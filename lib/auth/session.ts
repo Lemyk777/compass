@@ -44,3 +44,15 @@ export async function requireSession(next = "/dashboard"): Promise<SessionProfil
   }
   return session;
 }
+
+/** Requires a specific role; redirects elsewhere if the user lacks it. */
+export async function requireRole(
+  role: Role,
+  next = "/dashboard"
+): Promise<SessionProfile> {
+  const session = await requireSession(next);
+  if (session.role !== role) {
+    redirect("/dashboard");
+  }
+  return session;
+}

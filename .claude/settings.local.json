@@ -18,7 +18,8 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(grep -oE '\\(Error|Warning\\)[^|]*' /Users/kimkirill/.claude/projects/-Users-kimkirill-Desktop-Compass/615b64e8-b40e-40cd-9643-b537772f3c80/tool-results/mcp-Claude_Preview-preview_console_logs-1781338393570.txt)",
       "Bash(git commit -q -m 'M4: results dashboard — scorecard hero, school gauges, comparison, benchmarks, gaps, timeline *)",
-      "Bash(git commit -q -m 'M5: ambassador view — referral link, QR code, live signup count *)"
+      "Bash(git commit -q -m 'M5: ambassador view — referral link, QR code, live signup count *)",
+      "Bash(git commit -q -m 'M6: admin view — role-gated founder metrics + API cost estimate *)"
     ]
   }
 }
