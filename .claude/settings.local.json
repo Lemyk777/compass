@@ -10,7 +10,8 @@
       "Bash(git config *)",
       "Bash(git commit -q -m 'M0: scaffold Next.js + TS + Tailwind + Recharts/Supabase/Anthropic, design tokens, landing page *)",
       "Bash(git add *)",
-      "Bash(git commit -q -m 'M1: Supabase auth \\(email + Google\\), DB migration with RLS, referral capture end-to-end *)"
+      "Bash(git commit -q -m 'M1: Supabase auth \\(email + Google\\), DB migration with RLS, referral capture end-to-end *)",
+      "Bash(git commit -q -m 'M2: multi-step curriculum-aware profile intake + university dataset *)"
     ]
   }
 }
