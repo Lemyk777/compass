@@ -6,7 +6,11 @@
       "Bash(npm install *)",
       "Bash(npm view *)",
       "Bash(npm audit *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git config *)",
+      "Bash(git commit -q -m 'M0: scaffold Next.js + TS + Tailwind + Recharts/Supabase/Anthropic, design tokens, landing page *)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m 'M1: Supabase auth \\(email + Google\\), DB migration with RLS, referral capture end-to-end *)"
     ]
   }
 }
