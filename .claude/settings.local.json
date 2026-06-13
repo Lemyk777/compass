@@ -14,7 +14,10 @@
       "Bash(git commit -q -m 'M2: multi-step curriculum-aware profile intake + university dataset *)",
       "Skill(claude-api)",
       "Skill(claude-api:*)",
-      "Bash(git commit -q -m 'M3: AI analysis engine \\(claude-haiku-4-5, cached prompt, zod-validated\\) *)"
+      "Bash(git commit -q -m 'M3: AI analysis engine \\(claude-haiku-4-5, cached prompt, zod-validated\\) *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(grep -oE '\\(Error|Warning\\)[^|]*' /Users/kimkirill/.claude/projects/-Users-kimkirill-Desktop-Compass/615b64e8-b40e-40cd-9643-b537772f3c80/tool-results/mcp-Claude_Preview-preview_console_logs-1781338393570.txt)",
+      "Bash(git commit -q -m 'M4: results dashboard — scorecard hero, school gauges, comparison, benchmarks, gaps, timeline *)"
     ]
   }
 }
