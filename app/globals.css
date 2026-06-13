@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Mirror of Tailwind tokens for use in inline styles / Recharts */
+  --ink: #10192b;
+  --ink-soft: #3a4661;
+  --surface: #f5f3ef;
+  --card: #ffffff;
+  --line: #e6e2da;
+  --accent: #2f6fed;
+  --accent-soft: #e4ecfd;
+  --reach: #e0664f;
+  --target: #d98a2b;
+  --likely: #3f9b6e;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-surface text-ink font-body antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+  /* Numbers product: tabular figures everywhere by default */
+  .tnum,
+  [data-num] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+}
+
+@layer utilities {
+  .focus-ring {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-surface;
+  }
+}
+
+/* Honor reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
