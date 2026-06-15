@@ -4,7 +4,10 @@ import { analysisSchema, sanitizeAnalysis, type Analysis } from "@/lib/ai/schema
 import type { StudentProfileInput } from "@/lib/types";
 
 const MODEL = "claude-haiku-4-5";
-const MAX_TOKENS = 2500;
+// Cost-safety cap, but large enough for the full report (7 factors + up to ~12
+// schools + recommendations + benchmarks + gap analysis + timeline). 2500 was
+// too small and truncated the JSON mid-array.
+const MAX_TOKENS = 6000;
 
 export type AnalyzeResult = {
   analysis: Analysis;
