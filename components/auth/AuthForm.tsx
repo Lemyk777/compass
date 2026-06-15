@@ -22,7 +22,20 @@ export function AuthForm({
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [checkEmail, setCheckEmail] = useState(false);
 
-  const callbackUrl = `${siteUrl()}/auth/callback?next=/onboarding`;
+  // Forward an explicit return target if one was passed (e.g. a gated page
+  // redirected here). Otherwise let the callback route by role.
+  const nextParam =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("next")
+      : null;
+  const safeNext =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : null;
+  const callbackPath = safeNext
+    ? `/auth/callback?next=${encodeURIComponent(safeNext)}`
+    : "/auth/callback";
+  const callbackUrl = `${siteUrl()}${callbackPath}`;
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
@@ -38,7 +51,7 @@ export function AuthForm({
         if (error) throw error;
         if (data.session) {
           // Email confirmation disabled — straight in.
-          window.location.assign("/auth/callback?next=/onboarding");
+          window.location.assign(callbackPath);
         } else {
           setCheckEmail(true);
         }
@@ -48,7 +61,7 @@ export function AuthForm({
           password,
         });
         if (error) throw error;
-        window.location.assign("/auth/callback?next=/onboarding");
+        window.location.assign(callbackPath);
       }
     } catch (err) {
       setError(messageFor(err));

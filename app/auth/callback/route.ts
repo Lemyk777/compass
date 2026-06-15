@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { provisionUser } from "@/lib/auth/provision";
+import { landingPathForRole, type Role } from "@/lib/auth/session";
 import { REF_COOKIE } from "@/lib/supabase/middleware";
 
 /**
@@ -13,7 +14,7 @@ import { REF_COOKIE } from "@/lib/supabase/middleware";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const next = sanitizeNext(searchParams.get("next"));
+  const explicitNext = cleanNext(searchParams.get("next"));
 
   const supabase = createClient();
 
@@ -42,11 +43,23 @@ export async function GET(request: NextRequest) {
     console.error("provisionUser failed", e);
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  // Honor an explicit return target; otherwise route by role
+  // (admin → /admin, ambassador → /ambassador, student → /onboarding).
+  let target = explicitNext;
+  if (!target) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    target = landingPathForRole((profile?.role as Role) ?? "student");
+  }
+
+  return NextResponse.redirect(`${origin}${target}`);
 }
 
-function sanitizeNext(next: string | null): string {
-  // Only allow internal, absolute-path redirects.
+/** Allow only internal absolute-path redirects; null if absent/invalid. */
+function cleanNext(next: string | null): string | null {
   if (next && next.startsWith("/") && !next.startsWith("//")) return next;
-  return "/onboarding";
+  return null;
 }

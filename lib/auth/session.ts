@@ -45,6 +45,13 @@ export async function requireSession(next = "/dashboard"): Promise<SessionProfil
   return session;
 }
 
+/** Where a user lands right after signing in, based on their role. */
+export function landingPathForRole(role: Role): string {
+  if (role === "admin") return "/admin";
+  if (role === "ambassador") return "/ambassador";
+  return "/onboarding";
+}
+
 /** Requires a specific role; redirects elsewhere if the user lacks it. */
 export async function requireRole(
   role: Role,

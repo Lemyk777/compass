@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
 import { CURRICULA, emptyProfile, type StudentProfileInput } from "@/lib/types";
 import { UNIVERSITY_NAMES } from "@/lib/data/universities";
@@ -84,12 +84,17 @@ export function Onboarding({
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-8">
       <header className="flex items-center justify-between py-5">
         <Logo className="text-ink" />
-        <span data-num className="text-sm text-ink-faint">
-          Step {step + 1} of {STEPS.length}
-        </span>
+        <ButtonLink href="/ambassador" variant="ghost" size="sm">
+          Are you an Ambassador?
+        </ButtonLink>
       </header>
 
       {/* Progress */}
+      <div className="mb-1.5 flex justify-end">
+        <span data-num className="text-xs text-ink-faint">
+          Step {step + 1} of {STEPS.length}
+        </span>
+      </div>
       <div className="mb-6 flex gap-1.5" aria-hidden="true">
         {STEPS.map((_, i) => (
           <div

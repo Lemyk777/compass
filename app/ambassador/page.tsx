@@ -2,8 +2,8 @@ import { requireSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { AmbassadorClient } from "@/components/ambassador/AmbassadorClient";
+import { AmbassadorPending } from "@/components/ambassador/AmbassadorPending";
 import { Card } from "@/components/report/Section";
-import { ButtonLink } from "@/components/ui/Button";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +32,7 @@ export default async function AmbassadorPage() {
       <AppHeader links={[{ href: "/dashboard", label: "Dashboard" }]} />
       <div className="mx-auto max-w-2xl px-5 py-6">
         {!amb ? (
-          <NotAmbassador />
+          <AmbassadorPending />
         ) : (
           <div className="space-y-6">
             <div>
@@ -83,22 +83,5 @@ export default async function AmbassadorPage() {
         )}
       </div>
     </main>
-  );
-}
-
-function NotAmbassador() {
-  return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <h1 className="text-2xl font-semibold tracking-tight text-ink">
-        You&apos;re not an ambassador yet
-      </h1>
-      <p className="mt-2 max-w-sm text-sm text-ink-soft">
-        Ambassadors get a personal referral link and see their signups here.
-        Reach out to the Compass team to get set up.
-      </p>
-      <ButtonLink href="/dashboard" variant="subtle" size="lg" className="mt-6">
-        Back to dashboard
-      </ButtonLink>
-    </div>
   );
 }
