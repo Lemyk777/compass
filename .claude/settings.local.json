@@ -20,7 +20,10 @@
       "Bash(git commit -q -m 'M4: results dashboard — scorecard hero, school gauges, comparison, benchmarks, gaps, timeline *)",
       "Bash(git commit -q -m 'M5: ambassador view — referral link, QR code, live signup count *)",
       "Bash(git commit -q -m 'M6: admin view — role-gated founder metrics + API cost estimate *)",
-      "Bash(git commit -q -m 'docs: founder setup guide \\(Supabase, Google OAuth, roles, deploy, acceptance test\\) *)"
+      "Bash(git commit -q -m 'docs: founder setup guide \\(Supabase, Google OAuth, roles, deploy, acceptance test\\) *)",
+      "Bash(git commit -q -m 'fix: raise analysis max_tokens 2500->6000 \\(full report was truncating mid-JSON\\) *)",
+      "Bash(node --env-file=.env.local scripts/_tmp_confirm_user.mjs)",
+      "Bash(git commit -q -m 'chore: enable autoPort for preview dev server *)"
     ]
   }
 }
