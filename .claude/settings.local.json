@@ -29,7 +29,8 @@
       "Bash(grep -oE '\\(Error:|TypeError:|ReferenceError:|Cannot |is not |Failed to|Hydration|Text content does not|undefined \\\\\\(reading\\)[^\\\\\\\\\"]{0,120}' /Users/kimkirill/.claude/projects/-Users-kimkirill-Desktop-Compass/615b64e8-b40e-40cd-9643-b537772f3c80/tool-results/toolu_01JhToNBEHoHpwmwwdtSbdHd.json)",
       "Bash(python3 -c ' *)",
       "Bash(node --env-file=.env.local --input-type=module -e ' *)",
-      "Bash(git commit -q -m 'feat: role-based post-login routing + ambassador discovery flow *)"
+      "Bash(git commit -q -m 'feat: role-based post-login routing + ambassador discovery flow *)",
+      "Bash(git commit -q -m 'fix: add error/global-error/not-found boundaries; harden signout route *)"
     ]
   }
 }
