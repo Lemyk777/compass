@@ -30,7 +30,11 @@
       "Bash(python3 -c ' *)",
       "Bash(node --env-file=.env.local --input-type=module -e ' *)",
       "Bash(git commit -q -m 'feat: role-based post-login routing + ambassador discovery flow *)",
-      "Bash(git commit -q -m 'fix: add error/global-error/not-found boundaries; harden signout route *)"
+      "Bash(git commit -q -m 'fix: add error/global-error/not-found boundaries; harden signout route *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/admin)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/ambassador)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:49670/admin)",
+      "Bash(git commit -q -m 'chore: update local Claude settings *)"
     ]
   }
 }
