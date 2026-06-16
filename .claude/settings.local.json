@@ -34,7 +34,16 @@
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/admin)",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/ambassador)",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:49670/admin)",
-      "Bash(git commit -q -m 'chore: update local Claude settings *)"
+      "Bash(git commit -q -m 'chore: update local Claude settings *)",
+      "Bash(git check-ignore *)",
+      "Bash(gh --version)",
+      "Bash(command -v gh)",
+      "Bash(echo \"gh: installed \\($\\(gh --version)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(grep -q \"^.env.local$\")",
+      "Bash(git rev-list *)"
     ]
   }
 }
