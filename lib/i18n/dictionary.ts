@@ -44,6 +44,23 @@ const en: Dict = {
   "landing.standingPreview": "Your standing",
   "landing.preview": "Preview",
   "landing.competitiveness": "competitiveness",
+  "landing.trustedBy": "Benchmark yourself against 50+ US universities",
+  "landing.fromEverywhere": "Students applying from 50+ countries",
+  "landing.getTitle": "Everything you get",
+  "landing.getSub": "One profile in, a complete game plan out.",
+  "landing.get1Title": "A competitiveness score",
+  "landing.get1Body": "Seven factors scored 0–10 and blended into one honest 0–100 number.",
+  "landing.get2Title": "Per-school odds",
+  "landing.get2Body": "Reach / target / likely tiers with admission-likelihood ranges for every school.",
+  "landing.get3Title": "Benchmarks vs admits",
+  "landing.get3Body": "See your SAT and grades against each school's admitted middle 50%.",
+  "landing.get4Title": "A plan to improve",
+  "landing.get4Body": "Prioritized, specific moves and a month-by-month timeline.",
+  "landing.seeSample": "See a sample report",
+  "landing.demoTitle": "This is what you walk away with",
+  "landing.demoSub": "A clear, shareable read on exactly where you stand — and what to do next.",
+  "landing.ctaTitle": "Ready to see where you stand?",
+  "landing.ctaSub": "Build your scorecard in a few minutes. Free to start.",
 
   // auth
   "auth.welcomeBack": "Welcome back",
@@ -70,6 +87,16 @@ const en: Dict = {
   "auth.errNotConfigured":
     "Authentication isn't configured yet. Add your Supabase keys to continue.",
   "auth.errGeneric": "Something went wrong. Please try again.",
+  "auth.asideTitle": "Your US university journey starts here",
+  "auth.asideBullet1": "An honest competitiveness score",
+  "auth.asideBullet2": "Admission odds for every school on your list",
+  "auth.asideBullet3": "A concrete plan to raise your chances",
+
+  // mini scorecard
+  "mini.academics": "Academics",
+  "mini.tests": "Test scores",
+  "mini.leadership": "Leadership",
+  "mini.activities": "Activities",
 
   // onboarding
   "ob.step": "Step",
@@ -289,6 +316,23 @@ const ru: Dict = {
   "landing.standingPreview": "Ваш результат",
   "landing.preview": "Превью",
   "landing.competitiveness": "конкурентоспособность",
+  "landing.trustedBy": "Сравните себя с 50+ вузами США",
+  "landing.fromEverywhere": "Абитуриенты из 50+ стран",
+  "landing.getTitle": "Что вы получаете",
+  "landing.getSub": "Один профиль на входе — полный план на выходе.",
+  "landing.get1Title": "Балл конкурентоспособности",
+  "landing.get1Body": "Семь факторов по 0–10, сведённые в один честный балл 0–100.",
+  "landing.get2Title": "Шансы по каждому вузу",
+  "landing.get2Body": "Тиры «сложная / реальная / вероятная» и диапазоны шансов для каждого вуза.",
+  "landing.get3Title": "Сравнение с поступившими",
+  "landing.get3Body": "Ваш SAT и оценки против среднего диапазона поступивших (50%).",
+  "landing.get4Title": "План улучшений",
+  "landing.get4Body": "Приоритизированные конкретные шаги и план по месяцам.",
+  "landing.seeSample": "Посмотреть пример отчёта",
+  "landing.demoTitle": "Вот что вы получите на руки",
+  "landing.demoSub": "Понятная картина того, где вы стоите — и что делать дальше.",
+  "landing.ctaTitle": "Готовы узнать, где вы стоите?",
+  "landing.ctaSub": "Создайте карту профиля за пару минут. Бесплатно.",
 
   // auth
   "auth.welcomeBack": "С возвращением",
@@ -315,6 +359,16 @@ const ru: Dict = {
   "auth.errNotConfigured":
     "Аутентификация ещё не настроена. Добавьте ключи Supabase.",
   "auth.errGeneric": "Что-то пошло не так. Попробуйте снова.",
+  "auth.asideTitle": "Ваш путь в вузы США начинается здесь",
+  "auth.asideBullet1": "Честный балл конкурентоспособности",
+  "auth.asideBullet2": "Шансы на поступление по каждому вузу из списка",
+  "auth.asideBullet3": "Конкретный план, как повысить шансы",
+
+  // mini scorecard
+  "mini.academics": "Академика",
+  "mini.tests": "Тесты",
+  "mini.leadership": "Лидерство",
+  "mini.activities": "Активности",
 
   // onboarding
   "ob.step": "Шаг",

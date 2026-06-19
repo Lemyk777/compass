@@ -43,7 +43,8 @@
       "Bash(git branch *)",
       "Bash(git push *)",
       "Bash(grep -q \"^.env.local$\")",
-      "Bash(git rev-list *)"
+      "Bash(git rev-list *)",
+      "Bash(git commit -q -m 'feat: add EN/RU language toggle \\(English default\\), translate the UI *)"
     ]
   }
 }
