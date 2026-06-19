@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/client";
 
 // Shown when a signed-in user opens /ambassador but isn't an approved
 // ambassador yet. The "Check approval" button re-runs the server query — if the
 // founder has since added them, the page swaps to the hub automatically.
 export function AmbassadorPending() {
+  const t = useT();
   const router = useRouter();
   const [checking, setChecking] = useState(false);
   const [checkedOnce, setCheckedOnce] = useState(false);
@@ -31,25 +33,22 @@ export function AmbassadorPending() {
         </svg>
       </span>
       <h1 className="text-2xl font-semibold tracking-tight text-ink">
-        You&apos;re not confirmed yet
+        {t("amb.pendTitle")}
       </h1>
-      <p className="mt-2 max-w-sm text-sm text-ink-soft">
-        Your ambassador status hasn&apos;t been approved yet. Once the Compass team
-        confirms you, your referral link and stats will appear here.
-      </p>
+      <p className="mt-2 max-w-sm text-sm text-ink-soft">{t("amb.pendBody")}</p>
 
       {checkedOnce && !checking && (
         <p className="mt-4 rounded-lg bg-target-soft px-3 py-2 text-sm text-[#8A5410]">
-          Still pending — check back a little later.
+          {t("amb.stillPending")}
         </p>
       )}
 
       <div className="mt-6 flex gap-3">
         <Button size="lg" onClick={check} disabled={checking}>
-          {checking ? "Checking…" : "Check approval"}
+          {checking ? t("amb.checking") : t("amb.checkApproval")}
         </Button>
         <ButtonLink href="/onboarding" variant="subtle" size="lg">
-          Back
+          {t("common.back")}
         </ButtonLink>
       </div>
     </div>

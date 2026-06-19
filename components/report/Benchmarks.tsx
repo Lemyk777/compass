@@ -2,10 +2,12 @@
 
 import type { Benchmark } from "@/lib/ai/schema";
 import { ACCENT } from "@/lib/tiers";
+import { useT } from "@/lib/i18n/client";
 
 // Benchmark markers: the student's value plotted against each school's
 // admitted mid-50% (p25–p75) range.
 export function Benchmarks({ benchmarks }: { benchmarks: Benchmark[] }) {
+  const t = useT();
   if (!benchmarks.length) return null;
 
   // Shared scale across rows for visual comparability.
@@ -52,10 +54,10 @@ export function Benchmarks({ benchmarks }: { benchmarks: Benchmark[] }) {
             </div>
             <p className="mt-0.5 text-xs text-ink-faint">
               {inRange
-                ? "You're inside the admitted range."
+                ? t("bench.inRange")
                 : above
-                  ? "You're above the admitted mid-range — a strength."
-                  : "You're below the admitted mid-range here."}
+                  ? t("bench.above")
+                  : t("bench.below")}
             </p>
           </li>
         );

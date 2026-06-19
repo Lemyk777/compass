@@ -11,6 +11,7 @@ import { GapAnalysis } from "@/components/report/GapAnalysis";
 import { Recommendations } from "@/components/report/Recommendations";
 import { Timeline } from "@/components/report/Timeline";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/client";
 
 export function Report({
   analysis,
@@ -19,6 +20,7 @@ export function Report({
   analysis: Analysis;
   name?: string | null;
 }) {
+  const t = useT();
   const scorecardRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -28,15 +30,15 @@ export function Report({
         <Scorecard ref={scorecardRef} analysis={analysis} name={name} />
         <ShareButton score={analysis.overall_score} />
         <p className="text-center text-xs text-ink-faint">
-          This is an estimate — top schools are unpredictable for everyone.
+          {t("report.estimate")}
         </p>
       </div>
 
       {/* Per-school likelihood */}
       {analysis.schools.length > 0 && (
         <Section
-          title="Your school list"
-          hint="Admission likelihood is always a range, with a confidence level."
+          title={t("report.schoolsTitle")}
+          hint={t("report.schoolsHint")}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             {analysis.schools.map((s) => (
@@ -49,8 +51,8 @@ export function Report({
       {/* Comparison */}
       {analysis.schools.length > 1 && (
         <Section
-          title="Compared side by side"
-          hint="Mid-point likelihood, highest odds first."
+          title={t("report.compareTitle")}
+          hint={t("report.compareHint")}
         >
           <Card>
             <SchoolComparison schools={analysis.schools} />
@@ -62,8 +64,8 @@ export function Report({
       {/* Benchmarks */}
       {analysis.benchmarks.length > 0 && (
         <Section
-          title="How you compare"
-          hint="Your scores against each school's admitted middle 50%."
+          title={t("report.benchTitle")}
+          hint={t("report.benchHint")}
         >
           <Card>
             <Benchmarks benchmarks={analysis.benchmarks} />
@@ -74,8 +76,8 @@ export function Report({
       {/* Gap analysis */}
       {analysis.gap_analysis.length > 0 && (
         <Section
-          title="Your highest-impact moves"
-          hint="Ranked by how much they lift your standing."
+          title={t("report.gapTitle")}
+          hint={t("report.gapHint")}
         >
           <GapAnalysis items={analysis.gap_analysis} />
         </Section>
@@ -84,8 +86,8 @@ export function Report({
       {/* Recommendations */}
       {analysis.recommended_schools.length > 0 && (
         <Section
-          title="Schools worth adding"
-          hint="Strong fits that aren't on your list yet."
+          title={t("report.recTitle")}
+          hint={t("report.recHint")}
         >
           <Recommendations schools={analysis.recommended_schools} />
         </Section>
@@ -93,7 +95,10 @@ export function Report({
 
       {/* Timeline */}
       {analysis.timeline.length > 0 && (
-        <Section title="What to do next" hint="A plan across the coming months.">
+        <Section
+          title={t("report.timelineTitle")}
+          hint={t("report.timelineHint")}
+        >
           <Card>
             <Timeline blocks={analysis.timeline} />
           </Card>
@@ -102,7 +107,7 @@ export function Report({
 
       {/* Summary */}
       {analysis.summary && (
-        <Section title="The bottom line">
+        <Section title={t("report.summaryTitle")}>
           <Card>
             <p className="text-pretty leading-relaxed text-ink-soft">
               {analysis.summary}
@@ -115,10 +120,11 @@ export function Report({
 }
 
 function Legend() {
+  const t = useT();
   const items = [
-    { label: "Likely", color: "var(--likely)" },
-    { label: "Target", color: "var(--target)" },
-    { label: "Reach", color: "var(--reach)" },
+    { label: t("tier.likely"), color: "var(--likely)" },
+    { label: t("tier.target"), color: "var(--target)" },
+    { label: t("tier.reach"), color: "var(--reach)" },
   ];
   return (
     <div className="mt-3 flex flex-wrap gap-4 border-t border-line pt-3">
@@ -136,6 +142,7 @@ function Legend() {
 }
 
 function ShareButton({ score }: { score: number }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   async function share() {
@@ -156,7 +163,7 @@ function ShareButton({ score }: { score: number }) {
 
   return (
     <Button variant="subtle" className="w-full" onClick={share}>
-      {copied ? "Copied to clipboard ✓" : "Share my scorecard"}
+      {copied ? t("report.copied") : t("report.share")}
     </Button>
   );
 }

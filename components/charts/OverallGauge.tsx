@@ -8,21 +8,23 @@ import {
 } from "recharts";
 import { useCountUp } from "@/lib/useCountUp";
 import { ACCENT } from "@/lib/tiers";
+import { useT } from "@/lib/i18n/client";
 
 // The overall-score gauge — a 270° radial arc (Recharts radial primitive) with
 // the number counting up once on load.
 export function OverallGauge({ score }: { score: number }) {
+  const t = useT();
   const animated = useCountUp(score);
   const data = [{ name: "score", value: score, fill: ACCENT }];
 
   const band =
     score >= 80
-      ? "Exceptional"
+      ? t("band.exceptional")
       : score >= 65
-        ? "Competitive"
+        ? t("band.competitive")
         : score >= 50
-          ? "Solid"
-          : "Developing";
+          ? t("band.solid")
+          : t("band.developing");
 
   return (
     <div className="relative mx-auto aspect-square w-[180px]">
@@ -58,7 +60,7 @@ export function OverallGauge({ score }: { score: number }) {
         >
           {animated}
         </span>
-        <span className="mt-1 text-xs text-ink-faint">out of 100</span>
+        <span className="mt-1 text-xs text-ink-faint">{t("report.outOf")}</span>
         <span className="mt-1.5 text-sm font-medium text-accent">{band}</span>
       </div>
     </div>

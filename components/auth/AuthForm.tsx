@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { siteUrl } from "@/lib/site";
 import { Button } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
+import { useT } from "@/lib/i18n/client";
 
 type Mode = "login" | "signup";
 
@@ -15,6 +16,7 @@ export function AuthForm({
   mode: Mode;
   initialError?: string;
 }) {
+  const t = useT();
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,7 +66,7 @@ export function AuthForm({
         window.location.assign(callbackPath);
       }
     } catch (err) {
-      setError(messageFor(err));
+      setError(messageFor(err, t));
       setLoading(null);
     }
   }
@@ -77,7 +79,7 @@ export function AuthForm({
       options: { redirectTo: callbackUrl },
     });
     if (error) {
-      setError(messageFor(error));
+      setError(messageFor(error, t));
       setLoading(null);
     }
   }
@@ -85,10 +87,10 @@ export function AuthForm({
   if (checkEmail) {
     return (
       <div className="rounded-2xl border border-line bg-card p-6 text-center shadow-card">
-        <h2 className="text-lg font-semibold text-ink">Check your inbox</h2>
+        <h2 className="text-lg font-semibold text-ink">{t("auth.checkInbox")}</h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-          We sent a confirmation link to <strong>{email}</strong>. Open it on
-          this device to finish creating your account.
+          {t("auth.checkInboxBody")} <strong>{email}</strong>.{" "}
+          {t("auth.checkInboxBody2")}
         </p>
       </div>
     );
@@ -105,17 +107,17 @@ export function AuthForm({
         disabled={loading !== null}
       >
         <GoogleMark />
-        {loading === "google" ? "Connecting…" : "Continue with Google"}
+        {loading === "google" ? t("auth.connecting") : t("auth.continueGoogle")}
       </Button>
 
       <div className="my-5 flex items-center gap-3 text-xs text-ink-faint">
         <span className="h-px flex-1 bg-line" />
-        or with email
+        {t("auth.orEmail")}
         <span className="h-px flex-1 bg-line" />
       </div>
 
       <form onSubmit={handleEmail} className="space-y-4">
-        <Field label="Email" htmlFor="email">
+        <Field label={t("auth.email")} htmlFor="email">
           <Input
             id="email"
             type="email"
@@ -127,9 +129,9 @@ export function AuthForm({
           />
         </Field>
         <Field
-          label="Password"
+          label={t("auth.password")}
           htmlFor="password"
-          hint={mode === "signup" ? "At least 6 characters." : undefined}
+          hint={mode === "signup" ? t("auth.passwordHint") : undefined}
         >
           <Input
             id="password"
@@ -159,21 +161,21 @@ export function AuthForm({
           disabled={loading !== null}
         >
           {loading === "email"
-            ? "One moment…"
+            ? t("auth.oneMoment")
             : mode === "signup"
-              ? "Create account"
-              : "Log in"}
+              ? t("auth.createBtn")
+              : t("auth.loginBtn")}
         </Button>
       </form>
     </div>
   );
 }
 
-function messageFor(err: unknown): string {
+function messageFor(err: unknown, t: (k: string) => string): string {
   const msg = err instanceof Error ? err.message : String(err);
   if (/configuration|fetch|Failed to fetch/i.test(msg))
-    return "Authentication isn't configured yet. Add your Supabase keys to continue.";
-  return msg || "Something went wrong. Please try again.";
+    return t("auth.errNotConfigured");
+  return msg || t("auth.errGeneric");
 }
 
 function GoogleMark() {

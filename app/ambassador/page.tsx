@@ -4,11 +4,13 @@ import { AppHeader } from "@/components/ui/AppHeader";
 import { AmbassadorClient } from "@/components/ambassador/AmbassadorClient";
 import { AmbassadorPending } from "@/components/ambassador/AmbassadorPending";
 import { Card } from "@/components/report/Section";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AmbassadorPage() {
   const session = await requireSession("/ambassador");
+  const t = getT();
   const supabase = createClient();
 
   // RLS: a user can read only their own ambassadors row.
@@ -29,7 +31,7 @@ export default async function AmbassadorPage() {
 
   return (
     <main className="min-h-dvh bg-surface">
-      <AppHeader links={[{ href: "/dashboard", label: "Dashboard" }]} />
+      <AppHeader links={[{ href: "/dashboard", label: t("common.dashboard") }]} />
       <div className="mx-auto max-w-2xl px-5 py-6">
         {!amb ? (
           <AmbassadorPending />
@@ -37,12 +39,9 @@ export default async function AmbassadorPage() {
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight text-ink">
-                Your ambassador hub
+                {t("amb.hubTitle")}
               </h1>
-              <p className="text-sm text-ink-soft">
-                Share your link — every student who signs up through it counts
-                toward you.
-              </p>
+              <p className="text-sm text-ink-soft">{t("amb.hubSub")}</p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -51,7 +50,9 @@ export default async function AmbassadorPage() {
                   {liveSignups}
                 </span>
                 <span className="mt-1 text-sm text-ink-soft">
-                  {liveSignups === 1 ? "student signed up" : "students signed up"}
+                  {liveSignups === 1
+                    ? t("amb.signedUpOne")
+                    : t("amb.signedUpMany")}
                 </span>
               </Card>
               <Card className="flex flex-col justify-center text-center">
@@ -59,7 +60,7 @@ export default async function AmbassadorPage() {
                   {amb.code}
                 </span>
                 <span className="mt-1 text-sm text-ink-soft">
-                  Your code · {amb.country ?? "—"}
+                  {t("amb.yourCode")} · {amb.country ?? "—"}
                 </span>
                 <span
                   className={`mx-auto mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -75,10 +76,7 @@ export default async function AmbassadorPage() {
 
             <AmbassadorClient code={amb.code} />
 
-            <p className="text-center text-xs text-ink-faint">
-              Counts update as students sign up. Tier rewards are handled
-              manually for now.
-            </p>
+            <p className="text-center text-xs text-ink-faint">{t("amb.note")}</p>
           </div>
         )}
       </div>

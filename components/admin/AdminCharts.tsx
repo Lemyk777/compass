@@ -10,6 +10,7 @@ import {
   Cell,
 } from "recharts";
 import { ACCENT } from "@/lib/tiers";
+import { useT } from "@/lib/i18n/client";
 
 export function SignupsOverTime({
   data,
@@ -48,8 +49,9 @@ export function SignupsByCountry({
 }: {
   data: { country: string; count: number }[];
 }) {
+  const t = useT();
   if (!data.length)
-    return <p className="text-sm text-ink-faint">No signups yet.</p>;
+    return <p className="text-sm text-ink-faint">{t("admin.noSignups")}</p>;
   const height = Math.max(120, data.length * 34);
   return (
     <ResponsiveContainer width="100%" height={height}>

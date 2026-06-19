@@ -1,8 +1,12 @@
+"use client";
+
 import type { RecommendedSchool } from "@/lib/ai/schema";
 import { TIER_META } from "@/lib/tiers";
+import { useT } from "@/lib/i18n/client";
 
 // Ranked school recommendations not already on the student's list.
 export function Recommendations({ schools }: { schools: RecommendedSchool[] }) {
+  const t = useT();
   if (!schools.length) return null;
   return (
     <ul className="space-y-3">
@@ -22,10 +26,10 @@ export function Recommendations({ schools }: { schools: RecommendedSchool[] }) {
                   className="rounded-full px-2.5 py-1 text-xs font-medium"
                   style={{ backgroundColor: meta.soft, color: meta.text }}
                 >
-                  {meta.label}
+                  {t(`tier.${s.tier}`)}
                 </span>
                 <span data-num className="text-xs font-medium text-ink-soft">
-                  fit {s.fit_score}/10
+                  {t("report.fit")} {s.fit_score}/10
                 </span>
               </div>
             </div>

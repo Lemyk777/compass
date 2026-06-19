@@ -1,11 +1,13 @@
 "use client";
 
 import type { SchoolLikelihood } from "@/lib/ai/schema";
-import { TIER_HEX, TIER_META, CONFIDENCE_LABEL } from "@/lib/tiers";
+import { TIER_HEX, TIER_META } from "@/lib/tiers";
+import { useT } from "@/lib/i18n/client";
 
 // Per-school admission-likelihood gauge: a range band (low–high) on a 0–100
 // track, coloured by tier. Always a range, never a single number (§7.2).
 export function LikelihoodGauge({ school }: { school: SchoolLikelihood }) {
+  const t = useT();
   const color = TIER_HEX[school.tier];
   const meta = TIER_META[school.tier];
   const low = Math.max(0, Math.min(100, school.likelihood_low));
@@ -21,7 +23,7 @@ export function LikelihoodGauge({ school }: { school: SchoolLikelihood }) {
           className="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium"
           style={{ backgroundColor: meta.soft, color: meta.text }}
         >
-          {meta.label}
+          {t(`tier.${school.tier}`)}
         </span>
       </div>
 
@@ -29,7 +31,9 @@ export function LikelihoodGauge({ school }: { school: SchoolLikelihood }) {
         <span data-num className="font-display text-xl font-semibold text-ink">
           {low}–{high}%
         </span>
-        <span className="text-xs text-ink-faint">{CONFIDENCE_LABEL[school.confidence]}</span>
+        <span className="text-xs text-ink-faint">
+          {t(`conf.${school.confidence}`)}
+        </span>
       </div>
 
       {/* Range track */}

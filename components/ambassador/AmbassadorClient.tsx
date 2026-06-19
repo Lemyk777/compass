@@ -5,8 +5,10 @@ import QRCode from "qrcode";
 import { siteUrl } from "@/lib/site";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/report/Section";
+import { useT } from "@/lib/i18n/client";
 
 export function AmbassadorClient({ code }: { code: string }) {
+  const t = useT();
   const [link, setLink] = useState("");
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -47,7 +49,7 @@ export function AmbassadorClient({ code }: { code: string }) {
       )}
 
       <p className="mt-4 text-xs font-medium uppercase tracking-wide text-ink-faint">
-        Your referral link
+        {t("amb.referralLink")}
       </p>
       <p className="mt-1 break-all text-sm text-ink" data-num>
         {link || "…"}
@@ -55,7 +57,7 @@ export function AmbassadorClient({ code }: { code: string }) {
 
       <div className="mt-4 flex gap-2">
         <Button onClick={copy} className="flex-1">
-          {copied ? "Copied ✓" : "Copy link"}
+          {copied ? t("amb.copied") : t("amb.copyLink")}
         </Button>
         <Button
           variant="subtle"
@@ -63,7 +65,7 @@ export function AmbassadorClient({ code }: { code: string }) {
             if (navigator.share) navigator.share({ url: link, title: "Join Compass" });
           }}
         >
-          Share
+          {t("amb.share")}
         </Button>
       </div>
     </Card>

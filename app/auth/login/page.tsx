@@ -1,34 +1,36 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { AuthForm } from "@/components/auth/AuthForm";
+import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { getT } from "@/lib/i18n/server";
 
 export default function LoginPage({
   searchParams,
 }: {
   searchParams: { error?: string };
 }) {
+  const t = getT();
   return (
     <main className="flex min-h-dvh flex-col bg-surface">
-      <header className="mx-auto w-full max-w-md px-5 py-6">
+      <header className="mx-auto flex w-full max-w-md items-center justify-between px-5 py-6">
         <Link href="/" className="rounded focus-visible:focus-ring">
           <Logo className="text-ink" />
         </Link>
+        <LanguageToggle />
       </header>
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 pb-16">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          Welcome back
+          {t("auth.welcomeBack")}
         </h1>
-        <p className="mb-6 mt-1 text-sm text-ink-soft">
-          Log in to see your standing and pick up where you left off.
-        </p>
+        <p className="mb-6 mt-1 text-sm text-ink-soft">{t("auth.loginSub")}</p>
         <AuthForm mode="login" initialError={searchParams.error} />
         <p className="mt-5 text-center text-sm text-ink-soft">
-          New here?{" "}
+          {t("auth.newHere")}{" "}
           <Link
             href="/auth/signup"
             className="font-medium text-accent hover:underline"
           >
-            Create an account
+            {t("auth.createAccount")}
           </Link>
         </p>
       </div>

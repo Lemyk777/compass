@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Card } from "@/components/report/Section";
 import { SignupsOverTime, SignupsByCountry } from "@/components/admin/AdminCharts";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ const EST_COST_PER_ANALYSIS = 0.012;
 
 export default async function AdminPage() {
   await requireRole("admin", "/admin");
+  const t = getT();
   const admin = createAdminClient();
 
   const [{ data: profiles }, { data: analyses }] = await Promise.all([
@@ -63,49 +65,49 @@ export default async function AdminPage() {
 
   return (
     <main className="min-h-dvh bg-surface">
-      <AppHeader links={[{ href: "/dashboard", label: "Dashboard" }]} />
+      <AppHeader links={[{ href: "/dashboard", label: t("common.dashboard") }]} />
       <div className="mx-auto max-w-2xl px-5 py-6">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          Founder metrics
+          {t("admin.title")}
         </h1>
-        <p className="mb-6 text-sm text-ink-soft">A snapshot of usage so far.</p>
+        <p className="mb-6 text-sm text-ink-soft">{t("admin.sub")}</p>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <Stat label="Total users" value={totalUsers} />
-          <Stat label="Analyses run" value={totalAnalyses} />
-          <Stat label="Analyzed ≥1×" value={analyzedUsers} />
-          <Stat label="Returning (≥2)" value={returningUsers} />
-          <Stat label="One-time" value={oneTimeUsers} />
-          <Stat label="Never analyzed" value={Math.max(0, totalUsers - analyzedUsers)} />
+          <Stat label={t("admin.totalUsers")} value={totalUsers} />
+          <Stat label={t("admin.analysesRun")} value={totalAnalyses} />
+          <Stat label={t("admin.analyzed")} value={analyzedUsers} />
+          <Stat label={t("admin.returning")} value={returningUsers} />
+          <Stat label={t("admin.oneTime")} value={oneTimeUsers} />
+          <Stat
+            label={t("admin.neverAnalyzed")}
+            value={Math.max(0, totalUsers - analyzedUsers)}
+          />
         </div>
 
         <div className="mt-6 space-y-6">
           <Card>
             <h2 className="mb-3 text-base font-semibold text-ink">
-              Signups — last 14 days
+              {t("admin.signups14")}
             </h2>
             <SignupsOverTime data={days} />
           </Card>
 
           <Card>
             <h2 className="mb-3 text-base font-semibold text-ink">
-              Signups by country
+              {t("admin.signupsByCountry")}
             </h2>
             <SignupsByCountry data={countryData} />
           </Card>
 
           <Card>
             <h2 className="text-base font-semibold text-ink">
-              Estimated API cost
+              {t("admin.estCost")}
             </h2>
             <p data-num className="mt-1 font-display text-3xl font-semibold text-ink">
               ~${estCost}
             </p>
             <p className="mt-2 text-xs leading-relaxed text-ink-soft">
-              Rough estimate: {totalAnalyses} analyses × ~$
-              {EST_COST_PER_ANALYSIS.toFixed(3)} each (claude-haiku-4-5 with
-              prompt caching). This is indicative only — set a hard spend limit
-              in the Anthropic console for the real cap.
+              {t("admin.estCostBody")}
             </p>
           </Card>
         </div>

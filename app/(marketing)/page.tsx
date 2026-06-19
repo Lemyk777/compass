@@ -1,18 +1,23 @@
 import { Logo } from "@/components/ui/Logo";
 import { ButtonLink } from "@/components/ui/Button";
+import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { getT } from "@/lib/i18n/server";
+import type { TFunc } from "@/lib/i18n/dictionary";
 
 export default function LandingPage() {
+  const t = getT();
   return (
     <main className="min-h-dvh bg-surface">
       {/* Nav */}
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <Logo className="text-ink" />
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-1.5">
+          <LanguageToggle className="mr-1" />
           <ButtonLink href="/auth/login" variant="ghost" size="sm">
-            Log in
+            {t("common.logIn")}
           </ButtonLink>
           <ButtonLink href="/auth/signup" variant="primary" size="sm">
-            Get started
+            {t("common.getStarted")}
           </ButtonLink>
         </nav>
       </header>
@@ -23,45 +28,44 @@ export default function LandingPage() {
           <div className="animate-fade-up">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-line bg-card px-3 py-1 text-xs font-medium text-ink-soft">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              For international students applying to US universities
+              {t("landing.badge")}
             </p>
             <h1 className="text-balance text-[2.1rem] font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">
-              See where you stand.
+              {t("landing.title1")}
               <br />
-              <span className="text-accent">Then close the gap.</span>
+              <span className="text-accent">{t("landing.title2")}</span>
             </h1>
             <p className="mt-5 max-w-md text-pretty text-[1.05rem] leading-relaxed text-ink-soft">
-              Enter your academic profile and get a clear, honest read on your
-              competitiveness — scored factors, per-school likelihood ranges, and
-              a concrete plan for what to improve next.
+              {t("landing.subtitle")}
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <ButtonLink href="/auth/signup" size="lg">
-                Build your scorecard
+                {t("landing.ctaBuild")}
               </ButtonLink>
               <ButtonLink href="/auth/login" variant="subtle" size="lg">
-                I already have an account
+                {t("landing.ctaHave")}
               </ButtonLink>
             </div>
-            <p className="mt-4 text-sm text-ink-faint">
-              Free to start. No credit card.
-            </p>
+            <p className="mt-4 text-sm text-ink-faint">{t("landing.free")}</p>
           </div>
 
-          {/* Scorecard teaser — the signature element, previewed */}
-          <ScorecardTeaser />
+          <ScorecardTeaser t={t} />
         </div>
       </section>
 
       {/* How it works */}
       <section className="mx-auto max-w-5xl px-5 py-12">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-faint">
-          How it works
+          {t("landing.howItWorks")}
         </h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          {STEPS.map((s, i) => (
+          {[
+            { title: t("landing.step1Title"), body: t("landing.step1Body") },
+            { title: t("landing.step2Title"), body: t("landing.step2Body") },
+            { title: t("landing.step3Title"), body: t("landing.step3Body") },
+          ].map((s, i) => (
             <div
-              key={s.title}
+              key={i}
               className="rounded-2xl border border-line bg-card p-5 shadow-card"
             >
               <div
@@ -82,12 +86,9 @@ export default function LandingPage() {
       {/* Honesty note */}
       <section className="mx-auto max-w-5xl px-5 pb-16">
         <div className="rounded-2xl border border-line bg-ink p-6 text-white sm:p-8">
-          <h2 className="text-lg font-semibold">Honest by design</h2>
+          <h2 className="text-lg font-semibold">{t("landing.honestTitle")}</h2>
           <p className="mt-2 max-w-2xl text-pretty text-sm leading-relaxed text-white/70">
-            We give you confident numbers about your profile — and careful ranges
-            about admission. Top schools are unpredictable for everyone, so we
-            never pretend a single percentage is the truth. The value is the plan,
-            not a false guarantee.
+            {t("landing.honestBody")}
           </p>
         </div>
       </section>
@@ -95,30 +96,16 @@ export default function LandingPage() {
       <footer className="mx-auto max-w-5xl px-5 py-8 text-sm text-ink-faint">
         <div className="flex flex-col items-start justify-between gap-3 border-t border-line pt-6 sm:flex-row sm:items-center">
           <Logo className="text-ink" />
-          <p>© {new Date().getFullYear()} Compass. Guidance, not guarantees.</p>
+          <p>
+            © {new Date().getFullYear()} Compass. {t("landing.footer")}
+          </p>
         </div>
       </footer>
     </main>
   );
 }
 
-const STEPS = [
-  {
-    title: "Tell us about you",
-    body: "A short, guided intake — grades, tests, activities, and your target schools. Works with IB, A-Levels, national curricula, and US GPA.",
-  },
-  {
-    title: "Get your scorecard",
-    body: "Seven scored factors, an overall competitiveness score, and per-school likelihood ranges with a confidence level.",
-  },
-  {
-    title: "Follow the plan",
-    body: "A prioritized gap analysis and timeline showing the highest-impact moves you can make next.",
-  },
-];
-
-/** Static visual teaser of the scorecard — pure CSS, no data. */
-function ScorecardTeaser() {
+function ScorecardTeaser({ t }: { t: TFunc }) {
   const factors = [
     { label: "Academics", v: 8 },
     { label: "Test scores", v: 9 },
@@ -129,9 +116,11 @@ function ScorecardTeaser() {
   return (
     <div className="animate-fade-up rounded-2xl border border-line bg-card p-6 shadow-lift [animation-delay:120ms]">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-ink-soft">Your standing</p>
+        <p className="text-sm font-medium text-ink-soft">
+          {t("landing.standingPreview")}
+        </p>
         <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent-ink">
-          Preview
+          {t("landing.preview")}
         </span>
       </div>
       <div className="mt-4 flex items-end gap-4">
@@ -144,7 +133,7 @@ function ScorecardTeaser() {
         <div className="pb-1 text-sm text-ink-faint">
           / 100
           <br />
-          competitiveness
+          {t("landing.competitiveness")}
         </div>
       </div>
       <div className="mt-6 space-y-2.5">

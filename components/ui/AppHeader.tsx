@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
+import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { getT } from "@/lib/i18n/server";
 
 type NavLink = { href: string; label: string };
 
 export function AppHeader({ links = [] }: { links?: NavLink[] }) {
+  const t = getT();
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-surface/85 backdrop-blur">
       <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-3">
@@ -21,9 +24,10 @@ export function AppHeader({ links = [] }: { links?: NavLink[] }) {
               {l.label}
             </Link>
           ))}
+          <LanguageToggle className="mx-1" />
           <form action="/auth/signout" method="post">
             <Button type="submit" variant="ghost" size="sm">
-              Sign out
+              {t("common.signOut")}
             </Button>
           </form>
         </div>

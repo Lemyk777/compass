@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
+import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { CURRICULA, emptyProfile, type StudentProfileInput } from "@/lib/types";
 import { UNIVERSITY_NAMES } from "@/lib/data/universities";
 import { saveProfile } from "@/app/onboarding/actions";
+import { useT } from "@/lib/i18n/client";
 
 const STEPS = ["You", "Grades", "Tests", "Activities", "Schools", "Review"];
 
@@ -18,6 +20,7 @@ export function Onboarding({
   initial?: StudentProfileInput | null;
   hasAnalysis?: boolean;
 }) {
+  const t = useT();
   const router = useRouter();
   const [data, setData] = useState<StudentProfileInput>(
     initial ?? emptyProfile()
@@ -36,17 +39,16 @@ export function Onboarding({
   function validateStep(): string | null {
     switch (step) {
       case 0:
-        if (!data.country.trim()) return "Tell us your country.";
-        if (!data.citizenship.trim()) return "Add your citizenship.";
-        if (!data.intended_major.trim()) return "What do you want to study?";
+        if (!data.country.trim()) return t("ob.errCountry");
+        if (!data.citizenship.trim()) return t("ob.errCitizenship");
+        if (!data.intended_major.trim()) return t("ob.errMajor");
         return null;
       case 1:
-        if (!data.curriculum) return "Pick your curriculum.";
-        if (!data.grades.raw.trim()) return "Add your grades.";
+        if (!data.curriculum) return t("ob.errCurriculum");
+        if (!data.grades.raw.trim()) return t("ob.errGrades");
         return null;
       case 4:
-        if (data.target_schools.length === 0)
-          return "Add at least one target school.";
+        if (data.target_schools.length === 0) return t("ob.errSchools");
         return null;
       default:
         return null;
@@ -84,15 +86,18 @@ export function Onboarding({
     <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-8">
       <header className="flex items-center justify-between py-5">
         <Logo className="text-ink" />
-        <ButtonLink href="/ambassador" variant="ghost" size="sm">
-          Are you an Ambassador?
-        </ButtonLink>
+        <div className="flex items-center gap-1.5">
+          <LanguageToggle />
+          <ButtonLink href="/ambassador" variant="ghost" size="sm">
+            {t("common.areYouAmbassador")}
+          </ButtonLink>
+        </div>
       </header>
 
       {/* Progress */}
       <div className="mb-1.5 flex justify-end">
         <span data-num className="text-xs text-ink-faint">
-          Step {step + 1} of {STEPS.length}
+          {t("ob.step")} {step + 1} {t("ob.of")} {STEPS.length}
         </span>
       </div>
       <div className="mb-6 flex gap-1.5" aria-hidden="true">
@@ -108,9 +113,9 @@ export function Onboarding({
 
       <div className="flex-1 animate-fade-up" key={step}>
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          {TITLES[step].title}
+          {t(TITLES[step].title)}
         </h1>
-        <p className="mb-6 mt-1 text-sm text-ink-soft">{TITLES[step].sub}</p>
+        <p className="mb-6 mt-1 text-sm text-ink-soft">{t(TITLES[step].sub)}</p>
 
         {step === 0 && <StepYou data={data} set={set} />}
         {step === 1 && <StepGrades data={data} set={set} />}
@@ -129,16 +134,20 @@ export function Onboarding({
       <div className="sticky bottom-0 mt-6 flex gap-3 bg-surface py-4">
         {step > 0 && (
           <Button variant="subtle" size="lg" onClick={back} disabled={saving}>
-            Back
+            {t("common.back")}
           </Button>
         )}
         {!last ? (
           <Button size="lg" className="flex-1" onClick={next}>
-            Continue
+            {t("common.continue")}
           </Button>
         ) : (
           <Button size="lg" className="flex-1" onClick={submit} disabled={saving}>
-            {saving ? "Saving…" : hasAnalysis ? "Save & re-analyze" : "See my standing"}
+            {saving
+              ? t("ob.saving")
+              : hasAnalysis
+                ? t("ob.saveReanalyze")
+                : t("ob.seeStanding")}
           </Button>
         )}
       </div>
@@ -147,12 +156,12 @@ export function Onboarding({
 }
 
 const TITLES = [
-  { title: "About you", sub: "Where you're from and what you want to study." },
-  { title: "Your grades", sub: "We adapt to your curriculum — no conversions needed." },
-  { title: "Test scores", sub: "Optional. Add what you have; skip the rest." },
-  { title: "Activities", sub: "Your strongest few. Depth beats a long list." },
-  { title: "Target schools", sub: "Pick the US schools you're aiming at." },
-  { title: "Review", sub: "Check it over, then see where you stand." },
+  { title: "ob.t0", sub: "ob.s0" },
+  { title: "ob.t1", sub: "ob.s1" },
+  { title: "ob.t2", sub: "ob.s2" },
+  { title: "ob.t3", sub: "ob.s3" },
+  { title: "ob.t4", sub: "ob.s4" },
+  { title: "ob.t5", sub: "ob.s5" },
 ];
 
 type StepProps = {
@@ -164,30 +173,31 @@ type StepProps = {
 };
 
 function StepYou({ data, set }: StepProps) {
+  const t = useT();
   return (
     <div className="space-y-4">
-      <Field label="Country you live in" htmlFor="country">
+      <Field label={t("ob.country")} htmlFor="country">
         <Input
           id="country"
           value={data.country}
           onChange={(e) => set("country", e.target.value)}
-          placeholder="e.g. Kazakhstan"
+          placeholder={t("ob.countryPh")}
         />
       </Field>
-      <Field label="Citizenship" htmlFor="citizenship">
+      <Field label={t("ob.citizenship")} htmlFor="citizenship">
         <Input
           id="citizenship"
           value={data.citizenship}
           onChange={(e) => set("citizenship", e.target.value)}
-          placeholder="e.g. Kazakhstan"
+          placeholder={t("ob.countryPh")}
         />
       </Field>
-      <Field label="Intended major" htmlFor="major">
+      <Field label={t("ob.major")} htmlFor="major">
         <Input
           id="major"
           value={data.intended_major}
           onChange={(e) => set("intended_major", e.target.value)}
-          placeholder="e.g. Finance / Business"
+          placeholder={t("ob.majorPh")}
         />
       </Field>
     </div>
@@ -195,9 +205,10 @@ function StepYou({ data, set }: StepProps) {
 }
 
 function StepGrades({ data, set }: StepProps) {
+  const t = useT();
   return (
     <div className="space-y-4">
-      <Field label="Curriculum">
+      <Field label={t("ob.curriculum")}>
         <div className="grid grid-cols-1 gap-2">
           {CURRICULA.map((c) => (
             <button
@@ -210,7 +221,7 @@ function StepGrades({ data, set }: StepProps) {
                   : "border-line bg-card text-ink hover:border-ink/30"
               }`}
             >
-              {c.label}
+              {t(`curr.${c.value}`)}
               {data.curriculum === c.value && <Check />}
             </button>
           ))}
@@ -218,9 +229,9 @@ function StepGrades({ data, set }: StepProps) {
       </Field>
 
       <Field
-        label="Your grades"
+        label={t("ob.grades")}
         htmlFor="grades"
-        hint={gradeHint(data.curriculum)}
+        hint={t(gradeHintKey(data.curriculum))}
       >
         <textarea
           id="grades"
@@ -229,13 +240,13 @@ function StepGrades({ data, set }: StepProps) {
             set("grades", { ...data.grades, raw: e.target.value })
           }
           rows={3}
-          placeholder={gradePlaceholder(data.curriculum)}
+          placeholder={t(gradePlaceholderKey(data.curriculum))}
           className="w-full rounded-xl border border-line bg-card px-3.5 py-2.5 text-[0.95rem] text-ink placeholder:text-ink-faint focus-visible:focus-ring"
         />
       </Field>
 
       {data.curriculum === "IB" && (
-        <Field label="Predicted/actual IB total (optional)" htmlFor="ib">
+        <Field label={t("ob.ibTotal")} htmlFor="ib">
           <Input
             id="ib"
             type="number"
@@ -254,7 +265,7 @@ function StepGrades({ data, set }: StepProps) {
         </Field>
       )}
       {data.curriculum === "US-GPA" && (
-        <Field label="GPA (optional)" htmlFor="gpa">
+        <Field label={t("ob.gpa")} htmlFor="gpa">
           <Input
             id="gpa"
             type="number"
@@ -271,7 +282,7 @@ function StepGrades({ data, set }: StepProps) {
         </Field>
       )}
       {data.curriculum === "national" && (
-        <Field label="Average % (optional)" htmlFor="pct">
+        <Field label={t("ob.percent")} htmlFor="pct">
           <Input
             id="pct"
             type="number"
@@ -294,6 +305,7 @@ function StepGrades({ data, set }: StepProps) {
 }
 
 function StepTests({ data, set }: StepProps) {
+  const tr = useT();
   const t = data.tests;
   const upd = (k: keyof typeof t, v: number | string | undefined) =>
     set("tests", { ...t, [k]: v });
@@ -342,12 +354,12 @@ function StepTests({ data, set }: StepProps) {
           />
         </Field>
       </div>
-      <Field label="Subject tests / APs (optional)" htmlFor="subj">
+      <Field label={tr("ob.subjects")} htmlFor="subj">
         <Input
           id="subj"
           value={t.subjects ?? ""}
           onChange={(e) => upd("subjects", e.target.value || undefined)}
-          placeholder="e.g. AP Calculus BC 5, AP Econ 5"
+          placeholder={tr("ob.subjectsPh")}
         />
       </Field>
     </div>
@@ -355,6 +367,7 @@ function StepTests({ data, set }: StepProps) {
 }
 
 function StepActivities({ data, set }: StepProps) {
+  const t = useT();
   const acts = data.activities;
   const update = (i: number, patch: Partial<(typeof acts)[number]>) =>
     set(
@@ -377,7 +390,7 @@ function StepActivities({ data, set }: StepProps) {
         >
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-medium text-ink-faint">
-              Activity {i + 1}
+              {t("ob.activity")} {i + 1}
             </span>
             {acts.length > 1 && (
               <button
@@ -385,33 +398,34 @@ function StepActivities({ data, set }: StepProps) {
                 onClick={() => remove(i)}
                 className="rounded px-1 text-xs text-ink-faint hover:text-reach focus-visible:focus-ring"
               >
-                Remove
+                {t("ob.remove")}
               </button>
             )}
           </div>
           <Input
             value={a.title}
             onChange={(e) => update(i, { title: e.target.value })}
-            placeholder="e.g. Co-founded an AI startup"
+            placeholder={t("ob.activityTitlePh")}
             className="mb-2"
           />
           <textarea
             value={a.detail ?? ""}
             onChange={(e) => update(i, { detail: e.target.value })}
             rows={2}
-            placeholder="Impact, scale, your role, recognition…"
+            placeholder={t("ob.activityDetailPh")}
             className="w-full rounded-xl border border-line bg-card px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus-visible:focus-ring"
           />
         </div>
       ))}
       <Button variant="subtle" onClick={add} className="w-full">
-        + Add another
+        {t("ob.addAnother")}
       </Button>
     </div>
   );
 }
 
 function StepSchools({ data, set }: StepProps) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const selected = data.target_schools;
 
@@ -456,12 +470,12 @@ function StepSchools({ data, set }: StepProps) {
         </div>
       )}
 
-      <Field label="Search US universities" htmlFor="school-search">
+      <Field label={t("ob.searchSchools")} htmlFor="school-search">
         <Input
           id="school-search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Start typing a school name…"
+          placeholder={t("ob.searchPh")}
         />
       </Field>
 
@@ -469,7 +483,7 @@ function StepSchools({ data, set }: StepProps) {
         <div className="overflow-hidden rounded-xl border border-line bg-card">
           {suggestions.length === 0 ? (
             <p className="px-4 py-3 text-sm text-ink-faint">
-              No matches. You can still type your list later.
+              {t("ob.noMatches")}
             </p>
           ) : (
             suggestions.map((s) => (
@@ -487,7 +501,7 @@ function StepSchools({ data, set }: StepProps) {
       )}
 
       <label className="mt-2 flex items-center justify-between rounded-xl border border-line bg-card px-4 py-3">
-        <span className="text-sm text-ink">I&apos;ll need financial aid</span>
+        <span className="text-sm text-ink">{t("ob.needAid")}</span>
         <Toggle
           checked={data.needs_aid}
           onChange={(v) => set("needs_aid", v)}
@@ -504,29 +518,33 @@ function StepReview({
   data: StudentProfileInput;
   goTo: (n: number) => void;
 }) {
+  const t = useT();
   const rows: { label: string; value: string; step: number }[] = [
-    { label: "Country", value: data.country || "—", step: 0 },
-    { label: "Citizenship", value: data.citizenship || "—", step: 0 },
-    { label: "Major", value: data.intended_major || "—", step: 0 },
+    { label: t("ob.rCountry"), value: data.country || "—", step: 0 },
+    { label: t("ob.rCitizenship"), value: data.citizenship || "—", step: 0 },
+    { label: t("ob.rMajor"), value: data.intended_major || "—", step: 0 },
     {
-      label: "Curriculum",
-      value:
-        CURRICULA.find((c) => c.value === data.curriculum)?.label || "—",
+      label: t("ob.rCurriculum"),
+      value: data.curriculum ? t(`curr.${data.curriculum}`) : "—",
       step: 1,
     },
-    { label: "Grades", value: data.grades.raw || "—", step: 1 },
-    { label: "Tests", value: testSummary(data) || "—", step: 2 },
+    { label: t("ob.rGrades"), value: data.grades.raw || "—", step: 1 },
+    { label: t("ob.rTests"), value: testSummary(data) || "—", step: 2 },
     {
-      label: "Activities",
-      value: `${data.activities.filter((a) => a.title.trim()).length} added`,
+      label: t("ob.rActivities"),
+      value: `${data.activities.filter((a) => a.title.trim()).length} ${t("ob.added")}`,
       step: 3,
     },
     {
-      label: "Target schools",
+      label: t("ob.rSchools"),
       value: data.target_schools.join(", ") || "—",
       step: 4,
     },
-    { label: "Needs aid", value: data.needs_aid ? "Yes" : "No", step: 4 },
+    {
+      label: t("ob.rAid"),
+      value: data.needs_aid ? t("ob.yes") : t("ob.no"),
+      step: 4,
+    },
   ];
   return (
     <div className="divide-y divide-line rounded-xl border border-line bg-card">
@@ -541,7 +559,7 @@ function StepReview({
             onClick={() => goTo(r.step)}
             className="rounded text-xs font-medium text-accent hover:underline focus-visible:focus-ring"
           >
-            Edit
+            {t("ob.edit")}
           </button>
         </div>
       ))}
@@ -595,33 +613,33 @@ function numOrUndef(v: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-function gradeHint(c: StudentProfileInput["curriculum"]) {
+function gradeHintKey(c: StudentProfileInput["curriculum"]) {
   switch (c) {
     case "IB":
-      return "Subjects with HL/SL and predicted or final scores.";
+      return "ob.hintIB";
     case "A-Level":
-      return "Subjects with grades; note if predicted.";
+      return "ob.hintAlevel";
     case "US-GPA":
-      return "Weighted/unweighted, plus AP/honors load.";
+      return "ob.hintGpa";
     case "national":
-      return "Your average and the grading scale.";
+      return "ob.hintNational";
     default:
-      return "Describe your grades however your system works.";
+      return "ob.hintOther";
   }
 }
 
-function gradePlaceholder(c: StudentProfileInput["curriculum"]) {
+function gradePlaceholderKey(c: StudentProfileInput["curriculum"]) {
   switch (c) {
     case "IB":
-      return "e.g. HL Math 7, HL Econ 6, HL English 6, predicted 41/45";
+      return "ob.phIB";
     case "A-Level":
-      return "e.g. A*A*A in Math, Economics, Business (predicted)";
+      return "ob.phAlevel";
     case "US-GPA":
-      return "e.g. 3.95 UW / 4.5 W, 8 APs";
+      return "ob.phGpa";
     case "national":
-      return "e.g. 95% average (national curriculum, out of 100)";
+      return "ob.phNational";
     default:
-      return "Describe your grades…";
+      return "ob.phOther";
   }
 }
 
