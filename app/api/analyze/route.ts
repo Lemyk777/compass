@@ -7,7 +7,10 @@ import { emptyProfile, type StudentProfileInput } from "@/lib/types";
 // FOUNDER: set a hard spend limit in the Anthropic console — code can rate-limit
 // per user (below) and cap max_tokens, but the billing cap can only be set there.
 
-export const maxDuration = 30;
+// Streaming analysis can take a while on rich profiles; give it headroom so a
+// large request finishes instead of being killed mid-flight (which returned a
+// non-JSON error page the client couldn't parse).
+export const maxDuration = 60;
 
 const MAX_PER_HOUR = 5; // cost safety: max analyses / hour / user
 

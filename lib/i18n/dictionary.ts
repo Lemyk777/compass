@@ -188,6 +188,11 @@ const en: Dict = {
     "Your profile is saved. Run the analysis to see your competitiveness score and per-school likelihoods.",
   "dash.seeStanding": "See my standing",
   "dash.errTitle": "We couldn't finish your analysis",
+  "dash.errTimeout":
+    "The analysis took too long. Your profile may be very large — try trimming your activity details, then run it again.",
+  "dash.errBusy":
+    "The analysis service is busy right now. Please try again in a moment.",
+  "dash.errGeneric": "Something went wrong running your analysis. Please try again.",
   "dash.editProfile": "Edit profile",
 
   // report
@@ -460,6 +465,11 @@ const ru: Dict = {
     "Профиль сохранён. Запустите анализ, чтобы увидеть балл и шансы по вузам.",
   "dash.seeStanding": "Узнать результат",
   "dash.errTitle": "Не удалось завершить анализ",
+  "dash.errTimeout":
+    "Анализ занял слишком много времени. Возможно, профиль очень большой — сократите описания активностей и попробуйте снова.",
+  "dash.errBusy":
+    "Сервис анализа сейчас загружен. Попробуйте ещё раз через минуту.",
+  "dash.errGeneric": "Что-то пошло не так при анализе. Попробуйте ещё раз.",
   "dash.editProfile": "Изменить профиль",
 
   // report

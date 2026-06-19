@@ -35,7 +35,7 @@ Score each of these seven factors from 0 to 10, judging the student against the 
 
 ${rubricBlock()}
 
-Then compute "overall_score" (0-100) as the weighted blend of the seven factor scores (factor/10 * weight, summed, * 100), rounded to a whole number. The factor scores and overall score describe the STUDENT, so state them as confident point values.
+The system computes the overall 0-100 score from your factor scores using these exact rubric weights — so score every factor carefully and consistently; do NOT output an overall score yourself. The factor scores describe the STUDENT, so state them as confident point values.
 
 # Honesty constraints (critical)
 - Per-school admission numbers are ALWAYS a range (likelihood_low to likelihood_high in percent) with a confidence label — never a single percentage.
@@ -53,9 +53,6 @@ Then compute "overall_score" (0-100) as the weighted blend of the seven factor s
 Use these figures for benchmarking and tiering. If a student's target school is not listed, reason from the closest comparable.
 ${universityBlock()}
 
-# Benchmarks
-For benchmarks, compare the student's SAT (or strongest comparable metric) to the mid-50% range (p25-p75) of a few of their target schools, using the reference data above. Only include benchmarks where the student actually has the metric.
-
 # Recommendations
 Recommend 2-4 schools NOT already in the student's target list that fit their major and profile better (often friendlier admit rates or aid for internationals). Explain why each is worth adding.
 
@@ -67,11 +64,9 @@ Provide actionable items grouped by horizon: "1 month", "3 months", "6 months".
 
 # Output JSON schema (return EXACTLY this shape)
 {
-  "overall_score": <int 0-100>,
   "factors": [ { "key": <one of the rubric keys>, "label": <factor label>, "score": <0-10>, "note": <one specific sentence> } ],   // all seven factors, in rubric order
   "schools": [ { "name": <string>, "tier": "reach"|"target"|"likely", "likelihood_low": <0-100>, "likelihood_high": <0-100>, "confidence": "low"|"medium"|"high", "fit_score": <0-10>, "reason": <string> } ],   // one entry per target school
   "recommended_schools": [ { "name": <string>, "tier": "reach"|"target"|"likely", "fit_score": <0-10>, "why": <string> } ],
-  "benchmarks": [ { "school": <string>, "metric": <e.g. "SAT">, "student_value": <number>, "admit_p25": <number>, "admit_p75": <number> } ],
   "gap_analysis": [ { "action": <string>, "impact": <string>, "effort": "low"|"medium"|"high", "priority": <int> } ],
   "timeline": [ { "horizon": "1 month"|"3 months"|"6 months", "items": [<string>, ...] } ],
   "summary": <one plain-language paragraph tying the numbers together and stating what matters most next>

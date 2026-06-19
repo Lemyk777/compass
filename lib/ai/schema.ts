@@ -65,6 +65,19 @@ export const analysisSchema = z.object({
 });
 
 export type Analysis = z.infer<typeof analysisSchema>;
+
+/**
+ * What the MODEL is asked to return — the qualitative judgment only. The
+ * overall score and the benchmark table are computed deterministically in code
+ * (lib/ai/assemble.ts), so the model never does arithmetic or repeats dataset
+ * numbers. This keeps the output smaller, cheaper, and consistent run-to-run.
+ */
+export const modelAnalysisSchema = analysisSchema.omit({
+  overall_score: true,
+  benchmarks: true,
+});
+export type ModelAnalysis = z.infer<typeof modelAnalysisSchema>;
+
 export type Factor = z.infer<typeof factorSchema>;
 export type SchoolLikelihood = z.infer<typeof schoolSchema>;
 export type RecommendedSchool = z.infer<typeof recommendedSchoolSchema>;

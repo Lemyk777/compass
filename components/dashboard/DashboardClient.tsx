@@ -35,13 +35,34 @@ export function DashboardClient({
     setError(null);
     try {
       const res = await fetch("/api/analyze", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Analysis failed.");
+
+      // Parse defensively: on a timeout/crash the platform returns a non-JSON
+      // error page, so never assume the body is JSON (that crashed the UI with
+      // "Unexpected token 'A'..."). Read text, then try to parse it.
+      const raw = await res.text();
+      let data: { analysis?: Analysis; error?: string } | null = null;
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok) {
+        const fallback =
+          res.status === 504 || res.status === 408 || res.status === 524
+            ? t("dash.errTimeout")
+            : res.status === 429
+              ? t("dash.errBusy")
+              : t("dash.errGeneric");
+        throw new Error(data?.error || fallback);
+      }
+      if (!data?.analysis) throw new Error(t("dash.errGeneric"));
+
       setAnalysis(data.analysis as Analysis);
       // Clean the ?analyze=1 flag from the URL.
       router.replace("/dashboard");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Analysis failed.");
+      setError(e instanceof Error ? e.message : t("dash.errGeneric"));
     } finally {
       setLoading(false);
     }

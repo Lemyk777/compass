@@ -7,6 +7,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { CURRICULA, emptyProfile, type StudentProfileInput } from "@/lib/types";
+import { LIMITS } from "@/lib/limits";
 import { UNIVERSITY_NAMES } from "@/lib/data/universities";
 import { saveProfile } from "@/app/onboarding/actions";
 import { useT } from "@/lib/i18n/client";
@@ -180,6 +181,7 @@ function StepYou({ data, set }: StepProps) {
         <Input
           id="country"
           value={data.country}
+          maxLength={LIMITS.shortText}
           onChange={(e) => set("country", e.target.value)}
           placeholder={t("ob.countryPh")}
         />
@@ -188,6 +190,7 @@ function StepYou({ data, set }: StepProps) {
         <Input
           id="citizenship"
           value={data.citizenship}
+          maxLength={LIMITS.shortText}
           onChange={(e) => set("citizenship", e.target.value)}
           placeholder={t("ob.countryPh")}
         />
@@ -196,6 +199,7 @@ function StepYou({ data, set }: StepProps) {
         <Input
           id="major"
           value={data.intended_major}
+          maxLength={LIMITS.shortText}
           onChange={(e) => set("intended_major", e.target.value)}
           placeholder={t("ob.majorPh")}
         />
@@ -236,6 +240,7 @@ function StepGrades({ data, set }: StepProps) {
         <textarea
           id="grades"
           value={data.grades.raw}
+          maxLength={LIMITS.grades}
           onChange={(e) =>
             set("grades", { ...data.grades, raw: e.target.value })
           }
@@ -358,6 +363,7 @@ function StepTests({ data, set }: StepProps) {
         <Input
           id="subj"
           value={t.subjects ?? ""}
+          maxLength={LIMITS.subjects}
           onChange={(e) => upd("subjects", e.target.value || undefined)}
           placeholder={tr("ob.subjectsPh")}
         />
@@ -404,12 +410,14 @@ function StepActivities({ data, set }: StepProps) {
           </div>
           <Input
             value={a.title}
+            maxLength={LIMITS.activityTitle}
             onChange={(e) => update(i, { title: e.target.value })}
             placeholder={t("ob.activityTitlePh")}
             className="mb-2"
           />
           <textarea
             value={a.detail ?? ""}
+            maxLength={LIMITS.activityDetail}
             onChange={(e) => update(i, { detail: e.target.value })}
             rows={2}
             placeholder={t("ob.activityDetailPh")}
@@ -417,9 +425,11 @@ function StepActivities({ data, set }: StepProps) {
           />
         </div>
       ))}
-      <Button variant="subtle" onClick={add} className="w-full">
-        {t("ob.addAnother")}
-      </Button>
+      {acts.length < LIMITS.activities && (
+        <Button variant="subtle" onClick={add} className="w-full">
+          {t("ob.addAnother")}
+        </Button>
+      )}
     </div>
   );
 }
