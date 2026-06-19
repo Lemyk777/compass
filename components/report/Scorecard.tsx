@@ -14,6 +14,7 @@ export const Scorecard = forwardRef<
   HTMLDivElement,
   { analysis: Analysis; name?: string | null }
 >(function Scorecard({ analysis, name }, ref) {
+  const italyFinancialFitScore = analysis.italy_financial_fit_score;
   const t = useT();
   const standingLabel = name
     ? `${t("report.standingPrefix")}${name}${t("report.standingSuffix")}`
@@ -36,7 +37,10 @@ export const Scorecard = forwardRef<
           </p>
         </div>
         <div className="min-w-0">
-          <RadarScorecard factors={analysis.factors} />
+          <RadarScorecard
+            factors={analysis.factors}
+            italyFinancialFitScore={italyFinancialFitScore}
+          />
         </div>
       </div>
 

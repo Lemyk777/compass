@@ -1,7 +1,12 @@
 import { requireSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { Onboarding } from "@/components/onboarding/Onboarding";
-import { emptyProfile, type StudentProfileInput } from "@/lib/types";
+import {
+  emptyProfile,
+  normalizeActivities,
+  normalizeHonors,
+  type StudentProfileInput,
+} from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -29,14 +34,16 @@ export default async function OnboardingPage() {
       curriculum: sp.curriculum ?? "",
       grades: sp.grades ?? base.grades,
       tests: sp.tests ?? {},
-      activities:
-        Array.isArray(sp.activities) && sp.activities.length
-          ? sp.activities
-          : base.activities,
+      activities: normalizeActivities(sp.activities),
+      honors: normalizeHonors(sp.honors),
       target_schools: sp.target_schools ?? [],
       intended_major: sp.intended_major ?? "",
       citizenship: sp.citizenship ?? "",
       needs_aid: sp.needs_aid ?? false,
+      // Italy module (gracefully defaults for pre-migration rows)
+      include_italy: sp.include_italy ?? false,
+      italy_programs: sp.italy_programs ?? [],
+      italy_family_income: sp.italy_family_income ?? undefined,
     };
   } else if (session.country) {
     initial = { ...emptyProfile(), country: session.country };

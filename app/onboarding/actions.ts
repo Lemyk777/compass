@@ -26,15 +26,34 @@ const inputSchema = z.object({
     TOEFL: z.number().optional(),
     subjects: z.string().max(LIMITS.subjects).optional(),
   }),
+  // Common App activities (up to 10), validated against the same caps the UI uses.
   activities: z
     .array(
       z.object({
-        title: z.string().trim().max(LIMITS.activityTitle),
-        detail: z.string().trim().max(LIMITS.activityDetail).optional(),
+        type: z.string().max(60).optional(),
+        position: z.string().trim().max(LIMITS.activityPosition),
+        organization: z.string().trim().max(LIMITS.activityOrganization).optional(),
+        description: z.string().trim().max(LIMITS.activityDescription).optional(),
+        grades: z.array(z.string().max(4)).max(5).optional(),
+        timing: z.array(z.string().max(20)).max(3).optional(),
+        hours_per_week: z.number().min(0).max(LIMITS.hoursPerWeek).optional(),
+        weeks_per_year: z.number().min(0).max(LIMITS.weeksPerYear).optional(),
+        continue_in_college: z.boolean().optional(),
       })
     )
-    .max(LIMITS.activities, "Please keep it to your most meaningful activities.")
-    .transform((a) => a.filter((x) => x.title.length > 0)),
+    .max(LIMITS.activities, "Up to 10 activities, like the Common App.")
+    .transform((a) => a.filter((x) => x.position.trim().length > 0)),
+  // Common App honors / awards (up to 5).
+  honors: z
+    .array(
+      z.object({
+        title: z.string().trim().max(LIMITS.honorTitle),
+        grades: z.array(z.string().max(4)).max(5).optional(),
+        levels: z.array(z.string().max(20)).max(4).optional(),
+      })
+    )
+    .max(LIMITS.honors, "Up to 5 honors, like the Common App.")
+    .transform((h) => h.filter((x) => x.title.trim().length > 0)),
   target_schools: z.array(z.string()).max(LIMITS.targetSchools),
   intended_major: z
     .string()
@@ -47,6 +66,9 @@ const inputSchema = z.object({
     .min(1, "Add your citizenship.")
     .max(LIMITS.shortText),
   needs_aid: z.boolean(),
+  include_italy: z.boolean().default(false),
+  italy_programs: z.array(z.string().max(80)).max(8).default([]),
+  italy_family_income: z.number().min(0).max(10_000_000).optional(),
 });
 
 export type SaveResult =
@@ -81,10 +103,14 @@ export async function saveProfile(
     grades: data.grades,
     tests: data.tests,
     activities: data.activities,
+    honors: data.honors,
     target_schools: data.target_schools,
     intended_major: data.intended_major,
     citizenship: data.citizenship,
     needs_aid: data.needs_aid,
+    include_italy: data.include_italy,
+    italy_programs: data.italy_programs,
+    italy_family_income: data.italy_family_income ?? null,
     updated_at: new Date().toISOString(),
   };
 

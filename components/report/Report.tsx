@@ -10,6 +10,7 @@ import { Benchmarks } from "@/components/report/Benchmarks";
 import { GapAnalysis } from "@/components/report/GapAnalysis";
 import { Recommendations } from "@/components/report/Recommendations";
 import { Timeline } from "@/components/report/Timeline";
+import { ItalyBreakdown } from "@/components/report/ItalyBreakdown";
 import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n/client";
 
@@ -113,6 +114,16 @@ export function Report({
               {analysis.summary}
             </p>
           </Card>
+        </Section>
+      )}
+
+      {/* Italy university breakdown — only rendered when Italy programs are in the analysis */}
+      {analysis.italy_programs && analysis.italy_programs.length > 0 && (
+        <Section
+          title={t("report.italyTitle")}
+          hint={t("report.italyHint")}
+        >
+          <ItalyBreakdown programs={analysis.italy_programs} />
         </Section>
       )}
     </div>

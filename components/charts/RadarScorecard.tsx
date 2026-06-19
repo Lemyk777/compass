@@ -11,12 +11,21 @@ import {
 import type { Factor } from "@/lib/ai/schema";
 import { ACCENT } from "@/lib/tiers";
 
-// Radar chart of the seven factor scores — the user's own scores in the accent.
-export function RadarScorecard({ factors }: { factors: Factor[] }) {
-  const data = factors.map((f) => ({
-    factor: shortLabel(f.label),
-    score: f.score,
-  }));
+type RadarScorecardProps = {
+  factors: Factor[];
+  // When set, radar enters Italy mode: only Academics + Tests + Financial Fit shown.
+  italyFinancialFitScore?: number;
+};
+
+export function RadarScorecard({
+  factors,
+  italyFinancialFitScore,
+}: RadarScorecardProps) {
+  const isItalyMode = italyFinancialFitScore != null;
+
+  const data = isItalyMode
+    ? buildItalyRadarData(factors, italyFinancialFitScore)
+    : factors.map((f) => ({ factor: shortLabel(f.label), score: f.score }));
 
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -38,6 +47,18 @@ export function RadarScorecard({ factors }: { factors: Factor[] }) {
       </RadarChart>
     </ResponsiveContainer>
   );
+}
+
+function buildItalyRadarData(
+  factors: Factor[],
+  financialFitScore: number
+): { factor: string; score: number }[] {
+  const byKey = new Map(factors.map((f) => [f.key, f.score]));
+  return [
+    { factor: "Academics", score: byKey.get("academics") ?? 0 },
+    { factor: "Test Scores", score: byKey.get("test_scores") ?? 0 },
+    { factor: "Financial Fit", score: financialFitScore },
+  ];
 }
 
 function shortLabel(label: string): string {

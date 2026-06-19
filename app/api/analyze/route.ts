@@ -2,7 +2,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { analyzeProfile, AnalyzeError } from "@/lib/ai/analyze";
-import { emptyProfile, type StudentProfileInput } from "@/lib/types";
+import {
+  emptyProfile,
+  normalizeActivities,
+  normalizeHonors,
+  type StudentProfileInput,
+} from "@/lib/types";
 
 // FOUNDER: set a hard spend limit in the Anthropic console — code can rate-limit
 // per user (below) and cap max_tokens, but the billing cap can only be set there.
@@ -66,11 +71,16 @@ export async function POST(_req: NextRequest) {
     curriculum: sp.curriculum,
     grades: sp.grades ?? { raw: "" },
     tests: sp.tests ?? {},
-    activities: Array.isArray(sp.activities) ? sp.activities : [],
+    activities: normalizeActivities(sp.activities),
+    honors: normalizeHonors(sp.honors),
     target_schools: sp.target_schools ?? [],
     intended_major: sp.intended_major ?? "",
     citizenship: sp.citizenship ?? "",
     needs_aid: sp.needs_aid ?? false,
+    // Italy module — gracefully defaults for pre-migration rows
+    include_italy: sp.include_italy ?? false,
+    italy_programs: sp.italy_programs ?? [],
+    italy_family_income: sp.italy_family_income ?? undefined,
   };
 
   try {

@@ -12,12 +12,49 @@ export const SAMPLE_PROFILE: StudentProfileInput = {
   tests: { SAT: 1520, IELTS: 8.0 },
   activities: [
     {
-      title: "Co-founded an AI startup",
-      detail:
-        "Received investment; placed top-7 of 1,200 teams at an international competition.",
+      type: "Research",
+      position: "Co-founder",
+      organization: "AI startup",
+      description:
+        "Raised investment; placed top-7 of 1,200 teams at an international competition.",
+      grades: ["11", "12"],
+      timing: ["All year"],
+      hours_per_week: 12,
+      weeks_per_year: 40,
+      continue_in_college: true,
     },
-    { title: "Organized a 200+ participant academic competition" },
-    { title: "School league winner" },
+    {
+      type: "Academic",
+      position: "Lead organizer",
+      organization: "School academic olympiad",
+      description: "Organized a 200+ participant academic competition.",
+      grades: ["11"],
+      timing: ["School year"],
+      hours_per_week: 5,
+      weeks_per_year: 10,
+    },
+    {
+      type: "Athletics: Club",
+      position: "Captain",
+      organization: "School sports league",
+      description: "Led the team to a league title.",
+      grades: ["10", "11"],
+      timing: ["School year"],
+      hours_per_week: 6,
+      weeks_per_year: 20,
+    },
+  ],
+  honors: [
+    {
+      title: "International competition — top 7 of 1,200 teams",
+      grades: ["12"],
+      levels: ["International"],
+    },
+    {
+      title: "National academic olympiad — honorable mention",
+      grades: ["11"],
+      levels: ["National"],
+    },
   ],
   target_schools: [
     "University of Pennsylvania",
@@ -26,6 +63,9 @@ export const SAMPLE_PROFILE: StudentProfileInput = {
     "University of Michigan, Ann Arbor",
   ],
   needs_aid: true,
+  include_italy: false,
+  italy_programs: [],
+  italy_family_income: undefined,
 };
 
 export const SAMPLE_ANALYSIS: Analysis = {
