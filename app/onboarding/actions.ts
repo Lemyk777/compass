@@ -3,15 +3,18 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { LIMITS } from "@/lib/limits";
 import type { StudentProfileInput } from "@/lib/types";
 
+// Bounds (LIMITS) are enforced here so an oversized profile can never be stored
+// and later overwhelm the analysis. The UI mirrors these caps for good UX.
 const inputSchema = z.object({
-  country: z.string().trim().min(1, "Tell us your country."),
+  country: z.string().trim().min(1, "Tell us your country.").max(LIMITS.shortText),
   curriculum: z.enum(["IB", "A-Level", "national", "US-GPA", "other"], {
     errorMap: () => ({ message: "Pick your curriculum." }),
   }),
   grades: z.object({
-    raw: z.string().trim().min(1, "Add your grades."),
+    raw: z.string().trim().min(1, "Add your grades.").max(LIMITS.grades),
     ib_total: z.number().optional(),
     gpa: z.number().optional(),
     national_percent: z.number().optional(),
@@ -21,14 +24,28 @@ const inputSchema = z.object({
     ACT: z.number().optional(),
     IELTS: z.number().optional(),
     TOEFL: z.number().optional(),
-    subjects: z.string().optional(),
+    subjects: z.string().max(LIMITS.subjects).optional(),
   }),
   activities: z
-    .array(z.object({ title: z.string().trim(), detail: z.string().optional() }))
+    .array(
+      z.object({
+        title: z.string().trim().max(LIMITS.activityTitle),
+        detail: z.string().trim().max(LIMITS.activityDetail).optional(),
+      })
+    )
+    .max(LIMITS.activities, "Please keep it to your most meaningful activities.")
     .transform((a) => a.filter((x) => x.title.length > 0)),
-  target_schools: z.array(z.string()).max(12),
-  intended_major: z.string().trim().min(1, "Add your intended major."),
-  citizenship: z.string().trim().min(1, "Add your citizenship."),
+  target_schools: z.array(z.string()).max(LIMITS.targetSchools),
+  intended_major: z
+    .string()
+    .trim()
+    .min(1, "Add your intended major.")
+    .max(LIMITS.shortText),
+  citizenship: z
+    .string()
+    .trim()
+    .min(1, "Add your citizenship.")
+    .max(LIMITS.shortText),
   needs_aid: z.boolean(),
 });
 

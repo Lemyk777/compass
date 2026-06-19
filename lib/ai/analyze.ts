@@ -1,12 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { STATIC_SYSTEM_PROMPT } from "@/lib/ai/prompt";
-import { analysisSchema, sanitizeAnalysis, type Analysis } from "@/lib/ai/schema";
+import { modelAnalysisSchema, type Analysis } from "@/lib/ai/schema";
+import { assembleAnalysis } from "@/lib/ai/assemble";
+import { LIMITS } from "@/lib/limits";
 import type { StudentProfileInput } from "@/lib/types";
 
 const MODEL = "claude-haiku-4-5";
-// Cost-safety cap, but large enough for the full report (7 factors + up to ~12
-// schools + recommendations + benchmarks + gap analysis + timeline). 2500 was
-// too small and truncated the JSON mid-array.
+// Output cap. The model no longer emits the overall score or the benchmark
+// table (computed in code), so this is a comfortable ceiling, not a hard wall.
 const MAX_TOKENS = 6000;
 
 export type AnalyzeResult = {
@@ -20,9 +21,20 @@ export type AnalyzeResult = {
 };
 
 /**
- * Runs the AI analysis: cached static system block + the variable profile as
- * the only fresh content. Validates the JSON against the zod schema; on parse
- * failure, retries once with a stricter reminder, then throws a clean error.
+ * Runs the AI analysis: cached static system block + the (size-bounded) profile
+ * as the only fresh content.
+ *
+ * Robustness, by design:
+ *  - the response is STREAMED, so long generations don't hit the platform's
+ *    response-buffering/idle timeout (the cause of the non-JSON "An error…"
+ *    page the client used to choke on);
+ *  - the SDK retries 429/5xx/timeouts with exponential backoff, so a burst of
+ *    concurrent requests degrades gracefully instead of failing hard;
+ *  - the model returns only qualitative JSON; the overall score and benchmarks
+ *    are computed in code (assembleAnalysis);
+ *  - on a parse failure we retry once; if the reply was cut off by the token
+ *    cap we fail fast with an actionable message (a same-budget retry can't fix
+ *    truncation).
  */
 export async function analyzeProfile(
   profile: StudentProfileInput
@@ -33,9 +45,10 @@ export async function analyzeProfile(
       "AI is not configured yet. Add ANTHROPIC_API_KEY to enable analysis."
     );
   }
-  const anthropic = new Anthropic({ apiKey });
+  // maxRetries: graceful backoff under load (429/529) and transient 5xx.
+  const anthropic = new Anthropic({ apiKey, maxRetries: 3 });
 
-  // Send the model a compact, model-friendly view of the profile.
+  // Send the model a compact, SIZE-BOUNDED view of the profile.
   const userPayload = JSON.stringify(buildModelInput(profile));
 
   const messages: Anthropic.MessageParam[] = [
@@ -59,19 +72,23 @@ export async function analyzeProfile(
 
     let message: Anthropic.Message;
     try {
-      message = await anthropic.messages.create({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        system: [
-          {
-            type: "text",
-            text: STATIC_SYSTEM_PROMPT,
-            // Prompt caching: the static block is ~90% cheaper on cache hits.
-            cache_control: { type: "ephemeral" },
-          },
-        ],
-        messages,
-      });
+      // Stream and await the assembled final message — keeps the connection
+      // alive for long generations instead of buffering a single response.
+      message = await anthropic.messages
+        .stream({
+          model: MODEL,
+          max_tokens: MAX_TOKENS,
+          system: [
+            {
+              type: "text",
+              text: STATIC_SYSTEM_PROMPT,
+              // Prompt caching: the static block is ~90% cheaper on cache hits.
+              cache_control: { type: "ephemeral" },
+            },
+          ],
+          messages,
+        })
+        .finalMessage();
     } catch (e) {
       // Surface API errors cleanly; the route maps these to a user message.
       throw mapApiError(e);
@@ -83,9 +100,9 @@ export async function analyzeProfile(
       .join("");
 
     try {
-      const parsed = analysisSchema.parse(extractJson(text));
+      const parsed = modelAnalysisSchema.parse(extractJson(text));
       return {
-        analysis: sanitizeAnalysis(parsed),
+        analysis: assembleAnalysis(parsed, profile),
         usage: {
           input_tokens: message.usage.input_tokens,
           output_tokens: message.usage.output_tokens,
@@ -96,7 +113,15 @@ export async function analyzeProfile(
       };
     } catch (e) {
       lastErr = e;
-      // loop and retry once
+      if (message.stop_reason === "max_tokens") {
+        // The reply was cut off mid-JSON; retrying with the same budget would
+        // cut off again. Tell the user how to shrink the request.
+        throw new AnalyzeError(
+          "Your profile produced a very long analysis. Try trimming activity details or shortening your target-school list, then run it again.",
+          e
+        );
+      }
+      // otherwise loop and retry once
     }
   }
 
@@ -119,19 +144,35 @@ function extractJson(text: string): unknown {
   return JSON.parse(t);
 }
 
-/** Compact, stable view of the profile for the model (drops empty fields). */
+/** Clamp a string to a max length (after trimming); preserves undefined. */
+function clamp(s: string | undefined | null, max: number): string | undefined {
+  if (s == null) return undefined;
+  const t = s.trim();
+  return t.length > max ? t.slice(0, max) : t;
+}
+
+/**
+ * Compact, stable, SIZE-BOUNDED view of the profile for the model. This is the
+ * last line of defense: even if an oversized profile somehow reached here, it
+ * can never blow up the request (drops empty fields, caps counts and lengths).
+ */
 function buildModelInput(p: StudentProfileInput) {
   return {
-    country: p.country,
-    citizenship: p.citizenship,
-    intended_major: p.intended_major,
+    country: clamp(p.country, LIMITS.shortText),
+    citizenship: clamp(p.citizenship, LIMITS.shortText),
+    intended_major: clamp(p.intended_major, LIMITS.shortText),
     curriculum: p.curriculum,
-    grades: p.grades,
-    tests: p.tests,
+    grades: { ...p.grades, raw: clamp(p.grades?.raw, LIMITS.grades) ?? "" },
+    tests: { ...p.tests, subjects: clamp(p.tests?.subjects, LIMITS.subjects) },
     activities: p.activities
       .filter((a) => a.title.trim())
-      .map((a) => (a.detail ? `${a.title} — ${a.detail}` : a.title)),
-    target_schools: p.target_schools,
+      .slice(0, LIMITS.activities)
+      .map((a) => {
+        const title = clamp(a.title, LIMITS.activityTitle) ?? "";
+        const detail = clamp(a.detail, LIMITS.activityDetail);
+        return detail ? `${title} — ${detail}` : title;
+      }),
+    target_schools: p.target_schools.slice(0, LIMITS.targetSchools),
     needs_aid: p.needs_aid,
   };
 }
