@@ -91,6 +91,13 @@ const en: Dict = {
   "auth.asideBullet1": "An honest competitiveness score",
   "auth.asideBullet2": "Admission odds for every school on your list",
   "auth.asideBullet3": "A concrete plan to raise your chances",
+  "auth.asideBadge": "Trusted by applicants in 20+ countries",
+  "auth.asideSample": "Sample report",
+  "auth.asideBenchmark": "Benchmarked against top US universities",
+  "auth.asideRadar": "Profile fingerprint",
+  "auth.asideStat1": "50+ universities",
+  "auth.asideStat2": "7 scored factors",
+  "auth.asideStat3": "20+ countries",
 
   // mini scorecard
   "mini.academics": "Academics",
@@ -406,6 +413,13 @@ const ru: Dict = {
   "auth.asideBullet1": "Честный балл конкурентоспособности",
   "auth.asideBullet2": "Шансы на поступление по каждому вузу из списка",
   "auth.asideBullet3": "Конкретный план, как повысить шансы",
+  "auth.asideBadge": "Нам доверяют абитуриенты из 20+ стран",
+  "auth.asideSample": "Пример отчёта",
+  "auth.asideBenchmark": "Сравнение с топовыми вузами США",
+  "auth.asideRadar": "Профиль абитуриента",
+  "auth.asideStat1": "50+ вузов",
+  "auth.asideStat2": "7 факторов оценки",
+  "auth.asideStat3": "20+ стран",
 
   // mini scorecard
   "mini.academics": "Академика",
