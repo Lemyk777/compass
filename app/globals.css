@@ -88,6 +88,59 @@
   animation-play-state: paused;
 }
 
+/* ---- Auth aside: ambient + entrance animations ---------------------------- */
+@keyframes aside-float {
+  0%, 100% { transform: translateY(0) }
+  50% { transform: translateY(-10px) }
+}
+@keyframes aside-glow {
+  0%, 100% { opacity: 0.28; transform: scale(1) }
+  50% { opacity: 0.5; transform: scale(1.12) }
+}
+@keyframes aside-rise {
+  from { opacity: 0; transform: translateY(14px) }
+  to { opacity: 1; transform: translateY(0) }
+}
+@keyframes aside-pop {
+  0% { opacity: 0; transform: scale(0.9) }
+  60% { transform: scale(1.04) }
+  100% { opacity: 1; transform: scale(1) }
+}
+@keyframes aside-grow {
+  from { transform: scaleX(0) }
+  to { transform: scaleX(1) }
+}
+@keyframes aside-draw {
+  to { stroke-dashoffset: 0 }
+}
+@keyframes aside-sheen {
+  0% { transform: translateX(-120%) }
+  60%, 100% { transform: translateX(220%) }
+}
+
+.aside-glow { animation: aside-glow 9s ease-in-out infinite }
+.aside-float { animation: aside-float 7s ease-in-out infinite }
+.aside-rise { opacity: 0; animation: aside-rise 0.7s cubic-bezier(.21,.7,.35,1) forwards }
+.aside-pop { opacity: 0; animation: aside-pop 0.7s cubic-bezier(.21,.7,.35,1) forwards }
+.aside-bar { transform-origin: left center; animation: aside-grow 1.1s cubic-bezier(.21,.7,.35,1) both }
+.aside-draw {
+  stroke-dasharray: var(--len, 1000);
+  stroke-dashoffset: var(--len, 1000);
+  animation: aside-draw 1.4s cubic-bezier(.21,.7,.35,1) 0.25s forwards;
+}
+.aside-sheen { animation: aside-sheen 4.5s ease-in-out 1s infinite }
+@keyframes aside-gauge { to { stroke-dashoffset: 0 } }
+.aside-gauge {
+  stroke-dashoffset: 61.5;
+  animation: aside-gauge 1.5s cubic-bezier(.21,.7,.35,1) 0.35s forwards;
+}
+.aside-svg-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: aside-pop 0.9s cubic-bezier(.21,.7,.35,1) 0.45s forwards;
+}
+
 /* Honor reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   *,
