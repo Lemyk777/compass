@@ -1,13 +1,28 @@
 import type { Analysis } from "@/lib/ai/schema";
 import type { StudentProfileInput } from "@/lib/types";
+import {
+  analyzeItalianPrograms,
+  computeFinancialFitScore,
+} from "@/lib/ai/italy-analyze";
+
+// Demo: a Kazakhstan AI-startup founder applying to BOTH the US (business) and
+// Italy (CS + economics). This exercises the full product — the multi-country
+// selector, per-country scorecards, the Italian graduatoria breakdown, and the
+// application-cost sections — so /demo mirrors what real users actually see.
+const SAMPLE_ITALY_PROGRAMS = [
+  "polimi-cs-eng",
+  "bocconi-econ-mgmt",
+  "unibo-business",
+];
+const SAMPLE_FAMILY_INCOME = 30000; // EUR/year — moderate DSU fit
 
 // The §12 acceptance-test student, used to develop and demo the dashboard
 // without a live API call. Real analyses come from /api/analyze.
 export const SAMPLE_PROFILE: StudentProfileInput = {
   country: "Kazakhstan",
   citizenship: "Kazakhstan",
-  destinations: ["US"],
-  faculties: ["business_economics"],
+  destinations: ["US", "IT"],
+  faculties: ["computer_science", "business_economics"],
   intended_major: "Finance / Business",
   curriculum: "A-Level",
   grades: { raw: "A*A*A (Math, Economics, Business, predicted)" },
@@ -65,8 +80,8 @@ export const SAMPLE_PROFILE: StudentProfileInput = {
     "University of Michigan, Ann Arbor",
   ],
   needs_aid: true,
-  italy_programs: [],
-  italy_family_income: undefined,
+  italy_programs: SAMPLE_ITALY_PROGRAMS,
+  italy_family_income: SAMPLE_FAMILY_INCOME,
 };
 
 export const SAMPLE_ANALYSIS: Analysis = {
@@ -108,5 +123,16 @@ export const SAMPLE_ANALYSIS: Analysis = {
     { horizon: "6 months", items: ["Finalize a balanced school list (reach/target/likely)", "Secure strong recommenders", "Complete aid paperwork (CSS Profile)"] },
   ],
   summary:
-    "You have a genuinely strong, coherent profile — top-decile test scores, real entrepreneurial leadership, and rigorous A-Levels. Your list is reach-heavy, and as an aid-seeking international that raises the stakes, so the highest-value moves are balancing the list with aid-friendly targets like Rochester and nudging your SAT and awards up. Penn and Princeton stay aspirational (single-digit odds for everyone); Michigan and BU are where your profile competes hardest.",
+    "You have a genuinely strong, coherent profile — top-decile test scores, real entrepreneurial leadership, and rigorous A-Levels. Your list is reach-heavy, and as an aid-seeking international that raises the stakes, so the highest-value moves are balancing the list with aid-friendly targets like Rochester and nudging your SAT and awards up. Penn and Princeton stay aspirational (single-digit odds for everyone); Michigan and BU are where your profile competes hardest. In Italy your SAT clears the Politecnico early-admission threshold outright — a far more predictable, score-based path worth securing alongside the US list.",
+  // Italy pathway — computed deterministically by the engine, exactly as a real
+  // analysis would assemble it, so the demo stays faithful to production.
+  italy_programs: analyzeItalianPrograms(
+    SAMPLE_ITALY_PROGRAMS,
+    SAMPLE_PROFILE.tests.SAT,
+    SAMPLE_FAMILY_INCOME
+  ),
+  italy_financial_fit_score: computeFinancialFitScore(
+    SAMPLE_FAMILY_INCOME,
+    true
+  ),
 };

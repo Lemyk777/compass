@@ -11,8 +11,11 @@ import { GapAnalysis } from "@/components/report/GapAnalysis";
 import { Recommendations } from "@/components/report/Recommendations";
 import { Timeline } from "@/components/report/Timeline";
 import { ItalyBreakdown } from "@/components/report/ItalyBreakdown";
+import { CostBreakdown } from "@/components/report/CostBreakdown";
 import { Button } from "@/components/ui/Button";
+import { Flag } from "@/components/ui/Flag";
 import { DESTINATIONS, type DestinationCode } from "@/lib/data/destinations";
+import { countryOverall } from "@/lib/data/country-scorecard";
 import { useT } from "@/lib/i18n/client";
 
 export function Report({
@@ -41,44 +44,47 @@ export function Report({
       : tabs[0]
     : null;
 
+  // Share the same number the scorecard shows for the active country.
+  const shareScore = activeTab
+    ? countryOverall(activeTab, analysis.factors, analysis.italy_financial_fit_score)
+    : analysis.overall_score;
+
   return (
     <div className="space-y-8">
-      {/* Hero scorecard + share — the country-agnostic profile strength. */}
+      {/* Very top: choose which country's results to view. */}
+      {tabs.length > 1 && (
+        <div className="space-y-2">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">
+              {t("report.destTitle")}
+            </h2>
+            <p className="mt-0.5 text-sm text-ink-soft">{t("report.destHint")}</p>
+          </div>
+          <DestinationTabs tabs={tabs} active={activeTab!} onChange={setActive} />
+        </div>
+      )}
+
+      {/* Scorecard — computed for the selected country. */}
       <div className="space-y-3">
-        <Scorecard ref={scorecardRef} analysis={analysis} name={name} />
-        <ShareButton score={analysis.overall_score} />
+        <Scorecard
+          ref={scorecardRef}
+          analysis={analysis}
+          name={name}
+          country={activeTab}
+        />
+        <ShareButton score={shareScore} />
         <p className="text-center text-xs text-ink-faint">
           {t("report.estimate")}
         </p>
       </div>
 
-      {/* Admission odds, cleanly separated per destination country. */}
+      {/* Admission odds + application costs for the selected country. */}
       {activeTab && (
-        <div className="space-y-5">
-          {tabs.length > 1 ? (
-            <div className="space-y-3">
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight text-ink">
-                  {t("report.destTitle")}
-                </h2>
-                <p className="mt-0.5 text-sm text-ink-soft">
-                  {t("report.destHint")}
-                </p>
-              </div>
-              <DestinationTabs
-                tabs={tabs}
-                active={activeTab}
-                onChange={setActive}
-              />
-            </div>
-          ) : (
-            <CountryHeader code={activeTab} />
-          )}
-
-          <div className="space-y-8">
-            {activeTab === "US" && <UsOdds analysis={analysis} />}
-            {activeTab === "IT" && <ItalyOdds analysis={analysis} />}
-          </div>
+        <div className="space-y-8">
+          {tabs.length === 1 && <CountryHeader code={activeTab} />}
+          {activeTab === "US" && <UsOdds analysis={analysis} />}
+          {activeTab === "IT" && <ItalyOdds analysis={analysis} />}
+          <CostBreakdown analysis={analysis} country={activeTab} />
         </div>
       )}
 
@@ -137,7 +143,7 @@ function DestinationTabs({
               on ? "bg-accent text-white" : "text-ink-soft hover:text-ink"
             }`}
           >
-            <span aria-hidden="true">{d.flag}</span>
+            <Flag code={code} />
             {t(d.labelKey)}
           </button>
         );
@@ -152,9 +158,7 @@ function CountryHeader({ code }: { code: DestinationCode }) {
   if (!d) return null;
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xl" aria-hidden="true">
-        {d.flag}
-      </span>
+      <Flag code={code} size={20} />
       <h2 className="text-lg font-semibold tracking-tight text-ink">
         {t(d.labelKey)}
       </h2>

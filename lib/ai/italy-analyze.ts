@@ -20,6 +20,7 @@ import {
   findItalianProgram,
   type ItalianProgram,
 } from "@/lib/data/italian-universities";
+import { italyApplicationFee } from "@/lib/data/application-fees";
 import type { ItalyProgramAnalysis, ItalyDSUFit } from "@/lib/ai/schema";
 
 // DSU income thresholds (approximate ISEE equivalents, EUR/year).
@@ -82,6 +83,7 @@ function analyzeOneProgram(
     dsu_eligible: program.dsu_eligible,
     dsu_fit,
     annual_fee_eur: program.annual_fee_eur,
+    application_fee_eur: italyApplicationFee(program.is_private),
     reasoning,
     roadmap,
     notes: program.notes,

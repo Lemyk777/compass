@@ -19,7 +19,7 @@ const en: Dict = {
   "lang.label": "Language",
 
   // landing
-  "landing.badge": "For international students applying to US universities",
+  "landing.badge": "For international students applying to universities abroad",
   "landing.title1": "See where you stand.",
   "landing.title2": "Then close the gap.",
   "landing.subtitle":
@@ -44,7 +44,7 @@ const en: Dict = {
   "landing.standingPreview": "Your standing",
   "landing.preview": "Preview",
   "landing.competitiveness": "competitiveness",
-  "landing.trustedBy": "Benchmark yourself against 50+ US universities",
+  "landing.trustedBy": "Benchmark yourself against top universities in the US, Italy & beyond",
   "landing.fromEverywhere": "Students applying from 50+ countries",
   "landing.getTitle": "Everything you get",
   "landing.getSub": "One profile in, a complete game plan out.",
@@ -89,13 +89,13 @@ const en: Dict = {
   "auth.errNotConfigured":
     "Authentication isn't configured yet. Add your Supabase keys to continue.",
   "auth.errGeneric": "Something went wrong. Please try again.",
-  "auth.asideTitle": "Your US university journey starts here",
+  "auth.asideTitle": "Your study-abroad journey starts here",
   "auth.asideBullet1": "An honest competitiveness score",
   "auth.asideBullet2": "Admission odds for every school on your list",
   "auth.asideBullet3": "A concrete plan to raise your chances",
   "auth.asideBadge": "Trusted by applicants in 20+ countries",
   "auth.asideSample": "Sample report",
-  "auth.asideBenchmark": "Benchmarked against top US universities",
+  "auth.asideBenchmark": "Benchmarked against top universities worldwide",
   "auth.asideRadar": "Profile fingerprint",
   "auth.asideStat1": "50+ universities",
   "auth.asideStat2": "7 scored factors",
@@ -285,9 +285,18 @@ const en: Dict = {
   "report.timelineTitle": "What to do next",
   "report.timelineHint": "A plan across the coming months.",
   "report.summaryTitle": "The bottom line",
-  "report.destTitle": "Your admission odds by country",
+  "report.destTitle": "View your results by country",
   "report.destHint":
-    "Switch between the countries you're applying to — each has its own rules.",
+    "Pick a country — your scorecard, odds, and costs all update for it.",
+  "report.weightedFor": "Weighted for",
+  "report.costTitle": "Application costs",
+  "report.costHintUS": "One-time fees to submit each application.",
+  "report.costHintIT":
+    "State pre-enrollment is free; tuition is billed separately.",
+  "report.costTotal": "Total to apply",
+  "report.costApprox":
+    "Approximate — verify each institution's current fee before you apply.",
+  "report.costFree": "Free",
   "report.fit": "fit",
   "band.exceptional": "Exceptional",
   "band.competitive": "Competitive",
@@ -380,7 +389,7 @@ const ru: Dict = {
   "lang.label": "Язык",
 
   // landing
-  "landing.badge": "Для иностранных абитуриентов в вузы США",
+  "landing.badge": "Для иностранных абитуриентов в вузы за рубежом",
   "landing.title1": "Узнайте, где вы стоите.",
   "landing.title2": "И сократите разрыв.",
   "landing.subtitle":
@@ -405,7 +414,7 @@ const ru: Dict = {
   "landing.standingPreview": "Ваш результат",
   "landing.preview": "Превью",
   "landing.competitiveness": "конкурентоспособность",
-  "landing.trustedBy": "Сравните себя с 50+ вузами США",
+  "landing.trustedBy": "Сравните себя с топовыми вузами США, Италии и не только",
   "landing.fromEverywhere": "Абитуриенты из 50+ стран",
   "landing.getTitle": "Что вы получаете",
   "landing.getSub": "Один профиль на входе — полный план на выходе.",
@@ -450,13 +459,13 @@ const ru: Dict = {
   "auth.errNotConfigured":
     "Аутентификация ещё не настроена. Добавьте ключи Supabase.",
   "auth.errGeneric": "Что-то пошло не так. Попробуйте снова.",
-  "auth.asideTitle": "Ваш путь в вузы США начинается здесь",
+  "auth.asideTitle": "Ваш путь к учёбе за рубежом начинается здесь",
   "auth.asideBullet1": "Честный балл конкурентоспособности",
   "auth.asideBullet2": "Шансы на поступление по каждому вузу из списка",
   "auth.asideBullet3": "Конкретный план, как повысить шансы",
   "auth.asideBadge": "Нам доверяют абитуриенты из 20+ стран",
   "auth.asideSample": "Пример отчёта",
-  "auth.asideBenchmark": "Сравнение с топовыми вузами США",
+  "auth.asideBenchmark": "Сравнение с топовыми вузами мира",
   "auth.asideRadar": "Профиль абитуриента",
   "auth.asideStat1": "50+ вузов",
   "auth.asideStat2": "7 факторов оценки",
@@ -647,9 +656,18 @@ const ru: Dict = {
   "report.timelineTitle": "Что делать дальше",
   "report.timelineHint": "План на ближайшие месяцы.",
   "report.summaryTitle": "Итог",
-  "report.destTitle": "Ваши шансы по странам",
+  "report.destTitle": "Результаты по стране",
   "report.destHint":
-    "Переключайтесь между странами — у каждой свои правила поступления.",
+    "Выберите страну — скоркард, шансы и стоимость обновятся под неё.",
+  "report.weightedFor": "Расчёт под",
+  "report.costTitle": "Стоимость подачи",
+  "report.costHintUS": "Разовый сбор за подачу каждой заявки.",
+  "report.costHintIT":
+    "Гос. пре-энроллмент бесплатный; обучение оплачивается отдельно.",
+  "report.costTotal": "Итого за подачу",
+  "report.costApprox":
+    "Приблизительно — уточняйте актуальный сбор у каждого вуза перед подачей.",
+  "report.costFree": "Бесплатно",
   "report.fit": "соответствие",
   "band.exceptional": "Выдающийся",
   "band.competitive": "Конкурентный",
