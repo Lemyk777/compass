@@ -7,6 +7,7 @@ import {
   FlagStrip,
 } from "@/components/marketing/UniversityMarquee";
 import { MiniScorecard } from "@/components/marketing/MiniScorecard";
+import { MascotGallery } from "@/components/marketing/MascotGallery";
 import { getUniversityLogos } from "@/lib/data/logos";
 import { getT } from "@/lib/i18n/server";
 
@@ -119,6 +120,23 @@ export default function LandingPage() {
               </ButtonLink>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Mascots */}
+      <section className="relative overflow-hidden border-t border-line py-16">
+        <div className="pointer-events-none absolute -left-24 top-1/3 -z-10 h-72 w-72 rounded-full bg-accent-soft opacity-50 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 bottom-0 -z-10 h-72 w-72 rounded-full bg-likely/10 blur-3xl" />
+        <div className="mx-auto max-w-6xl px-5">
+          <div className="mx-auto mb-10 max-w-xl text-center">
+            <h2 className="text-balance text-3xl font-semibold tracking-tight text-ink">
+              {t("landing.mascotsTitle")}
+            </h2>
+            <p className="mt-2 text-pretty text-ink-soft">
+              {t("landing.mascotsSub")}
+            </p>
+          </div>
+          <MascotGallery />
         </div>
       </section>
 
