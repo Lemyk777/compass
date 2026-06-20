@@ -34,7 +34,20 @@ export default function LandingPage() {
         <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="animate-fade-up">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-line bg-card px-3 py-1 text-xs font-medium text-ink-soft">
-              <span aria-hidden="true">🇺🇸</span>
+              <svg
+                viewBox="0 0 16 16"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <circle cx="8" cy="8" r="6.3" />
+                <ellipse cx="8" cy="8" rx="2.9" ry="6.3" />
+                <path d="M2 6.2h12M2 9.8h12" />
+              </svg>
               {t("landing.badge")}
             </p>
             <h1 className="text-balance text-[2.3rem] font-semibold leading-[1.05] tracking-tight text-ink sm:text-6xl">
