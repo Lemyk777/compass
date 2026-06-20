@@ -31,3 +31,6 @@ yarn-error.log*
 # vercel / typescript
 .vercel
 *.tsbuildinfo
+
+# raw logo drop (copied into public/logos)
+/logos/

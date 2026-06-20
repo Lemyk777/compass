@@ -2,36 +2,34 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// A scrolling academic "logo wall": a colored seal (monogram) + serif wordmark
-// for each university. Rendered locally so nothing depends on a flaky logo CDN.
-type Logo = { name: string; mono: string; color: string };
+// A scrolling "logo wall" of real university logos (served from /public/logos).
+// `file` points at the real image; if it's missing or fails to load we fall
+// back to a tasteful academic seal so the wall never looks broken.
+type Logo = { name: string; mono: string; color: string; file?: string };
 
 const LOGOS: Logo[] = [
-  { name: "Harvard", mono: "H", color: "#A51C30" },
-  { name: "Yale", mono: "Y", color: "#00356B" },
-  { name: "Princeton", mono: "P", color: "#E77500" },
+  { name: "Harvard", mono: "H", color: "#A51C30", file: "harvard.svg" },
+  { name: "Yale", mono: "Y", color: "#00356B", file: "yale.png" },
+  { name: "Princeton", mono: "P", color: "#E77500", file: "princeton.svg" },
+  { name: "Stanford", mono: "S", color: "#8C1515", file: "stanford.jpg" },
+  { name: "Penn", mono: "P", color: "#990000", file: "penn.png" },
+  { name: "Northwestern", mono: "N", color: "#4E2A84", file: "northwestern.png" },
+  { name: "Berkeley", mono: "B", color: "#003262", file: "berkeley.svg" },
+  { name: "NYU", mono: "NYU", color: "#57068C", file: "nyu.png" },
+  { name: "Duke", mono: "D", color: "#00539B", file: "duke.png" },
+  { name: "Rice", mono: "R", color: "#002469", file: "rice.png" },
+  { name: "UCLA", mono: "LA", color: "#2774AE", file: "ucla.avif" },
+  { name: "Washington", mono: "W", color: "#4B2E83", file: "washington.png" },
+  // Seal-only (no logo file yet) — kept for variety:
   { name: "MIT", mono: "MIT", color: "#A31F34" },
-  { name: "Stanford", mono: "S", color: "#8C1515" },
   { name: "Columbia", mono: "C", color: "#1D4F91" },
-  { name: "Penn", mono: "P", color: "#990000" },
-  { name: "Brown", mono: "B", color: "#4E3629" },
   { name: "Cornell", mono: "C", color: "#B31B1B" },
   { name: "Dartmouth", mono: "D", color: "#00693E" },
-  { name: "Duke", mono: "D", color: "#00539B" },
   { name: "Chicago", mono: "U", color: "#800000" },
-  { name: "Northwestern", mono: "N", color: "#4E2A84" },
   { name: "Johns Hopkins", mono: "JH", color: "#002D72" },
-  { name: "Berkeley", mono: "B", color: "#003262" },
-  { name: "UCLA", mono: "LA", color: "#2774AE" },
-  { name: "Michigan", mono: "M", color: "#00274C" },
-  { name: "NYU", mono: "NYU", color: "#57068C" },
-  { name: "Boston U.", mono: "BU", color: "#CC0000" },
-  { name: "USC", mono: "SC", color: "#9D2235" },
-  { name: "Carnegie Mellon", mono: "CM", color: "#C41230" },
-  { name: "Georgia Tech", mono: "GT", color: "#003057" },
 ];
 
-function LogoMark({ u }: { u: Logo }) {
+function Seal({ u }: { u: Logo }) {
   return (
     <span className="flex shrink-0 items-center gap-3">
       <span
@@ -50,6 +48,22 @@ function LogoMark({ u }: { u: Logo }) {
         {u.name}
       </span>
     </span>
+  );
+}
+
+function LogoMark({ u }: { u: Logo }) {
+  const [failed, setFailed] = useState(false);
+  if (!u.file || failed) return <Seal u={u} />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/logos/${u.file}`}
+      alt={u.name}
+      title={u.name}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="h-14 w-auto max-w-[170px] shrink-0 object-contain"
+    />
   );
 }
 
