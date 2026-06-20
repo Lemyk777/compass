@@ -6,6 +6,8 @@ import {
   emptyProfile,
   normalizeActivities,
   normalizeHonors,
+  normalizeDestinations,
+  normalizeFaculties,
   type StudentProfileInput,
 } from "@/lib/types";
 
@@ -40,7 +42,16 @@ export async function POST(_req: NextRequest) {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!sp || !sp.curriculum || !sp.target_schools?.length) {
+  const destinations = normalizeDestinations(sp?.destinations, sp?.include_italy);
+  const wantsUS = destinations.includes("US");
+  const wantsIT = destinations.includes("IT");
+  const hasUSTargets = (sp?.target_schools?.length ?? 0) > 0;
+  const hasITTargets = (sp?.italy_programs?.length ?? 0) > 0;
+  // Ready when every selected destination has its targets in place.
+  const targetsReady =
+    (!wantsUS || hasUSTargets) && (!wantsIT || hasITTargets);
+
+  if (!sp || !sp.curriculum || destinations.length === 0 || !targetsReady) {
     return NextResponse.json(
       { error: "Complete your profile first." },
       { status: 400 }
@@ -68,17 +79,17 @@ export async function POST(_req: NextRequest) {
   const profile: StudentProfileInput = {
     ...emptyProfile(),
     country: prof?.country ?? "",
+    citizenship: sp.citizenship ?? "",
+    destinations,
+    faculties: normalizeFaculties(sp.faculties),
+    intended_major: sp.intended_major ?? "",
     curriculum: sp.curriculum,
     grades: sp.grades ?? { raw: "" },
     tests: sp.tests ?? {},
     activities: normalizeActivities(sp.activities),
     honors: normalizeHonors(sp.honors),
     target_schools: sp.target_schools ?? [],
-    intended_major: sp.intended_major ?? "",
-    citizenship: sp.citizenship ?? "",
     needs_aid: sp.needs_aid ?? false,
-    // Italy module — gracefully defaults for pre-migration rows
-    include_italy: sp.include_italy ?? false,
     italy_programs: sp.italy_programs ?? [],
     italy_family_income: sp.italy_family_income ?? undefined,
   };

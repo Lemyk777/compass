@@ -6,6 +6,8 @@ import type { StudentProfileInput } from "@/lib/types";
 export const SAMPLE_PROFILE: StudentProfileInput = {
   country: "Kazakhstan",
   citizenship: "Kazakhstan",
+  destinations: ["US"],
+  faculties: ["business_economics"],
   intended_major: "Finance / Business",
   curriculum: "A-Level",
   grades: { raw: "A*A*A (Math, Economics, Business, predicted)" },
@@ -63,7 +65,6 @@ export const SAMPLE_PROFILE: StudentProfileInput = {
     "University of Michigan, Ann Arbor",
   ],
   needs_aid: true,
-  include_italy: false,
   italy_programs: [],
   italy_family_income: undefined,
 };

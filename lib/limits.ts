@@ -24,4 +24,7 @@ export const LIMITS = {
   subjects: 400,
   shortText: 80, // country / citizenship / intended major
   targetSchools: 12,
+  // Country-first intake: destinations applied to, and fields of study.
+  destinations: 6,
+  faculties: 3,
 } as const;
