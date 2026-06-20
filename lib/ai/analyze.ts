@@ -164,14 +164,32 @@ function buildModelInput(p: StudentProfileInput) {
     curriculum: p.curriculum,
     grades: { ...p.grades, raw: clamp(p.grades?.raw, LIMITS.grades) ?? "" },
     tests: { ...p.tests, subjects: clamp(p.tests?.subjects, LIMITS.subjects) },
+    // Common App activities — structured so the model can weigh role, scale,
+    // commitment (hours x weeks) and continuation.
     activities: p.activities
-      .filter((a) => a.title.trim())
+      .filter((a) => a.position?.trim())
       .slice(0, LIMITS.activities)
-      .map((a) => {
-        const title = clamp(a.title, LIMITS.activityTitle) ?? "";
-        const detail = clamp(a.detail, LIMITS.activityDetail);
-        return detail ? `${title} — ${detail}` : title;
-      }),
+      .map((a) => ({
+        type: a.type || undefined,
+        position: clamp(a.position, LIMITS.activityPosition),
+        organization: clamp(a.organization, LIMITS.activityOrganization),
+        description: clamp(a.description, LIMITS.activityDescription),
+        grades: a.grades?.length ? a.grades : undefined,
+        timing: a.timing?.length ? a.timing : undefined,
+        hours_per_week: a.hours_per_week || undefined,
+        weeks_per_year: a.weeks_per_year || undefined,
+        continue_in_college: a.continue_in_college || undefined,
+      })),
+    // Common App honors — title + grade levels + level of recognition; feeds
+    // the "awards" factor (school -> regional -> national -> international).
+    honors: (p.honors ?? [])
+      .filter((h) => h.title?.trim())
+      .slice(0, LIMITS.honors)
+      .map((h) => ({
+        title: clamp(h.title, LIMITS.honorTitle),
+        grades: h.grades?.length ? h.grades : undefined,
+        levels: h.levels?.length ? h.levels : undefined,
+      })),
     target_schools: p.target_schools.slice(0, LIMITS.targetSchools),
     needs_aid: p.needs_aid,
   };

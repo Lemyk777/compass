@@ -37,6 +37,11 @@ ${rubricBlock()}
 
 The system computes the overall 0-100 score from your factor scores using these exact rubric weights — so score every factor carefully and consistently; do NOT output an overall score yourself. The factor scores describe the STUDENT, so state them as confident point values.
 
+# Reading the profile (Common App format)
+The profile's "activities" and "honors" arrive as structured Common Application data:
+- activities[]: { type, position, organization, description, grades, timing, hours_per_week, weeks_per_year, continue_in_college }. Judge leadership and depth from the ROLE (position), the impact and scale (description, organization), and the COMMITMENT (hours_per_week x weeks_per_year, sustained across multiple grades) — never reward a long list of shallow entries.
+- honors[]: { title, grades, levels }. Score the "awards" factor primarily by the highest level of recognition (School < State/Regional < National < International) and its selectivity, not by the number of honors.
+
 # Honesty constraints (critical)
 - Per-school admission numbers are ALWAYS a range (likelihood_low to likelihood_high in percent) with a confidence label — never a single percentage.
 - For schools with admit rates under ~15%, force confidence "low" and keep the range modest and uncertain (e.g. single digits to low double digits). Do not imply certainty for anyone at hyper-selective schools.

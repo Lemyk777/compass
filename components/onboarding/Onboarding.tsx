@@ -6,13 +6,28 @@ import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
-import { CURRICULA, emptyProfile, type StudentProfileInput } from "@/lib/types";
+import {
+  CURRICULA,
+  ACTIVITY_TYPES,
+  GRADE_LEVELS,
+  ACTIVITY_TIMING,
+  HONOR_LEVELS,
+  emptyProfile,
+  emptyActivity,
+  emptyHonor,
+  type Honor,
+  type StudentProfileInput,
+} from "@/lib/types";
 import { LIMITS } from "@/lib/limits";
 import { UNIVERSITY_NAMES } from "@/lib/data/universities";
+import {
+  ITALIAN_PROGRAMS,
+  type ItalianProgram,
+} from "@/lib/data/italian-universities";
 import { saveProfile } from "@/app/onboarding/actions";
 import { useT } from "@/lib/i18n/client";
 
-const STEPS = ["You", "Grades", "Tests", "Activities", "Schools", "Review"];
+const STEPS = ["You", "Grades", "Tests", "Activities", "Honors", "Schools", "Review"];
 
 export function Onboarding({
   initial,
@@ -48,7 +63,7 @@ export function Onboarding({
         if (!data.curriculum) return t("ob.errCurriculum");
         if (!data.grades.raw.trim()) return t("ob.errGrades");
         return null;
-      case 4:
+      case 5:
         if (data.target_schools.length === 0) return t("ob.errSchools");
         return null;
       default:
@@ -122,8 +137,9 @@ export function Onboarding({
         {step === 1 && <StepGrades data={data} set={set} />}
         {step === 2 && <StepTests data={data} set={set} />}
         {step === 3 && <StepActivities data={data} set={set} />}
-        {step === 4 && <StepSchools data={data} set={set} />}
-        {step === 5 && <StepReview data={data} goTo={setStep} />}
+        {step === 4 && <StepHonors data={data} set={set} />}
+        {step === 5 && <StepSchools data={data} set={set} />}
+        {step === 6 && <StepReview data={data} goTo={setStep} />}
       </div>
 
       {error && (
@@ -161,6 +177,7 @@ const TITLES = [
   { title: "ob.t1", sub: "ob.s1" },
   { title: "ob.t2", sub: "ob.s2" },
   { title: "ob.t3", sub: "ob.s3" },
+  { title: "ob.tHonors", sub: "ob.sHonors" },
   { title: "ob.t4", sub: "ob.s4" },
   { title: "ob.t5", sub: "ob.s5" },
 ];
@@ -204,6 +221,70 @@ function StepYou({ data, set }: StepProps) {
           placeholder={t("ob.majorPh")}
         />
       </Field>
+
+      {/* Italy geolocation trigger */}
+      <div className="rounded-xl border border-line bg-card px-4 py-3.5">
+        <label className="flex cursor-pointer items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-base" aria-hidden="true">🇮🇹</span>
+            <span className="text-sm font-medium text-ink">
+              {t("ob.italyToggle")}
+            </span>
+          </div>
+          <Toggle
+            checked={data.include_italy}
+            onChange={(v) => {
+              set("include_italy", v);
+              if (!v) {
+                set("italy_family_income", undefined);
+                set("italy_programs", []);
+              }
+            }}
+          />
+        </label>
+
+        {/* Smooth reveal of Italy financial module */}
+        {data.include_italy && (
+          <div className="mt-4 space-y-3 border-t border-line pt-4">
+            <Field
+              label={t("ob.italyIncome")}
+              htmlFor="italy-income"
+              hint={t("ob.italyIncomeHint")}
+            >
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-faint">
+                    €
+                  </span>
+                  <Input
+                    id="italy-income"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={10_000_000}
+                    value={data.italy_family_income ?? ""}
+                    onChange={(e) =>
+                      set(
+                        "italy_family_income",
+                        numOrUndef(e.target.value)
+                      )
+                    }
+                    placeholder={t("ob.italyIncomePh")}
+                    className="pl-8"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => set("italy_family_income", undefined)}
+                  className="rounded-xl border border-line bg-card px-3 text-sm text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
+                >
+                  {t("ob.italyIncomeSkip")}
+                </button>
+              </div>
+            </Field>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -372,6 +453,57 @@ function StepTests({ data, set }: StepProps) {
   );
 }
 
+const selectClass =
+  "h-11 w-full rounded-xl border border-line bg-card px-3 text-[0.95rem] text-ink focus-visible:focus-ring";
+const textareaClass =
+  "w-full rounded-xl border border-line bg-card px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus-visible:focus-ring";
+
+function toggleIn(arr: string[] | undefined, v: string): string[] {
+  const cur = arr ?? [];
+  return cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v];
+}
+
+function MiniLabel({ children }: { children: string }) {
+  return (
+    <span className="mb-1 block text-xs font-medium text-ink-faint">
+      {children}
+    </span>
+  );
+}
+
+function ChipGroup({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: readonly string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const on = selected.includes(o);
+        return (
+          <button
+            key={o}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onToggle(o)}
+            className={`rounded-full border px-2.5 py-1 text-xs transition-colors focus-visible:focus-ring ${
+              on
+                ? "border-accent bg-accent-soft text-accent-ink"
+                : "border-line bg-card text-ink-soft hover:border-ink/30"
+            }`}
+          >
+            {o}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function StepActivities({ data, set }: StepProps) {
   const t = useT();
   const acts = data.activities;
@@ -380,7 +512,7 @@ function StepActivities({ data, set }: StepProps) {
       "activities",
       acts.map((a, idx) => (idx === i ? { ...a, ...patch } : a))
     );
-  const add = () => set("activities", [...acts, { title: "", detail: "" }]);
+  const add = () => set("activities", [...acts, emptyActivity()]);
   const remove = (i: number) =>
     set(
       "activities",
@@ -392,9 +524,9 @@ function StepActivities({ data, set }: StepProps) {
       {acts.map((a, i) => (
         <div
           key={i}
-          className="rounded-xl border border-line bg-card p-3.5 shadow-card"
+          className="space-y-3 rounded-xl border border-line bg-card p-3.5 shadow-card"
         >
-          <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-ink-faint">
               {t("ob.activity")} {i + 1}
             </span>
@@ -408,26 +540,194 @@ function StepActivities({ data, set }: StepProps) {
               </button>
             )}
           </div>
-          <Input
-            value={a.title}
-            maxLength={LIMITS.activityTitle}
-            onChange={(e) => update(i, { title: e.target.value })}
-            placeholder={t("ob.activityTitlePh")}
-            className="mb-2"
-          />
-          <textarea
-            value={a.detail ?? ""}
-            maxLength={LIMITS.activityDetail}
-            onChange={(e) => update(i, { detail: e.target.value })}
-            rows={2}
-            placeholder={t("ob.activityDetailPh")}
-            className="w-full rounded-xl border border-line bg-card px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus-visible:focus-ring"
-          />
+
+          <div>
+            <MiniLabel>{t("ob.activityType")}</MiniLabel>
+            <select
+              value={a.type ?? ""}
+              onChange={(e) => update(i, { type: e.target.value })}
+              className={selectClass}
+            >
+              <option value="">{t("ob.activityTypePh")}</option>
+              {ACTIVITY_TYPES.map((ty) => (
+                <option key={ty} value={ty}>
+                  {ty}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <MiniLabel>{t("ob.position")}</MiniLabel>
+            <Input
+              value={a.position}
+              maxLength={LIMITS.activityPosition}
+              onChange={(e) => update(i, { position: e.target.value })}
+              placeholder={t("ob.positionPh")}
+            />
+          </div>
+
+          <div>
+            <MiniLabel>{t("ob.organization")}</MiniLabel>
+            <Input
+              value={a.organization ?? ""}
+              maxLength={LIMITS.activityOrganization}
+              onChange={(e) => update(i, { organization: e.target.value })}
+              placeholder={t("ob.organizationPh")}
+            />
+          </div>
+
+          <div>
+            <MiniLabel>{t("ob.activityDesc")}</MiniLabel>
+            <textarea
+              value={a.description ?? ""}
+              maxLength={LIMITS.activityDescription}
+              onChange={(e) => update(i, { description: e.target.value })}
+              rows={2}
+              placeholder={t("ob.activityDescPh")}
+              className={textareaClass}
+            />
+          </div>
+
+          <div>
+            <MiniLabel>{t("ob.gradeLevels")}</MiniLabel>
+            <ChipGroup
+              options={GRADE_LEVELS}
+              selected={a.grades ?? []}
+              onToggle={(v) => update(i, { grades: toggleIn(a.grades, v) })}
+            />
+          </div>
+
+          <div>
+            <MiniLabel>{t("ob.timing")}</MiniLabel>
+            <ChipGroup
+              options={ACTIVITY_TIMING}
+              selected={a.timing ?? []}
+              onToggle={(v) => update(i, { timing: toggleIn(a.timing, v) })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <MiniLabel>{t("ob.hoursWeek")}</MiniLabel>
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={LIMITS.hoursPerWeek}
+                value={a.hours_per_week ?? ""}
+                onChange={(e) =>
+                  update(i, { hours_per_week: numOrUndef(e.target.value) })
+                }
+                placeholder="e.g. 5"
+              />
+            </div>
+            <div>
+              <MiniLabel>{t("ob.weeksYear")}</MiniLabel>
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={LIMITS.weeksPerYear}
+                value={a.weeks_per_year ?? ""}
+                onChange={(e) =>
+                  update(i, { weeks_per_year: numOrUndef(e.target.value) })
+                }
+                placeholder="e.g. 30"
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center justify-between">
+            <span className="text-sm text-ink">{t("ob.continueCollege")}</span>
+            <Toggle
+              checked={a.continue_in_college ?? false}
+              onChange={(v) => update(i, { continue_in_college: v })}
+            />
+          </label>
         </div>
       ))}
       {acts.length < LIMITS.activities && (
         <Button variant="subtle" onClick={add} className="w-full">
-          {t("ob.addAnother")}
+          {t("ob.addActivity")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function StepHonors({ data, set }: StepProps) {
+  const t = useT();
+  const honors = data.honors ?? [];
+  const update = (i: number, patch: Partial<Honor>) =>
+    set(
+      "honors",
+      honors.map((h, idx) => (idx === i ? { ...h, ...patch } : h))
+    );
+  const add = () => set("honors", [...honors, emptyHonor()]);
+  const remove = (i: number) =>
+    set(
+      "honors",
+      honors.filter((_, idx) => idx !== i)
+    );
+
+  return (
+    <div className="space-y-4">
+      {honors.length === 0 && (
+        <p className="rounded-xl border border-dashed border-line bg-card px-4 py-6 text-center text-sm text-ink-faint">
+          {t("ob.honorsEmpty")}
+        </p>
+      )}
+      {honors.map((h, i) => (
+        <div
+          key={i}
+          className="space-y-3 rounded-xl border border-line bg-card p-3.5 shadow-card"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-ink-faint">
+              {t("ob.honor")} {i + 1}
+            </span>
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="rounded px-1 text-xs text-ink-faint hover:text-reach focus-visible:focus-ring"
+            >
+              {t("ob.remove")}
+            </button>
+          </div>
+
+          <div>
+            <MiniLabel>{t("ob.honorTitle")}</MiniLabel>
+            <Input
+              value={h.title}
+              maxLength={LIMITS.honorTitle}
+              onChange={(e) => update(i, { title: e.target.value })}
+              placeholder={t("ob.honorTitlePh")}
+            />
+          </div>
+
+          <div>
+            <MiniLabel>{t("ob.gradeLevels")}</MiniLabel>
+            <ChipGroup
+              options={GRADE_LEVELS}
+              selected={h.grades ?? []}
+              onToggle={(v) => update(i, { grades: toggleIn(h.grades, v) })}
+            />
+          </div>
+
+          <div>
+            <MiniLabel>{t("ob.honorLevels")}</MiniLabel>
+            <ChipGroup
+              options={HONOR_LEVELS}
+              selected={h.levels ?? []}
+              onToggle={(v) => update(i, { levels: toggleIn(h.levels, v) })}
+            />
+          </div>
+        </div>
+      ))}
+      {honors.length < LIMITS.honors && (
+        <Button variant="subtle" onClick={add} className="w-full">
+          {t("ob.addHonor")}
         </Button>
       )}
     </div>
@@ -437,7 +737,13 @@ function StepActivities({ data, set }: StepProps) {
 function StepSchools({ data, set }: StepProps) {
   const t = useT();
   const [query, setQuery] = useState("");
+  const [italyQuery, setItalyQuery] = useState("");
   const selected = data.target_schools;
+  const selectedItaly = useMemo(
+    () => data.italy_programs ?? [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data.italy_programs]
+  );
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -446,77 +752,194 @@ function StepSchools({ data, set }: StepProps) {
     ).slice(0, 6);
   }, [query, selected]);
 
+  const italySuggestions = useMemo((): ItalianProgram[] => {
+    const q = italyQuery.trim().toLowerCase();
+    return ITALIAN_PROGRAMS.filter(
+      (p) =>
+        !selectedItaly.includes(p.id) &&
+        (q === "" ||
+          p.university.toLowerCase().includes(q) ||
+          p.program_name.toLowerCase().includes(q) ||
+          p.city.toLowerCase().includes(q))
+    ).slice(0, 6);
+  }, [italyQuery, selectedItaly]);
+
   const addSchool = (name: string) => {
     if (!selected.includes(name) && selected.length < 12)
       set("target_schools", [...selected, name]);
     setQuery("");
   };
 
+  const addItalyProgram = (id: string) => {
+    if (!selectedItaly.includes(id) && selectedItaly.length < 8)
+      set("italy_programs", [...selectedItaly, id]);
+    setItalyQuery("");
+  };
+
+  const removeItalyProgram = (id: string) =>
+    set("italy_programs", selectedItaly.filter((x) => x !== id));
+
+  const italyProgramById = (id: string) =>
+    ITALIAN_PROGRAMS.find((p) => p.id === id);
+
   return (
-    <div className="space-y-4">
-      {selected.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {selected.map((s) => (
-            <span
-              key={s}
-              className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-sm text-white"
-            >
-              {s}
-              <button
-                type="button"
-                onClick={() =>
-                  set(
-                    "target_schools",
-                    selected.filter((x) => x !== s)
-                  )
-                }
-                aria-label={`Remove ${s}`}
-                className="text-white/70 hover:text-white focus-visible:focus-ring"
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
+    <div className="space-y-6">
+      {/* US Universities section */}
+      <div className="space-y-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-ink-faint">
+          US Universities
+        </p>
 
-      <Field label={t("ob.searchSchools")} htmlFor="school-search">
-        <Input
-          id="school-search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("ob.searchPh")}
-        />
-      </Field>
-
-      {(query !== "" || selected.length === 0) && (
-        <div className="overflow-hidden rounded-xl border border-line bg-card">
-          {suggestions.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-ink-faint">
-              {t("ob.noMatches")}
-            </p>
-          ) : (
-            suggestions.map((s) => (
-              <button
+        {selected.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {selected.map((s) => (
+              <span
                 key={s}
-                type="button"
-                onClick={() => addSchool(s)}
-                className="block w-full border-b border-line px-4 py-2.5 text-left text-sm text-ink last:border-0 hover:bg-accent-soft focus-visible:focus-ring"
+                className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-sm text-white"
               >
                 {s}
-              </button>
-            ))
+                <button
+                  type="button"
+                  onClick={() =>
+                    set(
+                      "target_schools",
+                      selected.filter((x) => x !== s)
+                    )
+                  }
+                  aria-label={`Remove ${s}`}
+                  className="text-white/70 hover:text-white focus-visible:focus-ring"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <Field label={t("ob.searchSchools")} htmlFor="school-search">
+          <Input
+            id="school-search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("ob.searchPh")}
+          />
+        </Field>
+
+        {(query !== "" || selected.length === 0) && (
+          <div className="overflow-hidden rounded-xl border border-line bg-card">
+            {suggestions.length === 0 ? (
+              <p className="px-4 py-3 text-sm text-ink-faint">
+                {t("ob.noMatches")}
+              </p>
+            ) : (
+              suggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => addSchool(s)}
+                  className="block w-full border-b border-line px-4 py-2.5 text-left text-sm text-ink last:border-0 hover:bg-accent-soft focus-visible:focus-ring"
+                >
+                  {s}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+
+        <label className="flex items-center justify-between rounded-xl border border-line bg-card px-4 py-3">
+          <span className="text-sm text-ink">{t("ob.needAid")}</span>
+          <Toggle
+            checked={data.needs_aid}
+            onChange={(v) => set("needs_aid", v)}
+          />
+        </label>
+      </div>
+
+      {/* Italian programs section — only shown when Italy is enabled */}
+      {data.include_italy && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span aria-hidden="true">🇮🇹</span>
+            <p className="text-xs font-semibold uppercase tracking-widest text-ink-faint">
+              {t("ob.italyPrograms")}
+            </p>
+          </div>
+          <p className="text-xs text-ink-soft">{t("ob.italyProgramsHint")}</p>
+
+          {selectedItaly.length > 0 && (
+            <div className="space-y-2">
+              {selectedItaly.map((id) => {
+                const prog = italyProgramById(id);
+                if (!prog) return null;
+                return (
+                  <div
+                    key={id}
+                    className="flex items-start justify-between gap-3 rounded-xl border border-line bg-card px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-ink">
+                        {prog.university}
+                      </p>
+                      <p className="truncate text-xs text-ink-soft">
+                        {prog.program_name} · {prog.city} ·{" "}
+                        {prog.level.toUpperCase()}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeItalyProgram(id)}
+                      aria-label={`Remove ${prog.program_name}`}
+                      className="shrink-0 rounded px-1 text-xs text-ink-faint hover:text-reach focus-visible:focus-ring"
+                    >
+                      {t("ob.remove")}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {selectedItaly.length < 8 && (
+            <>
+              <Field
+                label={t("ob.italyProgramsPh")}
+                htmlFor="italy-search"
+              >
+                <Input
+                  id="italy-search"
+                  value={italyQuery}
+                  onChange={(e) => setItalyQuery(e.target.value)}
+                  placeholder={t("ob.italyProgramsPh")}
+                />
+              </Field>
+
+              {(italyQuery !== "" || selectedItaly.length === 0) && (
+                <div className="overflow-hidden rounded-xl border border-line bg-card">
+                  {italySuggestions.length === 0 ? (
+                    <p className="px-4 py-3 text-sm text-ink-faint">
+                      {t("ob.italyNoMatches")}
+                    </p>
+                  ) : (
+                    italySuggestions.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => addItalyProgram(p.id)}
+                        className="block w-full border-b border-line px-4 py-2.5 text-left last:border-0 hover:bg-accent-soft focus-visible:focus-ring"
+                      >
+                        <p className="text-sm text-ink">{p.university}</p>
+                        <p className="text-xs text-ink-soft">
+                          {p.program_name} · {p.city} · {p.level.toUpperCase()} · {p.language}
+                        </p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
-
-      <label className="mt-2 flex items-center justify-between rounded-xl border border-line bg-card px-4 py-3">
-        <span className="text-sm text-ink">{t("ob.needAid")}</span>
-        <Toggle
-          checked={data.needs_aid}
-          onChange={(v) => set("needs_aid", v)}
-        />
-      </label>
     </div>
   );
 }
@@ -529,6 +952,14 @@ function StepReview({
   goTo: (n: number) => void;
 }) {
   const t = useT();
+
+  const italyProgramSummary = (data.italy_programs ?? [])
+    .map((id) => {
+      const p = ITALIAN_PROGRAMS.find((x) => x.id === id);
+      return p ? `${p.university} (${p.level.toUpperCase()})` : id;
+    })
+    .join(", ");
+
   const rows: { label: string; value: string; step: number }[] = [
     { label: t("ob.rCountry"), value: data.country || "—", step: 0 },
     { label: t("ob.rCitizenship"), value: data.citizenship || "—", step: 0 },
@@ -542,20 +973,43 @@ function StepReview({
     { label: t("ob.rTests"), value: testSummary(data) || "—", step: 2 },
     {
       label: t("ob.rActivities"),
-      value: `${data.activities.filter((a) => a.title.trim()).length} ${t("ob.added")}`,
+      value: `${data.activities.filter((a) => a.position.trim()).length} ${t("ob.added")}`,
       step: 3,
+    },
+    {
+      label: t("ob.rHonors"),
+      value: `${(data.honors ?? []).filter((h) => h.title.trim()).length} ${t("ob.added")}`,
+      step: 4,
     },
     {
       label: t("ob.rSchools"),
       value: data.target_schools.join(", ") || "—",
-      step: 4,
+      step: 5,
     },
     {
       label: t("ob.rAid"),
       value: data.needs_aid ? t("ob.yes") : t("ob.no"),
-      step: 4,
+      step: 5,
     },
+    ...(data.include_italy
+      ? [
+          {
+            label: t("ob.rItalyPrograms"),
+            value: italyProgramSummary || "—",
+            step: 5,
+          },
+          {
+            label: t("ob.rItalyIncome"),
+            value:
+              data.italy_family_income != null
+                ? `€${data.italy_family_income.toLocaleString()}`
+                : t("ob.italyIncomeSkip"),
+            step: 0,
+          },
+        ]
+      : []),
   ];
+
   return (
     <div className="divide-y divide-line rounded-xl border border-line bg-card">
       {rows.map((r) => (

@@ -34,3 +34,6 @@ yarn-error.log*
 
 # raw logo drop (copied into public/logos)
 /logos/
+
+# personal, per-machine Claude permissions (each dev keeps their own)
+.claude/settings.local.json

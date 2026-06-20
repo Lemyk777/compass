@@ -8,6 +8,10 @@ import {
   type Benchmark,
   type ModelAnalysis,
 } from "@/lib/ai/schema";
+import {
+  analyzeItalianPrograms,
+  computeFinancialFitScore,
+} from "@/lib/ai/italy-analyze";
 
 /**
  * Deterministic overall score (0–100) from the model's per-factor scores and
@@ -58,6 +62,18 @@ export function assembleAnalysis(
   model: ModelAnalysis,
   profile: StudentProfileInput
 ): Analysis {
+  const hasItaly =
+    profile.include_italy === true &&
+    (profile.italy_programs ?? []).length > 0;
+
+  const italyPrograms = hasItaly
+    ? analyzeItalianPrograms(
+        profile.italy_programs ?? [],
+        profile.tests?.SAT,
+        profile.italy_family_income
+      )
+    : undefined;
+
   const full: Analysis = {
     overall_score: computeOverallFromFactors(model.factors),
     factors: model.factors,
@@ -67,6 +83,10 @@ export function assembleAnalysis(
     gap_analysis: model.gap_analysis,
     timeline: model.timeline,
     summary: model.summary,
+    italy_programs: italyPrograms,
+    italy_financial_fit_score: hasItaly
+      ? computeFinancialFitScore(profile.italy_family_income, true)
+      : undefined,
   };
   return sanitizeAnalysis(analysisSchema.parse(full));
 }
