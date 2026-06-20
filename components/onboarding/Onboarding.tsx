@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
-import { Flag } from "@/components/ui/Flag";
 import {
   CURRICULA,
   ACTIVITY_TYPES,
@@ -198,24 +198,34 @@ export function Onboarding({
         ))}
       </div>
 
-      <div className="flex-1 animate-fade-up" key={clampedIndex}>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          {t(STEP_META[stepKey].title)}
-        </h1>
-        <p className="mb-6 mt-1 text-sm text-ink-soft">
-          {t(STEP_META[stepKey].sub)}
-        </p>
+      <div className="flex-1 relative overflow-x-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={clampedIndex}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <h1 className="text-2xl font-semibold tracking-tight text-ink">
+              {t(STEP_META[stepKey].title)}
+            </h1>
+            <p className="mb-6 mt-1 text-sm text-ink-soft">
+              {t(STEP_META[stepKey].sub)}
+            </p>
 
-        {stepKey === "origin" && <StepOrigin data={data} set={set} />}
-        {stepKey === "destinations" && <StepDestinations data={data} set={set} />}
-        {stepKey === "faculties" && <StepFaculties data={data} set={set} />}
-        {stepKey === "grades" && <StepGrades data={data} set={set} />}
-        {stepKey === "tests" && <StepTests data={data} set={set} />}
-        {stepKey === "activities" && <StepActivities data={data} set={set} />}
-        {stepKey === "honors" && <StepHonors data={data} set={set} />}
-        {stepKey === "us" && <StepUSTargets data={data} set={set} />}
-        {stepKey === "it" && <StepItalyTargets data={data} set={set} />}
-        {stepKey === "review" && <StepReview data={data} goToKey={goToKey} />}
+            {stepKey === "origin" && <StepOrigin data={data} set={set} />}
+            {stepKey === "destinations" && <StepDestinations data={data} set={set} />}
+            {stepKey === "faculties" && <StepFaculties data={data} set={set} />}
+            {stepKey === "grades" && <StepGrades data={data} set={set} />}
+            {stepKey === "tests" && <StepTests data={data} set={set} />}
+            {stepKey === "activities" && <StepActivities data={data} set={set} />}
+            {stepKey === "honors" && <StepHonors data={data} set={set} />}
+            {stepKey === "us" && <StepUSTargets data={data} set={set} />}
+            {stepKey === "it" && <StepItalyTargets data={data} set={set} />}
+            {stepKey === "review" && <StepReview data={data} goToKey={goToKey} />}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {error && (
@@ -315,7 +325,7 @@ function StepDestinations({ data, set }: StepProps) {
                   : "border-line bg-card hover:border-ink/30"
             }`}
           >
-            <Flag code={d.code} size={28} />
+
             <span className="text-sm font-medium text-ink">
               {t(d.labelKey)}
             </span>

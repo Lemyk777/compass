@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Compass — an AI guidance tool that scores an international student's profile for **US university** admissions and returns a structured, data-driven report (factor scores, per-school likelihood ranges, benchmarks, gap analysis, ranked recommendations). Three roles share one backend: **student** (core product), **ambassador** (referral growth), **admin/founder** (metrics). Full product spec lives in [compass-project-blueprint.md](compass-project-blueprint.md); setup in [SETUP.md](SETUP.md).
+Compass — an AI guidance tool that scores an international student's profile for **US and Italian university** admissions and returns a structured, data-driven report (factor scores, per-school likelihood ranges, benchmarks, gap analysis, ranked recommendations). Three roles share one backend: **student** (core product), **ambassador** (referral growth), **admin/founder** (metrics). Full product spec lives in [compass-project-blueprint.md](compass-project-blueprint.md); setup in [SETUP.md](SETUP.md).
 
 Stack: Next.js 14 (App Router, RSC, server actions) · TypeScript (strict) · Tailwind · Supabase (Postgres + Auth + RLS) · Anthropic `claude-haiku-4-5` · Recharts · Zod · custom EN/RU i18n.
 
@@ -26,9 +26,10 @@ Five vars (see [.env.example](.env.example)) in `.env.local`: `NEXT_PUBLIC_SUPAB
 
 ## The AI analysis pipeline (the heart — read these together)
 
-Spans [lib/ai/prompt.ts](lib/ai/prompt.ts), [lib/ai/analyze.ts](lib/ai/analyze.ts), [lib/ai/schema.ts](lib/ai/schema.ts), [lib/ai/assemble.ts](lib/ai/assemble.ts), [lib/rubric.ts](lib/rubric.ts), [lib/data/universities.ts](lib/data/universities.ts).
+Spans [lib/ai/prompt.ts](lib/ai/prompt.ts), [lib/ai/analyze.ts](lib/ai/analyze.ts), [lib/ai/schema.ts](lib/ai/schema.ts), [lib/ai/assemble.ts](lib/ai/assemble.ts), [lib/ai/italy-analyze.ts](lib/ai/italy-analyze.ts), [lib/rubric.ts](lib/rubric.ts), [lib/data/universities.ts](lib/data/universities.ts).
 
-- **The model returns qualitative JSON only.** It does NOT compute the overall score or the benchmark table. The model output is validated against `modelAnalysisSchema` (the full `analysisSchema` minus `overall_score` and `benchmarks`). Then `assembleAnalysis()` computes the **overall score** (weighted blend of factor scores using `RUBRIC` weights) and **benchmarks** (student SAT vs. each target school's mid-50% from the university dataset) deterministically in code, producing the full `Analysis` the dashboard renders. Same profile → same numbers, run to run.
+- **Multi-Country Architecture:** The US pathway uses the AI model. The Italy pathway (`italy_programs`) is evaluated strictly deterministically in code (`lib/ai/italy-analyze.ts`), bypassing AI generation to avoid hallucinations.
+- **The model returns qualitative JSON only.** It does NOT compute the overall score or the benchmark table. The model output is validated against `modelAnalysisSchema` (the full `analysisSchema` minus `overall_score`, `benchmarks`, and Italy data). Then `assembleAnalysis()` computes the **overall score**, **benchmarks**, and **Italy program analyses** deterministically in code, producing the full `Analysis` the dashboard renders. Same profile → same numbers, run to run.
 - **Prompt caching:** `STATIC_SYSTEM_PROMPT` (instructions + rubric + ~55 universities) is sent as a cached system block and **must stay byte-identical across requests** — only the per-user profile (the user message) varies. Don't put per-user data in the system block; keep dataset ordering stable.
 - **Robustness:** the call is **streamed** (`messages.stream().finalMessage()`), `maxRetries` lets the SDK back off on 429/5xx, and a parse failure retries once. A reply cut off by the token cap (`stop_reason === "max_tokens"`) fails fast with an actionable error. `app/api/analyze/route.ts` sets `maxDuration = 60` and rate-limits to 5 analyses/hour/user.
 - The dashboard re-validates the stored analysis with the full `analysisSchema` and renders charts from the JSON — the model never draws.
