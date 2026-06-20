@@ -52,7 +52,14 @@
       "Bash(git stash *)",
       "Bash(grep -q \"^/logos/$\" .gitignore)",
       "Bash(git commit -q -m 'feat: use real university logos in the marquee *)",
-      "Bash(git commit -q -m 'docs: add PROJECT.md — full orientation guide for humans and AI agents *)"
+      "Bash(git commit -q -m 'docs: add PROJECT.md — full orientation guide for humans and AI agents *)",
+      "Bash(git checkout *)",
+      "Bash(git reset *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(gh pr create --base main --head feat/logo-marquee-single-line --title 'Single-line university logo marquee \\(auto-discovered from /public/logos\\)' --body ' *)",
+      "Bash(which gh *)",
+      "Bash(printenv GITHUB_TOKEN GH_TOKEN)",
+      "Bash(git credential *)"
     ]
   }
 }
