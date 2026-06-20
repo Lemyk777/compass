@@ -51,7 +51,8 @@
       "Bash(git pull *)",
       "Bash(git stash *)",
       "Bash(grep -q \"^/logos/$\" .gitignore)",
-      "Bash(git commit -q -m 'feat: use real university logos in the marquee *)"
+      "Bash(git commit -q -m 'feat: use real university logos in the marquee *)",
+      "Bash(git commit -q -m 'docs: add PROJECT.md — full orientation guide for humans and AI agents *)"
     ]
   }
 }
