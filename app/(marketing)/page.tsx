@@ -2,8 +2,9 @@ import { Logo } from "@/components/ui/Logo";
 import { ButtonLink } from "@/components/ui/Button";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import {
-  UniversityMarquee,
-  FlagRibbon,
+  UniversityLogos,
+  CountryReveal,
+  FlagStrip,
 } from "@/components/marketing/UniversityMarquee";
 import { MiniScorecard } from "@/components/marketing/MiniScorecard";
 import { getT } from "@/lib/i18n/server";
@@ -59,17 +60,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* University marquee band */}
-      <section className="border-y border-line bg-card/60 py-7">
+      {/* University logo wall + country reveal */}
+      <section className="border-y border-line bg-card/60 py-10">
         <div className="mx-auto max-w-6xl px-5">
-          <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-ink-faint">
+          <p className="mb-5 text-center text-xs font-semibold uppercase tracking-wide text-ink-faint">
             {t("landing.trustedBy")}
           </p>
-          <UniversityMarquee />
-          <p className="mb-3 mt-6 text-center text-xs font-semibold uppercase tracking-wide text-ink-faint">
+          <UniversityLogos />
+          <p className="mb-4 mt-9 text-center text-xs font-semibold uppercase tracking-wide text-ink-faint">
             {t("landing.fromEverywhere")}
           </p>
-          <FlagRibbon />
+          <CountryReveal />
         </div>
       </section>
 
@@ -164,8 +165,8 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section className="mx-auto max-w-6xl px-5 pb-20">
         <div className="overflow-hidden rounded-2xl border border-line bg-card p-8 text-center shadow-lift sm:p-12">
-          <div className="mb-5 flex justify-center">
-            <FlagRibbon />
+          <div className="mb-6 flex justify-center">
+            <CountryReveal />
           </div>
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
             {t("landing.ctaTitle")}

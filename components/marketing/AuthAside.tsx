@@ -1,5 +1,5 @@
 import { MiniScorecard } from "@/components/marketing/MiniScorecard";
-import { FlagRibbon } from "@/components/marketing/UniversityMarquee";
+import { FlagStrip } from "@/components/marketing/UniversityMarquee";
 import type { TFunc } from "@/lib/i18n/dictionary";
 
 // Decorative panel that fills the empty desktop space beside auth forms.
@@ -33,7 +33,7 @@ export function AuthAside({ t }: { t: TFunc }) {
       </div>
 
       <div className="relative">
-        <FlagRibbon />
+        <FlagStrip />
       </div>
     </aside>
   );

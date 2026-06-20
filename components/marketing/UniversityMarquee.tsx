@@ -1,74 +1,157 @@
-// Infinite scrolling rows of US universities + applicant-country flags.
-// Pure CSS animation (see globals.css); honors prefers-reduced-motion globally.
+"use client";
 
-const SCHOOLS = [
-  "Harvard",
-  "MIT",
-  "Stanford",
-  "Yale",
-  "Princeton",
-  "Columbia",
-  "UPenn",
-  "Brown",
-  "Cornell",
-  "Dartmouth",
-  "Duke",
-  "UChicago",
-  "Northwestern",
-  "Johns Hopkins",
-  "UC Berkeley",
-  "UCLA",
-  "Michigan",
-  "NYU",
-  "Boston University",
-  "USC",
-  "Carnegie Mellon",
-  "Georgia Tech",
+import { useEffect, useRef, useState } from "react";
+
+// A scrolling academic "logo wall": a colored seal (monogram) + serif wordmark
+// for each university. Rendered locally so nothing depends on a flaky logo CDN.
+type Logo = { name: string; mono: string; color: string };
+
+const LOGOS: Logo[] = [
+  { name: "Harvard", mono: "H", color: "#A51C30" },
+  { name: "Yale", mono: "Y", color: "#00356B" },
+  { name: "Princeton", mono: "P", color: "#E77500" },
+  { name: "MIT", mono: "MIT", color: "#A31F34" },
+  { name: "Stanford", mono: "S", color: "#8C1515" },
+  { name: "Columbia", mono: "C", color: "#1D4F91" },
+  { name: "Penn", mono: "P", color: "#990000" },
+  { name: "Brown", mono: "B", color: "#4E3629" },
+  { name: "Cornell", mono: "C", color: "#B31B1B" },
+  { name: "Dartmouth", mono: "D", color: "#00693E" },
+  { name: "Duke", mono: "D", color: "#00539B" },
+  { name: "Chicago", mono: "U", color: "#800000" },
+  { name: "Northwestern", mono: "N", color: "#4E2A84" },
+  { name: "Johns Hopkins", mono: "JH", color: "#002D72" },
+  { name: "Berkeley", mono: "B", color: "#003262" },
+  { name: "UCLA", mono: "LA", color: "#2774AE" },
+  { name: "Michigan", mono: "M", color: "#00274C" },
+  { name: "NYU", mono: "NYU", color: "#57068C" },
+  { name: "Boston U.", mono: "BU", color: "#CC0000" },
+  { name: "USC", mono: "SC", color: "#9D2235" },
+  { name: "Carnegie Mellon", mono: "CM", color: "#C41230" },
+  { name: "Georgia Tech", mono: "GT", color: "#003057" },
 ];
 
-// The "applying from everywhere" vibe.
-const FLAGS = [
-  "🇰🇿", "🇮🇳", "🇳🇬", "🇧🇷", "🇻🇳", "🇪🇬", "🇮🇩", "🇵🇰", "🇹🇷", "🇰🇷",
-  "🇨🇳", "🇲🇽", "🇵🇭", "🇧🇩", "🇰🇪", "🇨🇴", "🇹🇭", "🇺🇿", "🇲🇾", "🇬🇭",
-];
-
-export function UniversityMarquee() {
-  const schools = [...SCHOOLS, ...SCHOOLS];
+function LogoMark({ u }: { u: Logo }) {
   return (
-    <div className="space-y-3">
-      <div className="marquee-row marquee-mask overflow-hidden">
-        <div className="marquee-track gap-3 pr-3">
-          {schools.map((s, i) => (
-            <span
-              key={i}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-line bg-card px-4 py-2 text-sm font-medium text-ink-soft shadow-card"
-            >
-              <span aria-hidden="true">🇺🇸</span>
-              {s}
-            </span>
-          ))}
-        </div>
+    <span className="flex shrink-0 items-center gap-3">
+      <span
+        className="relative flex h-11 w-11 items-center justify-center rounded-full ring-2"
+        style={{ color: u.color }}
+      >
+        <span
+          className="absolute inset-[3px] rounded-full ring-1 ring-current opacity-40"
+          aria-hidden="true"
+        />
+        <span className="font-serif text-[12px] font-bold leading-none">
+          {u.mono}
+        </span>
+      </span>
+      <span className="font-serif text-xl font-semibold tracking-tight text-ink">
+        {u.name}
+      </span>
+    </span>
+  );
+}
+
+function LogoRow({ items, dir }: { items: Logo[]; dir: "left" | "right" }) {
+  const doubled = [...items, ...items];
+  return (
+    <div className="marquee-row marquee-mask overflow-hidden">
+      <div
+        className={`${dir === "left" ? "marquee-track" : "marquee-track-rev"} items-center gap-12 pr-12`}
+      >
+        {doubled.map((u, i) => (
+          <LogoMark key={i} u={u} />
+        ))}
       </div>
     </div>
   );
 }
 
-/** A compact flag ribbon — the international-applicant vibe. */
-export function FlagRibbon() {
-  const flags = [...FLAGS, ...FLAGS];
+export function UniversityLogos() {
+  const mid = Math.ceil(LOGOS.length / 2);
   return (
-    <div className="marquee-row marquee-mask overflow-hidden">
-      <div className="marquee-track-rev gap-2 pr-2">
-        {flags.map((f, i) => (
-          <span
-            key={i}
-            aria-hidden="true"
-            className="inline-flex shrink-0 items-center justify-center rounded-xl border border-line bg-card px-2.5 py-1.5 text-lg shadow-card"
-          >
-            {f}
-          </span>
-        ))}
-      </div>
+    <div className="space-y-6">
+      <LogoRow items={LOGOS.slice(0, mid)} dir="left" />
+      <LogoRow items={LOGOS.slice(mid)} dir="right" />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Real country flags (flagcdn), revealed with a staggered animation on scroll.
+// ---------------------------------------------------------------------------
+const CODES = [
+  "kz", "in", "ng", "br", "vn", "eg", "id", "pk", "tr", "kr",
+  "cn", "mx", "ph", "bd", "ke", "co", "th", "uz", "my", "gh",
+];
+
+export function CountryReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setShown(true);
+      return;
+    }
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setShown(true);
+            io.disconnect();
+          }
+        }
+      },
+      { threshold: 0.2 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="flex flex-wrap justify-center gap-3">
+      {CODES.map((c, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={c}
+          src={`https://flagcdn.com/h80/${c}.png`}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          style={{ transitionDelay: `${i * 45}ms` }}
+          className={`h-12 w-auto rounded-md shadow-lift transition-all duration-500 ease-out ${
+            shown
+              ? "translate-y-0 scale-100 opacity-100"
+              : "translate-y-4 scale-90 opacity-0"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Compact real-flag strip for tight spaces (auth panel). */
+export function FlagStrip({ count = 16 }: { count?: number }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {CODES.slice(0, count).map((c) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={c}
+          src={`https://flagcdn.com/h40/${c}.png`}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          className="h-6 w-auto rounded shadow-sm"
+        />
+      ))}
     </div>
   );
 }
