@@ -7,10 +7,12 @@ import {
   FlagStrip,
 } from "@/components/marketing/UniversityMarquee";
 import { MiniScorecard } from "@/components/marketing/MiniScorecard";
+import { getUniversityLogos } from "@/lib/data/logos";
 import { getT } from "@/lib/i18n/server";
 
 export default function LandingPage() {
   const t = getT();
+  const universityLogos = getUniversityLogos();
   return (
     <main className="min-h-dvh bg-surface">
       {/* Nav */}
@@ -66,7 +68,7 @@ export default function LandingPage() {
           <p className="mb-5 text-center text-xs font-semibold uppercase tracking-wide text-ink-faint">
             {t("landing.trustedBy")}
           </p>
-          <UniversityLogos />
+          <UniversityLogos logos={universityLogos} />
           <p className="mb-4 mt-9 text-center text-xs font-semibold uppercase tracking-wide text-ink-faint">
             {t("landing.fromEverywhere")}
           </p>
