@@ -6,6 +6,7 @@ import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { Flag } from "@/components/ui/Flag";
 import {
   CURRICULA,
   ACTIVITY_TYPES,
@@ -314,9 +315,7 @@ function StepDestinations({ data, set }: StepProps) {
                   : "border-line bg-card hover:border-ink/30"
             }`}
           >
-            <span className="text-3xl leading-none" aria-hidden="true">
-              {d.flag}
-            </span>
+            <Flag code={d.code} size={28} />
             <span className="text-sm font-medium text-ink">
               {t(d.labelKey)}
             </span>

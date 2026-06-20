@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ItalyProgramAnalysis, ItalyDSUFit } from "@/lib/ai/schema";
+import { Flag } from "@/components/ui/Flag";
 
 type Props = {
   programs: ItalyProgramAnalysis[];
@@ -18,7 +19,7 @@ export function ItalyBreakdown({ programs }: Props) {
       {/* Italy context banner */}
       <div className="rounded-2xl border border-line bg-card px-5 py-4">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 text-lg" aria-hidden="true">🇮🇹</span>
+          <Flag code="IT" size={16} className="mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-medium text-ink">Italian Admission Rules</p>
             <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">

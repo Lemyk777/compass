@@ -39,6 +39,9 @@ export const italyProgramSchema = z.object({
     "not_applicable",
   ]),
   annual_fee_eur: z.number(),
+  // One-time fee to APPLY (EUR). Optional so older stored analyses still
+  // validate; computed deterministically for new runs.
+  application_fee_eur: z.number().optional(),
   reasoning: z.string(),
   roadmap: z.array(z.string()),
   notes: z.string(),

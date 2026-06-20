@@ -3,11 +3,22 @@
 import type { Factor } from "@/lib/ai/schema";
 
 // Per-factor bars with notes. The user's own scores → accent fill.
-export function FactorBars({ factors }: { factors: Factor[] }) {
+// `mutedKeys` dims factors that carry little weight for the selected country,
+// so the scorecard visibly emphasizes what matters for that destination.
+export function FactorBars({
+  factors,
+  mutedKeys,
+}: {
+  factors: Factor[];
+  mutedKeys?: Set<string>;
+}) {
   return (
     <ul className="space-y-3.5">
       {factors.map((f) => (
-        <li key={f.key}>
+        <li
+          key={f.key}
+          className={mutedKeys?.has(f.key) ? "opacity-45" : undefined}
+        >
           <div className="mb-1 flex items-baseline justify-between gap-3">
             <span className="text-sm font-medium text-ink">{f.label}</span>
             <span data-num className="text-sm font-semibold text-ink">
