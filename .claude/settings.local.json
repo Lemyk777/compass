@@ -49,7 +49,9 @@
       "Bash(git commit -q -m 'feat: tasteful logo wall \\(academic seals + serif wordmarks\\) and real flags *)",
       "Bash(git merge-tree *)",
       "Bash(echo \"exit=$?\")",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(echo \"--- commit1 exit=$? ---\")",
+      "Bash(echo \"--- commit2 exit=$? ---\")"
     ]
   }
 }
