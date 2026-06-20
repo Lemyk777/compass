@@ -13,8 +13,25 @@ ALTER TABLE student_profiles
   ADD COLUMN IF NOT EXISTS faculties    text[] NOT NULL DEFAULT '{}';
 
 -- Backfill existing rows: before this redesign everyone was a US applicant, so
--- legacy rows map to ['US'] plus 'IT' where include_italy was set.
-UPDATE student_profiles
-  SET destinations = ARRAY['US']
-    || CASE WHEN include_italy THEN ARRAY['IT'] ELSE '{}'::text[] END
-  WHERE cardinality(destinations) = 0;
+-- legacy rows map to ['US'] plus 'IT' where the older include_italy flag was set.
+--
+-- Column-safe: if migration 0003 (include_italy) was never applied to this
+-- database, there can be no Italy selections anyway, so legacy rows just map to
+-- ['US']. The PL/pgSQL block plans each UPDATE lazily, so the include_italy
+-- branch is never parsed when that column is absent.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'student_profiles' AND column_name = 'include_italy'
+  ) THEN
+    UPDATE student_profiles
+      SET destinations = ARRAY['US']
+        || CASE WHEN include_italy THEN ARRAY['IT'] ELSE '{}'::text[] END
+      WHERE cardinality(destinations) = 0;
+  ELSE
+    UPDATE student_profiles
+      SET destinations = ARRAY['US']
+      WHERE cardinality(destinations) = 0;
+  END IF;
+END $$;

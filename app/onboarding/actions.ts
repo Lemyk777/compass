@@ -106,12 +106,34 @@ export type SaveResult =
   | { ok: true }
   | { ok: false; error: string };
 
+// Turn the first Zod issue into a message that points at the offending field —
+// e.g. a too-long activity "Position / Leadership" on a returning profile —
+// instead of a bare "String must contain at most 50 character(s)".
+function describeIssue(err: z.ZodError): string {
+  const issue = err.errors[0];
+  if (!issue) return "Invalid input.";
+  const [section, index, field] = issue.path;
+  if (section === "activities" && typeof index === "number") {
+    const labels: Record<string, string> = {
+      position: "“Position / Leadership” (max 50 characters)",
+      organization: "“Organization” (max 100 characters)",
+      description: "“Description” (max 150 characters)",
+    };
+    const label = labels[String(field)] ?? "a field";
+    return `Activity #${index + 1}: ${label} is too long. Please shorten it.`;
+  }
+  if (section === "honors" && typeof index === "number") {
+    return `Honor #${index + 1}: “Title” is too long (max 100 characters). Please shorten it.`;
+  }
+  return issue.message;
+}
+
 export async function saveProfile(
   input: StudentProfileInput
 ): Promise<SaveResult> {
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.errors[0]?.message ?? "Invalid input." };
+    return { ok: false, error: describeIssue(parsed.error) };
   }
   const data = parsed.data;
 

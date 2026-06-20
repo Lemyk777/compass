@@ -283,6 +283,9 @@ const en: Dict = {
   "report.timelineTitle": "What to do next",
   "report.timelineHint": "A plan across the coming months.",
   "report.summaryTitle": "The bottom line",
+  "report.destTitle": "Your admission odds by country",
+  "report.destHint":
+    "Switch between the countries you're applying to — each has its own rules.",
   "report.fit": "fit",
   "band.exceptional": "Exceptional",
   "band.competitive": "Competitive",
@@ -640,6 +643,9 @@ const ru: Dict = {
   "report.timelineTitle": "Что делать дальше",
   "report.timelineHint": "План на ближайшие месяцы.",
   "report.summaryTitle": "Итог",
+  "report.destTitle": "Ваши шансы по странам",
+  "report.destHint":
+    "Переключайтесь между странами — у каждой свои правила поступления.",
   "report.fit": "соответствие",
   "band.exceptional": "Выдающийся",
   "band.competitive": "Конкурентный",

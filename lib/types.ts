@@ -9,6 +9,13 @@ import {
   type DestinationCode,
 } from "@/lib/data/destinations";
 import { FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
+import { LIMITS } from "@/lib/limits";
+
+/** Trim a value to a max length (after trimming whitespace). */
+function clampText(s: unknown, max: number): string {
+  const t = typeof s === "string" ? s.trim() : "";
+  return t.length > max ? t.slice(0, max) : t;
+}
 
 export const CURRICULA = [
   { value: "IB", label: "International Baccalaureate (IB)" },
@@ -203,12 +210,19 @@ export function normalizeActivities(raw: unknown): Activity[] {
     const o = (a ?? {}) as Record<string, unknown>;
     const legacyTitle = typeof o.title === "string" ? o.title : "";
     const legacyDetail = typeof o.detail === "string" ? o.detail : "";
+    // Clamp to the field caps so a returning profile whose older (longer)
+    // values predate these limits can still be saved instead of being rejected.
     return {
       type: typeof o.type === "string" ? o.type : "",
-      position: typeof o.position === "string" ? o.position : legacyTitle,
-      organization: typeof o.organization === "string" ? o.organization : "",
-      description:
+      position: clampText(
+        typeof o.position === "string" ? o.position : legacyTitle,
+        LIMITS.activityPosition
+      ),
+      organization: clampText(o.organization, LIMITS.activityOrganization),
+      description: clampText(
         typeof o.description === "string" ? o.description : legacyDetail,
+        LIMITS.activityDescription
+      ),
       grades: Array.isArray(o.grades) ? (o.grades as string[]) : [],
       timing: Array.isArray(o.timing) ? (o.timing as string[]) : [],
       hours_per_week:
@@ -230,7 +244,7 @@ export function normalizeHonors(raw: unknown): Honor[] {
   return raw.map((h): Honor => {
     const o = (h ?? {}) as Record<string, unknown>;
     return {
-      title: typeof o.title === "string" ? o.title : "",
+      title: clampText(o.title, LIMITS.honorTitle),
       grades: Array.isArray(o.grades) ? (o.grades as string[]) : [],
       levels: Array.isArray(o.levels) ? (o.levels as string[]) : [],
     };
