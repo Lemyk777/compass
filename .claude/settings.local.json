@@ -50,8 +50,12 @@
       "Bash(git merge-tree *)",
       "Bash(echo \"exit=$?\")",
       "Read(//tmp/**)",
-      "Bash(echo \"--- commit1 exit=$? ---\")",
-      "Bash(echo \"--- commit2 exit=$? ---\")"
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(grep -q \"^/logos/$\" .gitignore)",
+      "Bash(git commit -q -m 'feat: use real university logos in the marquee *)",
+      "Bash(echo \"--- exit=$? ---\")"
     ]
   }
 }
