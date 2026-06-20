@@ -46,7 +46,10 @@
       "Bash(git rev-list *)",
       "Bash(git commit -q -m 'feat: add EN/RU language toggle \\(English default\\), translate the UI *)",
       "Bash(git commit -q -m 'feat: richer landing + two-column auth pages \\(fill desktop space\\) *)",
-      "Bash(git commit -q -m 'feat: tasteful logo wall \\(academic seals + serif wordmarks\\) and real flags *)"
+      "Bash(git commit -q -m 'feat: tasteful logo wall \\(academic seals + serif wordmarks\\) and real flags *)",
+      "Bash(git merge-tree *)",
+      "Bash(echo \"exit=$?\")",
+      "Read(//tmp/**)"
     ]
   }
 }
