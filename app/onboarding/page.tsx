@@ -5,6 +5,8 @@ import {
   emptyProfile,
   normalizeActivities,
   normalizeHonors,
+  normalizeDestinations,
+  normalizeFaculties,
   type StudentProfileInput,
 } from "@/lib/types";
 
@@ -31,17 +33,18 @@ export default async function OnboardingPage() {
     const base = emptyProfile();
     initial = {
       country: session.country ?? "",
+      citizenship: sp.citizenship ?? "",
+      // Country-first: derive from new columns, falling back to legacy rows.
+      destinations: normalizeDestinations(sp.destinations, sp.include_italy),
+      faculties: normalizeFaculties(sp.faculties),
+      intended_major: sp.intended_major ?? "",
       curriculum: sp.curriculum ?? "",
       grades: sp.grades ?? base.grades,
       tests: sp.tests ?? {},
       activities: normalizeActivities(sp.activities),
       honors: normalizeHonors(sp.honors),
       target_schools: sp.target_schools ?? [],
-      intended_major: sp.intended_major ?? "",
-      citizenship: sp.citizenship ?? "",
       needs_aid: sp.needs_aid ?? false,
-      // Italy module (gracefully defaults for pre-migration rows)
-      include_italy: sp.include_italy ?? false,
       italy_programs: sp.italy_programs ?? [],
       italy_family_income: sp.italy_family_income ?? undefined,
     };

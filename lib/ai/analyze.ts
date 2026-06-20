@@ -160,7 +160,12 @@ function buildModelInput(p: StudentProfileInput) {
   return {
     country: clamp(p.country, LIMITS.shortText),
     citizenship: clamp(p.citizenship, LIMITS.shortText),
-    intended_major: clamp(p.intended_major, LIMITS.shortText),
+    // Country-first signals: where they're applying and what they'll study.
+    // These tell the model how to frame the scorecard and whether to produce
+    // US school likelihoods (only when target_schools is non-empty).
+    destinations: p.destinations,
+    faculties: p.faculties,
+    intended_major: clamp(p.intended_major, LIMITS.shortText) || undefined,
     curriculum: p.curriculum,
     grades: { ...p.grades, raw: clamp(p.grades?.raw, LIMITS.grades) ?? "" },
     tests: { ...p.tests, subjects: clamp(p.tests?.subjects, LIMITS.subjects) },

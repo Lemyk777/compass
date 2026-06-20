@@ -63,7 +63,7 @@ export function assembleAnalysis(
   profile: StudentProfileInput
 ): Analysis {
   const hasItaly =
-    profile.include_italy === true &&
+    (profile.destinations ?? []).includes("IT") &&
     (profile.italy_programs ?? []).length > 0;
 
   const italyPrograms = hasItaly

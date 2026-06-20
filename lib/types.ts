@@ -4,6 +4,12 @@
 // The Activities and Honors sections mirror the Common Application 1:1
 // (field set, options, and character limits live in lib/limits.ts).
 
+import {
+  ALL_DESTINATION_CODES,
+  type DestinationCode,
+} from "@/lib/data/destinations";
+import { FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
+
 export const CURRICULA = [
   { value: "IB", label: "International Baccalaureate (IB)" },
   { value: "A-Level", label: "A-Levels" },
@@ -107,19 +113,24 @@ export type Tests = {
 };
 
 export type StudentProfileInput = {
-  country: string; // origin country
+  // ── Where you're from ──
+  country: string; // origin country (where the student lives)
+  citizenship: string;
+  // ── Where you're applying + what you'll study (drive the whole flow) ──
+  destinations: DestinationCode[]; // countries applying to (≥1)
+  faculties: FacultyValue[]; // fields of study (up to LIMITS.faculties)
+  intended_major: string; // optional free-text specialization (may be "")
+  // ── Academics (country-agnostic) ──
   curriculum: Curriculum | "";
   grades: Grades;
   tests: Tests;
   activities: Activity[];
   honors: Honor[];
-  target_schools: string[];   // US university names
-  intended_major: string;
-  citizenship: string;
+  // ── US pathway (active when destinations includes "US") ──
+  target_schools: string[]; // US university names
   needs_aid: boolean;
-  // Italy module — only active when include_italy is true.
-  include_italy: boolean;
-  italy_programs: string[];   // Italian program IDs from the dataset
+  // ── Italy pathway (active when destinations includes "IT") ──
+  italy_programs: string[]; // Italian program IDs from the dataset
   italy_family_income?: number; // Annual family income in EUR (for DSU scholarship estimate)
 };
 
@@ -134,19 +145,52 @@ export function emptyHonor(): Honor {
 export function emptyProfile(): StudentProfileInput {
   return {
     country: "",
+    citizenship: "",
+    destinations: [],
+    faculties: [],
+    intended_major: "",
     curriculum: "",
     grades: { raw: "" },
     tests: {},
     activities: [emptyActivity()],
     honors: [],
     target_schools: [],
-    intended_major: "",
-    citizenship: "",
     needs_aid: false,
-    include_italy: false,
     italy_programs: [],
     italy_family_income: undefined,
   };
+}
+
+/**
+ * Normalize destination codes loaded from the DB. Pre-redesign rows have no
+ * `destinations` column; everyone was a US applicant back then, so legacy rows
+ * map to ["US", …("IT" when include_italy was set)]. Unknown codes are dropped.
+ */
+export function normalizeDestinations(
+  raw: unknown,
+  legacyIncludeItaly?: boolean
+): DestinationCode[] {
+  if (Array.isArray(raw) && raw.length) {
+    const valid = raw.filter(
+      (c): c is DestinationCode =>
+        typeof c === "string" &&
+        (ALL_DESTINATION_CODES as string[]).includes(c)
+    );
+    if (valid.length) return [...new Set(valid)];
+  }
+  const out: DestinationCode[] = ["US"];
+  if (legacyIncludeItaly) out.push("IT");
+  return out;
+}
+
+/** Normalize faculty values loaded from the DB (defensive against drift). */
+export function normalizeFaculties(raw: unknown): FacultyValue[] {
+  if (!Array.isArray(raw)) return [];
+  const valid = raw.filter(
+    (f): f is FacultyValue =>
+      typeof f === "string" && (FACULTY_VALUES as string[]).includes(f)
+  );
+  return [...new Set(valid)];
 }
 
 /**

@@ -10,6 +10,31 @@ import type { StudentProfileInput } from "@/lib/types";
 // and later overwhelm the analysis. The UI mirrors these caps for good UX.
 const inputSchema = z.object({
   country: z.string().trim().min(1, "Tell us your country.").max(LIMITS.shortText),
+  citizenship: z
+    .string()
+    .trim()
+    .min(1, "Add your citizenship.")
+    .max(LIMITS.shortText),
+  destinations: z
+    .array(z.enum(["US", "IT", "UK", "DE", "NL", "CA"]))
+    .min(1, "Pick at least one destination country.")
+    .max(LIMITS.destinations),
+  faculties: z
+    .array(
+      z.enum([
+        "engineering",
+        "computer_science",
+        "business_economics",
+        "natural_sciences",
+        "humanities_social",
+        "medicine_health",
+        "law",
+        "arts_design",
+      ])
+    )
+    .min(1, "Pick at least one field of study.")
+    .max(LIMITS.faculties),
+  intended_major: z.string().trim().max(LIMITS.shortText).optional().default(""),
   curriculum: z.enum(["IB", "A-Level", "national", "US-GPA", "other"], {
     errorMap: () => ({ message: "Pick your curriculum." }),
   }),
@@ -55,20 +80,26 @@ const inputSchema = z.object({
     .max(LIMITS.honors, "Up to 5 honors, like the Common App.")
     .transform((h) => h.filter((x) => x.title.trim().length > 0)),
   target_schools: z.array(z.string()).max(LIMITS.targetSchools),
-  intended_major: z
-    .string()
-    .trim()
-    .min(1, "Add your intended major.")
-    .max(LIMITS.shortText),
-  citizenship: z
-    .string()
-    .trim()
-    .min(1, "Add your citizenship.")
-    .max(LIMITS.shortText),
   needs_aid: z.boolean(),
-  include_italy: z.boolean().default(false),
   italy_programs: z.array(z.string().max(80)).max(8).default([]),
   italy_family_income: z.number().min(0).max(10_000_000).optional(),
+}).superRefine((val, ctx) => {
+  // Each selected destination needs its own targets (mirrors the per-country
+  // step the UI enforces).
+  if (val.destinations.includes("US") && val.target_schools.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Add at least one US target school.",
+      path: ["target_schools"],
+    });
+  }
+  if (val.destinations.includes("IT") && val.italy_programs.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Add at least one Italian program.",
+      path: ["italy_programs"],
+    });
+  }
 });
 
 export type SaveResult =
@@ -104,11 +135,14 @@ export async function saveProfile(
     tests: data.tests,
     activities: data.activities,
     honors: data.honors,
+    destinations: data.destinations,
+    faculties: data.faculties,
     target_schools: data.target_schools,
     intended_major: data.intended_major,
     citizenship: data.citizenship,
     needs_aid: data.needs_aid,
-    include_italy: data.include_italy,
+    // Keep the legacy include_italy column in sync for any old readers.
+    include_italy: data.destinations.includes("IT"),
     italy_programs: data.italy_programs,
     italy_family_income: data.italy_family_income ?? null,
     updated_at: new Date().toISOString(),

@@ -24,10 +24,63 @@ import {
   ITALIAN_PROGRAMS,
   type ItalianProgram,
 } from "@/lib/data/italian-universities";
+import {
+  DESTINATIONS,
+  destinationLabelKey,
+  type DestinationCode,
+} from "@/lib/data/destinations";
+import {
+  FACULTIES,
+  facultyLabelKey,
+  italianFieldsForFaculties,
+  type FacultyValue,
+} from "@/lib/data/faculties";
 import { saveProfile } from "@/app/onboarding/actions";
 import { useT } from "@/lib/i18n/client";
 
-const STEPS = ["You", "Grades", "Tests", "Activities", "Honors", "Schools", "Review"];
+// The intake is country-first: the chosen destinations decide which target
+// steps appear, so the sequence is computed per profile rather than fixed.
+type StepKey =
+  | "origin"
+  | "destinations"
+  | "faculties"
+  | "grades"
+  | "tests"
+  | "activities"
+  | "honors"
+  | "us"
+  | "it"
+  | "review";
+
+const STEP_META: Record<StepKey, { title: string; sub: string }> = {
+  origin: { title: "ob.tOrigin", sub: "ob.sOrigin" },
+  destinations: { title: "ob.tDest", sub: "ob.sDest" },
+  faculties: { title: "ob.tFac", sub: "ob.sFac" },
+  grades: { title: "ob.t1", sub: "ob.s1" },
+  tests: { title: "ob.t2", sub: "ob.s2" },
+  activities: { title: "ob.t3", sub: "ob.s3" },
+  honors: { title: "ob.tHonors", sub: "ob.sHonors" },
+  us: { title: "ob.tUS", sub: "ob.sUS" },
+  it: { title: "ob.tIT", sub: "ob.sIT" },
+  review: { title: "ob.t5", sub: "ob.s5" },
+};
+
+function buildSteps(destinations: DestinationCode[]): StepKey[] {
+  const wantsUS = destinations.includes("US");
+  const wantsIT = destinations.includes("IT");
+  return [
+    "origin",
+    "destinations",
+    "faculties",
+    "grades",
+    "tests",
+    "activities",
+    "honors",
+    ...(wantsUS ? (["us"] as StepKey[]) : []),
+    ...(wantsIT ? (["it"] as StepKey[]) : []),
+    "review",
+  ];
+}
 
 export function Onboarding({
   initial,
@@ -41,7 +94,7 @@ export function Onboarding({
   const [data, setData] = useState<StudentProfileInput>(
     initial ?? emptyProfile()
   );
-  const [step, setStep] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -50,21 +103,38 @@ export function Onboarding({
     value: StudentProfileInput[K]
   ) => setData((d) => ({ ...d, [key]: value }));
 
-  const last = step === STEPS.length - 1;
+  const steps = useMemo(() => buildSteps(data.destinations), [data.destinations]);
+  const clampedIndex = Math.min(stepIndex, steps.length - 1);
+  const stepKey = steps[clampedIndex];
+  const last = clampedIndex === steps.length - 1;
+
+  const goToKey = (key: StepKey) => {
+    const i = steps.indexOf(key);
+    if (i !== -1) setStepIndex(i);
+  };
 
   function validateStep(): string | null {
-    switch (step) {
-      case 0:
+    switch (stepKey) {
+      case "origin":
         if (!data.country.trim()) return t("ob.errCountry");
         if (!data.citizenship.trim()) return t("ob.errCitizenship");
-        if (!data.intended_major.trim()) return t("ob.errMajor");
         return null;
-      case 1:
+      case "destinations":
+        if (data.destinations.length === 0) return t("ob.errDest");
+        return null;
+      case "faculties":
+        if (data.faculties.length === 0) return t("ob.errFac");
+        return null;
+      case "grades":
         if (!data.curriculum) return t("ob.errCurriculum");
         if (!data.grades.raw.trim()) return t("ob.errGrades");
         return null;
-      case 5:
+      case "us":
         if (data.target_schools.length === 0) return t("ob.errSchools");
+        return null;
+      case "it":
+        if ((data.italy_programs ?? []).length === 0)
+          return t("ob.errItalyPrograms");
         return null;
       default:
         return null;
@@ -78,12 +148,12 @@ export function Onboarding({
       return;
     }
     setError(null);
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    setStepIndex(() => Math.min(clampedIndex + 1, steps.length - 1));
   }
 
   function back() {
     setError(null);
-    setStep((s) => Math.max(s - 1, 0));
+    setStepIndex(() => Math.max(clampedIndex - 1, 0));
   }
 
   async function submit() {
@@ -113,33 +183,38 @@ export function Onboarding({
       {/* Progress */}
       <div className="mb-1.5 flex justify-end">
         <span data-num className="text-xs text-ink-faint">
-          {t("ob.step")} {step + 1} {t("ob.of")} {STEPS.length}
+          {t("ob.step")} {clampedIndex + 1} {t("ob.of")} {steps.length}
         </span>
       </div>
       <div className="mb-6 flex gap-1.5" aria-hidden="true">
-        {STEPS.map((_, i) => (
+        {steps.map((_, i) => (
           <div
             key={i}
             className={`h-1.5 flex-1 rounded-full transition-colors ${
-              i <= step ? "bg-accent" : "bg-line"
+              i <= clampedIndex ? "bg-accent" : "bg-line"
             }`}
           />
         ))}
       </div>
 
-      <div className="flex-1 animate-fade-up" key={step}>
+      <div className="flex-1 animate-fade-up" key={clampedIndex}>
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          {t(TITLES[step].title)}
+          {t(STEP_META[stepKey].title)}
         </h1>
-        <p className="mb-6 mt-1 text-sm text-ink-soft">{t(TITLES[step].sub)}</p>
+        <p className="mb-6 mt-1 text-sm text-ink-soft">
+          {t(STEP_META[stepKey].sub)}
+        </p>
 
-        {step === 0 && <StepYou data={data} set={set} />}
-        {step === 1 && <StepGrades data={data} set={set} />}
-        {step === 2 && <StepTests data={data} set={set} />}
-        {step === 3 && <StepActivities data={data} set={set} />}
-        {step === 4 && <StepHonors data={data} set={set} />}
-        {step === 5 && <StepSchools data={data} set={set} />}
-        {step === 6 && <StepReview data={data} goTo={setStep} />}
+        {stepKey === "origin" && <StepOrigin data={data} set={set} />}
+        {stepKey === "destinations" && <StepDestinations data={data} set={set} />}
+        {stepKey === "faculties" && <StepFaculties data={data} set={set} />}
+        {stepKey === "grades" && <StepGrades data={data} set={set} />}
+        {stepKey === "tests" && <StepTests data={data} set={set} />}
+        {stepKey === "activities" && <StepActivities data={data} set={set} />}
+        {stepKey === "honors" && <StepHonors data={data} set={set} />}
+        {stepKey === "us" && <StepUSTargets data={data} set={set} />}
+        {stepKey === "it" && <StepItalyTargets data={data} set={set} />}
+        {stepKey === "review" && <StepReview data={data} goToKey={goToKey} />}
       </div>
 
       {error && (
@@ -149,7 +224,7 @@ export function Onboarding({
       )}
 
       <div className="sticky bottom-0 mt-6 flex gap-3 bg-surface py-4">
-        {step > 0 && (
+        {clampedIndex > 0 && (
           <Button variant="subtle" size="lg" onClick={back} disabled={saving}>
             {t("common.back")}
           </Button>
@@ -172,16 +247,6 @@ export function Onboarding({
   );
 }
 
-const TITLES = [
-  { title: "ob.t0", sub: "ob.s0" },
-  { title: "ob.t1", sub: "ob.s1" },
-  { title: "ob.t2", sub: "ob.s2" },
-  { title: "ob.t3", sub: "ob.s3" },
-  { title: "ob.tHonors", sub: "ob.sHonors" },
-  { title: "ob.t4", sub: "ob.s4" },
-  { title: "ob.t5", sub: "ob.s5" },
-];
-
 type StepProps = {
   data: StudentProfileInput;
   set: <K extends keyof StudentProfileInput>(
@@ -190,7 +255,8 @@ type StepProps = {
   ) => void;
 };
 
-function StepYou({ data, set }: StepProps) {
+// ── Step 1: Origin ──────────────────────────────────────────────────────────
+function StepOrigin({ data, set }: StepProps) {
   const t = useT();
   return (
     <div className="space-y-4">
@@ -212,7 +278,110 @@ function StepYou({ data, set }: StepProps) {
           placeholder={t("ob.countryPh")}
         />
       </Field>
-      <Field label={t("ob.major")} htmlFor="major">
+    </div>
+  );
+}
+
+// ── Step 2: Destinations ────────────────────────────────────────────────────
+function StepDestinations({ data, set }: StepProps) {
+  const t = useT();
+  const selected = data.destinations;
+  const toggle = (code: DestinationCode) =>
+    set(
+      "destinations",
+      selected.includes(code)
+        ? selected.filter((c) => c !== code)
+        : [...selected, code]
+    );
+
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {DESTINATIONS.map((d) => {
+        const on = selected.includes(d.code);
+        const disabled = !d.available;
+        return (
+          <button
+            key={d.code}
+            type="button"
+            disabled={disabled}
+            aria-pressed={on}
+            onClick={() => toggle(d.code)}
+            className={`relative flex flex-col items-start gap-2 rounded-2xl border p-4 text-left transition-colors focus-visible:focus-ring ${
+              disabled
+                ? "cursor-not-allowed border-line bg-card opacity-50"
+                : on
+                  ? "border-accent bg-accent-soft"
+                  : "border-line bg-card hover:border-ink/30"
+            }`}
+          >
+            <span className="text-3xl leading-none" aria-hidden="true">
+              {d.flag}
+            </span>
+            <span className="text-sm font-medium text-ink">
+              {t(d.labelKey)}
+            </span>
+            {disabled ? (
+              <span className="absolute right-3 top-3 rounded-full bg-line px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-faint">
+                {t("dest.soon")}
+              </span>
+            ) : (
+              on && (
+                <span className="absolute right-3 top-3 text-accent">
+                  <Check />
+                </span>
+              )
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Step 3: Faculties ───────────────────────────────────────────────────────
+function StepFaculties({ data, set }: StepProps) {
+  const t = useT();
+  const selected = data.faculties;
+  const atCap = selected.length >= LIMITS.faculties;
+  const toggle = (v: FacultyValue) => {
+    if (selected.includes(v)) {
+      set("faculties", selected.filter((x) => x !== v));
+    } else if (!atCap) {
+      set("faculties", [...selected, v]);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <div className="flex flex-wrap gap-2">
+          {FACULTIES.map((f) => {
+            const on = selected.includes(f.value);
+            const dis = !on && atCap;
+            return (
+              <button
+                key={f.value}
+                type="button"
+                aria-pressed={on}
+                disabled={dis}
+                onClick={() => toggle(f.value)}
+                className={`rounded-full border px-3.5 py-2 text-sm transition-colors focus-visible:focus-ring ${
+                  on
+                    ? "border-accent bg-accent-soft text-accent-ink"
+                    : dis
+                      ? "cursor-not-allowed border-line bg-card text-ink-faint opacity-50"
+                      : "border-line bg-card text-ink-soft hover:border-ink/30"
+                }`}
+              >
+                {t(f.labelKey)}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-xs text-ink-faint">{t("ob.facCap")}</p>
+      </div>
+
+      <Field label={t("ob.major")} htmlFor="major" hint={t("ob.majorHint")}>
         <Input
           id="major"
           value={data.intended_major}
@@ -221,70 +390,6 @@ function StepYou({ data, set }: StepProps) {
           placeholder={t("ob.majorPh")}
         />
       </Field>
-
-      {/* Italy geolocation trigger */}
-      <div className="rounded-xl border border-line bg-card px-4 py-3.5">
-        <label className="flex cursor-pointer items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-base" aria-hidden="true">🇮🇹</span>
-            <span className="text-sm font-medium text-ink">
-              {t("ob.italyToggle")}
-            </span>
-          </div>
-          <Toggle
-            checked={data.include_italy}
-            onChange={(v) => {
-              set("include_italy", v);
-              if (!v) {
-                set("italy_family_income", undefined);
-                set("italy_programs", []);
-              }
-            }}
-          />
-        </label>
-
-        {/* Smooth reveal of Italy financial module */}
-        {data.include_italy && (
-          <div className="mt-4 space-y-3 border-t border-line pt-4">
-            <Field
-              label={t("ob.italyIncome")}
-              htmlFor="italy-income"
-              hint={t("ob.italyIncomeHint")}
-            >
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-faint">
-                    €
-                  </span>
-                  <Input
-                    id="italy-income"
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={10_000_000}
-                    value={data.italy_family_income ?? ""}
-                    onChange={(e) =>
-                      set(
-                        "italy_family_income",
-                        numOrUndef(e.target.value)
-                      )
-                    }
-                    placeholder={t("ob.italyIncomePh")}
-                    className="pl-8"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => set("italy_family_income", undefined)}
-                  className="rounded-xl border border-line bg-card px-3 text-sm text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
-                >
-                  {t("ob.italyIncomeSkip")}
-                </button>
-              </div>
-            </Field>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -734,16 +839,11 @@ function StepHonors({ data, set }: StepProps) {
   );
 }
 
-function StepSchools({ data, set }: StepProps) {
+// ── Target step: US universities ────────────────────────────────────────────
+function StepUSTargets({ data, set }: StepProps) {
   const t = useT();
   const [query, setQuery] = useState("");
-  const [italyQuery, setItalyQuery] = useState("");
   const selected = data.target_schools;
-  const selectedItaly = useMemo(
-    () => data.italy_programs ?? [],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data.italy_programs]
-  );
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -752,23 +852,104 @@ function StepSchools({ data, set }: StepProps) {
     ).slice(0, 6);
   }, [query, selected]);
 
-  const italySuggestions = useMemo((): ItalianProgram[] => {
-    const q = italyQuery.trim().toLowerCase();
-    return ITALIAN_PROGRAMS.filter(
-      (p) =>
-        !selectedItaly.includes(p.id) &&
-        (q === "" ||
-          p.university.toLowerCase().includes(q) ||
-          p.program_name.toLowerCase().includes(q) ||
-          p.city.toLowerCase().includes(q))
-    ).slice(0, 6);
-  }, [italyQuery, selectedItaly]);
-
   const addSchool = (name: string) => {
-    if (!selected.includes(name) && selected.length < 12)
+    if (!selected.includes(name) && selected.length < LIMITS.targetSchools)
       set("target_schools", [...selected, name]);
     setQuery("");
   };
+
+  return (
+    <div className="space-y-4">
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {selected.map((s) => (
+            <span
+              key={s}
+              className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-sm text-white"
+            >
+              {s}
+              <button
+                type="button"
+                onClick={() =>
+                  set(
+                    "target_schools",
+                    selected.filter((x) => x !== s)
+                  )
+                }
+                aria-label={`Remove ${s}`}
+                className="text-white/70 hover:text-white focus-visible:focus-ring"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <Field label={t("ob.searchSchools")} htmlFor="school-search">
+        <Input
+          id="school-search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("ob.searchPh")}
+        />
+      </Field>
+
+      {(query !== "" || selected.length === 0) && (
+        <div className="overflow-hidden rounded-xl border border-line bg-card">
+          {suggestions.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-ink-faint">
+              {t("ob.noMatches")}
+            </p>
+          ) : (
+            suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => addSchool(s)}
+                className="block w-full border-b border-line px-4 py-2.5 text-left text-sm text-ink last:border-0 hover:bg-accent-soft focus-visible:focus-ring"
+              >
+                {s}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+
+      <label className="flex items-center justify-between rounded-xl border border-line bg-card px-4 py-3">
+        <span className="text-sm text-ink">{t("ob.needAid")}</span>
+        <Toggle checked={data.needs_aid} onChange={(v) => set("needs_aid", v)} />
+      </label>
+    </div>
+  );
+}
+
+// ── Target step: Italian programs (pre-filtered by chosen faculties) ─────────
+function StepItalyTargets({ data, set }: StepProps) {
+  const t = useT();
+  const [italyQuery, setItalyQuery] = useState("");
+  const selectedItaly = useMemo(
+    () => data.italy_programs ?? [],
+    [data.italy_programs]
+  );
+  const facultyKey = data.faculties.join(",");
+
+  const italySuggestions = useMemo((): ItalianProgram[] => {
+    const q = italyQuery.trim().toLowerCase();
+    const fields = italianFieldsForFaculties(facultyKey ? facultyKey.split(",") : []);
+    return ITALIAN_PROGRAMS.filter((p) => {
+      if (selectedItaly.includes(p.id)) return false;
+      if (q !== "") {
+        return (
+          p.university.toLowerCase().includes(q) ||
+          p.program_name.toLowerCase().includes(q) ||
+          p.city.toLowerCase().includes(q)
+        );
+      }
+      // No query: pre-filter to the fields implied by the chosen faculties.
+      return fields.length === 0 || fields.includes(p.field);
+    }).slice(0, 6);
+  }, [italyQuery, selectedItaly, facultyKey]);
 
   const addItalyProgram = (id: string) => {
     if (!selectedItaly.includes(id) && selectedItaly.length < 8)
@@ -783,176 +964,134 @@ function StepSchools({ data, set }: StepProps) {
     ITALIAN_PROGRAMS.find((p) => p.id === id);
 
   return (
-    <div className="space-y-6">
-      {/* US Universities section */}
-      <div className="space-y-4">
-        <p className="text-xs font-semibold uppercase tracking-widest text-ink-faint">
-          US Universities
-        </p>
+    <div className="space-y-4">
+      <p className="text-xs text-ink-soft">{t("ob.italyProgramsHint")}</p>
 
-        {selected.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {selected.map((s) => (
-              <span
-                key={s}
-                className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-sm text-white"
+      {selectedItaly.length > 0 && (
+        <div className="space-y-2">
+          {selectedItaly.map((id) => {
+            const prog = italyProgramById(id);
+            if (!prog) return null;
+            return (
+              <div
+                key={id}
+                className="flex items-start justify-between gap-3 rounded-xl border border-line bg-card px-4 py-3"
               >
-                {s}
-                <button
-                  type="button"
-                  onClick={() =>
-                    set(
-                      "target_schools",
-                      selected.filter((x) => x !== s)
-                    )
-                  }
-                  aria-label={`Remove ${s}`}
-                  className="text-white/70 hover:text-white focus-visible:focus-ring"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-
-        <Field label={t("ob.searchSchools")} htmlFor="school-search">
-          <Input
-            id="school-search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("ob.searchPh")}
-          />
-        </Field>
-
-        {(query !== "" || selected.length === 0) && (
-          <div className="overflow-hidden rounded-xl border border-line bg-card">
-            {suggestions.length === 0 ? (
-              <p className="px-4 py-3 text-sm text-ink-faint">
-                {t("ob.noMatches")}
-              </p>
-            ) : (
-              suggestions.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => addSchool(s)}
-                  className="block w-full border-b border-line px-4 py-2.5 text-left text-sm text-ink last:border-0 hover:bg-accent-soft focus-visible:focus-ring"
-                >
-                  {s}
-                </button>
-              ))
-            )}
-          </div>
-        )}
-
-        <label className="flex items-center justify-between rounded-xl border border-line bg-card px-4 py-3">
-          <span className="text-sm text-ink">{t("ob.needAid")}</span>
-          <Toggle
-            checked={data.needs_aid}
-            onChange={(v) => set("needs_aid", v)}
-          />
-        </label>
-      </div>
-
-      {/* Italian programs section — only shown when Italy is enabled */}
-      {data.include_italy && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <span aria-hidden="true">🇮🇹</span>
-            <p className="text-xs font-semibold uppercase tracking-widest text-ink-faint">
-              {t("ob.italyPrograms")}
-            </p>
-          </div>
-          <p className="text-xs text-ink-soft">{t("ob.italyProgramsHint")}</p>
-
-          {selectedItaly.length > 0 && (
-            <div className="space-y-2">
-              {selectedItaly.map((id) => {
-                const prog = italyProgramById(id);
-                if (!prog) return null;
-                return (
-                  <div
-                    key={id}
-                    className="flex items-start justify-between gap-3 rounded-xl border border-line bg-card px-4 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-ink">
-                        {prog.university}
-                      </p>
-                      <p className="truncate text-xs text-ink-soft">
-                        {prog.program_name} · {prog.city} ·{" "}
-                        {prog.level.toUpperCase()}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeItalyProgram(id)}
-                      aria-label={`Remove ${prog.program_name}`}
-                      className="shrink-0 rounded px-1 text-xs text-ink-faint hover:text-reach focus-visible:focus-ring"
-                    >
-                      {t("ob.remove")}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {selectedItaly.length < 8 && (
-            <>
-              <Field
-                label={t("ob.italyProgramsPh")}
-                htmlFor="italy-search"
-              >
-                <Input
-                  id="italy-search"
-                  value={italyQuery}
-                  onChange={(e) => setItalyQuery(e.target.value)}
-                  placeholder={t("ob.italyProgramsPh")}
-                />
-              </Field>
-
-              {(italyQuery !== "" || selectedItaly.length === 0) && (
-                <div className="overflow-hidden rounded-xl border border-line bg-card">
-                  {italySuggestions.length === 0 ? (
-                    <p className="px-4 py-3 text-sm text-ink-faint">
-                      {t("ob.italyNoMatches")}
-                    </p>
-                  ) : (
-                    italySuggestions.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => addItalyProgram(p.id)}
-                        className="block w-full border-b border-line px-4 py-2.5 text-left last:border-0 hover:bg-accent-soft focus-visible:focus-ring"
-                      >
-                        <p className="text-sm text-ink">{p.university}</p>
-                        <p className="text-xs text-ink-soft">
-                          {p.program_name} · {p.city} · {p.level.toUpperCase()} · {p.language}
-                        </p>
-                      </button>
-                    ))
-                  )}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-ink">
+                    {prog.university}
+                  </p>
+                  <p className="truncate text-xs text-ink-soft">
+                    {prog.program_name} · {prog.city} ·{" "}
+                    {prog.level.toUpperCase()}
+                  </p>
                 </div>
-              )}
-            </>
-          )}
+                <button
+                  type="button"
+                  onClick={() => removeItalyProgram(id)}
+                  aria-label={`Remove ${prog.program_name}`}
+                  className="shrink-0 rounded px-1 text-xs text-ink-faint hover:text-reach focus-visible:focus-ring"
+                >
+                  {t("ob.remove")}
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
+
+      {selectedItaly.length < 8 && (
+        <>
+          <Field label={t("ob.italyPrograms")} htmlFor="italy-search">
+            <Input
+              id="italy-search"
+              value={italyQuery}
+              onChange={(e) => setItalyQuery(e.target.value)}
+              placeholder={t("ob.italyProgramsPh")}
+            />
+          </Field>
+
+          {(italyQuery !== "" || selectedItaly.length === 0) && (
+            <div className="overflow-hidden rounded-xl border border-line bg-card">
+              {italySuggestions.length === 0 ? (
+                <p className="px-4 py-3 text-sm text-ink-faint">
+                  {italyQuery === ""
+                    ? t("ob.italyNoFieldMatches")
+                    : t("ob.italyNoMatches")}
+                </p>
+              ) : (
+                italySuggestions.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => addItalyProgram(p.id)}
+                    className="block w-full border-b border-line px-4 py-2.5 text-left last:border-0 hover:bg-accent-soft focus-visible:focus-ring"
+                  >
+                    <p className="text-sm text-ink">{p.university}</p>
+                    <p className="text-xs text-ink-soft">
+                      {p.program_name} · {p.city} · {p.level.toUpperCase()} ·{" "}
+                      {p.language}
+                    </p>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      <Field
+        label={t("ob.italyIncome")}
+        htmlFor="italy-income"
+        hint={t("ob.italyIncomeHint")}
+      >
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-faint">
+              €
+            </span>
+            <Input
+              id="italy-income"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={10_000_000}
+              value={data.italy_family_income ?? ""}
+              onChange={(e) =>
+                set("italy_family_income", numOrUndef(e.target.value))
+              }
+              placeholder={t("ob.italyIncomePh")}
+              className="pl-8"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => set("italy_family_income", undefined)}
+            className="rounded-xl border border-line bg-card px-3 text-sm text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
+          >
+            {t("ob.italyIncomeSkip")}
+          </button>
+        </div>
+      </Field>
     </div>
   );
 }
 
 function StepReview({
   data,
-  goTo,
+  goToKey,
 }: {
   data: StudentProfileInput;
-  goTo: (n: number) => void;
+  goToKey: (key: StepKey) => void;
 }) {
   const t = useT();
 
+  const destinationSummary = data.destinations
+    .map((c) => t(destinationLabelKey(c) ?? c))
+    .join(", ");
+  const facultySummary = data.faculties
+    .map((v) => t(facultyLabelKey(v) ?? v))
+    .join(", ");
   const italyProgramSummary = (data.italy_programs ?? [])
     .map((id) => {
       const p = ITALIAN_PROGRAMS.find((x) => x.id === id);
@@ -960,43 +1099,72 @@ function StepReview({
     })
     .join(", ");
 
-  const rows: { label: string; value: string; step: number }[] = [
-    { label: t("ob.rCountry"), value: data.country || "—", step: 0 },
-    { label: t("ob.rCitizenship"), value: data.citizenship || "—", step: 0 },
-    { label: t("ob.rMajor"), value: data.intended_major || "—", step: 0 },
+  const wantsUS = data.destinations.includes("US");
+  const wantsIT = data.destinations.includes("IT");
+
+  const rows: { label: string; value: string; step: StepKey }[] = [
+    { label: t("ob.rCountry"), value: data.country || "—", step: "origin" },
+    {
+      label: t("ob.rCitizenship"),
+      value: data.citizenship || "—",
+      step: "origin",
+    },
+    {
+      label: t("ob.rDestinations"),
+      value: destinationSummary || "—",
+      step: "destinations",
+    },
+    {
+      label: t("ob.rFaculties"),
+      value: facultySummary || "—",
+      step: "faculties",
+    },
+    ...(data.intended_major.trim()
+      ? [
+          {
+            label: t("ob.rMajor"),
+            value: data.intended_major,
+            step: "faculties" as StepKey,
+          },
+        ]
+      : []),
     {
       label: t("ob.rCurriculum"),
       value: data.curriculum ? t(`curr.${data.curriculum}`) : "—",
-      step: 1,
+      step: "grades",
     },
-    { label: t("ob.rGrades"), value: data.grades.raw || "—", step: 1 },
-    { label: t("ob.rTests"), value: testSummary(data) || "—", step: 2 },
+    { label: t("ob.rGrades"), value: data.grades.raw || "—", step: "grades" },
+    { label: t("ob.rTests"), value: testSummary(data) || "—", step: "tests" },
     {
       label: t("ob.rActivities"),
       value: `${data.activities.filter((a) => a.position.trim()).length} ${t("ob.added")}`,
-      step: 3,
+      step: "activities",
     },
     {
       label: t("ob.rHonors"),
       value: `${(data.honors ?? []).filter((h) => h.title.trim()).length} ${t("ob.added")}`,
-      step: 4,
+      step: "honors",
     },
-    {
-      label: t("ob.rSchools"),
-      value: data.target_schools.join(", ") || "—",
-      step: 5,
-    },
-    {
-      label: t("ob.rAid"),
-      value: data.needs_aid ? t("ob.yes") : t("ob.no"),
-      step: 5,
-    },
-    ...(data.include_italy
+    ...(wantsUS
+      ? [
+          {
+            label: t("ob.rSchools"),
+            value: data.target_schools.join(", ") || "—",
+            step: "us" as StepKey,
+          },
+          {
+            label: t("ob.rAid"),
+            value: data.needs_aid ? t("ob.yes") : t("ob.no"),
+            step: "us" as StepKey,
+          },
+        ]
+      : []),
+    ...(wantsIT
       ? [
           {
             label: t("ob.rItalyPrograms"),
             value: italyProgramSummary || "—",
-            step: 5,
+            step: "it" as StepKey,
           },
           {
             label: t("ob.rItalyIncome"),
@@ -1004,7 +1172,7 @@ function StepReview({
               data.italy_family_income != null
                 ? `€${data.italy_family_income.toLocaleString()}`
                 : t("ob.italyIncomeSkip"),
-            step: 0,
+            step: "it" as StepKey,
           },
         ]
       : []),
@@ -1020,7 +1188,7 @@ function StepReview({
           <span className="flex-1 text-sm text-ink">{r.value}</span>
           <button
             type="button"
-            onClick={() => goTo(r.step)}
+            onClick={() => goToKey(r.step)}
             className="rounded text-xs font-medium text-accent hover:underline focus-visible:focus-ring"
           >
             {t("ob.edit")}

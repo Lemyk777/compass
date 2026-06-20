@@ -158,7 +158,7 @@ function ShareButton({ score }: { score: number }) {
 
   async function share() {
     const url = typeof window !== "undefined" ? window.location.origin : "";
-    const text = `I scored ${score}/100 on my Compass US-university competitiveness scorecard.`;
+    const text = `I scored ${score}/100 on my Compass university competitiveness scorecard.`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "My Compass scorecard", text, url });
