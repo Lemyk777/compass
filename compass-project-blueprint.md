@@ -6,9 +6,9 @@
 
 ## 1. What this is (and what it deliberately is NOT)
 
-**It is:** an AI guidance tool for internationally-minded students — especially in markets where good college counseling barely exists — that takes a student's academic profile and tells them *where they realistically stand* and *what to do next* to strengthen their application to **American universities**.
+**It is:** an AI guidance tool for internationally-minded students — especially in markets where good college counseling barely exists — that takes a student's academic profile and tells them *where they realistically stand* and *what to do next* to strengthen their application to **American and Italian universities** (with infrastructure for more countries).
 
-> **Scope (for now): US universities only.** The entire analysis is tuned for the US holistic admissions system. This is a feature, not a limitation — going deep on one system beats spreading thin across many, and it sharply simplifies the intake, the data you need, and the AI logic. Other destinations (UK, Canada, Europe) can be added later once the US experience is genuinely good.
+> **Scope:** Currently supports US universities (via AI holistic evaluation) and Italian universities (via strict deterministic score ranking). Other destinations (UK, Canada, Europe) are in the architecture and can be added later.
 
 **It is NOT:** a single overconfident number ("you have a 37% chance at Harvard") presented as fact. Admission at selective US schools is holistic and high-variance, so any *likelihood* is an estimate — shown as a **range with a confidence level**, never a falsely precise point. But the tool absolutely *is* heavily quantified: the part it scores with confidence is the **profile itself** (leadership, academics, testing, etc.), where numbers are honest and genuinely useful. The output is a rich, data-driven report — scores, charts, likelihood ranges, benchmarks, and ranked school recommendations — plus the reasoning and action plan behind every number.
 
@@ -53,8 +53,8 @@ The international focus lives here. Most tools assume a US student; yours must n
 - **Academics** — grades *in their own system*, with the tool normalizing them internally. Never force a 4.0 GPA on an A-Level student.
 - **Standardized tests** — SAT/ACT, IELTS/TOEFL, and subject results (AP/IB/A-Level subjects + grades/predicted grades).
 - **Extracurriculars / awards / leadership / projects** — free text + structured tags.
-- **Target US universities + intended major** — pick from a curated list of American schools.
-- **(Destination is fixed: US universities only, for now.)** No country selector needed — the whole engine is tuned for US holistic admissions, which keeps the intake shorter and the logic sharper.
+- **Target US universities + intended major** — pick from a curated list of American schools (if US is selected).
+- **Target Italian programs + family income** — select from a dataset of Italian university programs and provide income for DSU scholarship estimates (if Italy is selected).
 - **Citizenship + financial-aid need** (optional) — flags need-aware vs need-blind realities at US schools, which matter enormously for international applicants.
 
 Design rule: **progressive disclosure.** Don't show a 40-field form. Ask in short steps with progress, mobile-thumb-friendly.
@@ -217,7 +217,7 @@ You do **not** need the finished product for YYGS. You need something **demoable
 
 ## 8. Open decisions to lock before writing more code
 
-1. ~~Destination scope~~ — **Decided: US universities only** for now. Don't add other countries until the US experience is genuinely strong; depth in one admissions system is your advantage.
+1. ~~Destination scope~~ — **Decided: US and Italy** are fully integrated. The architecture is ready for more, but depth in current systems is preferred over breadth.
 2. **Curated school list:** which ~50–150 US universities you cover at launch, and where you source their data (Common Data Set figures, published acceptance rates, mid-range admitted stats for benchmarks).
 3. **The scoring rubric:** the exact factors and weights behind the 0–10 scores and the 0–100 overall — this *is* your product's intelligence and should be deliberate, not whatever the model improvises. Lock it before building the AI prompt.
 4. **The name and one-line promise** — both should signal *guidance + insight*, not a single prediction.

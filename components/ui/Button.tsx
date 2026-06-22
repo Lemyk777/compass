@@ -4,12 +4,12 @@ import { ComponentProps } from "react";
 type Variant = "primary" | "ghost" | "subtle";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors focus-visible:focus-ring disabled:opacity-50 disabled:pointer-events-none";
+  "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
 
 const sizes = {
-  md: "h-11 px-5 text-[0.95rem]",
-  lg: "h-12 px-6 text-base",
-  sm: "h-9 px-3.5 text-sm",
+  md: "h-12 px-6 text-[0.95rem]",
+  lg: "h-14 px-8 text-base",
+  sm: "h-11 px-4 text-sm", // Min 44px touch target (UI/UX Pro Max)
 };
 
 const variants: Record<Variant, string> = {

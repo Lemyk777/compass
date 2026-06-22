@@ -10,7 +10,7 @@
 ## 1. What it is
 
 Compass is a web app that helps **internationally-based high-school students
-assess and improve their applications to US universities**. A student enters
+assess and improve their applications to universities abroad (currently US and Italy)**. A student enters
 their academic profile and gets a **rich, visual, honest report**: scored profile
 factors, an overall competitiveness score (0–100), per-school admission
 likelihood *ranges* with a confidence level, benchmark comparisons, a quantified
@@ -56,8 +56,7 @@ confidence label. Never imply certainty for hyper-selective schools.
    `prefers-reduced-motion` honored.
 6. **Typed throughout.** Shared types for the profile and analysis live in
    `lib/types.ts` and `lib/ai/schema.ts` — reuse them on client and server.
-7. **US universities only** (for now). The dataset, prompt, and benchmarks are
-   US-centric (`lib/data/universities.ts`).
+7. **Multiple Destinations:** The architecture supports multiple countries (`lib/data/destinations.ts`). The US uses an AI-driven pathway, while Italy uses a strict, deterministic code-driven pipeline (`lib/ai/italy-analyze.ts`).
 
 ---
 
@@ -274,7 +273,5 @@ The repo's "no live keys here" workflow is recorded in the project memory.
 
 - Deferred: automated leaderboard/tier unlocks, transactional email, a premium
   Sonnet "deep analysis" tier, essay-angle generation, payments.
-- **Italy support:** a `feature/italy-module` branch exists on the remote (not
-  merged). The whole product is US-only today (dataset, prompt, benchmarks); real
-  multi-country support is a larger change (different metrics + prompt).
+- **Other Countries:** UK, DE, NL, CA are placeholders in `destinations.ts` and not yet active.
 - **AI report in Russian** when RU is selected: not done (prompt change needed).

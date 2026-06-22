@@ -11,6 +11,9 @@
   --line: #e6e2da;
   --accent: #2f6fed;
   --accent-soft: #e4ecfd;
+  --ivy: #0e7b57;
+  --ivy-ink: #0a5c41;
+  --ivy-soft: #e7f2ec;
   --reach: #e0664f;
   --target: #d98a2b;
   --likely: #3f9b6e;
@@ -86,6 +89,26 @@
 .marquee-row:hover .marquee-track,
 .marquee-row:hover .marquee-track-rev {
   animation-play-state: paused;
+}
+
+/* ---- Hero ambient: faint dotted grid, masked to fade toward the edges ------ */
+.hero-grid {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(16, 25, 43, 0.05) 1px,
+    transparent 0
+  );
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 75% 55% at 50% 0%,
+    #000 35%,
+    transparent 78%
+  );
+  mask-image: radial-gradient(
+    ellipse 75% 55% at 50% 0%,
+    #000 35%,
+    transparent 78%
+  );
 }
 
 /* ---- Auth aside: ambient + entrance animations ---------------------------- */

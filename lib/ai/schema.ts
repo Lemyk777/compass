@@ -59,6 +59,8 @@ export const factorSchema = z.object({
   key: z.string(),
   label: z.string(),
   score: z.number().min(0).max(10),
+  rubric_tier: z.string(),
+  reasoning: z.array(z.string()),
   note: z.string(),
 });
 

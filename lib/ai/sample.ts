@@ -87,13 +87,13 @@ export const SAMPLE_PROFILE: StudentProfileInput = {
 export const SAMPLE_ANALYSIS: Analysis = {
   overall_score: 73,
   factors: [
-    { key: "academics", label: "Academics", score: 8, note: "A*A*A in a rigorous A-Level set is strong for selective US targets." },
-    { key: "test_scores", label: "Test scores", score: 9, note: "SAT 1520 and IELTS 8.0 are competitive almost everywhere on your list." },
-    { key: "course_rigor", label: "Course rigor", score: 7, note: "A-Levels in quantitative subjects show real rigor; more breadth would help." },
-    { key: "leadership", label: "Leadership", score: 8, note: "Co-founding a funded startup is authentic, high-agency leadership." },
-    { key: "extracurricular_depth", label: "Extracurricular depth", score: 7, note: "Focused around entrepreneurship and competitions — coherent, not scattered." },
-    { key: "awards", label: "Awards & recognition", score: 6, note: "Top-7 of 1,200 is strong; a clearly national/international title would lift this." },
-    { key: "narrative_fit", label: "Narrative / fit", score: 7, note: "Founder story fits Finance/Business well; tie it to a specific 'why this school'." },
+    { key: "academics", label: "Academics", score: 8, rubric_tier: "Tier 8: Straight A*/A profile in most rigorous curriculum available", reasoning: ["Perfect 4.0 equivalent GPA", "Most rigorous A-Level selection"], note: "A*A*A in a rigorous A-Level set is strong for selective US targets." },
+    { key: "test_scores", label: "Test scores", score: 9, rubric_tier: "Tier 9: Top 1% nationally, exceptional standardized scores", reasoning: ["SAT 1520 is in the top 1%", "IELTS 8.0 demonstrates perfect English proficiency"], note: "SAT 1520 and IELTS 8.0 are competitive almost everywhere on your list." },
+    { key: "course_rigor", label: "Course rigor", score: 7, rubric_tier: "Tier 7: Highly rigorous, but lacking breadth", reasoning: ["Quantitative subjects are maxed out", "Missing humanities breadth for top-tier liberal arts"], note: "A-Levels in quantitative subjects show real rigor; more breadth would help." },
+    { key: "leadership", label: "Leadership", score: 8, rubric_tier: "Tier 8: Regional/National impact founder or leader", reasoning: ["Co-founded funded startup", "Led team of 20+ people"], note: "Co-founding a funded startup is authentic, high-agency leadership." },
+    { key: "extracurricular_depth", label: "Extracurricular depth", score: 7, rubric_tier: "Tier 7: Deep spike in one specific area with measurable impact", reasoning: ["Consistent 3-year commitment", "Clear theme around entrepreneurship"], note: "Focused around entrepreneurship and competitions — coherent, not scattered." },
+    { key: "awards", label: "Awards & recognition", score: 6, rubric_tier: "Tier 6: Significant regional or minor national recognition", reasoning: ["Top 7 out of 1200 participants locally", "Lacks international-tier verification"], note: "Top-7 of 1,200 is strong; a clearly national/international title would lift this." },
+    { key: "narrative_fit", label: "Narrative / fit", score: 7, rubric_tier: "Tier 7: Clear, authentic story that aligns well with stated major", reasoning: ["Founder story aligns perfectly with business major", "Lacks specific 'Why Us' hooks for individual schools"], note: "Founder story fits Finance/Business well; tie it to a specific 'why this school'." },
   ],
   schools: [
     { name: "Princeton University", tier: "reach", likelihood_low: 4, likelihood_high: 9, confidence: "low", fit_score: 7, reason: "Excellent profile, but ~4% admit rates make this a reach for everyone — and Princeton has no undergrad business major." },

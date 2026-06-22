@@ -7,17 +7,25 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:analyze": "node --env-file=.env.local --import tsx scripts/test-analyze.ts"
+    "test:analyze": "node --env-file=.env.local --import tsx scripts/test-analyze.ts",
+    "test:onboarding": "node --experimental-test-module-mocks --import tsx --test scripts/test-onboarding.ts",
+    "create:test-user": "node --env-file=.env.local --import tsx scripts/create-test-user.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
+    "@types/d3-geo": "^3.1.0",
+    "clsx": "^2.1.1",
+    "d3-geo": "^3.1.1",
+    "framer-motion": "^12.40.0",
+    "lucide-react": "^1.21.0",
     "next": "^14.2.35",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.15.0",
+    "tailwind-merge": "^3.6.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -43,6 +43,11 @@ ${rubricBlock()}
 
 The system computes the overall 0-100 score from your factor scores using these exact rubric weights — so score every factor carefully and consistently; do NOT output an overall score yourself. The factor scores describe the STUDENT, so state them as confident point values.
 
+# Factor Argumentation (Crucial)
+For every factor, you MUST explicitly state the Tier (e.g. "Tier 4 (2-4 points)") in "rubric_tier" that best matches the student based on the rubric.
+In the "reasoning" array, provide 2-3 specific bullet points citing the exact hours, roles, or grades from the profile that justify this tier. 
+Crucial: Distinguish between genuine involvement and performative 'resume padding'. If a student lists many activities with only 1-2 hours/week and vague descriptions, penalize the score (1-2/10). Conversely, treat heavy 'Family Responsibilities' or paid work (15+ hours/week) as HIGH-TIER leadership and depth (6-8/10), recognizing the real-world maturity it demands.
+
 # Reading the profile (Common App format)
 The profile's "activities" and "honors" arrive as structured Common Application data:
 - activities[]: { type, position, organization, description, grades, timing, hours_per_week, weeks_per_year, continue_in_college }. Judge leadership and depth from the ROLE (position), the impact and scale (description, organization), and the COMMITMENT (hours_per_week x weeks_per_year, sustained across multiple grades) — never reward a long list of shallow entries.
@@ -75,7 +80,16 @@ Provide actionable items grouped by horizon: "1 month", "3 months", "6 months".
 
 # Output JSON schema (return EXACTLY this shape)
 {
-  "factors": [ { "key": <one of the rubric keys>, "label": <factor label>, "score": <0-10>, "note": <one specific sentence> } ],   // all seven factors, in rubric order
+  "factors": [ 
+    { 
+      "key": <one of the rubric keys>, 
+      "label": <factor label>, 
+      "score": <0-10>, 
+      "rubric_tier": <string matching the Tier mapped in the rubric>,
+      "reasoning": [ <2-3 string bullet points of concrete evidence proving why this tier was selected> ],
+      "note": <one specific sentence> 
+    } 
+  ],   // all seven factors, in rubric order
   "schools": [ { "name": <string>, "tier": "reach"|"target"|"likely", "likelihood_low": <0-100>, "likelihood_high": <0-100>, "confidence": "low"|"medium"|"high", "fit_score": <0-10>, "reason": <string> } ],   // one entry per target school
   "recommended_schools": [ { "name": <string>, "tier": "reach"|"target"|"likely", "fit_score": <0-10>, "why": <string> } ],
   "gap_analysis": [ { "action": <string>, "impact": <string>, "effort": "low"|"medium"|"high", "priority": <int> } ],

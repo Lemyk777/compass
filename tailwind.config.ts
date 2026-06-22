@@ -24,6 +24,12 @@ const config: Config = {
           soft: "#E4ECFD",
           ink: "#1B4FB8",
         },
+        // Landing redesign: single flat emerald/ivy accent (no gradients).
+        ivy: {
+          DEFAULT: "#0E7B57",
+          ink: "#0A5C41",
+          soft: "#E7F2EC",
+        },
         // Semantic tier scale — used identically everywhere (gauges, chips, bars)
         reach: { DEFAULT: "#E0664F", soft: "#FBE7E2" },
         target: { DEFAULT: "#D98A2B", soft: "#FaEEDB" },
@@ -46,9 +52,25 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "shimmer": {
+          from: { backgroundPosition: "0 0" },
+          to: { backgroundPosition: "-200% 0" },
+        },
+        "spotlight": {
+          "0%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.5)" },
+          "100%": { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+        },
+        "meteor": {
+          "0%": { transform: "rotate(215deg) translateX(0)", opacity: "1" },
+          "70%": { opacity: "1" },
+          "100%": { transform: "rotate(215deg) translateX(-500px)", opacity: "0" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.5s ease-out both",
+        "shimmer": "shimmer 2s linear infinite",
+        "spotlight": "spotlight 2s ease .75s 1 forwards",
+        "meteor": "meteor 5s linear infinite",
       },
     },
   },

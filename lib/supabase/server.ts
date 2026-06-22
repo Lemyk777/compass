@@ -7,6 +7,9 @@ import { cookies } from "next/headers";
  * route handlers, and server actions.
  */
 export function createClient() {
+  if (typeof global !== "undefined" && (global as any).mockSupabaseClient) {
+    return (global as any).mockSupabaseClient();
+  }
   const cookieStore = cookies();
 
   return createServerClient(
