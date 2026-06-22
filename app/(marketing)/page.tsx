@@ -1,24 +1,26 @@
+import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { ButtonLink } from "@/components/ui/Button";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { UniversityLogos } from "@/components/marketing/UniversityMarquee";
 import { MiniScorecard } from "@/components/marketing/MiniScorecard";
+import { MapScene } from "@/components/marketing/MapScene";
+import { HowItWorks } from "@/components/marketing/HowItWorks";
+import { ReportShowcase } from "@/components/marketing/ReportShowcase";
 import { getUniversityLogos } from "@/lib/data/logos";
 import { getT } from "@/lib/i18n/server";
-import { ScrollReveal, Parallax, StaggerReveal, StaggerItem } from "@/components/ui/ScrollAnimations";
+import { ScrollReveal } from "@/components/ui/ScrollAnimations";
 import { Magnetic } from "@/components/ui/Magnetic";
 import { TextBlur } from "@/components/ui/TextBlur";
-import { Card3D } from "@/components/ui/Card3D";
-import { cn } from "@/lib/utils";
 
 export default function LandingPage() {
   const t = getT();
   const universityLogos = getUniversityLogos();
 
   return (
-    <main className="min-h-dvh bg-white text-ink selection:bg-ink selection:text-white">
+    <main className="min-h-screen overflow-x-hidden bg-[#F7F8FA] text-ink selection:bg-ink selection:text-white">
       {/* Nav */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-8">
+      <header className="absolute inset-x-0 top-0 z-50 flex w-full items-center justify-between px-5 py-8 md:px-12 lg:px-20">
         <Logo className="text-ink" />
         <nav className="flex items-center gap-3">
           <LanguageToggle className="mr-2" />
@@ -31,52 +33,60 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      {/* Hero */}
-      <section className="relative mx-auto w-full max-w-6xl px-5 pb-20 pt-16 sm:pt-32">
-        <div className="grid items-center gap-16 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-8">
-            <div className="text-balance text-[3rem] font-medium leading-[1.05] tracking-tight text-ink sm:text-[4.5rem]">
+      {/* Hero — full-bleed interactive Map, minimal overlay */}
+      <section className="relative h-screen min-h-[700px] w-full overflow-hidden bg-[#F7F8FA]">
+        {/* Interactive map — to the right and intentionally smaller than the message */}
+        <div className="absolute inset-y-0 right-0 z-0 w-full lg:w-[46%]">
+          <MapScene className="h-full w-full" />
+        </div>
+
+        <div className="pointer-events-none relative z-10 flex h-full w-full flex-col justify-center px-5 pt-28 md:px-12 lg:px-20 lg:pt-0">
+          <div className="max-w-2xl">
+            <div className="text-balance text-[3rem] font-medium leading-[1.03] tracking-tight text-ink sm:text-[4.25rem]">
               <TextBlur text={t("landing.title1")} />
-              <div className="text-ink/40">
+              <div className="text-ink/60">
                 <TextBlur text={t("landing.title2")} delay={0.2} />
               </div>
             </div>
-
-            <ScrollReveal delay={0.1}>
-              <p className="max-w-md text-pretty text-lg leading-relaxed text-ink/70 font-light">
-                {t("landing.subtitle")}
-              </p>
-            </ScrollReveal>
-
-            <ScrollReveal delay={0.4}>
-              <div className="flex flex-wrap items-center gap-4 pt-4">
-                <Magnetic>
-                  <ButtonLink href="/auth/signup" size="lg" className="rounded-full px-8 bg-ink text-white hover:bg-ink/90 transition-colors">
-                    {t("landing.ctaBuild")}
-                  </ButtonLink>
-                </Magnetic>
-                <Magnetic>
-                  <ButtonLink href="/demo" variant="ghost" size="lg" className="rounded-full">
-                    {t("landing.seeSample")}
-                  </ButtonLink>
-                </Magnetic>
-              </div>
-            </ScrollReveal>
-          </div>
-
-          <Card3D className="hidden lg:block perspective-[1000px]">
-            <div className="relative rounded-3xl border border-black/5 bg-white p-2 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)]">
-              <MiniScorecard t={t} />
+            
+            <div className="pointer-events-auto mt-8 flex flex-wrap items-center gap-4">
+              <Magnetic>
+                <ButtonLink
+                  href="/auth/signup"
+                  size="lg"
+                  className="rounded-full bg-ink px-8 py-6 text-lg font-medium text-white transition-all hover:scale-105 hover:bg-ink/90 hover:shadow-[0_0_30px_rgba(31,163,122,0.4)] hover:ring-2 hover:ring-[#1FA37A]/50"
+                >
+                  {t("landing.ctaBuild")}
+                </ButtonLink>
+              </Magnetic>
+              <Magnetic>
+                <ButtonLink
+                  href="/demo"
+                  variant="subtle"
+                  size="lg"
+                  className="rounded-full border-ink/10 bg-white/60 px-8 py-6 text-lg font-medium text-ink backdrop-blur-md transition-all hover:bg-white/90"
+                >
+                  {t("landing.seeSample") || "View Demo"}
+                </ButtonLink>
+              </Magnetic>
             </div>
-          </Card3D>
+
+            <div className="pointer-events-auto mt-12 w-full max-w-lg">
+              <ScrollReveal delay={0.4}>
+                <div className="rounded-3xl bg-white/40 p-1 backdrop-blur-xl ring-1 ring-black/5">
+                  <MiniScorecard t={t} className="shadow-2xl" />
+                </div>
+              </ScrollReveal>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* University logo wall */}
-      <section className="border-y border-black/5 py-16">
-        <div className="mx-auto max-w-6xl px-5">
+      <section className="border-y border-black/5 py-24 bg-white">
+        <div className="w-full px-5 md:px-12 lg:px-20">
           <ScrollReveal>
-            <p className="mb-10 text-center text-xs font-semibold uppercase tracking-widest text-ink/40">
+            <p className="mb-12 text-center text-xs font-semibold uppercase tracking-widest text-ink/40">
               {t("landing.trustedBy")}
             </p>
           </ScrollReveal>
@@ -84,45 +94,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* What you get */}
-      <section className="mx-auto max-w-6xl px-5 py-32">
-        <ScrollReveal>
-          <div className="mx-auto mb-16 max-w-2xl text-center">
-            <h2 className="text-4xl font-medium tracking-tight text-ink">
-              {t("landing.getTitle")}
-            </h2>
-            <p className="mt-4 text-lg font-light text-ink/60">
-              {t("landing.getSub")}
-            </p>
-          </div>
-        </ScrollReveal>
+      {/* How it works → the mechanism behind the score */}
+      <HowItWorks t={t} />
 
-        <StaggerReveal className="grid md:grid-cols-2 gap-x-8 gap-y-16">
-          {[
-            { title: t("landing.get1Title"), body: t("landing.get1Body") },
-            { title: t("landing.get2Title"), body: t("landing.get2Body") },
-            { title: t("landing.get3Title"), body: t("landing.get3Body") },
-            { title: t("landing.get4Title"), body: t("landing.get4Body") },
-          ].map((f, i) => (
-            <StaggerItem key={i} className="border-t border-black/10 pt-6">
-              <h3 className="text-xl font-medium text-ink">{f.title}</h3>
-              <p className="mt-3 text-base font-light leading-relaxed text-ink/60">
-                {f.body}
-              </p>
-            </StaggerItem>
-          ))}
-        </StaggerReveal>
-
-        <Parallax offset={30} className="mt-24 flex justify-center">
-          <div className="w-full max-w-2xl rounded-3xl border border-black/5 bg-white p-2 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)]">
-            <MiniScorecard t={t} />
-          </div>
-        </Parallax>
-      </section>
+      {/* Inside your report → tangible, legible proof of depth */}
+      <ReportShowcase t={t} />
 
       {/* Honesty note */}
       <section className="bg-ink text-white">
-        <div className="mx-auto max-w-6xl px-5 py-24 md:py-32">
+        <div className="w-full px-5 md:px-12 lg:px-20 py-24 md:py-32">
           <ScrollReveal>
             <h2 className="text-3xl font-medium tracking-tight md:text-5xl">{t("landing.honestTitle")}</h2>
             <p className="mt-6 max-w-3xl text-pretty text-lg font-light leading-relaxed text-white/70 md:text-xl">
@@ -130,25 +110,6 @@ export default function LandingPage() {
             </p>
           </ScrollReveal>
         </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="mx-auto max-w-6xl px-5 py-32">
-        <ScrollReveal>
-          <div className="text-center">
-            <h2 className="text-balance text-4xl font-medium tracking-tight text-ink sm:text-6xl">
-              {t("landing.ctaTitle")}
-            </h2>
-            <p className="mx-auto mt-6 max-w-md text-lg font-light text-ink/60">
-              {t("landing.ctaSub")}
-            </p>
-            <div className="mt-10 flex flex-wrap justify-center gap-4">
-              <ButtonLink href="/auth/signup" size="lg" className="rounded-full px-8">
-                {t("landing.ctaBuild")}
-              </ButtonLink>
-            </div>
-          </div>
-        </ScrollReveal>
       </section>
 
       <footer className="mx-auto max-w-6xl px-5 py-10 text-sm font-light text-ink/40">

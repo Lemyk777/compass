@@ -24,6 +24,12 @@ const config: Config = {
           soft: "#E4ECFD",
           ink: "#1B4FB8",
         },
+        // Landing redesign: single flat emerald/ivy accent (no gradients).
+        ivy: {
+          DEFAULT: "#0E7B57",
+          ink: "#0A5C41",
+          soft: "#E7F2EC",
+        },
         // Semantic tier scale — used identically everywhere (gauges, chips, bars)
         reach: { DEFAULT: "#E0664F", soft: "#FBE7E2" },
         target: { DEFAULT: "#D98A2B", soft: "#FaEEDB" },

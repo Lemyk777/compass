@@ -37,3 +37,6 @@ yarn-error.log*
 
 # personal, per-machine Claude permissions (each dev keeps their own)
 .claude/settings.local.json
+
+# AI agent scratch / run artifacts (not part of the app)
+.agents/

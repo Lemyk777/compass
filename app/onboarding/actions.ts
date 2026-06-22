@@ -8,7 +8,7 @@ import type { StudentProfileInput } from "@/lib/types";
 
 // Bounds (LIMITS) are enforced here so an oversized profile can never be stored
 // and later overwhelm the analysis. The UI mirrors these caps for good UX.
-const inputSchema = z.object({
+export const inputSchema = z.object({
   country: z.string().trim().min(1, "Tell us your country.").max(LIMITS.shortText),
   citizenship: z
     .string()

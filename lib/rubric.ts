@@ -25,49 +25,71 @@ export const RUBRIC: RubricFactor[] = [
     key: "academics",
     label: "Academics",
     weight: 0.25,
-    measures:
-      "Grades normalized across the student's curriculum vs. selective-US expectations.",
+    measures: `9-10 (Tier 1): Top 1-2% of class, maxed out rigor with perfect grades.
+7-8 (Tier 2): Top 5-10%, mostly A's, strong rigor but not maxed out.
+5-6 (Tier 3): Solid B-average student, standard curriculum with a few honors.
+2-4 (Tier 4): C-average, no advanced classes.
+0-1 (Tier 5): Below average, struggling academically.`,
   },
   {
     key: "test_scores",
     label: "Test scores",
     weight: 0.15,
-    measures:
-      "SAT/ACT (and English proficiency for internationals) relative to target-school mid-ranges.",
+    measures: `9-10 (Tier 1): 1550+ SAT / 35+ ACT. Perfect TOEFL/IELTS.
+7-8 (Tier 2): 1450-1540 SAT / 33-34 ACT. Excellent English.
+5-6 (Tier 3): 1300-1440 SAT / 28-32 ACT. Good English.
+2-4 (Tier 4): 1100-1290 SAT / 22-27 ACT. Minimum English requirements met.
+0-1 (Tier 5): Below 1100 SAT or test-optional without other strong indicators.`,
   },
   {
     key: "course_rigor",
     label: "Course rigor",
     weight: 0.1,
-    measures:
-      "Difficulty of the chosen curriculum/subjects (IB HL, A-Levels, APs).",
+    measures: `9-10 (Tier 1): Most demanding curriculum available (e.g. full IB Diploma, 10+ APs).
+7-8 (Tier 2): Very demanding (many APs/Honors/A-levels).
+5-6 (Tier 3): Moderately demanding (some advanced classes).
+2-4 (Tier 4): Standard high school curriculum.
+0-1 (Tier 5): Below standard or remedial.`,
   },
   {
     key: "leadership",
     label: "Leadership",
     weight: 0.15,
-    measures: "Depth and authenticity of leadership roles, not titles alone.",
+    measures: `9-10 (Tier 1): Founder/President of national/global initiative with massive impact.
+7-8 (Tier 2): President of major regional org OR Significant Family Responsibilities/Work (20+ hrs/wk).
+5-6 (Tier 3): Core officer in school clubs OR Moderate Family Responsibilities (10-15 hrs/wk).
+2-4 (Tier 4): Active participation in clubs (e.g. 3-5 hrs/wk), minor volunteering. General member.
+0-1 (Performative/None): Blank list or resume padding (listing clubs with 1 hr/wk and no impact).`,
   },
   {
     key: "extracurricular_depth",
     label: "Extracurricular depth",
     weight: 0.15,
-    measures:
-      "Sustained, focused involvement over scattered activities.",
+    measures: `9-10 (Tier 1): Pre-professional level, published research, elite selective summer programs.
+7-8 (Tier 2): Sustained focus (3-4 years) in a clear 'spike' area, significant personal projects.
+5-6 (Tier 3): Standard school clubs, scattered interests, moderate commitment.
+2-4 (Tier 4): Superficial activities, low hours.
+0-1 (None): Barely any extracurriculars.`,
   },
   {
     key: "awards",
     label: "Awards & recognition",
     weight: 0.1,
-    measures:
-      "Level (school → regional → national → international) and selectivity.",
+    measures: `9-10 (Tier 1): International or highly selective national awards (e.g. IMO, Intel ISEF).
+7-8 (Tier 2): State/Regional level awards or significant national qualifiers.
+5-6 (Tier 3): School/Local level awards.
+2-4 (Tier 4): Minor recognition (e.g. Honor Roll).
+0-1 (None): No awards.`,
   },
   {
     key: "narrative_fit",
     label: "Narrative / fit",
     weight: 0.1,
-    measures:
-      "Coherence of the student's story and fit with intended major.",
+    measures: `9-10 (Tier 1): Extremely compelling, cohesive story connecting background, ECs, and intended major.
+7-8 (Tier 2): Clear direction and logical connection between activities and goals.
+5-6 (Tier 3): Generic but plausible intended major without deep backing evidence.
+2-4 (Tier 4): Disjointed story, contradictory goals.
+0-1 (None): Unclear why they are applying to this field.`,
   },
 ];
 

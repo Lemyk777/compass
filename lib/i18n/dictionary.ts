@@ -27,6 +27,8 @@ const en: Dict = {
   "landing.ctaBuild": "Build your scorecard",
   "landing.ctaHave": "I already have an account",
   "landing.free": "Free to start. No credit card.",
+  "landing.heroBadge": "New · Multi-country admissions",
+  "landing.heroTrust": "Now covering the US & Italy — more countries on the way",
   "landing.howItWorks": "How it works",
   "landing.step1Title": "Tell us about you",
   "landing.step1Body":
@@ -56,6 +58,26 @@ const en: Dict = {
   "landing.get3Body": "See your SAT and grades against each school's admitted middle 50%.",
   "landing.get4Title": "A plan to improve",
   "landing.get4Body": "Prioritized, specific moves and a month-by-month timeline.",
+  "landing.get5Title": "US & Italy pathways",
+  "landing.get5Body":
+    "One profile, scored for both American and Italian admissions — each evaluated on its own rubric.",
+  "landing.howTitle": "How Compass works",
+  "landing.howSub": "From one profile to a clear, honest plan.",
+  "landing.how1Title": "Tell us about you",
+  "landing.how1Body":
+    "Grades, test scores, activities, honors, and the schools you're aiming for.",
+  "landing.how2Title": "We score you — honestly",
+  "landing.how2Body":
+    "Every factor is rated against a fixed rubric and real admit data. Same profile, same numbers — no hype.",
+  "landing.how3Title": "Get your game plan",
+  "landing.how3Body":
+    "A competitiveness score, per-school odds, gap analysis, and a month-by-month plan.",
+  "landing.reportTitle": "Inside your report",
+  "landing.reportSub": "Not a vague vibe check — concrete numbers you can act on.",
+  "landing.benchYou": "You",
+  "landing.benchAdmitted": "Admitted 50%",
+  "landing.gap1": "Research / publication experience",
+  "landing.gap2": "Sharper personal essays",
   "landing.seeSample": "See a sample report",
   "landing.demoTitle": "This is what you walk away with",
   "landing.demoSub": "A clear, shareable read on exactly where you stand — and what to do next.",
@@ -395,6 +417,8 @@ const ru: Dict = {
   "landing.ctaBuild": "Создать карту профиля",
   "landing.ctaHave": "У меня уже есть аккаунт",
   "landing.free": "Бесплатно. Без карты.",
+  "landing.heroBadge": "Новое · Поступление в разные страны",
+  "landing.heroTrust": "Уже доступны США и Италия — другие страны на подходе",
   "landing.howItWorks": "Как это работает",
   "landing.step1Title": "Расскажите о себе",
   "landing.step1Body":
@@ -424,6 +448,26 @@ const ru: Dict = {
   "landing.get3Body": "Ваш SAT и оценки против среднего диапазона поступивших (50%).",
   "landing.get4Title": "План улучшений",
   "landing.get4Body": "Приоритизированные конкретные шаги и план по месяцам.",
+  "landing.get5Title": "США и Италия",
+  "landing.get5Body":
+    "Один профиль — оценка и для США, и для Италии, каждая по своей методике.",
+  "landing.howTitle": "Как работает Compass",
+  "landing.howSub": "От одного профиля — к ясному честному плану.",
+  "landing.how1Title": "Расскажите о себе",
+  "landing.how1Body":
+    "Оценки, экзамены, активности, награды и вузы мечты.",
+  "landing.how2Title": "Мы честно вас оцениваем",
+  "landing.how2Body":
+    "Каждый фактор — по фиксированной методике и реальным данным о поступивших. Один профиль → одни и те же цифры.",
+  "landing.how3Title": "Получите план действий",
+  "landing.how3Body":
+    "Балл конкурентоспособности, шансы по вузам, анализ пробелов и план по месяцам.",
+  "landing.reportTitle": "Что внутри отчёта",
+  "landing.reportSub": "Не размытое «ну такое» — конкретные цифры, с которыми можно работать.",
+  "landing.benchYou": "Вы",
+  "landing.benchAdmitted": "Поступившие 50%",
+  "landing.gap1": "Исследовательский опыт / публикации",
+  "landing.gap2": "Более сильные эссе",
   "landing.seeSample": "Посмотреть пример отчёта",
   "landing.demoTitle": "Вот что вы получите на руки",
   "landing.demoSub": "Понятная картина того, где вы стоите — и что делать дальше.",

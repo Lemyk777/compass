@@ -33,8 +33,8 @@ export const Spotlight = ({ className, fill }: SpotlightProps) => {
           id="filter"
           x="0.860352"
           y="0.838989"
-          w="3785.16"
-          h="2840.26"
+          width="3785.16"
+          height="2840.26"
           filterUnits="userSpaceOnUse"
           colorInterpolationFilters="sRGB"
         >
