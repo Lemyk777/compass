@@ -68,7 +68,7 @@ export function Report({
       )}
 
       {/* Scorecard — computed for the selected country. */}
-      <div id="standing" className="scroll-mt-24 space-y-3">
+      <div className="space-y-3">
         <Scorecard
           ref={scorecardRef}
           analysis={analysis}
@@ -81,57 +81,40 @@ export function Report({
         </p>
       </div>
 
-      {/* Admission odds (wide) paired with application costs (a compact side
-          rail) for the selected country — side by side on desktop to cut the
-          scroll; stacked on mobile. */}
+      {/* Admission odds + application costs for the selected country. */}
       {activeTab && (
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-8">
-          <div id="results" className="scroll-mt-24 space-y-8 lg:min-w-0 lg:flex-1">
-            {tabs.length === 1 && <CountryHeader code={activeTab} />}
-            {activeTab === "US" && <UsOdds analysis={analysis} />}
-            {activeTab === "IT" && <ItalyOdds analysis={analysis} />}
-            {activeTab === "HK" && <HkOdds analysis={analysis} />}
-          </div>
-          <div id="costs" className="scroll-mt-24 lg:w-72 lg:shrink-0">
-            <CostBreakdown analysis={analysis} country={activeTab} />
-          </div>
+        <div className="space-y-8">
+          {tabs.length === 1 && <CountryHeader code={activeTab} />}
+          {activeTab === "US" && <UsOdds analysis={analysis} />}
+          {activeTab === "IT" && <ItalyOdds analysis={analysis} />}
+          {activeTab === "HK" && <HkOdds analysis={analysis} />}
+          <CostBreakdown analysis={analysis} country={activeTab} />
         </div>
       )}
 
       {/* General plan — applies across every destination. */}
-      {/* Action plan paired with the timeline — side by side on desktop. */}
-      {(analysis.gap_analysis.length > 0 || analysis.timeline.length > 0) && (
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-8">
-          {analysis.gap_analysis.length > 0 && (
-            <div id="plan" className="scroll-mt-24 lg:min-w-0 lg:flex-1">
-              <Section title={t("report.gapTitle")} hint={t("report.gapHint")}>
-                <GapAnalysis items={analysis.gap_analysis} />
-              </Section>
-            </div>
-          )}
+      {analysis.gap_analysis.length > 0 && (
+        <Section title={t("report.gapTitle")} hint={t("report.gapHint")}>
+          <GapAnalysis items={analysis.gap_analysis} />
+        </Section>
+      )}
 
-          {analysis.timeline.length > 0 && (
-            <div id="timeline" className="scroll-mt-24 lg:min-w-0 lg:flex-1">
-              <Section title={t("report.timelineTitle")} hint={t("report.timelineHint")}>
-                <Card>
-                  <Timeline blocks={analysis.timeline} />
-                </Card>
-              </Section>
-            </div>
-          )}
-        </div>
+      {analysis.timeline.length > 0 && (
+        <Section title={t("report.timelineTitle")} hint={t("report.timelineHint")}>
+          <Card>
+            <Timeline blocks={analysis.timeline} />
+          </Card>
+        </Section>
       )}
 
       {analysis.summary && (
-        <div id="summary" className="scroll-mt-24">
-          <Section title={t("report.summaryTitle")}>
-            <Card>
-              <p className="text-pretty leading-relaxed text-ink-soft">
-                {analysis.summary}
-              </p>
-            </Card>
-          </Section>
-        </div>
+        <Section title={t("report.summaryTitle")}>
+          <Card>
+            <p className="text-pretty leading-relaxed text-ink-soft">
+              {analysis.summary}
+            </p>
+          </Card>
+        </Section>
       )}
     </div>
   );

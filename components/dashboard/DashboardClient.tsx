@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Analysis } from "@/lib/ai/schema";
 import { Report } from "@/components/report/Report";
-import { ReportNav } from "@/components/dashboard/ReportNav";
 import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
@@ -80,7 +79,7 @@ export function DashboardClient({
   return (
     <main className="min-h-dvh bg-surface">
       <header className="sticky top-0 z-10 border-b border-line bg-surface/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-3">
           <Logo className="text-ink" />
           <div className="flex items-center gap-1">
             <ButtonLink href="/onboarding" variant="ghost" size="sm">
@@ -96,41 +95,30 @@ export function DashboardClient({
         </div>
       </header>
 
-      {loading ? (
-        <div className="mx-auto max-w-2xl px-5 py-6">
+      <div className="mx-auto max-w-2xl px-5 py-6">
+        {loading ? (
           <LoadingState />
-        </div>
-      ) : error ? (
-        <div className="mx-auto max-w-2xl px-5 py-6">
+        ) : error ? (
           <ErrorState error={error} onRetry={runAnalysis} hasProfile={hasProfile} />
-        </div>
-      ) : analysis ? (
-        <div className="mx-auto max-w-6xl px-5 py-6">
-          <div className="mb-6 flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-ink">
-                {t("dash.yourStanding")}
-              </h1>
-              <p className="text-sm text-ink-soft">{t("dash.basedOn")}</p>
+        ) : analysis ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight text-ink">
+                  {t("dash.yourStanding")}
+                </h1>
+                <p className="text-sm text-ink-soft">{t("dash.basedOn")}</p>
+              </div>
+              <Button variant="subtle" size="sm" onClick={runAnalysis}>
+                {t("dash.reanalyze")}
+              </Button>
             </div>
-            <Button variant="subtle" size="sm" onClick={runAnalysis}>
-              {t("dash.reanalyze")}
-            </Button>
+            <Report analysis={analysis} name={name} />
           </div>
-          {/* Wide results layout: sticky section rail on the left, report fills
-              the rest. Single column on mobile (the rail hides itself). */}
-          <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-10">
-            <ReportNav analysis={analysis} />
-            <div className="min-w-0">
-              <Report analysis={analysis} name={name} />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="mx-auto max-w-2xl px-5 py-6">
+        ) : (
           <EmptyState hasProfile={hasProfile} onRun={runAnalysis} />
-        </div>
-      )}
+        )}
+      </div>
     </main>
   );
 }
