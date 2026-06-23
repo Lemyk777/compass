@@ -68,7 +68,7 @@ export function Report({
       )}
 
       {/* Scorecard — computed for the selected country. */}
-      <div className="space-y-3">
+      <div id="standing" className="scroll-mt-24 space-y-3">
         <Scorecard
           ref={scorecardRef}
           analysis={analysis}
@@ -81,40 +81,52 @@ export function Report({
         </p>
       </div>
 
-      {/* Admission odds + application costs for the selected country. */}
+      {/* Admission odds + application costs for the selected country — each
+          full width so nothing gets squeezed (the left rail is what shortens
+          the trip down the page, not narrower cards). */}
       {activeTab && (
         <div className="space-y-8">
-          {tabs.length === 1 && <CountryHeader code={activeTab} />}
-          {activeTab === "US" && <UsOdds analysis={analysis} />}
-          {activeTab === "IT" && <ItalyOdds analysis={analysis} />}
-          {activeTab === "HK" && <HkOdds analysis={analysis} />}
-          <CostBreakdown analysis={analysis} country={activeTab} />
+          <div id="results" className="scroll-mt-24 space-y-8">
+            {tabs.length === 1 && <CountryHeader code={activeTab} />}
+            {activeTab === "US" && <UsOdds analysis={analysis} />}
+            {activeTab === "IT" && <ItalyOdds analysis={analysis} />}
+            {activeTab === "HK" && <HkOdds analysis={analysis} />}
+          </div>
+          <div id="costs" className="scroll-mt-24">
+            <CostBreakdown analysis={analysis} country={activeTab} />
+          </div>
         </div>
       )}
 
       {/* General plan — applies across every destination. */}
       {analysis.gap_analysis.length > 0 && (
-        <Section title={t("report.gapTitle")} hint={t("report.gapHint")}>
-          <GapAnalysis items={analysis.gap_analysis} />
-        </Section>
+        <div id="plan" className="scroll-mt-24">
+          <Section title={t("report.gapTitle")} hint={t("report.gapHint")}>
+            <GapAnalysis items={analysis.gap_analysis} />
+          </Section>
+        </div>
       )}
 
       {analysis.timeline.length > 0 && (
-        <Section title={t("report.timelineTitle")} hint={t("report.timelineHint")}>
-          <Card>
-            <Timeline blocks={analysis.timeline} />
-          </Card>
-        </Section>
+        <div id="timeline" className="scroll-mt-24">
+          <Section title={t("report.timelineTitle")} hint={t("report.timelineHint")}>
+            <Card>
+              <Timeline blocks={analysis.timeline} />
+            </Card>
+          </Section>
+        </div>
       )}
 
       {analysis.summary && (
-        <Section title={t("report.summaryTitle")}>
-          <Card>
-            <p className="text-pretty leading-relaxed text-ink-soft">
-              {analysis.summary}
-            </p>
-          </Card>
-        </Section>
+        <div id="summary" className="scroll-mt-24">
+          <Section title={t("report.summaryTitle")}>
+            <Card>
+              <p className="text-pretty leading-relaxed text-ink-soft">
+                {analysis.summary}
+              </p>
+            </Card>
+          </Section>
+        </div>
       )}
     </div>
   );
