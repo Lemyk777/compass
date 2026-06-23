@@ -17,9 +17,9 @@ const body = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Compass — See your standing for US universities",
+  title: "Compass — See your standing for top universities",
   description:
-    "Compass helps internationally-based students assess and improve their applications to US universities with honest, data-driven guidance.",
+    "Compass helps internationally-based students assess and improve their applications to leading universities — in the US, Italy, and Hong Kong — with honest, data-driven guidance.",
 };
 
 export const viewport: Viewport = {
