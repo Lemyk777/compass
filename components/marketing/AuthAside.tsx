@@ -1,12 +1,6 @@
 import type { TFunc } from "@/lib/i18n/dictionary";
 import { getUniversityLogos } from "@/lib/data/logos";
 
-// Country flags shown "крупным планом" at the bottom of the panel.
-const FLAGS = [
-  "kz", "in", "ng", "br", "vn", "eg", "id",
-  "pk", "tr", "kr", "cn", "mx", "ph", "co",
-];
-
 // ---- Sample-report geometry (the "example from a result") -----------------
 // 7 scored factors → a radar "fingerprint", mirroring the real report.
 const RADAR_AXES = ["Academics", "Tests", "Rigor", "Leadership", "Activities", "Awards", "Narrative"];
@@ -169,8 +163,8 @@ export function AuthAside({ t }: { t: TFunc }) {
         </div>
       </div>
 
-      {/* ---- bottom: university wall + flags + stats ---------------------- */}
-      <div className="relative space-y-4">
+      {/* ---- bottom: university wall + stats ------------------------------ */}
+      <div className="relative space-y-5">
         {logos.length > 0 && (
           <div className="aside-rise" style={{ animationDelay: "0.42s" }}>
             <p className="mb-2.5 text-xs font-medium uppercase tracking-wide text-white/55">
@@ -198,24 +192,9 @@ export function AuthAside({ t }: { t: TFunc }) {
           </div>
         )}
 
-        <div className="aside-rise flex flex-wrap gap-1.5" style={{ animationDelay: "0.5s" }}>
-          {FLAGS.map((c, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={c}
-              src={`https://flagcdn.com/h40/${c}.png`}
-              alt=""
-              aria-hidden="true"
-              loading="lazy"
-              style={{ animationDelay: `${0.5 + i * 0.04}s` }}
-              className="aside-pop h-7 w-auto rounded shadow-[0_2px_8px_-2px_rgba(0,0,0,0.6)] ring-1 ring-white/10"
-            />
-          ))}
-        </div>
-
         <div
           className="aside-rise flex items-center gap-2 text-xs text-white/55"
-          style={{ animationDelay: "0.58s" }}
+          style={{ animationDelay: "0.5s" }}
         >
           <span className="font-medium text-white/80">{t("auth.asideStat1")}</span>
           <span className="h-1 w-1 rounded-full bg-white/30" />
