@@ -22,8 +22,12 @@ export default async function DashboardPage({
       .limit(1)
       .maybeSingle(),
     supabase
+      // Select * (not a fixed column list) so a DB that's missing newer columns
+      // — e.g. the Hong Kong columns before migration 0005 is applied — still
+      // returns the row instead of failing the whole query (Postgres 42703) and
+      // making the dashboard think the user has no profile.
       .from("student_profiles")
-      .select("curriculum, target_schools, italy_programs, hk_programs")
+      .select("*")
       .eq("user_id", session.id)
       .maybeSingle(),
   ]);

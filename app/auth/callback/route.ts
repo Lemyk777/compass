@@ -52,7 +52,19 @@ export async function GET(request: NextRequest) {
       .select("role")
       .eq("id", user.id)
       .maybeSingle();
-    target = landingPathForRole((profile?.role as Role) ?? "student");
+    const role = (profile?.role as Role) ?? "student";
+    if (role === "student") {
+      // A returning student who already has results should land on their
+      // dashboard — not be dumped back into the questionnaire (which looks like
+      // their results vanished). Only brand-new students go to onboarding.
+      const { count } = await supabase
+        .from("analyses")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      target = (count ?? 0) > 0 ? "/dashboard" : "/onboarding";
+    } else {
+      target = landingPathForRole(role);
+    }
   }
 
   return NextResponse.redirect(`${origin}${target}`);
