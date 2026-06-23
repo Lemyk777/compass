@@ -188,10 +188,29 @@ export async function saveProfile(
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const writeErr = existing
-    ? (await supabase.from("student_profiles").update(row).eq("id", existing.id))
-        .error
-    : (await supabase.from("student_profiles").insert(row)).error;
+  const write = (r: Record<string, unknown>) =>
+    existing
+      ? supabase.from("student_profiles").update(r).eq("id", existing.id)
+      : supabase.from("student_profiles").insert(r);
+
+  let { error: writeErr } = await write(row);
+
+  // Schema-drift safety net: if the database is missing the Hong Kong columns
+  // (migration 0005 not applied yet), Postgres rejects the entire write
+  // (42703 / PostgREST PGRST204). Retry without the HK fields so core US/Italy
+  // profiles still save instead of the product going down. Apply migration 0005
+  // to persist Hong Kong selections.
+  if (writeErr && (writeErr.code === "42703" || writeErr.code === "PGRST204")) {
+    const safeRow: Record<string, unknown> = { ...row };
+    delete safeRow.hk_programs;
+    delete safeRow.hk_grade_status;
+    console.warn(
+      "student_profiles is missing the Hong Kong columns — saving without them. " +
+        "Run supabase/migrations/0005_hong_kong.sql.",
+      writeErr.message
+    );
+    ({ error: writeErr } = await write(safeRow));
+  }
 
   if (writeErr) return { ok: false, error: "Could not save your profile." };
 
