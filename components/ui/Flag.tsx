@@ -21,6 +21,13 @@ const SHAPES: Record<DestinationCode, JSX.Element> = {
       <rect x="13.33" width="6.67" height="14" fill="#CE2B37" />
     </>
   ),
+  HK: (
+    <>
+      <rect width="20" height="14" fill="#DE2910" />
+      <circle cx="10" cy="7" r="3.4" fill="#fff" />
+      <circle cx="10" cy="7" r="1.2" fill="#DE2910" />
+    </>
+  ),
   UK: (
     <>
       <rect width="20" height="14" fill="#012169" />

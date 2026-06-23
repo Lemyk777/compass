@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { OutlineMap } from "./OutlineMap";
+import { OutlineMap, topoUrlForCountry } from "./OutlineMap";
 import { COUNTRIES } from "@/lib/data/map-markers";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -74,6 +74,14 @@ export default function MapView({ className }: { className?: string }) {
 
   const len = COUNTRIES.length;
   const country = COUNTRIES[((index % len) + len) % len];
+
+  // Warm the browser cache with every country's terrain so switches are instant.
+  useEffect(() => {
+    COUNTRIES.forEach((c) => {
+      const img = new window.Image();
+      img.src = topoUrlForCountry(c);
+    });
+  }, []);
 
   const go = useCallback((d: number) => {
     if (flyingRef.current) return;

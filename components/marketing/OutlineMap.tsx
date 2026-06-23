@@ -82,6 +82,36 @@ function decluster(pts: ProjPoint[]): Placed[] {
   return out;
 }
 
+// Web-Mercator bbox → Esri World_Topo export URL for a country. Exported so the
+// wizard can preload all countries' terrain for instant, flicker-free switches.
+export function topoUrlForCountry(country: CountryView): string {
+  const geo = (SHAPE[country.code] ?? italyGeo) as unknown as { features: any[] };
+  const rings = outerRings(geo, country.code === "US" ? US_EXCLUDE : undefined);
+  let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+  for (const ring of rings)
+    for (const [lon, lat] of ring) {
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+  const padLon = (maxLon - minLon) * 0.03;
+  const padLat = (maxLat - minLat) * 0.03;
+  minLon -= padLon; maxLon += padLon; minLat -= padLat; maxLat += padLat;
+  const minX = mercX(minLon), maxX = mercX(maxLon);
+  const minY = mercY(minLat), maxY = mercY(maxLat);
+  const mW = maxX - minX, mH = maxY - minY;
+  const scale = Math.min((VIEW_W - 2 * PAD) / mW, (VIEW_H - 2 * PAD) / mH);
+  const drawW = mW * scale;
+  const imgPxW = Math.min(2048, Math.round(drawW * 1.8));
+  const imgPxH = Math.round((imgPxW * mH) / mW);
+  return (
+    `https://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/export` +
+    `?bbox=${minX},${minY},${maxX},${maxY}&bboxSR=3857&imageSR=3857` +
+    `&size=${imgPxW},${imgPxH}&format=png&transparent=false&f=image`
+  );
+}
+
 export function OutlineMap({ country }: { country: CountryView }) {
   const [hovered, setHovered] = useState<string | null>(null);
   // Hold the whole map hidden until the terrain raster is decoded, then reveal
@@ -124,12 +154,7 @@ export function OutlineMap({ country }: { country: CountryView }) {
       clip += "Z";
     }
 
-    const imgPxW = Math.min(2048, Math.round(drawW * 1.8));
-    const imgPxH = Math.round((imgPxW * mH) / mW);
-    const url =
-      `https://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/export` +
-      `?bbox=${minX},${minY},${maxX},${maxY}&bboxSR=3857&imageSR=3857` +
-      `&size=${imgPxW},${imgPxH}&format=png&transparent=false&f=image`;
+    const url = topoUrlForCountry(country);
 
     const pts: ProjPoint[] = country.markers.map((m) => {
       const [x, y] = project(m.lon, m.lat);
