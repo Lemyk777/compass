@@ -107,6 +107,8 @@ function getBaseValidPayload(): any {
     target_schools: ["Stanford University", "MIT"],
     needs_aid: true,
     italy_programs: [],
+    hk_programs: [],
+    hk_grade_status: undefined,
   };
 }
 
@@ -150,6 +152,9 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         ["UK"],
         ["UK", "DE", "NL"],
         ["CA"],
+        ["HK"],
+        ["US", "HK"],
+        ["IT", "HK"],
       ];
       destinationSets.forEach((dests, index) => {
         it(`Scenario 3.${index + 1}: Valid destination list ${JSON.stringify(dests)}`, async () => {
@@ -160,6 +165,7 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
           // Adjust targets dynamically to avoid validation issues
           payload.target_schools = dests.includes("US") ? ["Stanford University"] : [];
           payload.italy_programs = dests.includes("IT") ? ["polito-computer-eng"] : [];
+          payload.hk_programs = dests.includes("HK") ? ["hku-bba"] : [];
           
           const result = await saveProfile(payload);
           assert.deepStrictEqual(result, { ok: true });
@@ -978,6 +984,64 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
     });
+
+    it("Scenario 3.10: HK selected, hk_programs is empty (Rejects)", async () => {
+      const { saveProfile } = await import("../app/onboarding/actions");
+      const payload = getBaseValidPayload();
+      payload.destinations = ["HK"];
+      payload.target_schools = [];
+      payload.italy_programs = [];
+      payload.hk_programs = [];
+      const result = await saveProfile(payload);
+      assert.strictEqual(result.ok, false);
+      assert.ok(result.error.includes("Hong Kong program"));
+    });
+
+    it("Scenario 3.11: HK selected, hk_programs is not empty (Succeeds)", async () => {
+      const { saveProfile } = await import("../app/onboarding/actions");
+      const payload = getBaseValidPayload();
+      payload.destinations = ["HK"];
+      payload.target_schools = [];
+      payload.italy_programs = [];
+      payload.hk_programs = ["hku-bba"];
+      const result = await saveProfile(payload);
+      assert.deepStrictEqual(result, { ok: true });
+    });
+
+    it("Scenario 3.12: Both US & HK selected, only US target set (Rejects)", async () => {
+      const { saveProfile } = await import("../app/onboarding/actions");
+      const payload = getBaseValidPayload();
+      payload.destinations = ["US", "HK"];
+      payload.target_schools = ["Stanford University"];
+      payload.italy_programs = [];
+      payload.hk_programs = [];
+      const result = await saveProfile(payload);
+      assert.strictEqual(result.ok, false);
+      assert.ok(result.error.includes("Hong Kong program"));
+    });
+
+    it("Scenario 3.13: Both US & HK selected, only HK target set (Rejects)", async () => {
+      const { saveProfile } = await import("../app/onboarding/actions");
+      const payload = getBaseValidPayload();
+      payload.destinations = ["US", "HK"];
+      payload.target_schools = [];
+      payload.italy_programs = [];
+      payload.hk_programs = ["hku-bba"];
+      const result = await saveProfile(payload);
+      assert.strictEqual(result.ok, false);
+      assert.ok(result.error.includes("US target school"));
+    });
+
+    it("Scenario 3.14: Both US & HK selected, both set (Succeeds)", async () => {
+      const { saveProfile } = await import("../app/onboarding/actions");
+      const payload = getBaseValidPayload();
+      payload.destinations = ["US", "HK"];
+      payload.target_schools = ["Stanford University"];
+      payload.italy_programs = [];
+      payload.hk_programs = ["hku-bba"];
+      const result = await saveProfile(payload);
+      assert.deepStrictEqual(result, { ok: true });
+    });
   });
 
   describe("Tier 4: Real-World Application Profile Scenarios", () => {
@@ -1038,6 +1102,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         needs_aid: true,
         italy_programs: ["polito-computer-eng", "unimi-ai-science"],
         italy_family_income: 24000,
+        hk_programs: [],
+        hk_grade_status: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1080,6 +1146,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         target_schools: [],
         needs_aid: false,
         italy_programs: [],
+        hk_programs: [],
+        hk_grade_status: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1133,6 +1201,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         target_schools: ["Harvard University", "Yale University", "Columbia University"],
         needs_aid: false,
         italy_programs: [],
+        hk_programs: [],
+        hk_grade_status: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1170,6 +1240,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         needs_aid: false,
         italy_programs: ["unimi-ims-medicine", "unipv-harvey-medicine"],
         italy_family_income: 14500, // Low income, eligible for DSU
+        hk_programs: [],
+        hk_grade_status: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1205,6 +1277,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         target_schools: [],
         needs_aid: true,
         italy_programs: [],
+        hk_programs: [],
+        hk_grade_status: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });

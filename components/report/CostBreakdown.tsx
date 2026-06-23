@@ -28,7 +28,12 @@ export function CostBreakdown({
             name: `${p.university} — ${p.program_name}`,
             fee: p.application_fee_eur ?? 0,
           }))
-        : [];
+        : country === "HK"
+          ? (analysis.hk_programs ?? []).map((p) => ({
+              name: `${p.university} — ${p.program_name}`,
+              fee: 450,
+            }))
+          : [];
 
   if (rows.length === 0) return null;
 
@@ -38,12 +43,20 @@ export function CostBreakdown({
       ? t("report.costFree")
       : country === "US"
         ? `$${n.toLocaleString()}`
-        : `€${n.toLocaleString()}`;
+        : country === "IT"
+          ? `€${n.toLocaleString()}`
+          : `${n.toLocaleString()} HKD`;
 
   return (
     <Section
       title={t("report.costTitle")}
-      hint={country === "US" ? t("report.costHintUS") : t("report.costHintIT")}
+      hint={
+        country === "US"
+          ? t("report.costHintUS")
+          : country === "IT"
+            ? t("report.costHintIT")
+            : t("report.costHintHK")
+      }
     >
       <Card>
         <ul className="divide-y divide-line">
@@ -66,7 +79,9 @@ export function CostBreakdown({
           <span data-num className="text-base font-semibold text-ink">
             {country === "US"
               ? `$${total.toLocaleString()}`
-              : `€${total.toLocaleString()}`}
+              : country === "IT"
+                ? `€${total.toLocaleString()}`
+                : `${total.toLocaleString()} HKD`}
           </span>
         </div>
         <p className="mt-3 text-xs text-ink-faint">{t("report.costApprox")}</p>

@@ -12,6 +12,7 @@ import {
   analyzeItalianPrograms,
   computeFinancialFitScore,
 } from "@/lib/ai/italy-analyze";
+import { analyzeHkPrograms } from "@/lib/ai/hk-analyze";
 
 /**
  * Deterministic overall score (0–100) from the model's per-factor scores and
@@ -74,6 +75,20 @@ export function assembleAnalysis(
       )
     : undefined;
 
+  const hasHk =
+    (profile.destinations ?? []).includes("HK") &&
+    (profile.hk_programs ?? []).length > 0;
+
+  const hkPrograms = hasHk
+    ? analyzeHkPrograms(profile.hk_programs ?? [], {
+        ibTotal: profile.grades?.ib_total,
+        sat: profile.tests?.SAT,
+        ielts: profile.tests?.IELTS,
+        toefl: profile.tests?.TOEFL,
+        gradeStatus: profile.hk_grade_status ?? "predicted",
+      })
+    : undefined;
+
   const full: Analysis = {
     overall_score: computeOverallFromFactors(model.factors),
     factors: model.factors,
@@ -87,6 +102,7 @@ export function assembleAnalysis(
     italy_financial_fit_score: hasItaly
       ? computeFinancialFitScore(profile.italy_family_income, true)
       : undefined,
+    hk_programs: hkPrograms,
   };
   return sanitizeAnalysis(analysisSchema.parse(full));
 }

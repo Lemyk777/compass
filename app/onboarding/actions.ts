@@ -83,6 +83,8 @@ export const inputSchema = z.object({
   needs_aid: z.boolean(),
   italy_programs: z.array(z.string().max(80)).max(8).default([]),
   italy_family_income: z.number().min(0).max(10_000_000).optional(),
+  hk_programs: z.array(z.string().max(80)).max(6).default([]),
+  hk_grade_status: z.enum(["predicted", "achieved"]).optional(),
 }).superRefine((val, ctx) => {
   // Each selected destination needs its own targets (mirrors the per-country
   // step the UI enforces).
@@ -98,6 +100,13 @@ export const inputSchema = z.object({
       code: z.ZodIssueCode.custom,
       message: "Add at least one Italian program.",
       path: ["italy_programs"],
+    });
+  }
+  if (val.destinations.includes("HK") && val.hk_programs.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Add at least one Hong Kong program.",
+      path: ["hk_programs"],
     });
   }
 });
@@ -167,6 +176,8 @@ export async function saveProfile(
     include_italy: data.destinations.includes("IT"),
     italy_programs: data.italy_programs,
     italy_family_income: data.italy_family_income ?? null,
+    hk_programs: data.hk_programs,
+    hk_grade_status: data.hk_grade_status ?? null,
     updated_at: new Date().toISOString(),
   };
 

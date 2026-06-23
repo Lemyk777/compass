@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { analyze?: string };
+  searchParams?: { analyze?: string };
 }) {
   const session = await requireSession("/dashboard");
   const supabase = createClient();
@@ -23,7 +23,7 @@ export default async function DashboardPage({
       .maybeSingle(),
     supabase
       .from("student_profiles")
-      .select("curriculum, target_schools")
+      .select("curriculum, target_schools, italy_programs, hk_programs")
       .eq("user_id", session.id)
       .maybeSingle(),
   ]);
@@ -35,14 +35,19 @@ export default async function DashboardPage({
     if (parsed.success) analysis = sanitizeAnalysis(parsed.data);
   }
 
-  const hasProfile = Boolean(sp?.curriculum && sp?.target_schools?.length);
+  const hasProfile = Boolean(
+    sp?.curriculum &&
+      ((sp.target_schools && sp.target_schools.length > 0) ||
+        (sp.italy_programs && sp.italy_programs.length > 0) ||
+        (sp.hk_programs && sp.hk_programs.length > 0))
+  );
 
   return (
     <DashboardClient
       initialAnalysis={analysis}
       name={session.full_name}
       hasProfile={hasProfile}
-      autoAnalyze={searchParams.analyze === "1"}
+      autoAnalyze={searchParams?.analyze === "1"}
     />
   );
 }

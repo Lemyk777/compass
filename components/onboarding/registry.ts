@@ -10,6 +10,7 @@ import StepActivities from "./steps/StepActivities";
 import StepHonors from "./steps/StepHonors";
 import StepUSTargets from "./steps/StepUSTargets";
 import StepItalyTargets from "./steps/StepItalyTargets";
+import StepHKTargets from "./steps/StepHKTargets";
 import StepReview from "./steps/StepReview";
 
 export const STEP_REGISTRY: Record<string, StepConfig> = {
@@ -77,6 +78,14 @@ export const STEP_REGISTRY: Record<string, StepConfig> = {
     schema: stepSchemas.it,
     component: StepItalyTargets,
     shouldShow: (data) => data.destinations.includes("IT"),
+  },
+  hk: {
+    key: "hk",
+    titleKey: "ob.tHK",
+    subKey: "ob.sHK",
+    schema: stepSchemas.hk,
+    component: StepHKTargets,
+    shouldShow: (data) => data.destinations.includes("HK"),
   },
   review: {
     key: "review",

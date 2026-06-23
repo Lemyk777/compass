@@ -11,6 +11,7 @@ export type StepKey =
   | "honors"
   | "us"
   | "it"
+  | "hk"
   | "review";
 
 export interface StepProps {

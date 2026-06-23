@@ -20,15 +20,19 @@ function Toggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative h-6 w-11 rounded-full transition-colors focus-visible:focus-ring ${
-        checked ? "bg-accent" : "bg-gray-400"
-      }`}
+      className="group relative flex items-center justify-center p-2 -mr-2 min-h-[44px] min-w-[44px] focus:outline-none"
     >
       <span
-        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-          checked ? "left-0.5 translate-x-5" : "left-0.5"
+        className={`relative h-6 w-11 rounded-full transition-colors group-focus-visible:focus-ring ${
+          checked ? "bg-accent" : "bg-neutral-300"
         }`}
-      />
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+            checked ? "left-0.5 translate-x-5" : "left-0.5"
+          }`}
+        />
+      </span>
     </button>
   );
 }
@@ -71,7 +75,7 @@ export default function StepUSTargets({ data, updateField }: StepProps) {
                   )
                 }
                 aria-label={`Remove ${s}`}
-                className="text-white/70 hover:text-white focus-visible:focus-ring min-h-[30px] min-w-[20px]"
+                className="flex h-11 w-11 -my-3 -mr-3 items-center justify-center text-white/70 hover:text-white focus-visible:focus-ring"
               >
                 ×
               </button>
