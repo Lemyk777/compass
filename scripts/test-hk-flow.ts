@@ -44,7 +44,7 @@ async function runHkFlowTest() {
   try {
     // 1. Verify schema parsing works for the inputs
     console.log("1. Parsing Zod Input Schema...");
-    const { inputSchema } = await import("../app/onboarding/actions");
+    const { inputSchema } = await import("../app/onboarding/schema");
     const parsed = inputSchema.parse(HK_TEST_PROFILE);
     console.log("✓ Zod input schema parsed successfully.");
 
