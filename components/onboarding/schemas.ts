@@ -164,6 +164,14 @@ export const italySchema = z.object({
     .optional(),
 });
 
+export const hkSchema = z.object({
+  hk_programs: z
+    .array(z.string().max(80))
+    .min(1, "ob.errHkPrograms")
+    .max(6, "Up to 6 Hong Kong programs allowed."),
+  hk_grade_status: z.enum(["predicted", "achieved"]).optional(),
+});
+
 export const reviewSchema = z.any();
 
 export const stepSchemas = {
@@ -176,5 +184,6 @@ export const stepSchemas = {
   honors: honorsSchema,
   us: usSchema,
   it: italySchema,
+  hk: hkSchema,
   review: reviewSchema,
 } as const;

@@ -82,6 +82,8 @@ export const SAMPLE_PROFILE: StudentProfileInput = {
   needs_aid: true,
   italy_programs: SAMPLE_ITALY_PROGRAMS,
   italy_family_income: SAMPLE_FAMILY_INCOME,
+  hk_programs: [],
+  hk_grade_status: undefined,
 };
 
 export const SAMPLE_ANALYSIS: Analysis = {

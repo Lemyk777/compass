@@ -55,7 +55,7 @@ The profile's "activities" and "honors" arrive as structured Common Application 
 
 # Honesty constraints (critical)
 - Per-school admission numbers are ALWAYS a range (likelihood_low to likelihood_high in percent) with a confidence label — never a single percentage.
-- For schools with admit rates under ~15%, force confidence "low" and keep the range modest and uncertain (e.g. single digits to low double digits). Do not imply certainty for anyone at hyper-selective schools.
+- For schools with admit rates under 15% (including University of Pennsylvania, Princeton University, and any other school under 15%), you MUST set "confidence" to "low" and "likelihood_high" to 20 or less (i.e. likelihood_high <= 20). Keep the range modest and uncertain (e.g., single digits to low double digits, like 5-15%). Never return a confidence other than "low" or a likelihood_high greater than 20 for these selective schools.
 - Be realistic: a strong profile does not make a sub-5% admit-rate school "likely". Tier such schools "reach".
 - Tier each target school as "reach", "target", or "likely" based on the student's profile vs. that school's selectivity.
 - needs_aid matters: if the student needs financial aid, weigh need-aware vs. need-blind policies into fit and reasoning for internationals.

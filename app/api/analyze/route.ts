@@ -45,11 +45,15 @@ export async function POST(_req: NextRequest) {
   const destinations = normalizeDestinations(sp?.destinations, sp?.include_italy);
   const wantsUS = destinations.includes("US");
   const wantsIT = destinations.includes("IT");
+  const wantsHK = destinations.includes("HK");
   const hasUSTargets = (sp?.target_schools?.length ?? 0) > 0;
   const hasITTargets = (sp?.italy_programs?.length ?? 0) > 0;
+  const hasHKTargets = (sp?.hk_programs?.length ?? 0) > 0;
   // Ready when every selected destination has its targets in place.
   const targetsReady =
-    (!wantsUS || hasUSTargets) && (!wantsIT || hasITTargets);
+    (!wantsUS || hasUSTargets) &&
+    (!wantsIT || hasITTargets) &&
+    (!wantsHK || hasHKTargets);
 
   if (!sp || !sp.curriculum || destinations.length === 0 || !targetsReady) {
     return NextResponse.json(
@@ -92,6 +96,8 @@ export async function POST(_req: NextRequest) {
     needs_aid: sp.needs_aid ?? false,
     italy_programs: sp.italy_programs ?? [],
     italy_family_income: sp.italy_family_income ?? undefined,
+    hk_programs: sp.hk_programs ?? [],
+    hk_grade_status: sp.hk_grade_status ?? undefined,
   };
 
   try {

@@ -5,6 +5,7 @@ import { useT } from "@/lib/i18n/client";
 import { destinationLabelKey } from "@/lib/data/destinations";
 import { facultyLabelKey } from "@/lib/data/faculties";
 import { ITALIAN_PROGRAMS } from "@/lib/data/italian-universities";
+import { HK_PROGRAMS } from "@/lib/data/hk-universities";
 import type { StudentProfileInput } from "@/lib/types";
 
 function testSummary(data: StudentProfileInput): string {
@@ -36,6 +37,14 @@ export default function StepReview({ data, goToKey }: StepProps) {
 
   const wantsUS = data.destinations.includes("US");
   const wantsIT = data.destinations.includes("IT");
+  const wantsHK = data.destinations.includes("HK");
+
+  const hkProgramSummary = (data.hk_programs ?? [])
+    .map((id) => {
+      const p = HK_PROGRAMS.find((x) => x.id === id);
+      return p ? `${p.university} (${p.program_name})` : id;
+    })
+    .join(", ");
 
   const rows: { label: string; value: string; step: StepKey }[] = [
     { label: t("ob.rCountry"), value: data.country || "—", step: "origin" },
@@ -111,6 +120,25 @@ export default function StepReview({ data, goToKey }: StepProps) {
           },
         ]
       : []),
+    ...(wantsHK
+      ? [
+          {
+            label: t("ob.hkPrograms"),
+            value: hkProgramSummary || "—",
+            step: "hk" as StepKey,
+          },
+          {
+            label: t("ob.hkGradeStatus"),
+            value:
+              data.hk_grade_status === "predicted"
+                ? t("ob.hkPredicted")
+                : data.hk_grade_status === "achieved"
+                  ? t("ob.hkAchieved")
+                  : "—",
+            step: "hk" as StepKey,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -125,7 +153,7 @@ export default function StepReview({ data, goToKey }: StepProps) {
             <button
               type="button"
               onClick={() => goToKey(r.step)}
-              className="rounded text-xs font-medium text-accent hover:underline focus-visible:focus-ring min-h-[30px]"
+              className="rounded text-xs font-medium text-accent hover:underline focus-visible:focus-ring min-h-[44px] px-2 -my-3 flex items-center"
             >
               {t("ob.edit")}
             </button>

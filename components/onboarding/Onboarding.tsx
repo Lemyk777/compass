@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -17,6 +18,14 @@ function OnboardingWizard({ hasAnalysis }: { hasAnalysis: boolean }) {
   const router = useRouter();
   const { data, errors, isSaving, updateField, updateFields, saveProfile } = useOnboardingContext();
   const { stepIndex, steps, stepKey, isFirst, isLast, next, back, goToKey } = useOnboardingWizard();
+
+  const [prevIndex, setPrevIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+
+  if (stepIndex !== prevIndex) {
+    setDirection(stepIndex > prevIndex ? 1 : -1);
+    setPrevIndex(stepIndex);
+  }
 
   const stepMeta = STEP_REGISTRY[stepKey];
   const StepComponent = stepMeta?.component;
@@ -69,10 +78,10 @@ function OnboardingWizard({ hasAnalysis }: { hasAnalysis: boolean }) {
         <AnimatePresence mode="wait">
           <motion.div
             key={stepKey}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: direction * 20 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, x: -direction * 20 }}
+            transition={{ duration: 0.22, ease: "easeInOut" }}
           >
             {stepMeta && (
               <>

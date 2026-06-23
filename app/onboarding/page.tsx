@@ -47,6 +47,8 @@ export default async function OnboardingPage() {
       needs_aid: sp.needs_aid ?? false,
       italy_programs: sp.italy_programs ?? [],
       italy_family_income: sp.italy_family_income ?? undefined,
+      hk_programs: sp.hk_programs ?? [],
+      hk_grade_status: sp.hk_grade_status ?? undefined,
     };
   } else if (session.country) {
     initial = { ...emptyProfile(), country: session.country };

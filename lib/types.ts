@@ -139,6 +139,9 @@ export type StudentProfileInput = {
   // ── Italy pathway (active when destinations includes "IT") ──
   italy_programs: string[]; // Italian program IDs from the dataset
   italy_family_income?: number; // Annual family income in EUR (for DSU scholarship estimate)
+  // ── Hong Kong pathway (active when destinations includes "HK") ──
+  hk_programs: string[]; // HK program IDs from the dataset
+  hk_grade_status?: "predicted" | "achieved"; // are reported grades predicted or achieved?
 };
 
 export function emptyActivity(): Activity {
@@ -165,6 +168,8 @@ export function emptyProfile(): StudentProfileInput {
     needs_aid: false,
     italy_programs: [],
     italy_family_income: undefined,
+    hk_programs: [],
+    hk_grade_status: undefined,
   };
 }
 

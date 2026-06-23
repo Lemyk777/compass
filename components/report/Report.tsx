@@ -11,6 +11,7 @@ import { GapAnalysis } from "@/components/report/GapAnalysis";
 import { Recommendations } from "@/components/report/Recommendations";
 import { Timeline } from "@/components/report/Timeline";
 import { ItalyBreakdown } from "@/components/report/ItalyBreakdown";
+import { HkBreakdown } from "@/components/report/HkBreakdown";
 import { CostBreakdown } from "@/components/report/CostBreakdown";
 import { Button } from "@/components/ui/Button";
 import { Flag } from "@/components/ui/Flag";
@@ -33,9 +34,11 @@ export function Report({
   // section, switchable via the selector when more than one is present.
   const hasUS = analysis.schools.length > 0;
   const hasItaly = (analysis.italy_programs?.length ?? 0) > 0;
+  const hasHK = (analysis.hk_programs?.length ?? 0) > 0;
   const tabs: DestinationCode[] = [];
   if (hasUS) tabs.push("US");
   if (hasItaly) tabs.push("IT");
+  if (hasHK) tabs.push("HK");
 
   const [active, setActive] = useState<DestinationCode>("US");
   const activeTab: DestinationCode | null = tabs.length
@@ -84,6 +87,7 @@ export function Report({
           {tabs.length === 1 && <CountryHeader code={activeTab} />}
           {activeTab === "US" && <UsOdds analysis={analysis} />}
           {activeTab === "IT" && <ItalyOdds analysis={analysis} />}
+          {activeTab === "HK" && <HkOdds analysis={analysis} />}
           <CostBreakdown analysis={analysis} country={activeTab} />
         </div>
       )}
@@ -214,6 +218,17 @@ function ItalyOdds({ analysis }: { analysis: Analysis }) {
   return (
     <Section title={t("report.italyTitle")} hint={t("report.italyHint")}>
       <ItalyBreakdown programs={analysis.italy_programs} />
+    </Section>
+  );
+}
+
+// ── Hong Kong admission odds (deterministic) ─────────────────────────────────
+function HkOdds({ analysis }: { analysis: Analysis }) {
+  const t = useT();
+  if (!analysis.hk_programs?.length) return null;
+  return (
+    <Section title={t("report.hkTitle")} hint={t("report.hkHint")}>
+      <HkBreakdown programs={analysis.hk_programs} />
     </Section>
   );
 }

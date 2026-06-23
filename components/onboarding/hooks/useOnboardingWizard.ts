@@ -9,6 +9,7 @@ import { stepSchemas } from "../schemas";
 export function buildSteps(destinations: DestinationCode[]): StepKey[] {
   const wantsUS = destinations.includes("US");
   const wantsIT = destinations.includes("IT");
+  const wantsHK = destinations.includes("HK");
   return [
     "origin",
     "destinations",
@@ -19,6 +20,7 @@ export function buildSteps(destinations: DestinationCode[]): StepKey[] {
     "honors",
     ...(wantsUS ? (["us"] as StepKey[]) : []),
     ...(wantsIT ? (["it"] as StepKey[]) : []),
+    ...(wantsHK ? (["hk"] as StepKey[]) : []),
     "review",
   ];
 }

@@ -30,8 +30,18 @@ export const COUNTRY_SCORECARD_WEIGHTS: Record<DestinationCode, WeightMap> = {
     extracurricular_depth: 0.005,
     narrative_fit: 0.005,
   },
+  // Academically meritocratic + interview-based: grades/tests dominate, with
+  // extracurriculars/leadership standing in for interview readiness.
+  HK: {
+    academics: 0.34,
+    test_scores: 0.2,
+    course_rigor: 0.16,
+    extracurricular_depth: 0.1,
+    leadership: 0.1,
+    awards: 0.06,
+    narrative_fit: 0.04,
+  },
   // Not yet tuned — fall back to an even, holistic blend.
-  HK: {},
   UK: {},
   DE: {},
   NL: {},

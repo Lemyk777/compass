@@ -165,7 +165,7 @@ export default function ActivityFormFields({
           onClick={() => update({ continue_in_college: !activity.continue_in_college })}
           className="group relative flex items-center justify-center p-2 -mr-2 min-h-[44px] min-w-[44px] focus:outline-none"
         >
-          <span className={`relative h-6 w-11 rounded-full transition-colors group-focus-visible:focus-ring ${activity.continue_in_college ? "bg-accent" : "bg-gray-500"}`}>
+          <span className={`relative h-6 w-11 rounded-full transition-colors group-focus-visible:focus-ring ${activity.continue_in_college ? "bg-accent" : "bg-neutral-300"}`}>
             <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${activity.continue_in_college ? "left-0.5 translate-x-5" : "left-0.5"}`} />
           </span>
         </button>
