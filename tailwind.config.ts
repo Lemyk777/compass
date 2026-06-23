@@ -12,7 +12,7 @@ const config: Config = {
         ink: {
           DEFAULT: "#10192B",
           soft: "#3A4661",
-          faint: "#6B7488",
+          faint: "#525D73",
         },
         // Warm neutral surfaces
         surface: "#F5F3EF",

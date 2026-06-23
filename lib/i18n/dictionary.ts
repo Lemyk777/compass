@@ -85,6 +85,24 @@ const en: Dict = {
   "landing.demoSub": "A clear, shareable read on exactly where you stand — and what to do next.",
   "landing.ctaTitle": "Ready to see where you stand?",
   "landing.ctaSub": "Build your scorecard in a few minutes. Free to start.",
+  "landing.faqTitle": "Questions, answered",
+  "landing.faqSub": "The honest answers, before you start.",
+  "landing.faqQ1": "How is my competitiveness score calculated?",
+  "landing.faqA1":
+    "Seven factors are each scored against a fixed rubric and real admitted-student data, then blended into one 0–100 number. The same profile always produces the same score — no black box, no hype.",
+  "landing.faqQ2": "Can Compass guarantee I'll get in?",
+  "landing.faqA2":
+    "No — and we won't pretend to. Top schools are unpredictable for everyone, so we give honest likelihood ranges instead of a fake percentage. The real value is the prioritized plan to improve.",
+  "landing.faqQ3": "Which countries does it cover?",
+  "landing.faqA3":
+    "The US, Italy and Hong Kong today — each scored on its own admission logic — with more countries on the way.",
+  "landing.faqQ4": "I'm on IB / A-Levels / a national curriculum — does it work?",
+  "landing.faqA4":
+    "Yes. The intake adapts to your curriculum — IB, A-Levels, national systems or US GPA — with no manual conversions.",
+  "landing.faqQ5": "How long does it take?",
+  "landing.faqA5": "A few minutes. One guided intake in, a complete game plan out.",
+  "landing.faqQ6": "Is it free?",
+  "landing.faqA6": "Free to start — no credit card needed.",
 
   // auth
   "auth.welcomeBack": "Welcome back",
@@ -241,6 +259,7 @@ const en: Dict = {
   "ob.italyNoFieldMatches": "No programs in your chosen fields yet — try searching by name.",
   "dest.US": "United States",
   "dest.IT": "Italy",
+  "dest.HK": "Hong Kong",
   "dest.UK": "United Kingdom",
   "dest.DE": "Germany",
   "dest.NL": "Netherlands",
@@ -477,6 +496,24 @@ const ru: Dict = {
   "landing.demoSub": "Понятная картина того, где вы стоите — и что делать дальше.",
   "landing.ctaTitle": "Готовы узнать, где вы стоите?",
   "landing.ctaSub": "Создайте карту профиля за пару минут. Бесплатно.",
+  "landing.faqTitle": "Частые вопросы",
+  "landing.faqSub": "Честные ответы — до того, как начать.",
+  "landing.faqQ1": "Как считается балл конкурентоспособности?",
+  "landing.faqA1":
+    "Семь факторов оцениваются по фиксированной методике и реальным данным о поступивших, затем сводятся в один балл 0–100. Один и тот же профиль всегда даёт один и тот же балл — без чёрного ящика и накрутки.",
+  "landing.faqQ2": "Compass гарантирует поступление?",
+  "landing.faqA2":
+    "Нет — и мы не будем притворяться. Топовые вузы непредсказуемы для всех, поэтому мы даём честные диапазоны вероятности, а не выдуманный процент. Главная ценность — приоритизированный план улучшений.",
+  "landing.faqQ3": "Какие страны поддерживаются?",
+  "landing.faqA3":
+    "США, Италия и Гонконг — каждая по своей логике поступления, и впереди новые страны.",
+  "landing.faqQ4": "У меня IB / A-Levels / национальная программа — сработает?",
+  "landing.faqA4":
+    "Да. Опросник подстраивается под вашу систему — IB, A-Levels, национальные системы или US GPA — без ручных пересчётов.",
+  "landing.faqQ5": "Сколько времени занимает?",
+  "landing.faqA5": "Пару минут. Один профиль на входе — полный план на выходе.",
+  "landing.faqQ6": "Это бесплатно?",
+  "landing.faqA6": "Бесплатно на старте — без карты.",
 
   // auth
   "auth.welcomeBack": "С возвращением",
@@ -633,6 +670,7 @@ const ru: Dict = {
   "ob.italyNoFieldMatches": "Пока нет программ по выбранным направлениям — поищите по названию.",
   "dest.US": "США",
   "dest.IT": "Италия",
+  "dest.HK": "Гонконг",
   "dest.UK": "Великобритания",
   "dest.DE": "Германия",
   "dest.NL": "Нидерланды",
