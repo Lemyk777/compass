@@ -80,9 +80,11 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right — interactive map, defined height so it never overlaps or jumps */}
-          <div className="relative h-[44vh] w-full sm:h-[54vh] lg:h-[82vh]">
-            <MapScene className="h-full w-full" />
+          {/* Right — interactive map. Self-sizing (its own aspect ratio) so it
+              fills the width with no dead space and never floats; centered
+              against the message by the grid's items-center. */}
+          <div className="w-full">
+            <MapScene className="w-full" />
           </div>
         </div>
       </section>
