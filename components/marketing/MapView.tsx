@@ -98,40 +98,44 @@ export default function MapView({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <div className="relative h-full w-full">
-        {/* Country silhouette — zooms out to space and the next one flies in */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={country.code}
-            className="absolute inset-0"
-            initial={{ scale: 0.28, opacity: 0, y: 30, filter: "blur(6px)" }}
-            animate={{ scale: 1, opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ scale: 0.28, opacity: 0, y: -30, filter: "blur(6px)" }}
-            transition={{ duration: 0.6, ease: EASE }}
-          >
-            <OutlineMap country={country} />
-          </motion.div>
-        </AnimatePresence>
+      <div className="mx-auto w-full max-w-2xl">
+        {/* Map stage — the country's own aspect ratio, so it fills the width with
+            no vertical dead space and the silhouette shows instantly. */}
+        <div className="relative aspect-[1000/640] w-full">
+          {/* Country silhouette — zooms out to space and the next one flies in */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={country.code}
+              className="absolute inset-0"
+              initial={{ scale: 0.28, opacity: 0, y: 30, filter: "blur(6px)" }}
+              animate={{ scale: 1, opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ scale: 0.28, opacity: 0, y: -30, filter: "blur(6px)" }}
+              transition={{ duration: 0.6, ease: EASE }}
+            >
+              <OutlineMap country={country} />
+            </motion.div>
+          </AnimatePresence>
 
-        {/* Flight overlay: clouds + a glimpse of the planet */}
-        <AnimatePresence>
-          {flying && (
-            <div key={flightKey} className="pointer-events-none absolute inset-0 z-20">
-              <Clouds dir={dir} />
-              <motion.div
-                className="absolute inset-0 z-30 flex items-center justify-center"
-                initial={{ scale: 0.2, opacity: 0 }}
-                animate={{ scale: [0.2, 1, 1, 0.4], opacity: [0, 1, 1, 0] }}
-                transition={{ duration: FLIGHT_MS / 1000, ease: "easeInOut", times: [0, 0.35, 0.6, 1] }}
-              >
-                <MiniGlobe />
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
+          {/* Flight overlay: clouds + a glimpse of the planet */}
+          <AnimatePresence>
+            {flying && (
+              <div key={flightKey} className="pointer-events-none absolute inset-0 z-20">
+                <Clouds dir={dir} />
+                <motion.div
+                  className="absolute inset-0 z-30 flex items-center justify-center"
+                  initial={{ scale: 0.2, opacity: 0 }}
+                  animate={{ scale: [0.2, 1, 1, 0.4], opacity: [0, 1, 1, 0] }}
+                  transition={{ duration: FLIGHT_MS / 1000, ease: "easeInOut", times: [0, 0.35, 0.6, 1] }}
+                >
+                  <MiniGlobe />
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
 
-        {/* Pager controls */}
-        <div className="pointer-events-auto absolute bottom-6 left-1/2 z-40 -translate-x-1/2">
+        {/* Pager controls — directly under the map, no floating gap */}
+        <div className="mt-5 flex flex-col items-center">
           <div className="flex items-center gap-4 rounded-full border border-black/5 bg-white/70 px-3 py-2 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-md">
             <button
               type="button"

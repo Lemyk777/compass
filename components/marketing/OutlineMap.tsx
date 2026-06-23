@@ -194,11 +194,14 @@ export function OutlineMap({ country }: { country: CountryView }) {
         </filter>
       </defs>
 
-      <g style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.5s ease-out" }}>
-        {/* Shadow silhouette lifts the country off the page */}
+      <g>
+        {/* Shadow silhouette lifts the country off the page. Shown immediately so
+            the map is visibly present even before the remote terrain decodes. */}
         <path d={clip} fill="#e8ecf0" filter="url(#terrain-lift)" />
 
-        {/* Real topographic terrain, clipped to the country shape */}
+        {/* Real topographic terrain, clipped to the country shape. Only THIS layer
+            waits on the remote raster, fading in over the silhouette below it —
+            so the shape, border and university chips never hide behind a slow image. */}
         <image
           href={url}
           x={img.x}
@@ -209,6 +212,7 @@ export function OutlineMap({ country }: { country: CountryView }) {
           preserveAspectRatio="none"
           onLoad={() => setLoaded(true)}
           onError={() => setLoaded(true)}
+          style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.4s ease-out" }}
         />
 
       {/* Coastline / border */}
