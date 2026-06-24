@@ -8,7 +8,6 @@ import { Report } from "@/components/report/Report";
 import { ReportNav } from "@/components/dashboard/ReportNav";
 import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
-import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 import { useT } from "@/lib/i18n/client";
 
@@ -92,7 +91,6 @@ export function DashboardClient({
             <ButtonLink href="/onboarding" variant="ghost" size="sm">
               {t("common.updateProfile")}
             </ButtonLink>
-            <LanguageToggle className="mx-1" />
             <form action="/auth/signout" method="post">
               <Button type="submit" variant="ghost" size="sm">
                 {t("common.signOut")}

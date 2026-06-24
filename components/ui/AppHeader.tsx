@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
-import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 import { getT } from "@/lib/i18n/server";
 
@@ -32,7 +31,6 @@ export function AppHeader({
               {l.label}
             </Link>
           ))}
-          <LanguageToggle className="mx-1" />
           <form action="/auth/signout" method="post">
             <Button type="submit" variant="ghost" size="sm">
               {t("common.signOut")}

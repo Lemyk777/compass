@@ -51,13 +51,13 @@ export function FactorBars({
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  Детали оценки
+                  Score details
                 </span>
               </summary>
               <div className="mt-2.5 pl-4 border-l-2 border-line/50 space-y-2">
                 {f.rubric_tier && (
                   <p className="text-[11px] font-semibold text-ink-soft uppercase tracking-wide">
-                    Уровень: {f.rubric_tier}
+                    Tier: {f.rubric_tier}
                   </p>
                 )}
                 {f.reasoning && f.reasoning.length > 0 && (
@@ -72,7 +72,7 @@ export function FactorBars({
                 )}
                 {f.note && (
                   <p className="text-xs italic leading-relaxed text-ink-soft bg-card-surface/50 rounded-md p-2 border border-line/30">
-                    Вывод: {f.note}
+                    Takeaway: {f.note}
                   </p>
                 )}
               </div>

@@ -5,7 +5,6 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
-import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { useT } from "@/lib/i18n/client";
 import type { StudentProfileInput } from "@/lib/types";
 
@@ -50,7 +49,6 @@ function OnboardingWizard({ hasAnalysis }: { hasAnalysis: boolean }) {
       <header className="flex items-center justify-between py-5">
         <Logo className="text-ink" />
         <div className="flex items-center gap-1.5">
-          <LanguageToggle />
           <ButtonLink href="/ambassador" variant="ghost" size="sm">
             {t("common.areYouAmbassador")}
           </ButtonLink>

@@ -132,7 +132,7 @@ export function Report({
   );
 }
 
-// ── Destination selector (the "выборка") ─────────────────────────────────────
+// ── Destination selector ─────────────────────────────────────────────────────
 function DestinationTabs({
   tabs,
   active,

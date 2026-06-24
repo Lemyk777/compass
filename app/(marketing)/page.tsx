@@ -1,9 +1,9 @@
 import { Logo } from "@/components/ui/Logo";
 import { ButtonLink } from "@/components/ui/Button";
-import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { UniversityLogos } from "@/components/marketing/UniversityMarquee";
 import { MiniScorecard } from "@/components/marketing/MiniScorecard";
 import { MapScene } from "@/components/marketing/MapScene";
+import { RotatingHeadline } from "@/components/marketing/RotatingHeadline";
 import { HowItWorks } from "@/components/marketing/HowItWorks";
 import { FAQ } from "@/components/marketing/FAQ";
 import { FinalCTA } from "@/components/marketing/FinalCTA";
@@ -29,7 +29,6 @@ export default async function LandingPage() {
           <Logo className="shrink-0 text-ink" />
           <nav className="flex items-center gap-1.5 sm:gap-3">
             {isAdmin && <AdminSwitcher className="mr-1 hidden lg:inline-flex" />}
-            <LanguageToggle className="mr-0 sm:mr-2" />
             <ButtonLink
               href="/auth/login"
               variant="ghost"
@@ -54,8 +53,8 @@ export default async function LandingPage() {
           column is deliberately compact so the map sits beside it, not far
           below it. Content is visible by default (CSS reveal), never gated by
           a scroll/JS animation. */}
-      <section className="relative w-full overflow-hidden bg-[#F7F8FA]">
-        <div className="mx-auto grid max-w-[1600px] grid-cols-1 items-center gap-12 px-6 pb-20 pt-32 md:px-12 lg:grid-cols-[minmax(0,500px)_1fr] lg:gap-16 lg:pb-24 lg:pt-36 xl:px-20">
+      <section className="relative flex min-h-[100svh] w-full items-center overflow-hidden bg-[#F7F8FA]">
+        <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 px-6 py-24 md:px-12 lg:grid-cols-[minmax(0,500px)_1fr] lg:gap-16 lg:py-28 xl:px-20">
           {/* Left — the message (compact) */}
           <div className="relative z-10 max-w-xl">
             <span className="rise-in inline-flex items-center rounded-full border border-ink/10 bg-white px-3.5 py-1.5 text-xs font-medium text-ink/60">
@@ -63,7 +62,13 @@ export default async function LandingPage() {
             </span>
             <h1 className="rise-in mt-6 text-balance text-[2.75rem] font-medium leading-[1.04] tracking-tight text-ink sm:text-[3.25rem] lg:text-[3.75rem]">
               {t("landing.title1")}
-              <span className="block text-ink/55">{t("landing.title2")}</span>
+              <RotatingHeadline
+                phrases={[
+                  t("landing.title2"),
+                  t("landing.title2b"),
+                  t("landing.title2c"),
+                ]}
+              />
             </h1>
             <p
               className="rise-in mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-ink/60"

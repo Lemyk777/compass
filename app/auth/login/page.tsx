@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { AuthForm } from "@/components/auth/AuthForm";
-import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { AuthAside } from "@/components/marketing/AuthAside";
 import { getT } from "@/lib/i18n/server";
 
@@ -18,7 +17,6 @@ export default function LoginPage({
           <Link href="/" className="rounded focus-visible:focus-ring">
             <Logo className="text-ink" />
           </Link>
-          <LanguageToggle />
         </header>
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 pb-16">
           <h1 className="text-2xl font-semibold tracking-tight text-ink">
