@@ -52,6 +52,7 @@ export default async function DashboardPage({
       name={session.full_name}
       hasProfile={hasProfile}
       autoAnalyze={searchParams?.analyze === "1"}
+      isAdmin={session.role === "admin"}
     />
   );
 }

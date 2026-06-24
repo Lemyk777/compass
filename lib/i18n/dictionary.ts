@@ -423,6 +423,11 @@ const en: Dict = {
   "admin.ambEmpty": "No ambassadors yet.",
   "admin.unnamed": "Unnamed",
 
+  // Admin view switcher (admins only)
+  "adminNav.landing": "Landing",
+  "adminNav.results": "Results",
+  "adminNav.stats": "Statistics",
+
   // Italy module
   "ob.italyToggle": "I'm applying to Italy",
   "ob.italyIncome": "Annual family income (for DSU scholarship estimate)",
@@ -868,6 +873,11 @@ const ru: Dict = {
   "admin.ambActiveStat": "Активных",
   "admin.ambEmpty": "Пока нет амбассадоров.",
   "admin.unnamed": "Без имени",
+
+  // Admin view switcher (admins only)
+  "adminNav.landing": "Лендинг",
+  "adminNav.results": "Результаты",
+  "adminNav.stats": "Статистика",
 
   // Italy module
   "ob.italyToggle": "Подаю в Италию",

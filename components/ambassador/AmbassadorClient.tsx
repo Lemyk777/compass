@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { siteUrl } from "@/lib/site";
+import { shareUrl } from "@/lib/site";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/report/Section";
 import { useT } from "@/lib/i18n/client";
@@ -14,7 +14,7 @@ export function AmbassadorClient({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const url = `${siteUrl()}/?ref=${encodeURIComponent(code)}`;
+    const url = `${shareUrl()}/?ref=${encodeURIComponent(code)}`;
     setLink(url);
     QRCode.toDataURL(url, {
       width: 320,

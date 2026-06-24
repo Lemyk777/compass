@@ -76,6 +76,7 @@ export default async function AdminPage() {
   return (
     <main className="min-h-dvh bg-surface">
       <AppHeader
+        admin
         links={[
           { href: "/admin/ambassadors", label: t("admin.ambassadors") },
           { href: "/dashboard", label: t("common.dashboard") },
