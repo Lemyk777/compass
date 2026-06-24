@@ -98,7 +98,7 @@ export default function MapView({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="w-full">
         {/* Map stage — the country's own aspect ratio, so it fills the width with
             no vertical dead space and the silhouette shows instantly. */}
         <div className="relative aspect-[1000/640] w-full">

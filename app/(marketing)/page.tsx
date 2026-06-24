@@ -21,22 +21,24 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#F7F8FA] text-ink selection:bg-ink selection:text-white">
       {/* Nav */}
-      <header className="absolute inset-x-0 top-0 z-50 flex w-full items-center justify-between px-5 py-8 md:px-12 lg:px-20">
-        <Logo className="text-ink" />
-        <nav className="flex items-center gap-3">
-          <LanguageToggle className="mr-2" />
-          <ButtonLink href="/auth/login" variant="ghost" size="sm" className="font-medium">
-            {t("common.logIn")}
-          </ButtonLink>
-          <ButtonLink href="/auth/signup" variant="primary" size="sm" className="rounded-full px-5">
-            {t("common.getStarted")}
-          </ButtonLink>
-        </nav>
+      <header className="absolute inset-x-0 top-0 z-50">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-5 py-8 md:px-10 lg:px-10">
+          <Logo className="text-ink" />
+          <nav className="flex items-center gap-3">
+            <LanguageToggle className="mr-2" />
+            <ButtonLink href="/auth/login" variant="ghost" size="sm" className="font-medium">
+              {t("common.logIn")}
+            </ButtonLink>
+            <ButtonLink href="/auth/signup" variant="primary" size="sm" className="rounded-full px-5">
+              {t("common.getStarted")}
+            </ButtonLink>
+          </nav>
+        </div>
       </header>
 
       {/* Hero — true two-column: message left, interactive map right. No overlap. */}
       <section className="relative w-full overflow-hidden bg-[#F7F8FA]">
-        <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 items-center gap-10 px-5 pb-16 pt-32 md:px-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-12 lg:px-20 lg:pb-0 lg:pt-0">
+        <div className="mx-auto grid min-h-screen max-w-[1440px] grid-cols-1 items-center gap-10 px-5 pb-16 pt-32 md:px-10 lg:grid-cols-[minmax(0,480px)_1fr] lg:gap-16 lg:px-10 lg:pb-12 lg:pt-28">
           {/* Left — the message */}
           <div className="relative z-10 max-w-xl">
             <div className="text-balance text-[2.75rem] font-medium leading-[1.04] tracking-tight text-ink sm:text-[3.5rem] lg:text-[3.75rem]">
@@ -82,8 +84,16 @@ export default function LandingPage() {
 
           {/* Right — interactive map. Self-sizing (its own aspect ratio) so it
               fills the width with no dead space and never floats; centered
-              against the message by the grid's items-center. */}
-          <div className="w-full">
+              against the message by the grid's items-center. A soft brand glow
+              sits behind it for depth (decorative, never intercepts input). */}
+          <div className="relative w-full">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 -z-10"
+            >
+              <div className="absolute right-[8%] top-[6%] h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
+              <div className="absolute bottom-[4%] left-[12%] h-64 w-64 rounded-full bg-[#0E7B57]/10 blur-3xl" />
+            </div>
             <MapScene className="w-full" />
           </div>
         </div>

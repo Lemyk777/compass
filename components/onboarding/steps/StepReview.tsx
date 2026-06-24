@@ -47,10 +47,9 @@ export default function StepReview({ data, goToKey }: StepProps) {
     .join(", ");
 
   const rows: { label: string; value: string; step: StepKey }[] = [
-    { label: t("ob.rCountry"), value: data.country || "—", step: "origin" },
     {
-      label: t("ob.rCitizenship"),
-      value: data.citizenship || "—",
+      label: t("ob.countryCitizenship"),
+      value: data.citizenship || data.country || "—",
       step: "origin",
     },
     {
