@@ -16,8 +16,9 @@ import { analyzeHkPrograms } from "@/lib/ai/hk-analyze";
 import {
   academicIndexFromProfile,
   estimateSchoolLikelihood,
+  isInternationalApplicant,
 } from "@/lib/ai/empirical";
-import { scoreHolistic } from "@/lib/ai/tier-score";
+import { scoreHolistic, scoreAcademicFactors } from "@/lib/ai/tier-score";
 import type { SchoolLikelihood } from "@/lib/ai/schema";
 
 /**
@@ -72,10 +73,11 @@ export function applyEmpiricalLikelihoods(
   profile: StudentProfileInput
 ): SchoolLikelihood[] {
   const index = academicIndexFromProfile(profile);
+  const international = isInternationalApplicant(profile);
   return schools.map((s) => {
     const uni = findUniversity(s.name);
     if (!uni) return s;
-    const est = estimateSchoolLikelihood(uni, index);
+    const est = estimateSchoolLikelihood(uni, index, { international });
     return {
       ...s,
       tier: est.tier,
@@ -86,12 +88,16 @@ export function applyEmpiricalLikelihoods(
   });
 }
 
-// The holistic factors whose score is OBJECTIVE — derivable from the student's
-// own hours/roles/award levels by an explicit rule. We compute these in code so
-// the number is reproducible and fully arguable, instead of trusting the model
-// to do (and hide) the arithmetic. narrative_fit is intentionally NOT here: the
-// rubric leaves that subjective classification to the model.
+// The factors whose score is OBJECTIVE — derivable from the student's own
+// grades/tests/curriculum/hours/roles/award levels by an explicit rule. We
+// compute these in code so the number is reproducible and fully arguable,
+// instead of trusting the model to do (and hide) the arithmetic. That is now 6
+// of the 7 factors (90% of the overall-score weight). narrative_fit is the only
+// one left to the model: the rubric leaves that subjective classification to it.
 const DETERMINISTIC_FACTORS = new Set([
+  "academics",
+  "test_scores",
+  "course_rigor",
   "leadership",
   "extracurricular_depth",
   "awards",
@@ -114,7 +120,14 @@ function applyDeterministicFactors(
     intended_major: profile.intended_major ?? "",
     faculties: profile.faculties ?? [],
   });
-  const byKey = new Map(card.factors.map((f) => [f.factor as string, f]));
+  const academic = scoreAcademicFactors({
+    grades: profile.grades,
+    tests: profile.tests,
+    curriculum: profile.curriculum || undefined,
+  });
+  const byKey = new Map(
+    [...card.factors, ...academic].map((f) => [f.factor as string, f])
+  );
   return factors.map((f) => {
     const s = DETERMINISTIC_FACTORS.has(f.key) ? byKey.get(f.key) : undefined;
     if (!s) return f;

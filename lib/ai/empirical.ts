@@ -67,6 +67,51 @@ function tierOf(pct: number): Tier {
   return pct < 20 ? "reach" : pct < 55 ? "target" : "likely";
 }
 
+/**
+ * Survivorship-bias calibration. The empirical curve is fit on SELF-REPORTED
+ * admissions outcomes (r/collegeresults etc.), where admits are heavily
+ * over-represented: e.g. Harvard's in-dataset admit rate is ~17% (85/499) vs its
+ * real ~3% acceptance rate. Left uncorrected, even a mid-strength applicant is
+ * shown ~25% at Harvard. We treat the reporting bias as a constant shift in
+ * log-odds and re-anchor the curve so the dataset's base rate maps to the
+ * school's published acceptance rate, while KEEPING the slope (how academic
+ * strength moves the odds is still informative). Same profile → same number.
+ *
+ * The shift is the gap between real and observed base rates in logit space; for
+ * schools whose self-reports aren't biased (datasetRate ≈ realRate) it's ~0.
+ */
+function calibrateToAcceptanceRate(prob: number, datasetRate: number, realRate: number): number {
+  if (!(datasetRate > 0 && datasetRate < 1) || !(realRate > 0 && realRate < 1)) return prob;
+  const shift = logit(realRate) - logit(datasetRate);
+  return sigmoid(logit(prob) + shift);
+}
+
+const US_RE = /\b(u\.?\s?s\.?\s?a?\.?|united\s*states|america|american)\b/i;
+
+/**
+ * Is this an international (non-US) applicant? Compass is built for international
+ * students, so an empty origin defaults to international; we only treat a clearly
+ * US citizenship/country as domestic.
+ */
+export function isInternationalApplicant(profile: StudentProfileInput): boolean {
+  const cit = (profile.citizenship ?? "").trim();
+  if (cit) return !US_RE.test(cit);
+  return !US_RE.test((profile.country ?? "").trim());
+}
+
+/**
+ * Extra haircut applied to INTERNATIONAL applicants: US schools cap international
+ * enrollment and the international pool is far more competitive, so a non-US
+ * applicant's real odds sit well below the school's overall rate — sharply so at
+ * the most selective schools, negligibly at open-admit ones. Expressed as a
+ * logit shift that scales with selectivity (≈ −0.87 at Harvard, ≈ −0.45 at a 50%
+ * school). This is a deliberately conservative, country-agnostic adjustment; a
+ * per-country factor (e.g. over-represented applicant pools) could refine it.
+ */
+function internationalLogitPenalty(acceptanceRate: number): number {
+  return -0.9 * (1 - clamp(acceptanceRate, 0, 1));
+}
+
 export type LikelihoodEstimate = {
   likelihood_low: number;
   likelihood_high: number;
@@ -105,14 +150,21 @@ function toEstimate(prob: number, source: "empirical" | "heuristic", n: number):
  *               tilt fades out as the empirical curve gains real slope (|b|), so
  *               it never double-counts once `clean:real` sharpens the model.
  */
-export function estimateSchoolLikelihood(uni: University, index: number): LikelihoodEstimate {
+export function estimateSchoolLikelihood(
+  uni: University,
+  index: number,
+  opts?: { international?: boolean }
+): LikelihoodEstimate {
   const m = MODEL.schools[uni.id];
   let baseProb: number;
   let source: "empirical" | "heuristic";
   let n: number;
   let slope: number;
   if (m && m.n >= MIN_SAMPLES) {
-    baseProb = sigmoid(m.a + m.b * (index / 100));
+    const rawProb = sigmoid(m.a + m.b * (index / 100));
+    // Re-anchor the survivorship-biased self-report curve to the school's real
+    // acceptance rate (keeps the slope; fixes the inflated level).
+    baseProb = calibrateToAcceptanceRate(rawProb, m.admits / m.n, uni.acceptance_rate);
     source = "empirical";
     n = m.n;
     slope = m.b;
@@ -135,6 +187,11 @@ export function estimateSchoolLikelihood(uni: University, index: number): Likeli
     // Full tilt when the curve has no slope of its own; tapers to 0 by |b|≈2.
     const tiltK = 0.6 * clamp(1 - Math.abs(slope) / 2, 0, 1);
     prob = sigmoid(logit(baseProb) + tiltK * z);
+  }
+
+  // International applicants face materially lower odds, sharpest at the top.
+  if (opts?.international) {
+    prob = sigmoid(logit(prob) + internationalLogitPenalty(uni.acceptance_rate));
   }
 
   return toEstimate(prob, source, n);
