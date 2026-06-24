@@ -2,18 +2,26 @@ import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 import { getT } from "@/lib/i18n/server";
 
 type NavLink = { href: string; label: string };
 
-export function AppHeader({ links = [] }: { links?: NavLink[] }) {
+export function AppHeader({
+  links = [],
+  admin = false,
+}: {
+  links?: NavLink[];
+  admin?: boolean;
+}) {
   const t = getT();
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-surface/85 backdrop-blur">
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-3">
+      <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-y-2 px-5 py-3">
         <Link href="/dashboard" className="rounded focus-visible:focus-ring">
           <Logo className="text-ink" />
         </Link>
+        {admin && <AdminSwitcher className="order-last w-full justify-center sm:order-none sm:w-auto" />}
         <div className="flex items-center gap-1">
           {links.map((l) => (
             <Link

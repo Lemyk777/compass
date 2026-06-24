@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { CANONICAL_HOST } from "@/lib/site";
 
 export const REF_COOKIE = "compass_ref";
 
@@ -9,6 +10,23 @@ export const REF_COOKIE = "compass_ref";
  * survives the round-trip through OAuth/email signup.
  */
 export async function updateSession(request: NextRequest) {
+  // Canonical-domain enforcement: in production, permanently forward any other
+  // host (the retired domain, www, etc.) to the single canonical domain. Old
+  // links — including ambassador `?ref=` links — keep working while the old
+  // domain effectively goes dark. Localhost and Vercel preview hosts are exempt.
+  if (process.env.NODE_ENV === "production") {
+    const host = request.headers.get("host") ?? "";
+    const isPreview = host.endsWith(".vercel.app");
+    const isLocal = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+    if (host && host !== CANONICAL_HOST && !isPreview && !isLocal) {
+      const url = request.nextUrl.clone();
+      url.protocol = "https:";
+      url.hostname = CANONICAL_HOST;
+      url.port = "";
+      return NextResponse.redirect(url, 308);
+    }
+  }
+
   let response = NextResponse.next({ request });
 
   // Capture referral code (no personal data in the URL — just the ambassador code).
