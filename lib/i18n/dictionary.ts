@@ -411,6 +411,18 @@ const en: Dict = {
   "admin.estCostBody":
     "Rough estimate based on analyses run (claude-haiku-4-5 with prompt caching). Indicative only — set a hard spend limit in the Anthropic console for the real cap.",
 
+  // Ambassador leaderboard (admin)
+  "admin.ambassadors": "Ambassadors",
+  "admin.metrics": "Metrics",
+  "admin.ambTitle": "Ambassador leaderboard",
+  "admin.ambSub":
+    "Every ambassador and how many sign-ups their referral link has brought in.",
+  "admin.ambCount": "Ambassadors",
+  "admin.ambReferred": "Referred sign-ups",
+  "admin.ambActiveStat": "Active",
+  "admin.ambEmpty": "No ambassadors yet.",
+  "admin.unnamed": "Unnamed",
+
   // Italy module
   "ob.italyToggle": "I'm applying to Italy",
   "ob.italyIncome": "Annual family income (for DSU scholarship estimate)",
@@ -844,6 +856,18 @@ const ru: Dict = {
   "admin.estCost": "Оценка затрат на API",
   "admin.estCostBody":
     "Грубая оценка по числу анализов (claude-haiku-4-5 с кэшированием). Только ориентир — жёсткий лимит расходов ставится в консоли Anthropic.",
+
+  // Ambassador leaderboard (admin)
+  "admin.ambassadors": "Амбассадоры",
+  "admin.metrics": "Метрики",
+  "admin.ambTitle": "Рейтинг амбассадоров",
+  "admin.ambSub":
+    "Все амбассадоры и сколько регистраций привела их реферальная ссылка.",
+  "admin.ambCount": "Амбассадоров",
+  "admin.ambReferred": "Привлечённых регистраций",
+  "admin.ambActiveStat": "Активных",
+  "admin.ambEmpty": "Пока нет амбассадоров.",
+  "admin.unnamed": "Без имени",
 
   // Italy module
   "ob.italyToggle": "Подаю в Италию",
