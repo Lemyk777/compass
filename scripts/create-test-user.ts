@@ -22,6 +22,7 @@ if (!url || !key) {
 const EMAIL = process.env.TEST_EMAIL ?? "test@compass.dev";
 const PASSWORD = process.env.TEST_PASSWORD ?? "compass1234";
 const ROLE = process.env.TEST_ROLE ?? "student";
+const NAME = process.env.TEST_NAME ?? "Test User";
 
 const admin = createClient(url, key, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -53,7 +54,7 @@ async function main() {
       email: EMAIL,
       password: PASSWORD,
       email_confirm: true,
-      user_metadata: { full_name: "Test User" },
+      user_metadata: { full_name: NAME },
     });
     if (error) throw error;
     user = data.user;
@@ -62,7 +63,7 @@ async function main() {
 
   const { error: pErr } = await admin
     .from("profiles")
-    .upsert({ id: user.id, role: ROLE, full_name: "Test User" }, { onConflict: "id" });
+    .upsert({ id: user.id, role: ROLE, full_name: NAME }, { onConflict: "id" });
   if (pErr) console.error("⚠ profiles upsert failed:", pErr.message);
   else console.log(`✓ profiles.role = ${ROLE}`);
 
