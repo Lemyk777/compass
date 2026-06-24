@@ -72,3 +72,66 @@ export async function provisionUser(user: User, refCode?: string | null) {
 
   return { created: true as const, referredBy };
 }
+
+/**
+ * Credit an ambassador a user self-reported in the "how did you hear about us?"
+ * survey (they arrived via a normal link, not a referral). Treated exactly like
+ * a referral so it shows in the ambassador's count and the admin leaderboard.
+ *
+ * Idempotent and safe: only credits a user with NO existing attribution, against
+ * a real, active ambassador (never self). Runs with the service role.
+ */
+export async function creditSurveyReferral(userId: string, rawCode: string) {
+  const code = rawCode.trim().slice(0, 64);
+  if (!code) return { credited: false as const };
+
+  const admin = createAdminClient();
+
+  // Never override an existing attribution (also keeps this idempotent).
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("referred_by")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!profile || profile.referred_by) return { credited: false as const };
+
+  // Validate against a real, active ambassador — ignore self/unknown/inactive.
+  const { data: amb } = await admin
+    .from("ambassadors")
+    .select("user_id, code, status, signups")
+    .eq("code", code)
+    .maybeSingle();
+  if (!amb || amb.user_id === userId || amb.status === "inactive") {
+    return { credited: false as const };
+  }
+
+  // Attribute on the profile.
+  await admin.from("profiles").update({ referred_by: amb.code }).eq("id", userId);
+
+  // Reflect in the event log so signup_count_for_code() and the admin
+  // leaderboard (which count signup events) pick it up. Attribute the user's
+  // existing signup event if it's unattributed; otherwise add one.
+  const { data: ev } = await admin
+    .from("events")
+    .select("id, ref_code")
+    .eq("user_id", userId)
+    .eq("type", "signup")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (ev && !ev.ref_code) {
+    await admin.from("events").update({ ref_code: amb.code }).eq("id", ev.id);
+  } else if (!ev) {
+    await admin
+      .from("events")
+      .insert({ user_id: userId, type: "signup", ref_code: amb.code });
+  }
+
+  // Bump the denormalized counter to match the referral-link path.
+  await admin
+    .from("ambassadors")
+    .update({ signups: (amb.signups ?? 0) + 1 })
+    .eq("code", amb.code);
+
+  return { credited: true as const, code: amb.code };
+}

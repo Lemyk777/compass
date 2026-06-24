@@ -21,7 +21,7 @@ export const inputSchema = z
       .min(1, "Add your citizenship.")
       .max(LIMITS.shortText),
     destinations: z
-      .array(z.enum(["US", "IT", "HK", "UK", "DE", "NL", "CA"]))
+      .array(z.enum(["US", "IT", "HK", "KR", "CN", "CA"]))
       .min(1, "Pick at least one destination country.")
       .max(LIMITS.destinations),
     faculties: z
@@ -90,6 +90,10 @@ export const inputSchema = z
     italy_family_income: z.number().min(0).max(10_000_000).optional(),
     hk_programs: z.array(z.string().max(80)).max(6).default([]),
     hk_grade_status: z.enum(["predicted", "achieved"]).optional(),
+    // Attribution survey (non-referral signups). Optional so a referral user —
+    // who never sees the step — always saves cleanly.
+    heard_from: z.string().trim().max(40).optional().default(""),
+    heard_from_code: z.string().trim().max(64).optional().default(""),
   })
   .superRefine((val, ctx) => {
     // Each selected destination needs its own targets (mirrors the per-country

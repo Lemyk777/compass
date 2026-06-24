@@ -42,9 +42,8 @@ export const COUNTRY_SCORECARD_WEIGHTS: Record<DestinationCode, WeightMap> = {
     narrative_fit: 0.04,
   },
   // Not yet tuned — fall back to an even, holistic blend.
-  UK: {},
-  DE: {},
-  NL: {},
+  KR: {},
+  CN: {},
   CA: {},
 };
 

@@ -28,27 +28,20 @@ const SHAPES: Record<DestinationCode, JSX.Element> = {
       <circle cx="10" cy="7" r="1.2" fill="#DE2910" />
     </>
   ),
-  UK: (
+  KR: (
     <>
-      <rect width="20" height="14" fill="#012169" />
-      <rect x="8" width="4" height="14" fill="#fff" />
-      <rect y="5" width="20" height="4" fill="#fff" />
-      <rect x="9" width="2" height="14" fill="#C8102E" />
-      <rect y="6" width="20" height="2" fill="#C8102E" />
+      <rect width="20" height="14" fill="#fff" />
+      <path d="M7 7a3 3 0 0 1 6 0z" fill="#CD2E3A" />
+      <path d="M7 7a3 3 0 0 0 6 0z" fill="#0047A0" />
     </>
   ),
-  DE: (
+  CN: (
     <>
-      <rect width="20" height="4.67" fill="#000" />
-      <rect y="4.67" width="20" height="4.66" fill="#D00" />
-      <rect y="9.33" width="20" height="4.67" fill="#FFCE00" />
-    </>
-  ),
-  NL: (
-    <>
-      <rect width="20" height="4.67" fill="#AE1C28" />
-      <rect y="4.67" width="20" height="4.66" fill="#fff" />
-      <rect y="9.33" width="20" height="4.67" fill="#21468B" />
+      <rect width="20" height="14" fill="#DE2910" />
+      <polygon
+        points="5.5,1.6 6.06,3.23 7.78,3.26 6.40,4.29 6.91,5.94 5.5,4.95 4.09,5.94 4.60,4.29 3.22,3.26 4.94,3.23"
+        fill="#FFDE00"
+      />
     </>
   ),
   CA: (

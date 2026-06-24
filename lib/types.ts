@@ -142,6 +142,9 @@ export type StudentProfileInput = {
   // ── Hong Kong pathway (active when destinations includes "HK") ──
   hk_programs: string[]; // HK program IDs from the dataset
   hk_grade_status?: "predicted" | "achieved"; // are reported grades predicted or achieved?
+  // ── Attribution (shown only to non-referral signups) ──
+  heard_from?: string; // how they found Compass: social | friend | search | school | ambassador | other
+  heard_from_code?: string; // ambassador's referral code, if they heard from one
 };
 
 export function emptyActivity(): Activity {
@@ -170,6 +173,8 @@ export function emptyProfile(): StudentProfileInput {
     italy_family_income: undefined,
     hk_programs: [],
     hk_grade_status: undefined,
+    heard_from: "",
+    heard_from_code: "",
   };
 }
 

@@ -149,8 +149,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       const destinationSets = [
         ["US"],
         ["US", "IT"],
-        ["UK"],
-        ["UK", "DE", "NL"],
+        ["KR"],
+        ["KR", "CN", "CA"],
         ["CA"],
         ["HK"],
         ["US", "HK"],
@@ -499,7 +499,7 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         const { saveProfile } = await import("../app/onboarding/actions");
         const payload = getBaseValidPayload();
         // Limit is 6, try to pass 7
-        payload.destinations = ["US", "IT", "UK", "DE", "NL", "CA", "US"];
+        payload.destinations = ["US", "IT", "KR", "CN", "CA", "CA", "US"];
         const result = await saveProfile(payload);
         assert.strictEqual(result.ok, false);
         assert.ok(result.error.includes("at most 6"));
@@ -517,7 +517,7 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       it("Scenario 3.10: Valid but unavailable destinations (checked in UI, actions check enum list)", async () => {
         const { saveProfile } = await import("../app/onboarding/actions");
         const payload = getBaseValidPayload();
-        payload.destinations = ["DE", "NL"];
+        payload.destinations = ["CN", "CA"];
         payload.target_schools = []; // No US targets needed
         payload.italy_programs = []; // No IT targets needed
         const result = await saveProfile(payload);
@@ -978,7 +978,7 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
     it("Scenario 3.9: Neither US nor Italy selected (e.g. UK, CA), targets empty (Succeeds)", async () => {
       const { saveProfile } = await import("../app/onboarding/actions");
       const payload = getBaseValidPayload();
-      payload.destinations = ["UK", "CA"];
+      payload.destinations = ["KR", "CA"];
       payload.target_schools = [];
       payload.italy_programs = [];
       const result = await saveProfile(payload);
@@ -1114,7 +1114,7 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       const payload: StudentProfileInput = {
         country: "Russia",
         citizenship: "Russian",
-        destinations: ["UK", "DE"],
+        destinations: ["KR", "CN"],
         faculties: ["business_economics"],
         intended_major: "Economics & Finance",
         curriculum: "A-Level",
