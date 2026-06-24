@@ -100,9 +100,16 @@ if you later read it from the DB.
 
 1. Push to GitHub and import the repo in Vercel.
 2. Add all five env vars in the Vercel project settings; set
-   `NEXT_PUBLIC_SITE_URL` to your production URL.
-3. Add the production `/auth/callback` URL to Supabase redirect URLs.
-4. Deploy.
+   `NEXT_PUBLIC_SITE_URL` to your production URL (`https://applycompass.app`).
+3. Add `applycompass.app` (and `www.applycompass.app`) as project domains and
+   set `applycompass.app` as the primary. Any other/retired domain pointed at
+   this deployment is permanently redirected to it by the canonical-host check
+   in `lib/supabase/middleware.ts` (`CANONICAL_HOST` in `lib/site.ts`).
+4. Supabase → Authentication → URL Configuration: set **Site URL** to
+   `https://applycompass.app` and add `https://applycompass.app/auth/callback`
+   (and `https://applycompass.app/**`) to **Redirect URLs**. Remove old-domain
+   entries to fully retire it.
+5. Deploy.
 
 ## Notes
 

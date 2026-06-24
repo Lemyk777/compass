@@ -31,7 +31,10 @@ export default async function AmbassadorPage() {
 
   return (
     <main className="min-h-dvh bg-surface">
-      <AppHeader links={[{ href: "/dashboard", label: t("common.dashboard") }]} />
+      <AppHeader
+        admin={session.role === "admin"}
+        links={[{ href: "/dashboard", label: t("common.dashboard") }]}
+      />
       <div className="mx-auto max-w-2xl px-5 py-6">
         {!amb ? (
           <AmbassadorPending />

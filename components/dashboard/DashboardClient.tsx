@@ -9,6 +9,7 @@ import { ReportNav } from "@/components/dashboard/ReportNav";
 import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 import { useT } from "@/lib/i18n/client";
 
 type Props = {
@@ -16,6 +17,7 @@ type Props = {
   name: string | null;
   hasProfile: boolean;
   autoAnalyze: boolean;
+  isAdmin?: boolean;
 };
 
 export function DashboardClient({
@@ -23,6 +25,7 @@ export function DashboardClient({
   name,
   hasProfile,
   autoAnalyze,
+  isAdmin = false,
 }: Props) {
   const t = useT();
   const router = useRouter();
@@ -80,8 +83,11 @@ export function DashboardClient({
   return (
     <main className="min-h-dvh bg-surface">
       <header className="sticky top-0 z-10 border-b border-line bg-surface/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-2 px-5 py-3">
           <Logo className="text-ink" />
+          {isAdmin && (
+            <AdminSwitcher className="order-last w-full justify-center sm:order-none sm:w-auto" />
+          )}
           <div className="flex items-center gap-1">
             <ButtonLink href="/onboarding" variant="ghost" size="sm">
               {t("common.updateProfile")}

@@ -10,26 +10,43 @@ import { FinalCTA } from "@/components/marketing/FinalCTA";
 import { MascotGallery } from "@/components/marketing/MascotGallery";
 import { getUniversityLogos } from "@/lib/data/logos";
 import { getT } from "@/lib/i18n/server";
+import { getSession } from "@/lib/auth/session";
+import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 import { ScrollReveal } from "@/components/ui/ScrollAnimations";
 import { Magnetic } from "@/components/ui/Magnetic";
 import { TextBlur } from "@/components/ui/TextBlur";
 
-export default function LandingPage() {
+export default async function LandingPage() {
   const t = getT();
   const universityLogos = getUniversityLogos();
+  const session = await getSession();
+  const isAdmin = session?.role === "admin";
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#F7F8FA] text-ink selection:bg-ink selection:text-white">
       {/* Nav */}
       <header className="absolute inset-x-0 top-0 z-50">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-5 py-8 md:px-10 lg:px-10">
-          <Logo className="text-ink" />
-          <nav className="flex items-center gap-3">
-            <LanguageToggle className="mr-2" />
-            <ButtonLink href="/auth/login" variant="ghost" size="sm" className="font-medium">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-2 px-5 py-6 md:px-10 md:py-8 lg:px-10">
+          <Logo className="shrink-0 text-ink" />
+          <nav className="flex items-center gap-1.5 sm:gap-3">
+            {isAdmin && <AdminSwitcher className="mr-1 hidden lg:inline-flex" />}
+            <LanguageToggle className="mr-0 sm:mr-2" />
+            {/* Secondary action — hidden on phones to keep the bar from wrapping;
+                returning users still reach login from the sign-up screen. */}
+            <ButtonLink
+              href="/auth/login"
+              variant="ghost"
+              size="sm"
+              className="hidden whitespace-nowrap font-medium sm:inline-flex"
+            >
               {t("common.logIn")}
             </ButtonLink>
-            <ButtonLink href="/auth/signup" variant="primary" size="sm" className="rounded-full px-5">
+            <ButtonLink
+              href="/auth/signup"
+              variant="primary"
+              size="sm"
+              className="whitespace-nowrap rounded-full px-4 sm:px-5"
+            >
               {t("common.getStarted")}
             </ButtonLink>
           </nav>
