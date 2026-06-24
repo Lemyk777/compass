@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireRole } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -17,13 +18,22 @@ export default async function AdminPage() {
   const t = getT();
   const admin = createAdminClient();
 
-  const [{ data: profiles }, { data: analyses }] = await Promise.all([
-    admin.from("profiles").select("id, country, created_at"),
-    admin.from("analyses").select("user_id, created_at"),
-  ]);
+  const [{ data: profiles }, { data: analyses }, { data: ambassadors }, { count: referredCount }] =
+    await Promise.all([
+      admin.from("profiles").select("id, country, created_at"),
+      admin.from("analyses").select("user_id, created_at"),
+      admin.from("ambassadors").select("user_id"),
+      admin
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("type", "signup")
+        .not("ref_code", "is", null),
+    ]);
 
   const users = profiles ?? [];
   const runs = analyses ?? [];
+  const ambassadorCount = ambassadors?.length ?? 0;
+  const referredSignups = referredCount ?? 0;
 
   const totalUsers = users.length;
   const totalAnalyses = runs.length;
@@ -65,7 +75,12 @@ export default async function AdminPage() {
 
   return (
     <main className="min-h-dvh bg-surface">
-      <AppHeader links={[{ href: "/dashboard", label: t("common.dashboard") }]} />
+      <AppHeader
+        links={[
+          { href: "/admin/ambassadors", label: t("admin.ambassadors") },
+          { href: "/dashboard", label: t("common.dashboard") },
+        ]}
+      />
       <div className="mx-auto max-w-2xl px-5 py-6">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
           {t("admin.title")}
@@ -83,6 +98,41 @@ export default async function AdminPage() {
             value={Math.max(0, totalUsers - analyzedUsers)}
           />
         </div>
+
+        <Link
+          href="/admin/ambassadors"
+          className="group mt-6 block rounded-2xl border border-line bg-card p-4 shadow-card transition-colors hover:border-accent/40 focus-visible:focus-ring"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-ink">
+                {t("admin.ambassadors")}
+              </h2>
+              <p className="mt-0.5 text-xs text-ink-soft">{t("admin.ambSub")}</p>
+            </div>
+            <span className="shrink-0 text-ink-faint transition-colors group-hover:text-accent">
+              →
+            </span>
+          </div>
+          <div className="mt-3 flex gap-6">
+            <div>
+              <span data-num className="font-display text-2xl font-semibold text-ink">
+                {ambassadorCount}
+              </span>
+              <span className="ml-1.5 text-xs text-ink-soft">
+                {t("admin.ambCount")}
+              </span>
+            </div>
+            <div>
+              <span data-num className="font-display text-2xl font-semibold text-accent">
+                {referredSignups}
+              </span>
+              <span className="ml-1.5 text-xs text-ink-soft">
+                {t("admin.ambReferred")}
+              </span>
+            </div>
+          </div>
+        </Link>
 
         <div className="mt-6 space-y-6">
           <Card>
