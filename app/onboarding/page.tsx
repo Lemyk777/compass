@@ -16,17 +16,31 @@ export default async function OnboardingPage() {
   const session = await requireSession("/onboarding");
   const supabase = createClient();
 
-  const [{ data: sp }, { count }] = await Promise.all([
-    supabase
-      .from("student_profiles")
-      .select("*")
-      .eq("user_id", session.id)
-      .maybeSingle(),
-    supabase
-      .from("analyses")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", session.id),
-  ]);
+  const [{ data: sp }, { count }, { data: prof, error: profErr }] =
+    await Promise.all([
+      supabase
+        .from("student_profiles")
+        .select("*")
+        .eq("user_id", session.id)
+        .maybeSingle(),
+      supabase
+        .from("analyses")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", session.id),
+      // Attribution columns may not exist before migration 0006 — capture the
+      // error and degrade gracefully (no survey) instead of crashing the page.
+      supabase
+        .from("profiles")
+        .select("heard_from, heard_from_code")
+        .eq("id", session.id)
+        .maybeSingle(),
+    ]);
+
+  const heardFrom = (prof?.heard_from as string | null) ?? "";
+  const heardFromCode = (prof?.heard_from_code as string | null) ?? "";
+  // Show the "how did you hear about us?" step only to signups with no referral
+  // attribution who haven't answered yet (and only once the columns exist).
+  const showSurvey = !profErr && !session.referred_by && !heardFrom;
 
   let initial: StudentProfileInput | null = null;
   if (sp) {
@@ -49,10 +63,18 @@ export default async function OnboardingPage() {
       italy_family_income: sp.italy_family_income ?? undefined,
       hk_programs: sp.hk_programs ?? [],
       hk_grade_status: sp.hk_grade_status ?? undefined,
+      heard_from: heardFrom,
+      heard_from_code: heardFromCode,
     };
   } else if (session.country) {
     initial = { ...emptyProfile(), country: session.country };
   }
 
-  return <Onboarding initial={initial} hasAnalysis={(count ?? 0) > 0} />;
+  return (
+    <Onboarding
+      initial={initial}
+      hasAnalysis={(count ?? 0) > 0}
+      showSurvey={showSurvey}
+    />
+  );
 }

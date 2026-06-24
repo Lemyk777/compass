@@ -2,6 +2,7 @@ import type { ZodSchema } from "zod";
 import type { StudentProfileInput } from "@/lib/types";
 
 export type StepKey =
+  | "source"
   | "origin"
   | "destinations"
   | "faculties"
@@ -35,6 +36,8 @@ export interface StepConfig {
 
 export interface OnboardingContextValue {
   data: StudentProfileInput;
+  /** Whether to show the "how did you hear about us?" step (non-referral signups). */
+  showSurvey: boolean;
   errors: Record<string, string> | null;
   isSaving: boolean;
   updateField: <K extends keyof StudentProfileInput>(

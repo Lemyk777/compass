@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { LIMITS } from "@/lib/limits";
 
+export const sourceSchema = z.object({
+  heard_from: z.string().trim().min(1, "ob.errSource").max(40),
+  heard_from_code: z.string().trim().max(64).optional(),
+});
+
 export const originSchema = z.object({
   country: z
     .string()
@@ -16,7 +21,7 @@ export const originSchema = z.object({
 
 export const destinationsSchema = z.object({
   destinations: z
-    .array(z.enum(["US", "IT", "HK", "UK", "DE", "NL", "CA"]))
+    .array(z.enum(["US", "IT", "HK", "KR", "CN", "CA"]))
     .min(1, "ob.errDest")
     .max(LIMITS.destinations, "Up to 6 destinations allowed."),
 });
@@ -175,6 +180,7 @@ export const hkSchema = z.object({
 export const reviewSchema = z.any();
 
 export const stepSchemas = {
+  source: sourceSchema,
   origin: originSchema,
   destinations: destinationsSchema,
   faculties: facultiesSchema,

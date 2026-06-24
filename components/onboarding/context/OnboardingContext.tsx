@@ -11,9 +11,11 @@ const OnboardingContext = createContext<OnboardingContextValue | undefined>(unde
 export function OnboardingContextProvider({
   children,
   initial,
+  showSurvey = false,
 }: {
   children: React.ReactNode;
   initial?: StudentProfileInput | null;
+  showSurvey?: boolean;
 }) {
   const [data, setData] = useState<StudentProfileInput>(initial ?? emptyProfile());
   const [errors, setErrors] = useState<Record<string, string> | null>(null);
@@ -65,6 +67,7 @@ export function OnboardingContextProvider({
     <OnboardingContext.Provider
       value={{
         data,
+        showSurvey,
         errors,
         isSaving,
         updateField,

@@ -8,6 +8,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { StudentProfileInput } from "@/lib/types";
+import { creditSurveyReferral } from "@/lib/auth/provision";
 import { inputSchema, describeIssue, type SaveResult } from "./schema";
 
 export async function saveProfile(
@@ -25,12 +26,34 @@ export async function saveProfile(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Please log in again." };
 
-  // Keep the origin country on the identity profile.
-  const { error: profileErr } = await supabase
+  // Keep the origin country (+ attribution survey) on the identity profile.
+  const profileUpdate: Record<string, unknown> = { country: data.country };
+  if (data.heard_from) profileUpdate.heard_from = data.heard_from;
+  if (data.heard_from_code) profileUpdate.heard_from_code = data.heard_from_code;
+
+  let { error: profileErr } = await supabase
     .from("profiles")
-    .update({ country: data.country })
+    .update(profileUpdate)
     .eq("id", user.id);
+  // Schema-drift safety net: if the heard_from columns aren't migrated yet
+  // (run supabase/migrations/0006_heard_from.sql), save the country alone.
+  if (profileErr && (profileErr.code === "42703" || profileErr.code === "PGRST204")) {
+    ({ error: profileErr } = await supabase
+      .from("profiles")
+      .update({ country: data.country })
+      .eq("id", user.id));
+  }
   if (profileErr) return { ok: false, error: "Could not save. Please retry." };
+
+  // If they said they heard from an ambassador and gave a code, credit that
+  // ambassador the same as a referral link. Best-effort — never block the save.
+  if (data.heard_from === "ambassador" && data.heard_from_code) {
+    try {
+      await creditSurveyReferral(user.id, data.heard_from_code);
+    } catch (e) {
+      console.error("creditSurveyReferral failed", e);
+    }
+  }
 
   const row = {
     user_id: user.id,

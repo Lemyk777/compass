@@ -6,11 +6,15 @@ import type { StepKey } from "../types";
 import type { DestinationCode } from "@/lib/data/destinations";
 import { stepSchemas } from "../schemas";
 
-export function buildSteps(destinations: DestinationCode[]): StepKey[] {
+export function buildSteps(
+  destinations: DestinationCode[],
+  showSurvey = false
+): StepKey[] {
   const wantsUS = destinations.includes("US");
   const wantsIT = destinations.includes("IT");
   const wantsHK = destinations.includes("HK");
   return [
+    ...(showSurvey ? (["source"] as StepKey[]) : []),
     "origin",
     "destinations",
     "faculties",
@@ -26,10 +30,13 @@ export function buildSteps(destinations: DestinationCode[]): StepKey[] {
 }
 
 export function useOnboardingWizard() {
-  const { data, setErrorMsg, clearError } = useOnboardingContext();
+  const { data, showSurvey, setErrorMsg, clearError } = useOnboardingContext();
   const [stepIndex, setStepIndex] = useState(0);
 
-  const steps = useMemo(() => buildSteps(data.destinations), [data.destinations]);
+  const steps = useMemo(
+    () => buildSteps(data.destinations, showSurvey),
+    [data.destinations, showSurvey]
+  );
 
   // Clamp stepIndex defensively in case the list of steps shrinks dynamically
   const clampedIndex = Math.min(stepIndex, steps.length - 1);
