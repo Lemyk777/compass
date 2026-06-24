@@ -1,0 +1,104 @@
+[
+  {
+    "id": "harvard",
+    "name": "Harvard University",
+    "matched": true,
+    "scorecard_name": "Harvard University",
+    "current": {
+      "acceptance_rate": 0.032,
+      "sat_p25": 1500,
+      "sat_p75": 1580
+    },
+    "official": {
+      "acceptance_rate": 0.037,
+      "sat_p25": 1510,
+      "sat_p75": 1580,
+      "enrollment": 7601
+    }
+  },
+  {
+    "id": "stanford",
+    "name": "Stanford University",
+    "matched": true,
+    "scorecard_name": "Stanford University",
+    "current": {
+      "acceptance_rate": 0.036,
+      "sat_p25": 1500,
+      "sat_p75": 1580
+    },
+    "official": {
+      "acceptance_rate": 0.036,
+      "sat_p25": 1510,
+      "sat_p75": 1580,
+      "enrollment": 7554
+    }
+  },
+  {
+    "id": "mit",
+    "name": "Massachusetts Institute of Technology",
+    "matched": true,
+    "scorecard_name": "Massachusetts Institute of Technology",
+    "current": {
+      "acceptance_rate": 0.04,
+      "sat_p25": 1520,
+      "sat_p75": 1580
+    },
+    "official": {
+      "acceptance_rate": 0.046,
+      "sat_p25": 1520,
+      "sat_p75": 1580,
+      "enrollment": 4535
+    }
+  },
+  {
+    "id": "princeton",
+    "name": "Princeton University",
+    "matched": true,
+    "scorecard_name": "Princeton University",
+    "current": {
+      "acceptance_rate": 0.04,
+      "sat_p25": 1500,
+      "sat_p75": 1580
+    },
+    "official": {
+      "acceptance_rate": 0.046,
+      "sat_p25": 1510,
+      "sat_p75": 1580,
+      "enrollment": 5709
+    }
+  },
+  {
+    "id": "yale",
+    "name": "Yale University",
+    "matched": true,
+    "scorecard_name": "Yale University",
+    "current": {
+      "acceptance_rate": 0.046,
+      "sat_p25": 1500,
+      "sat_p75": 1580
+    },
+    "official": {
+      "acceptance_rate": 0.039,
+      "sat_p25": 1470,
+      "sat_p75": 1570,
+      "enrollment": 6758
+    }
+  },
+  {
+    "id": "columbia",
+    "name": "Columbia University",
+    "matched": true,
+    "scorecard_name": "Columbia University in the City of New York",
+    "current": {
+      "acceptance_rate": 0.039,
+      "sat_p25": 1490,
+      "sat_p75": 1570
+    },
+    "official": {
+      "acceptance_rate": 0.04,
+      "sat_p25": 1510,
+      "sat_p75": 1580,
+      "enrollment": 8973
+    }
+  }
+]

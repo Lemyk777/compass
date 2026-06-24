@@ -1,0 +1,27 @@
+{
+  "name": "compass-data-pipeline",
+  "version": "1.0.0",
+  "description": "Dataset ingestion and parsing pipeline for Compass",
+  "main": "src/ingestion/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "scrape:reddit": "tsx src/ingestion/reddit-scraper.ts",
+    "scrape:reddit:real": "tsx src/ingestion/reddit-real-scraper.ts",
+    "scrape:twitter": "tsx src/ingestion/twitter-scraper.ts",
+    "clean:real": "tsx src/parser/clean-real.ts",
+    "enrich:scorecard": "tsx src/ingestion/scorecard-enrich.ts",
+    "eval:demo": "tsx src/evaluation/run-eval.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.2",
+    "ghost-cursor": "^1.1.9",
+    "playwright": "^1.49.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.22.4",
+    "typescript": "^5.7.2"
+  }
+}
