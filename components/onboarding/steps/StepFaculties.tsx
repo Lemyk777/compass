@@ -4,7 +4,6 @@ import { StepProps } from "../types";
 import { useT } from "@/lib/i18n/client";
 import { FACULTIES, type FacultyValue } from "@/lib/data/faculties";
 import { LIMITS } from "@/lib/limits";
-import { Input, Field } from "@/components/ui/Input";
 
 export default function StepFaculties({ data, updateField }: StepProps) {
   const t = useT();
@@ -49,16 +48,6 @@ export default function StepFaculties({ data, updateField }: StepProps) {
         </div>
         <p className="mt-2 text-xs text-ink-faint">{t("ob.facCap")}</p>
       </fieldset>
-
-      <Field label={t("ob.major")} htmlFor="major" hint={t("ob.majorHint")}>
-        <Input
-          id="major"
-          value={data.intended_major}
-          maxLength={LIMITS.shortText}
-          onChange={(e) => updateField("intended_major", e.target.value)}
-          placeholder={t("ob.majorPh")}
-        />
-      </Field>
     </div>
   );
 }

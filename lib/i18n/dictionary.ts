@@ -165,6 +165,7 @@ const en: Dict = {
   "ob.country": "Country you live in",
   "ob.countryPh": "e.g. Kazakhstan",
   "ob.citizenship": "Citizenship",
+  "ob.countryCitizenship": "Country / citizenship",
   "ob.major": "Intended major",
   "ob.majorPh": "e.g. Finance / Business",
   "ob.curriculum": "Curriculum",
@@ -240,7 +241,7 @@ const en: Dict = {
   "ob.errSchools": "Add at least one target school.",
   // country-first intake
   "ob.tOrigin": "Where are you from?",
-  "ob.sOrigin": "Your home country and citizenship.",
+  "ob.sOrigin": "Your country of citizenship.",
   "ob.tDest": "Where do you want to study?",
   "ob.sDest": "Pick every country you're applying to — we'll tailor the rest.",
   "ob.tFac": "What do you want to study?",
@@ -597,6 +598,7 @@ const ru: Dict = {
   "ob.country": "Страна проживания",
   "ob.countryPh": "напр. Казахстан",
   "ob.citizenship": "Гражданство",
+  "ob.countryCitizenship": "Страна / гражданство",
   "ob.major": "Желаемая специальность",
   "ob.majorPh": "напр. Финансы / Бизнес",
   "ob.curriculum": "Учебная программа",
@@ -672,7 +674,7 @@ const ru: Dict = {
   "ob.errSchools": "Добавьте хотя бы один вуз.",
   // country-first intake
   "ob.tOrigin": "Откуда вы?",
-  "ob.sOrigin": "Страна проживания и гражданство.",
+  "ob.sOrigin": "Ваша страна / гражданство.",
   "ob.tDest": "Куда хотите поступать?",
   "ob.sDest": "Выберите все страны, куда подаётесь — остальное подстроим.",
   "ob.tFac": "Что хотите изучать?",

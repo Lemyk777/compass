@@ -5,25 +5,22 @@ import { useT } from "@/lib/i18n/client";
 import { Input, Field } from "@/components/ui/Input";
 import { LIMITS } from "@/lib/limits";
 
-export default function StepOrigin({ data, updateField }: StepProps) {
+export default function StepOrigin({ data, updateFields }: StepProps) {
   const t = useT();
+  // One question instead of two: for international applicants residence and
+  // citizenship are the same, so we ask once and feed the value to both fields
+  // the analysis reads.
+  const value = data.citizenship || data.country;
   return (
     <div className="space-y-4">
-      <Field label={t("ob.country")} htmlFor="country">
+      <Field label={t("ob.countryCitizenship")} htmlFor="country">
         <Input
           id="country"
-          value={data.country}
+          value={value}
           maxLength={LIMITS.shortText}
-          onChange={(e) => updateField("country", e.target.value)}
-          placeholder={t("ob.countryPh")}
-        />
-      </Field>
-      <Field label={t("ob.citizenship")} htmlFor="citizenship">
-        <Input
-          id="citizenship"
-          value={data.citizenship}
-          maxLength={LIMITS.shortText}
-          onChange={(e) => updateField("citizenship", e.target.value)}
+          onChange={(e) =>
+            updateFields({ country: e.target.value, citizenship: e.target.value })
+          }
           placeholder={t("ob.countryPh")}
         />
       </Field>

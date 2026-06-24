@@ -99,7 +99,7 @@ export default function StepActivities({ data, updateField }: StepProps) {
               </div>
 
               {a.description && (
-                <p className="text-xs text-ink-soft line-clamp-2 bg-neutral-50 dark:bg-neutral-900 p-2 rounded-lg">
+                <p className="text-xs text-ink-soft line-clamp-2 bg-surface p-2 rounded-lg">
                   {a.description}
                 </p>
               )}
