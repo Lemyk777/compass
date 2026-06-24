@@ -15,8 +15,11 @@
   --ivy-ink: #0a5c41;
   --ivy-soft: #e7f2ec;
   --reach: #e0664f;
+  --reach-soft: #f8e3dd;
   --target: #d98a2b;
+  --target-soft: #f7ecd6;
   --likely: #3f9b6e;
+  --likely-soft: #ddefe6;
 }
 
 @layer base {
@@ -58,6 +61,22 @@
       transparent
     );
   }
+}
+
+/* ---- Reliable entrance: CSS-only, ends visible, runs without JS ----------- */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise-in {
+  opacity: 0;
+  animation: rise-in 0.7s cubic-bezier(0.21, 0.7, 0.35, 1) both;
 }
 
 @keyframes marquee-left {

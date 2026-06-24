@@ -400,4 +400,8 @@ async function main() {
   console.log(`   💾 ${OUTPUT_FILE}`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+// Only run the cleaning pipeline when invoked directly (e.g. `npm run clean:real`),
+// not when another script imports `matchSchool` from this module.
+if (require.main === module) {
+  main().catch((e) => { console.error(e); process.exit(1); });
+}

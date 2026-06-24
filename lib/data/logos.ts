@@ -21,6 +21,18 @@ const LABELS: Record<string, string> = {
   penn: "Penn",
   washington: "Washington",
   johnshopkins: "Johns Hopkins",
+  jhu: "Johns Hopkins",
+  cmu: "Carnegie Mellon",
+  uva: "UVA",
+  unc: "UNC",
+  bc: "Boston College",
+  bu: "Boston University",
+  rpi: "RPI",
+  rit: "RIT",
+  wpi: "WPI",
+  smu: "SMU",
+  cmc: "Claremont McKenna",
+  washu: "WashU",
 };
 
 function labelFor(base: string): string {

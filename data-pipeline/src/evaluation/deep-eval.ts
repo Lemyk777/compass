@@ -294,7 +294,7 @@ export interface EmpiricalModel {
  *  is used because real scraped data is sparse per school; 2 params generalise
  *  far better than 5 buckets, and stay smooth + monotonic (slope kept ≥ 0:
  *  a stronger applicant should never have a lower modelled chance). */
-function fitLogistic(points: { x: number; y: number }[]): { a: number; b: number } {
+export function fitLogistic(points: { x: number; y: number }[]): { a: number; b: number } {
   let a = 0;
   let b = 1; // start with a mild positive slope prior
   const lr = 0.5;

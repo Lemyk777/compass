@@ -117,6 +117,17 @@ export async function POST(_req: NextRequest) {
       console.error("Failed to store analysis", insErr);
     }
 
+    // Best-effort: record token usage for the admin cost dashboard. Decoupled
+    // from the insert above so a missing `usage` column (migration 0007 not yet
+    // applied) can never block storing the analysis itself.
+    if (inserted?.id) {
+      const { error: usageErr } = await admin
+        .from("analyses")
+        .update({ usage })
+        .eq("id", inserted.id);
+      if (usageErr) console.error("Failed to store analysis usage", usageErr);
+    }
+
     await admin.from("events").insert({
       user_id: user.id,
       type: "analysis_run",

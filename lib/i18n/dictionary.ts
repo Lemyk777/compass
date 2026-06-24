@@ -27,6 +27,19 @@ const en: Dict = {
   "landing.ctaBuild": "Build your scorecard",
   "landing.ctaHave": "I already have an account",
   "landing.free": "Free to start. No credit card.",
+  "landing.problemKicker": "The problem",
+  "landing.problemTitle": "Applying blind is the expensive part.",
+  "landing.problemBody":
+    "Most students only learn where they really stood from a rejection letter — when it's far too late to fix anything.",
+  "landing.pain1Title": "No honest benchmark",
+  "landing.pain1Body":
+    "Rankings describe schools, not you. You never see how your own profile actually compares.",
+  "landing.pain2Title": "Advice that flatters",
+  "landing.pain2Body":
+    "Forums and consultants tell you what you want to hear. Hype doesn't survive an admissions committee.",
+  "landing.pain3Title": "No clear next move",
+  "landing.pain3Body":
+    "Even when you know you're behind, nobody tells you which one thing to fix first.",
   "landing.heroBadge": "New · Multi-country admissions",
   "landing.heroTrust": "Now covering the US & Italy — more countries on the way",
   "landing.howItWorks": "How it works",
@@ -420,8 +433,9 @@ const en: Dict = {
   "admin.signupsByCountry": "Signups by country",
   "admin.noSignups": "No signups yet.",
   "admin.estCost": "Estimated API cost",
+  "admin.estCostPer": "per analysis",
   "admin.estCostBody":
-    "Rough estimate based on analyses run (claude-haiku-4-5 with prompt caching). Indicative only — set a hard spend limit in the Anthropic console for the real cap.",
+    "Total across all analyses run. Costed from real token usage per run where recorded (claude-haiku-4-5 pricing), otherwise estimated. Indicative only — set a hard spend limit in the Anthropic console for the real cap.",
 
   // Ambassador leaderboard (admin)
   "admin.ambassadors": "Ambassadors",
@@ -489,6 +503,19 @@ const ru: Dict = {
   "landing.ctaBuild": "Создать карту профиля",
   "landing.ctaHave": "У меня уже есть аккаунт",
   "landing.free": "Бесплатно. Без карты.",
+  "landing.problemKicker": "Проблема",
+  "landing.problemTitle": "Поступать вслепую — дорого.",
+  "landing.problemBody":
+    "Большинство узнаёт, где они на самом деле стояли, только из отказа — когда что-то менять уже поздно.",
+  "landing.pain1Title": "Нет честного ориентира",
+  "landing.pain1Body":
+    "Рейтинги описывают вузы, а не вас. Вы не видите, как ваш профиль реально смотрится на фоне других.",
+  "landing.pain2Title": "Советы, которые льстят",
+  "landing.pain2Body":
+    "Форумы и консультанты говорят то, что приятно слышать. Приёмную комиссию это не убедит.",
+  "landing.pain3Title": "Непонятно, что делать дальше",
+  "landing.pain3Body":
+    "Даже зная, что вы отстаёте, никто не подскажет, что исправить в первую очередь.",
   "landing.heroBadge": "Новое · Поступление в разные страны",
   "landing.heroTrust": "Уже доступны США и Италия — другие страны на подходе",
   "landing.howItWorks": "Как это работает",
@@ -883,8 +910,9 @@ const ru: Dict = {
   "admin.signupsByCountry": "Регистрации по странам",
   "admin.noSignups": "Пока нет регистраций.",
   "admin.estCost": "Оценка затрат на API",
+  "admin.estCostPer": "за один анализ",
   "admin.estCostBody":
-    "Грубая оценка по числу анализов (claude-haiku-4-5 с кэшированием). Только ориентир — жёсткий лимит расходов ставится в консоли Anthropic.",
+    "Суммарно по всем прогонам. Где есть данные — по реальному расходу токенов (тарифы claude-haiku-4-5), иначе оценка. Только ориентир — жёсткий лимит расходов ставится в консоли Anthropic.",
 
   // Ambassador leaderboard (admin)
   "admin.ambassadors": "Амбассадоры",

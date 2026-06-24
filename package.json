@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test:analyze": "node --env-file=.env.local --import tsx scripts/test-analyze.ts",
+    "trace:reasoning": "node --env-file=.env.local --import tsx scripts/trace-reasoning.ts",
     "test:onboarding": "node --experimental-test-module-mocks --import tsx --test scripts/test-onboarding.ts",
     "create:test-user": "node --env-file=.env.local --import tsx scripts/create-test-user.ts"
   },

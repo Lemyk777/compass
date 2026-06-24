@@ -5,13 +5,13 @@ import { AppHeader } from "@/components/ui/AppHeader";
 import { Card } from "@/components/report/Section";
 import { SignupsOverTime, SignupsByCountry } from "@/components/admin/AdminCharts";
 import { getT } from "@/lib/i18n/server";
+import {
+  analysisCostUSD,
+  hasUsage,
+  EST_COST_PER_ANALYSIS,
+} from "@/lib/ai/cost";
 
 export const dynamic = "force-dynamic";
-
-// Rough per-analysis cost for claude-haiku-4-5 with prompt caching
-// (cached input + ~1.8k output tokens). FOUNDER: refine against real usage;
-// the hard spend cap lives in the Anthropic console, not here.
-const EST_COST_PER_ANALYSIS = 0.012;
 
 export default async function AdminPage() {
   await requireRole("admin", "/admin");
@@ -21,7 +21,7 @@ export default async function AdminPage() {
   const [{ data: profiles }, { data: analyses }, { data: ambassadors }, { count: referredCount }] =
     await Promise.all([
       admin.from("profiles").select("id, country, created_at"),
-      admin.from("analyses").select("user_id, created_at"),
+      admin.from("analyses").select("user_id, created_at, usage"),
       admin.from("ambassadors").select("user_id"),
       admin
         .from("events")
@@ -71,7 +71,15 @@ export default async function AdminPage() {
     days.push({ day: key.slice(5), count: buckets.get(key) ?? 0 });
   }
 
-  const estCost = (totalAnalyses * EST_COST_PER_ANALYSIS).toFixed(2);
+  // Real cost from recorded token usage where present (Haiku 4.5 pricing),
+  // else the per-analysis estimate for rows predating migration 0007.
+  const totalCost = runs.reduce(
+    (sum, r) =>
+      sum + (hasUsage(r.usage) ? analysisCostUSD(r.usage) : EST_COST_PER_ANALYSIS),
+    0
+  );
+  const estCost = totalCost.toFixed(2);
+  const perAnalysis = (totalAnalyses > 0 ? totalCost / totalAnalyses : 0).toFixed(3);
 
   return (
     <main className="min-h-dvh bg-surface">
@@ -156,6 +164,10 @@ export default async function AdminPage() {
             </h2>
             <p data-num className="mt-1 font-display text-3xl font-semibold text-ink">
               ~${estCost}
+            </p>
+            <p data-num className="mt-1 text-sm text-ink-soft">
+              ~${perAnalysis}{" "}
+              <span className="text-ink-faint">{t("admin.estCostPer")}</span>
             </p>
             <p className="mt-2 text-xs leading-relaxed text-ink-soft">
               {t("admin.estCostBody")}

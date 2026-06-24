@@ -9,6 +9,8 @@
     "scrape:reddit:real": "tsx src/ingestion/reddit-real-scraper.ts",
     "scrape:twitter": "tsx src/ingestion/twitter-scraper.ts",
     "clean:real": "tsx src/parser/clean-real.ts",
+    "build:model": "tsx src/evaluation/build-admit-model.ts",
+    "eval:model": "tsx src/evaluation/eval-model.ts",
     "enrich:scorecard": "tsx src/ingestion/scorecard-enrich.ts",
     "eval:demo": "tsx src/evaluation/run-eval.ts"
   },
