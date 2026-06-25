@@ -137,13 +137,19 @@ export function Onboarding({
   initial,
   hasAnalysis = false,
   showSurvey = false,
+  hasSavedProfile = false,
 }: {
   initial?: StudentProfileInput | null;
   hasAnalysis?: boolean;
   showSurvey?: boolean;
+  hasSavedProfile?: boolean;
 }) {
   return (
-    <OnboardingContextProvider initial={initial} showSurvey={showSurvey}>
+    <OnboardingContextProvider
+      initial={initial}
+      showSurvey={showSurvey}
+      hasSavedProfile={hasSavedProfile}
+    >
       <OnboardingWizard hasAnalysis={hasAnalysis} />
     </OnboardingContextProvider>
   );

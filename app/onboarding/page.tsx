@@ -75,6 +75,9 @@ export default async function OnboardingPage() {
       initial={initial}
       hasAnalysis={(count ?? 0) > 0}
       showSurvey={showSurvey}
+      // Only first-timers (no saved profile) get localStorage draft-restore;
+      // a returning editor must read their persisted profile, not a stale draft.
+      hasSavedProfile={!!sp}
     />
   );
 }
