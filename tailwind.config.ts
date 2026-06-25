@@ -14,8 +14,9 @@ const config: Config = {
           soft: "#3A4661",
           faint: "#525D73",
         },
-        // Warm neutral surfaces
-        surface: "#F5F3EF",
+        // Neutral page surface — matches the landing page background so the app
+        // reads as one continuous product from marketing through the dashboard.
+        surface: "#F7F8FA",
         card: "#FFFFFF",
         line: "#E6E2DA",
         // The single accent — reserved for the user's own scores/highlights
