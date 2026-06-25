@@ -12,7 +12,7 @@
 // Same profile → same numbers, run to run. Regenerate the model artifact after
 // `npm run clean:real` and the app picks up the improved curves with no code change.
 
-import type { StudentProfileInput } from "@/lib/types";
+import { gpaToPercent, type StudentProfileInput } from "@/lib/types";
 import type { University } from "@/lib/data/universities";
 import type { Tier, Confidence } from "@/lib/ai/schema";
 import admitModel from "@/lib/data/admit-model.json";
@@ -39,7 +39,7 @@ export function academicIndexFromProfile(profile: StudentProfileInput): number {
 
   let gradesScore: number | null = null;
   if (g.ib_total != null) gradesScore = clamp(((g.ib_total - 24) / (45 - 24)) * 100, 0, 100);
-  else if (g.gpa != null) gradesScore = g.gpa <= 4 ? (g.gpa / 4) * 100 : clamp(g.gpa, 0, 100);
+  else if (g.gpa != null) gradesScore = gpaToPercent(g.gpa, g.gpa_scale);
   else if (g.national_percent != null) gradesScore = clamp(g.national_percent, 0, 100);
 
   let testScore: number | null = null;

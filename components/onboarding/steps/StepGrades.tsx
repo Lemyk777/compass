@@ -59,6 +59,15 @@ function gradePlaceholderKey(c: StudentProfileInput["curriculum"]) {
 export default function StepGrades({ data, updateField }: StepProps) {
   const t = useT();
 
+  // A numeric GPA (with an explicit scale) is offered for any curriculum that
+  // reports one — including A-Level / "other", which previously had no numeric
+  // field, so their grades never reached the deterministic academics scorer.
+  const showGpa =
+    data.curriculum === "US-GPA" ||
+    data.curriculum === "A-Level" ||
+    data.curriculum === "other";
+  const gpaScale = data.grades.gpa_scale ?? (data.curriculum === "US-GPA" ? 4 : 5);
+
   return (
     <div className="space-y-4">
       <fieldset className="border-none p-0 m-0 block">
@@ -121,21 +130,44 @@ export default function StepGrades({ data, updateField }: StepProps) {
           />
         </Field>
       )}
-      {data.curriculum === "US-GPA" && (
+      {showGpa && (
         <Field label={t("ob.gpa")} htmlFor="gpa">
-          <Input
-            id="gpa"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min={0}
-            max={4}
-            value={data.grades.gpa ?? ""}
-            onChange={(e) =>
-              updateField("grades", { ...data.grades, gpa: numOrUndef(e.target.value) })
-            }
-            placeholder="out of 4.0"
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              id="gpa"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min={0}
+              max={gpaScale}
+              value={data.grades.gpa ?? ""}
+              onChange={(e) =>
+                updateField("grades", {
+                  ...data.grades,
+                  gpa: numOrUndef(e.target.value),
+                  gpa_scale: gpaScale,
+                })
+              }
+              placeholder={`${t("ob.outOf")} ${gpaScale}`}
+            />
+            <select
+              aria-label={t("ob.gpaScale")}
+              value={gpaScale}
+              onChange={(e) =>
+                updateField("grades", {
+                  ...data.grades,
+                  gpa_scale: Number(e.target.value),
+                })
+              }
+              className="rounded-xl border border-line bg-card px-3 py-2.5 text-[0.95rem] text-ink focus-visible:focus-ring min-h-[44px]"
+            >
+              {[4, 5, 10, 100].map((s) => (
+                <option key={s} value={s}>
+                  {t("ob.outOf")} {s}
+                </option>
+              ))}
+            </select>
+          </div>
         </Field>
       )}
       {data.curriculum === "national" && (

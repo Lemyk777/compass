@@ -20,7 +20,7 @@ import {
   tierForPct,
   maxDisplayedHigh,
 } from "@/lib/ai/empirical";
-import { scoreHolistic, scoreAcademicFactors } from "@/lib/ai/tier-score";
+import { scoreAcademicFactors } from "@/lib/ai/tier-score";
 import type { SchoolLikelihood } from "@/lib/ai/schema";
 
 /**
@@ -127,49 +127,57 @@ export function blendSchoolLikelihoods(
 }
 
 // The factors whose score is OBJECTIVE — derivable from the student's own
-// grades/tests/curriculum/hours/roles by an explicit rule. We compute these in
-// code so the number is reproducible and fully arguable, instead of trusting
-// the model to do (and hide) the arithmetic.
+// grades/tests/curriculum by an explicit rule. We compute these in code so the
+// number is reproducible and fully arguable, instead of trusting the model to do
+// (and hide) the arithmetic.
 //
-// extracurricular_depth and awards are INTENTIONALLY left to the model: a rigid
-// keyword/threshold formula mis-scored genuine Tier-1 activities and honors
-// (e.g. non-English titles, blank hours fields), so the model now judges these
-// holistically against the rubric tiers (see the prompt's tier instructions).
-// narrative_fit is also the model's. Same trade-off as before for the rest.
+// leadership, extracurricular_depth, awards, and narrative_fit are left to the
+// model: rigid keyword/threshold formulas mis-scored genuine strong profiles
+// (e.g. a 1-year startup co-founder floored to Tier 3, non-English titles, blank
+// hours), so the model now judges these holistically against the rubric tiers
+// (see the prompt's tier instructions). academics is ALSO conditional — see
+// applyDeterministicFactors: it only overrides the model when real numeric
+// grades exist, otherwise the model's read of the free-text grades wins (a rigid
+// formula with no numbers wrongly showed "no grades provided → neutral 5.0").
 const DETERMINISTIC_FACTORS = new Set([
   "academics",
   "test_scores",
   "course_rigor",
-  "leadership",
 ]);
 
+/** True when the student gave a numeric grade the academics formula can score. */
+function hasStructuredGrades(profile: StudentProfileInput): boolean {
+  const g = profile.grades ?? {};
+  return g.ib_total != null || g.gpa != null || g.national_percent != null;
+}
+
 /**
- * Replace the model's score for the objective factors (academics, test_scores,
- * course_rigor, leadership) with the deterministic tier score from the student's
- * profile. Same student → same number, run to run; the reasoning becomes the
- * exact rule + evidence that fired. Factors not in DETERMINISTIC_FACTORS
- * (extracurricular_depth, awards, narrative_fit) keep the model's values.
+ * Replace the model's score for the objective academic factors (academics,
+ * test_scores, course_rigor) with the deterministic tier score from the
+ * student's profile. Same student → same number, run to run; the reasoning
+ * becomes the exact rule + evidence that fired. The holistic factors
+ * (leadership, extracurricular_depth, awards, narrative_fit) keep the model's
+ * values. academics is conditional: it only overrides the model when real
+ * numeric grades exist — otherwise the formula has nothing to score and the
+ * model's read of the free-text grades is kept.
  */
 function applyDeterministicFactors(
   factors: ModelAnalysis["factors"],
   profile: StudentProfileInput
 ): ModelAnalysis["factors"] {
-  const card = scoreHolistic({
-    activities: profile.activities ?? [],
-    honors: profile.honors ?? [],
-    intended_major: profile.intended_major ?? "",
-    faculties: profile.faculties ?? [],
-  });
   const academic = scoreAcademicFactors({
     grades: profile.grades,
     tests: profile.tests,
     curriculum: profile.curriculum || undefined,
   });
-  const byKey = new Map(
-    [...card.factors, ...academic].map((f) => [f.factor as string, f])
-  );
+  const byKey = new Map(academic.map((f) => [f.factor as string, f]));
+  const gradesKnown = hasStructuredGrades(profile);
   return factors.map((f) => {
-    const s = DETERMINISTIC_FACTORS.has(f.key) ? byKey.get(f.key) : undefined;
+    if (!DETERMINISTIC_FACTORS.has(f.key)) return f;
+    // academics needs real numbers; with only free-text grades, keep the
+    // model's read instead of flooring to the formula's neutral 5.0.
+    if (f.key === "academics" && !gradesKnown) return f;
+    const s = byKey.get(f.key);
     if (!s) return f;
     return {
       ...f,

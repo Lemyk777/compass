@@ -107,9 +107,22 @@ export type Grades = {
   raw: string;
   /** Optional normalized signals by curriculum. */
   ib_total?: number; // out of 45
-  gpa?: number; // out of 4.0
+  gpa?: number; // GPA value (out of gpa_scale; legacy rows assume 4.0)
+  gpa_scale?: number; // the scale gpa is out of (4, 5, 10, 100). Defaults inferred when absent.
   national_percent?: number; // 0–100
 };
+
+/**
+ * Convert a GPA to a 0–100 percentage given its scale. When the scale is absent
+ * (legacy rows), infer the common scale from the value so a 4.8 reads as 96 on a
+ * 5-point scale instead of 4.8 on a 100-point one: ≤4 → /4, ≤5 → /5, ≤10 → /10,
+ * else already a percentage.
+ */
+export function gpaToPercent(gpa: number, scale?: number): number {
+  const s =
+    scale && scale > 0 ? scale : gpa <= 4 ? 4 : gpa <= 5 ? 5 : gpa <= 10 ? 10 : 100;
+  return Math.max(0, Math.min(100, (gpa / s) * 100));
+}
 
 export type Tests = {
   SAT?: number;

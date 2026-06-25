@@ -61,7 +61,12 @@ export const gradesSchema = z
       gpa: z
         .number()
         .min(0, "GPA must be at least 0.")
-        .max(4, "GPA must be at most 4.0.")
+        .max(100, "GPA is out of range.")
+        .optional(),
+      gpa_scale: z
+        .number()
+        .min(1)
+        .max(100)
         .optional(),
       national_percent: z
         .number()

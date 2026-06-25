@@ -10,7 +10,7 @@
 // is a structured PROXY; in production the AI refines just that classification —
 // it still never emits the number. The number always comes from tier → table.
 
-import type { Activity, Honor, Grades, Tests } from "@/lib/types";
+import { gpaToPercent, type Activity, type Honor, type Grades, type Tests } from "@/lib/types";
 
 export type Factor =
   | "academics"
@@ -207,7 +207,7 @@ function scoreAwards(honors: Honor[]): ArguedScore {
 /** Grade standing (0–100) across curricula, identical to academicIndexFromProfile. */
 function gradesScore100(g: Partial<Grades>): number | null {
   if (g.ib_total != null) return clamp(((g.ib_total - 24) / (45 - 24)) * 100, 0, 100);
-  if (g.gpa != null) return g.gpa <= 4 ? (g.gpa / 4) * 100 : clamp(g.gpa, 0, 100);
+  if (g.gpa != null) return gpaToPercent(g.gpa, g.gpa_scale);
   if (g.national_percent != null) return clamp(g.national_percent, 0, 100);
   return null;
 }

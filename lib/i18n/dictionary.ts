@@ -187,6 +187,8 @@ const en: Dict = {
   "ob.grades": "Your grades",
   "ob.ibTotal": "Predicted/actual IB total (optional)",
   "ob.gpa": "GPA (optional)",
+  "ob.gpaScale": "GPA scale",
+  "ob.outOf": "out of",
   "ob.percent": "Average % (optional)",
   "ob.subjects": "Subject tests / APs (optional)",
   "ob.subjectsPh": "e.g. AP Calculus BC 5, AP Econ 5",
