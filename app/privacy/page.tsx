@@ -20,8 +20,9 @@ export default function PrivacyPage() {
         and protects information when you use our website and services (the
         &ldquo;Service&rdquo;). Compass helps internationally-based students
         assess and improve their applications to universities in the US, Italy,
-        and Hong Kong. By using the Service, you agree to the practices described
-        here.
+        and Hong Kong. Compass is an independent project operated by individuals
+        based in the Republic of Kazakhstan; it is not a registered company. By
+        using the Service, you agree to the practices described here.
       </p>
 
       <LegalSection heading="1. Information we collect">
@@ -151,9 +152,10 @@ export default function PrivacyPage() {
       <LegalSection heading="9. International users">
         <p>
           The Service is offered to internationally-based students, and your
-          information may be processed in countries other than your own,
-          including by the service providers described above. By using the
-          Service, you consent to this processing.
+          information may be processed in the Republic of Kazakhstan and in other
+          countries — including by the service providers described above — which
+          may have data-protection laws different from those of your own country.
+          By using the Service, you consent to this processing.
         </p>
       </LegalSection>
 

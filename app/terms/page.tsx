@@ -16,10 +16,12 @@ export default function TermsPage() {
     <LegalPage title="Terms of Use" updated={UPDATED}>
       <p>
         These Terms of Use (&ldquo;Terms&rdquo;) govern your access to and use of
-        Compass (the &ldquo;Service&rdquo;), provided by Compass
-        (&ldquo;Compass,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or
-        &ldquo;our&rdquo;). By creating an account or using the Service, you agree
-        to these Terms. If you do not agree, do not use the Service.
+        Compass (the &ldquo;Service&rdquo;). Compass (&ldquo;Compass,&rdquo;
+        &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) is an
+        independent project operated by individuals based in the Republic of
+        Kazakhstan; it is not a registered company. By creating an account or
+        using the Service, you agree to these Terms. If you do not agree, do not
+        use the Service.
       </p>
 
       <LegalSection heading="1. The Service">
@@ -107,9 +109,10 @@ export default function TermsPage() {
       <LegalSection heading="7. Intellectual property">
         <p>
           The Service, including its software, design, text, and branding, is
-          owned by Compass and protected by applicable intellectual property
-          laws. Except for Your Content, no rights are granted to you other than
-          the limited right to use the Service in accordance with these Terms.
+          owned by the operators of Compass and protected by applicable
+          intellectual property laws. Except for Your Content, no rights are
+          granted to you other than the limited right to use the Service in
+          accordance with these Terms.
         </p>
       </LegalSection>
 
@@ -152,7 +155,18 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection heading="12. Contact us">
+      <LegalSection heading="12. Governing law">
+        <p>
+          These Terms are governed by the laws of the Republic of Kazakhstan,
+          without regard to conflict-of-law rules. Any dispute arising out of or
+          relating to the Service or these Terms will be subject to the
+          jurisdiction of the courts of the Republic of Kazakhstan, except where
+          mandatory consumer-protection law in your country of residence grants
+          you the right to bring proceedings locally.
+        </p>
+      </LegalSection>
+
+      <LegalSection heading="13. Contact us">
         <p>
           Questions about these Terms? Contact us at{" "}
           <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
