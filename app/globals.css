@@ -83,50 +83,68 @@
 }
 
 /* Headline line — a deep-navy phrase that smoothly "shuffles" between full
-   sentences: the new line glides DOWN into place (soft blur→sharp, fades in)
-   while the old one slips down and fades out at the SAME time — a true
-   crossfade, so the slot never goes blank between phrases. Both are blurred and
-   semi-transparent as they cross, so the overlap reads as one soft shuffle, not
-   a collision. The phrases are layered absolutely over an invisible sizer (in
-   the component), so they never shift the text around them. The deep navy
-   (--accent-ink ≈ 9:1 on the light hero) keeps the composition serious and is
-   the 10% accent. prefers-reduced-motion (global guard below) makes the swap
-   instant and holds the first phrase. */
+   sentences: the new line glides DOWN into place (soft blur→sharp) while the old
+   one slips down and out at the SAME time. The trick that keeps it clean: motion
+   and OPACITY are separate animations. Opacity is LINEAR and complementary over
+   the same duration, so the incoming and outgoing opacities always sum to 1 —
+   it is mathematically impossible to ever paint two opaque phrases stacked on top
+   of each other, or to flash a blank slot. The phrases are layered absolutely
+   over an invisible sizer (in the component), so they never shift the text around
+   them. The deep navy (--accent-ink ≈ 9:1 on the light hero) keeps the
+   composition serious and is the 10% accent. prefers-reduced-motion (global guard
+   below) makes the swap instant and holds the first phrase. */
 .roll-word {
   color: var(--accent-ink);
   will-change: transform, opacity, filter;
 }
-@keyframes roll-in {
+/* Motion + blur — eased, for a fluid glide. Both phrases travel downward. */
+@keyframes roll-move-in {
   0% {
-    opacity: 0;
-    transform: translateY(-0.42em);
+    transform: translateY(-0.34em);
     filter: blur(5px);
   }
   100% {
-    opacity: 1;
     transform: translateY(0);
     filter: blur(0);
   }
 }
-@keyframes roll-out {
+@keyframes roll-move-out {
   0% {
-    opacity: 1;
     transform: translateY(0);
     filter: blur(0);
   }
   100% {
-    opacity: 0;
-    transform: translateY(0.46em);
+    transform: translateY(0.34em);
     filter: blur(5px);
   }
 }
-/* Enter: smooth ease-out-expo (≤500ms). Exit: faster ease-in-expo (~68% of the
-   enter, per motion guidance). Both run together for an overlapping crossfade. */
+/* Opacity — linear + complementary + equal duration ⇒ in + out === 1 at all
+   times. This is what prevents the stack-up: never two opaque, never blank. */
+@keyframes roll-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes roll-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
 .roll-in {
-  animation: roll-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation:
+    roll-move-in 0.46s cubic-bezier(0.22, 1, 0.36, 1) both,
+    roll-fade-in 0.46s linear both;
 }
 .roll-out {
-  animation: roll-out 0.34s cubic-bezier(0.7, 0, 0.84, 0) both;
+  animation:
+    roll-move-out 0.46s cubic-bezier(0.22, 1, 0.36, 1) both,
+    roll-fade-out 0.46s linear both;
 }
 
 @keyframes marquee-left {
