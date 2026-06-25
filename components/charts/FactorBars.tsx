@@ -18,26 +18,31 @@ export function FactorBars({
         // Hide irrelevant factors for clean UI (Progressive Disclosure)
         if (mutedKeys?.has(f.key)) return null;
 
+        // Factor scores are whole numbers on the 0–10 rubric; round so a stored
+        // decimal (e.g. 8.4) reads like the rest (8) across the number, bar, and
+        // screen-reader value.
+        const shown = Math.round(f.score);
+
         return (
           <li key={f.key}>
             <div className="mb-1 flex items-baseline justify-between gap-3">
               <span className="text-sm font-medium text-ink">{f.label}</span>
               <span data-num className="text-sm font-semibold text-ink">
-                {f.score}
+                {shown}
                 <span className="text-ink-faint">/10</span>
               </span>
             </div>
             <div
               className="h-2 w-full overflow-hidden rounded-full bg-line"
               role="meter"
-              aria-valuenow={f.score}
+              aria-valuenow={shown}
               aria-valuemin={0}
               aria-valuemax={10}
-              aria-label={`${f.label}: ${f.score} out of 10`}
+              aria-label={`${f.label}: ${shown} out of 10`}
             >
               <div
                 className="h-full rounded-full bg-accent transition-[width] duration-700 ease-out"
-                style={{ width: `${f.score * 10}%` }}
+                style={{ width: `${shown * 10}%` }}
               />
             </div>
             

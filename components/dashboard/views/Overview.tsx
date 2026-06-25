@@ -94,23 +94,29 @@ export function Overview() {
               <OverallGauge score={overall} />
             </div>
             <ul className="w-full flex-1 space-y-3.5">
-              {topFactors.map((f) => (
-                <li key={f.key}>
-                  <div className="mb-1 flex items-baseline justify-between gap-3">
-                    <span className="text-sm font-medium text-ink">{f.label}</span>
-                    <span data-num className="text-sm font-semibold text-ink">
-                      {f.score}
-                      <span className="text-ink-faint">/10</span>
-                    </span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-line">
-                    <div
-                      className="h-full rounded-full bg-accent transition-[width] duration-700 ease-out"
-                      style={{ width: `${f.score * 10}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
+              {topFactors.map((f) => {
+                // Factor scores are whole numbers on the 0–10 rubric; round so a
+                // stored decimal (e.g. 8.4) reads like the rest (8) — both the
+                // number and the bar width.
+                const shown = Math.round(f.score);
+                return (
+                  <li key={f.key}>
+                    <div className="mb-1 flex items-baseline justify-between gap-3">
+                      <span className="text-sm font-medium text-ink">{f.label}</span>
+                      <span data-num className="text-sm font-semibold text-ink">
+                        {shown}
+                        <span className="text-ink-faint">/10</span>
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-line">
+                      <div
+                        className="h-full rounded-full bg-accent transition-[width] duration-700 ease-out"
+                        style={{ width: `${shown * 10}%` }}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
           <ButtonLink href={`${basePath}/standing`} variant="subtle" className="mt-6 w-full">

@@ -57,7 +57,10 @@ const isSenior = (a: Activity) =>
 const years = (a: Activity) => a.grades?.length ?? 0;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
-const round1 = (n: number) => Math.round(n * 10) / 10;
+// Factor scores live on the integer 0–10 rubric scale, so keep them whole — a
+// 1-decimal blend like 8.4 read as out of place next to the other (integer)
+// factors on the scorecard.
+const roundScore = (n: number) => Math.round(n);
 // Display tier from a 0–10 score, so an arguable rule still maps to a tier band.
 const tierFromScore = (s: number): Tier => (s >= 8.5 ? 1 : s >= 7 ? 2 : s >= 5 ? 3 : 4);
 
@@ -229,7 +232,7 @@ function scoreAcademics(g: Partial<Grades>, curriculum?: string): ArguedScore {
   const gs = gradesScore100(g);
   const gradesSub = gs == null ? 5 : clamp(gs / 10, 0, 10); // neutral 5 when no grades
   const rs = rigorScore10(curriculum);
-  const score = round1(clamp(gradesSub * 0.7 + rs * 0.3, 0, 10)); // grades 70% + rigor 30%
+  const score = roundScore(clamp(gradesSub * 0.7 + rs * 0.3, 0, 10)); // grades 70% + rigor 30%
   const label = g.ib_total != null ? `IB ${g.ib_total}/45`
     : g.gpa != null ? `GPA ${g.gpa}`
     : g.national_percent != null ? `${g.national_percent}th percentile`
@@ -252,12 +255,12 @@ function scoreTestScores(t: Tests): ArguedScore {
   let score: number, rule: string, evidence: string[];
   if (stdSub != null) {
     const es = englishSub ?? 5; // neutral when no English score
-    score = round1(clamp(stdSub * 0.75 + es * 0.25, 0, 10));
+    score = roundScore(clamp(stdSub * 0.75 + es * 0.25, 0, 10));
     rule = "Deterministic: standardized band (SAT/ACT → 0–100) weighted 75% + English proficiency 25%.";
     evidence = [`standardized ${t.SAT ? `SAT ${t.SAT}` : `ACT ${t.ACT}`} → ${stdSub.toFixed(1)}/10`, `English ${englishLabel}${englishSub == null ? " (neutral 5.0)" : ` → ${englishSub.toFixed(1)}/10`}`];
   } else if (englishSub != null) {
     // Test-optional: only English to go on — credited but capped (no aptitude signal).
-    score = round1(clamp(Math.min(englishSub, 6) * 0.7 + 1, 0, 6));
+    score = roundScore(clamp(Math.min(englishSub, 6) * 0.7 + 1, 0, 6));
     rule = "Deterministic: no SAT/ACT (test-optional) — scored on English proficiency only, capped at 6 (no aptitude signal to credit).";
     evidence = [`no SAT/ACT submitted`, `English ${englishLabel} → ${englishSub.toFixed(1)}/10`];
   } else {
@@ -269,7 +272,7 @@ function scoreTestScores(t: Tests): ArguedScore {
 }
 
 function scoreCourseRigor(curriculum?: string): ArguedScore {
-  const score = round1(rigorScore10(curriculum));
+  const score = roundScore(rigorScore10(curriculum));
   const label = score >= 9 ? "most demanding (full IB)"
     : score >= 8 ? "very demanding (A-Level)"
     : score >= 6 ? "moderate (national / US-GPA)"
