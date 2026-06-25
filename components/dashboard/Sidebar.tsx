@@ -37,7 +37,10 @@ export function Sidebar() {
 
       <nav
         aria-label="Dashboard"
-        className="flex gap-1.5 overflow-x-auto border-b border-line px-3 py-3 lg:flex-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:border-b-0 lg:px-3 lg:py-2"
+        // Mobile: wrap every section so all of them are visible at once (a
+        // horizontal scroller hid Costs/Plan/Timeline/Summary off the right edge
+        // with no scroll affordance). Desktop: vertical rail.
+        className="flex flex-wrap gap-1.5 border-b border-line px-3 py-3 lg:flex-1 lg:flex-col lg:flex-nowrap lg:gap-1 lg:border-b-0 lg:px-3 lg:py-2"
       >
         {SECTIONS.map((s) => {
           const on = isActive(s.slug);
@@ -61,7 +64,10 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="hidden gap-2 border-t border-line p-4 lg:flex lg:flex-col">
+      {/* Account actions. Mobile: a compact wrapping row under the nav (was
+          hidden entirely below lg, so Update profile / Sign out were unreachable
+          on phones). Desktop: the vertical block pinned to the sidebar bottom. */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-line p-3 lg:flex-col lg:items-stretch lg:border-b-0 lg:border-t lg:p-4">
         {demo ? (
           <ButtonLink href="/" variant="subtle" size="sm">
             {t("common.home")}
@@ -77,7 +83,7 @@ export function Sidebar() {
               {t("common.updateProfile")}
             </ButtonLink>
             <form action="/auth/signout" method="post">
-              <Button type="submit" variant="ghost" size="sm" className="w-full">
+              <Button type="submit" variant="ghost" size="sm" className="lg:w-full">
                 {t("common.signOut")}
               </Button>
             </form>
