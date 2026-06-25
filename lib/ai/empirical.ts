@@ -63,8 +63,22 @@ export function academicIndexFromProfile(profile: StudentProfileInput): number {
   return Math.round(clamp(base * rigorMultiplier, 0, 100));
 }
 
-function tierOf(pct: number): Tier {
+export function tierForPct(pct: number): Tier {
   return pct < 20 ? "reach" : pct < 55 ? "target" : "likely";
+}
+
+/**
+ * Hard ceiling on the displayed likelihood_high for a school, anchored to its
+ * REAL acceptance rate. This is the guardrail that makes it impossible for an
+ * over-optimistic model guess (e.g. 33–45% at a 6%-admit school) to ever reach
+ * the user, regardless of how the AI/empirical blend lands. It encodes the same
+ * honesty rule the prompt asks the model to follow: schools under 15% admit stay
+ * single/low-double digits (≤20), and the ceiling rises with the base rate.
+ */
+export function maxDisplayedHigh(acceptanceRate: number): number {
+  const ar = clamp(acceptanceRate, 0, 1);
+  if (ar < 0.15) return 20;
+  return Math.round(clamp(20 + (ar - 0.15) * 90, 20, 95));
 }
 
 /**
@@ -131,7 +145,7 @@ function toEstimate(prob: number, source: "empirical" | "heuristic", n: number):
   return {
     likelihood_low: Math.round(clamp(pct - halfWidth, 0, 100)),
     likelihood_high: Math.round(clamp(pct + halfWidth, 0, 100)),
-    tier: tierOf(pct),
+    tier: tierForPct(pct),
     confidence,
     source,
     sampleSize: n,

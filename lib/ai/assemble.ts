@@ -17,6 +17,8 @@ import {
   academicIndexFromProfile,
   estimateSchoolLikelihood,
   isInternationalApplicant,
+  tierForPct,
+  maxDisplayedHigh,
 } from "@/lib/ai/empirical";
 import { scoreHolistic, scoreAcademicFactors } from "@/lib/ai/tier-score";
 import type { SchoolLikelihood } from "@/lib/ai/schema";
@@ -62,53 +64,91 @@ export function computeBenchmarks(profile: StudentProfileInput): Benchmark[] {
 }
 
 /**
- * Replace the model's GUESSED per-school likelihood range with a deterministic,
- * data-driven estimate (empirical admit curve, or an acceptance-rate heuristic
- * fallback). The model keeps the qualitative parts it's good at — fit_score and
- * the human-readable reason — while the numbers come from real outcomes in code.
- * Schools not in our university dataset keep the model's original numbers.
+ * Per-school likelihood = the AI's holistic read BLENDED with the data-driven
+ * estimate from our 2500+ outcome dataset (empirical admit curve, or an
+ * acceptance-rate heuristic fallback). Rather than discarding the model's number,
+ * we anchor it to real outcomes: the more samples behind the empirical estimate,
+ * the more it dominates the blend. A hard ceiling tied to each school's real
+ * acceptance rate then makes an over-optimistic guess impossible to display.
+ * The model keeps fit_score and the human-readable reason. Schools not in our
+ * dataset keep the model's numbers but still get a sanity cap.
  */
-export function applyEmpiricalLikelihoods(
+export function blendSchoolLikelihoods(
   schools: SchoolLikelihood[],
   profile: StudentProfileInput
 ): SchoolLikelihood[] {
   const index = academicIndexFromProfile(profile);
   const international = isInternationalApplicant(profile);
   return schools.map((s) => {
+    const aiLow = Math.min(s.likelihood_low, s.likelihood_high);
+    const aiHigh = Math.max(s.likelihood_low, s.likelihood_high);
     const uni = findUniversity(s.name);
-    if (!uni) return s;
+
+    // School we have no data for: trust the model but cap runaway optimism.
+    if (!uni) {
+      const high = Math.min(aiHigh, 60);
+      return { ...s, likelihood_low: Math.min(aiLow, high), likelihood_high: high };
+    }
+
     const est = estimateSchoolLikelihood(uni, index, { international });
+
+    // Weight on the DATA: heavier when more samples stand behind it.
+    const w =
+      est.source === "heuristic"
+        ? 0.45
+        : est.confidence === "high"
+          ? 0.82
+          : est.confidence === "medium"
+            ? 0.68
+            : 0.55;
+    const aiMid = (aiLow + aiHigh) / 2;
+    const empMid = (est.likelihood_low + est.likelihood_high) / 2;
+    const mid = w * empMid + (1 - w) * aiMid;
+    const half = (est.likelihood_high - est.likelihood_low) / 2;
+
+    const cap = maxDisplayedHigh(uni.acceptance_rate);
+    const rawHigh = Math.round(mid + half);
+    const high = Math.min(rawHigh, cap);
+    // If the ceiling clipped the top, slide the whole band down to keep its
+    // width instead of collapsing it flat against the cap.
+    const low =
+      high < rawHigh
+        ? Math.max(0, high - 2 * Math.round(half))
+        : Math.max(0, Math.round(mid - half));
+
     return {
       ...s,
-      tier: est.tier,
-      likelihood_low: est.likelihood_low,
-      likelihood_high: est.likelihood_high,
+      tier: tierForPct(Math.min(mid, cap)),
+      likelihood_low: Math.min(low, high),
+      likelihood_high: high,
       confidence: est.confidence,
     };
   });
 }
 
 // The factors whose score is OBJECTIVE — derivable from the student's own
-// grades/tests/curriculum/hours/roles/award levels by an explicit rule. We
-// compute these in code so the number is reproducible and fully arguable,
-// instead of trusting the model to do (and hide) the arithmetic. That is now 6
-// of the 7 factors (90% of the overall-score weight). narrative_fit is the only
-// one left to the model: the rubric leaves that subjective classification to it.
+// grades/tests/curriculum/hours/roles by an explicit rule. We compute these in
+// code so the number is reproducible and fully arguable, instead of trusting
+// the model to do (and hide) the arithmetic.
+//
+// extracurricular_depth and awards are INTENTIONALLY left to the model: a rigid
+// keyword/threshold formula mis-scored genuine Tier-1 activities and honors
+// (e.g. non-English titles, blank hours fields), so the model now judges these
+// holistically against the rubric tiers (see the prompt's tier instructions).
+// narrative_fit is also the model's. Same trade-off as before for the rest.
 const DETERMINISTIC_FACTORS = new Set([
   "academics",
   "test_scores",
   "course_rigor",
   "leadership",
-  "extracurricular_depth",
-  "awards",
 ]);
 
 /**
- * Replace the model's score for the objective holistic factors with the
- * deterministic tier score from the student's profile. Same student → same
- * number, run to run; the reasoning becomes the exact rule + evidence that
- * fired. Factors not in DETERMINISTIC_FACTORS (academics, test_scores,
- * course_rigor, narrative_fit) keep the model's values.
+ * Replace the model's score for the objective factors (academics, test_scores,
+ * course_rigor, leadership) with the deterministic tier score from the student's
+ * profile. Same student → same number, run to run; the reasoning becomes the
+ * exact rule + evidence that fired. Factors not in DETERMINISTIC_FACTORS
+ * (extracurricular_depth, awards, narrative_fit) keep the model's values.
  */
 function applyDeterministicFactors(
   factors: ModelAnalysis["factors"],
@@ -183,7 +223,7 @@ export function assembleAnalysis(
   const full: Analysis = {
     overall_score: computeOverallFromFactors(factors),
     factors,
-    schools: applyEmpiricalLikelihoods(model.schools, profile),
+    schools: blendSchoolLikelihoods(model.schools, profile),
     recommended_schools: model.recommended_schools,
     benchmarks: computeBenchmarks(profile),
     gap_analysis: model.gap_analysis,
