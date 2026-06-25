@@ -133,6 +133,9 @@ export type Tests = {
 };
 
 export type StudentProfileInput = {
+  // ── Who you are (redesigned intake) ──
+  full_name?: string; // shown name; mirrored onto the identity profile
+  school_name?: string; // current high school
   // ── Where you're from ──
   country: string; // origin country (where the student lives)
   citizenship: string;
@@ -155,6 +158,8 @@ export type StudentProfileInput = {
   // ── Hong Kong pathway (active when destinations includes "HK") ──
   hk_programs: string[]; // HK program IDs from the dataset
   hk_grade_status?: "predicted" | "achieved"; // are reported grades predicted or achieved?
+  // ── Budget (redesigned intake) ── how much family can pay per year, in USD.
+  budget_annual_usd?: number;
   // ── Attribution (shown only to non-referral signups) ──
   heard_from?: string; // how they found Compass: social | friend | search | school | ambassador | other
   heard_from_code?: string; // ambassador's referral code, if they heard from one
@@ -170,6 +175,8 @@ export function emptyHonor(): Honor {
 
 export function emptyProfile(): StudentProfileInput {
   return {
+    full_name: "",
+    school_name: "",
     country: "",
     citizenship: "",
     destinations: [],

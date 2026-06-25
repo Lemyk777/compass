@@ -106,14 +106,11 @@ export default async function AdminPage() {
   // logOnboardingStep). The drop between consecutive bars is the abandonment
   // cliff — the whole point of this instrumentation.
   const FUNNEL_STEPS: { key: string; label: string }[] = [
-    { key: "origin", label: "Origin" },
-    { key: "destinations", label: "Destinations" },
-    { key: "faculties", label: "Faculties" },
-    { key: "grades", label: "Grades" },
-    { key: "tests", label: "Tests" },
+    { key: "general", label: "General" },
+    { key: "academics", label: "Academics" },
     { key: "activities", label: "Activities" },
-    { key: "honors", label: "Honors" },
-    { key: "review", label: "Review" },
+    { key: "awards", label: "Awards" },
+    { key: "budget", label: "Budget" },
   ];
   const stepUsers = new Map<string, Set<string>>();
   for (const e of stepEvents ?? []) {

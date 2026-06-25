@@ -13,9 +13,11 @@ import { creditSurveyReferral } from "@/lib/auth/provision";
 import { inputSchema, describeIssue, type SaveResult } from "./schema";
 
 // Valid onboarding step keys — guards the events.type value against junk.
+// Redesigned intake sections, plus the legacy keys so historical events stay valid.
 const ONBOARDING_STEPS = new Set([
+  "general", "academics", "activities", "awards", "budget",
   "origin", "destinations", "faculties", "grades", "tests",
-  "activities", "honors", "us", "it", "hk", "review",
+  "honors", "us", "it", "hk", "review",
 ]);
 
 /**
