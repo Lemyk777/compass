@@ -144,6 +144,12 @@ const en: Dict = {
   "auth.errNotConfigured":
     "Authentication isn't configured yet. Add your Supabase keys to continue.",
   "auth.errGeneric": "Something went wrong. Please try again.",
+  "auth.errRateLimited":
+    "Too many attempts right now. Please wait a few minutes and try again.",
+  "auth.rateLimitTitle": "Email sign-up is busy right now",
+  "auth.rateLimitBody":
+    "We couldn't send the confirmation email at the moment. The fastest way in is to continue with Google — or try email again in a few minutes.",
+  "auth.rateLimitBtn": "Continue with Google",
   "auth.googleOnlyTitle": "This account uses Google",
   "auth.googleOnlyBody":
     "You created this account with Google, so it doesn't have a password. Use the button below to sign in.",

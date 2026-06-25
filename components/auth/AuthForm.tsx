@@ -27,6 +27,10 @@ export function AuthForm({
   // Set when a failed password login turns out to be a Google-only account, so
   // we can guide the user to the Google button instead of showing a raw error.
   const [googleOnly, setGoogleOnly] = useState(false);
+  // Set when Supabase rejects the signup email with a send-rate limit. The cap
+  // is project-wide on the built-in mailer, so we steer the user to Google
+  // (which sends no email) instead of showing a raw "rate limit" error.
+  const [rateLimited, setRateLimited] = useState(false);
 
   // Forward an explicit return target if one was passed (e.g. a gated page
   // redirected here). Otherwise let the callback route by role.
@@ -47,6 +51,7 @@ export function AuthForm({
     e.preventDefault();
     setError(null);
     setGoogleOnly(false);
+    setRateLimited(false);
     setLoading("email");
     try {
       if (mode === "signup") {
@@ -84,6 +89,13 @@ export function AuthForm({
         window.location.assign(callbackPath);
       }
     } catch (err) {
+      // Built-in mailer rate limit: don't show the raw error — point the user
+      // at Google sign-in, which works regardless of the email send cap.
+      if (mode === "signup" && isEmailRateLimit(err)) {
+        setRateLimited(true);
+        setLoading(null);
+        return;
+      }
       setError(messageFor(err, t));
       setLoading(null);
     }
@@ -116,6 +128,32 @@ export function AuthForm({
 
   return (
     <div className="rounded-2xl border border-line bg-card p-6 shadow-card">
+      {rateLimited && (
+        <div
+          role="alert"
+          className="mb-5 rounded-xl border border-accent/30 bg-accent-soft p-4"
+        >
+          <p className="text-sm font-semibold text-ink">
+            {t("auth.rateLimitTitle")}
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+            {t("auth.rateLimitBody")}
+          </p>
+          <Button
+            type="button"
+            size="md"
+            className="mt-3 w-full"
+            onClick={handleGoogle}
+            disabled={loading !== null}
+          >
+            <GoogleMark />
+            {loading === "google"
+              ? t("auth.connecting")
+              : t("auth.rateLimitBtn")}
+          </Button>
+        </div>
+      )}
+
       {googleOnly && (
         <div
           role="alert"
@@ -239,10 +277,28 @@ export function AuthForm({
   );
 }
 
+/**
+ * True when Supabase rejected the request because the built-in email sender hit
+ * its (project-wide) send-rate cap. Matches the GoTrue error code and the human
+ * message, since older SDK/server versions don't always populate `code`.
+ */
+function isEmailRateLimit(err: unknown): boolean {
+  const e = err as { code?: string; message?: string } | null;
+  const msg = e?.message ?? "";
+  return (
+    e?.code === "over_email_send_rate_limit" ||
+    /email rate limit|rate limit exceeded/i.test(msg)
+  );
+}
+
 function messageFor(err: unknown, t: (k: string) => string): string {
   const msg = err instanceof Error ? err.message : String(err);
   if (/configuration|fetch|Failed to fetch/i.test(msg))
     return t("auth.errNotConfigured");
+  // Any other rate-limit flavour (e.g. repeated login attempts) — keep it human
+  // rather than leaking the raw "...rate limit exceeded".
+  if (/rate limit|too many requests/i.test(msg))
+    return t("auth.errRateLimited");
   return msg || t("auth.errGeneric");
 }
 
