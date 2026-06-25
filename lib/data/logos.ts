@@ -43,6 +43,12 @@ const LABELS: Record<string, string> = {
   normale: "Scuola Normale Superiore",
   firenze: "Università di Firenze",
   federico2: "Federico II",
+  // Hong Kong universities (map + marquee)
+  hku: "HKU",
+  hkust: "HKUST",
+  cuhk: "CUHK",
+  cityu: "CityU",
+  polyu: "PolyU",
 };
 
 function labelFor(base: string): string {

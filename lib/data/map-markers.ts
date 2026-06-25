@@ -55,11 +55,11 @@ const IT_MARKERS: UniMarker[] = [
 ];
 
 const HK_MARKERS: UniMarker[] = [
-  { name: "HKU", lat: 22.283, lon: 114.137, mono: "HKU" },
-  { name: "HKUST", lat: 22.3364, lon: 114.2654, mono: "UST" },
-  { name: "CUHK", lat: 22.4196, lon: 114.207, mono: "CU" },
-  { name: "CityU", lat: 22.3367, lon: 114.1719, mono: "City" },
-  { name: "PolyU", lat: 22.3045, lon: 114.18, mono: "Poly" },
+  { name: "HKU", lat: 22.283, lon: 114.137, logo: "/logos/hku.svg" },
+  { name: "HKUST", lat: 22.3364, lon: 114.2654, logo: "/logos/hkust.svg" },
+  { name: "CUHK", lat: 22.4196, lon: 114.207, logo: "/logos/cuhk.png" },
+  { name: "CityU", lat: 22.3367, lon: 114.1719, logo: "/logos/cityu.svg" },
+  { name: "PolyU", lat: 22.3045, lon: 114.18, logo: "/logos/polyu.svg" },
 ];
 
 export const COUNTRIES: CountryView[] = [
