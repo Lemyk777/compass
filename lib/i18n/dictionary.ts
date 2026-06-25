@@ -144,6 +144,10 @@ const en: Dict = {
   "auth.errNotConfigured":
     "Authentication isn't configured yet. Add your Supabase keys to continue.",
   "auth.errGeneric": "Something went wrong. Please try again.",
+  "auth.googleOnlyTitle": "This account uses Google",
+  "auth.googleOnlyBody":
+    "You created this account with Google, so it doesn't have a password. Use the button below to sign in.",
+  "auth.googleOnlyBtn": "Continue with Google",
   "auth.asideTitle": "Your study-abroad journey starts here",
   "auth.asideBullet1": "An honest competitiveness score",
   "auth.asideBullet2": "Admission odds for every school on your list",

@@ -6,6 +6,7 @@ import { siteUrl } from "@/lib/site";
 import { Button } from "@/components/ui/Button";
 import { Input, Field } from "@/components/ui/Input";
 import { useT } from "@/lib/i18n/client";
+import { lookupAuthMethod } from "@/app/auth/actions";
 
 type Mode = "login" | "signup";
 
@@ -23,6 +24,9 @@ export function AuthForm({
   const [loading, setLoading] = useState<"email" | "google" | null>(null);
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [checkEmail, setCheckEmail] = useState(false);
+  // Set when a failed password login turns out to be a Google-only account, so
+  // we can guide the user to the Google button instead of showing a raw error.
+  const [googleOnly, setGoogleOnly] = useState(false);
 
   // Forward an explicit return target if one was passed (e.g. a gated page
   // redirected here). Otherwise let the callback route by role.
@@ -42,6 +46,7 @@ export function AuthForm({
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setGoogleOnly(false);
     setLoading("email");
     try {
       if (mode === "signup") {
@@ -62,7 +67,20 @@ export function AuthForm({
           email,
           password,
         });
-        if (error) throw error;
+        if (error) {
+          // A bad password on an account that was created with Google means
+          // there's no password at all. Detect that and guide them to Google
+          // rather than showing a confusing "invalid credentials".
+          if (/invalid login credentials/i.test(error.message)) {
+            const hint = await lookupAuthMethod(email);
+            if (hint === "google-only") {
+              setGoogleOnly(true);
+              setLoading(null);
+              return;
+            }
+          }
+          throw error;
+        }
         window.location.assign(callbackPath);
       }
     } catch (err) {
@@ -98,6 +116,32 @@ export function AuthForm({
 
   return (
     <div className="rounded-2xl border border-line bg-card p-6 shadow-card">
+      {googleOnly && (
+        <div
+          role="alert"
+          className="mb-5 rounded-xl border border-accent/30 bg-accent-soft p-4"
+        >
+          <p className="text-sm font-semibold text-ink">
+            {t("auth.googleOnlyTitle")}
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+            {t("auth.googleOnlyBody")}
+          </p>
+          <Button
+            type="button"
+            size="md"
+            className="mt-3 w-full"
+            onClick={handleGoogle}
+            disabled={loading !== null}
+          >
+            <GoogleMark />
+            {loading === "google"
+              ? t("auth.connecting")
+              : t("auth.googleOnlyBtn")}
+          </Button>
+        </div>
+      )}
+
       <Button
         type="button"
         variant="subtle"
