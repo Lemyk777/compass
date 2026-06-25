@@ -45,8 +45,12 @@ export async function analyzeProfile(
       "AI is not configured yet. Add ANTHROPIC_API_KEY to enable analysis."
     );
   }
-  // maxRetries: graceful backoff under load (429/529) and transient 5xx.
-  const anthropic = new Anthropic({ apiKey, maxRetries: 3 });
+  // maxRetries: one graceful backoff on 429/529/5xx. Kept low on purpose — this
+  // call runs inside a bounded serverless function, and stacking 3 exponential
+  // backoffs could push past the function's time budget and turn a transient
+  // "service busy" into a hard 504 timeout. One retry, then fail fast with the
+  // actionable "service is busy" message.
+  const anthropic = new Anthropic({ apiKey, maxRetries: 1 });
 
   // Send the model a compact, SIZE-BOUNDED view of the profile.
   const userPayload = JSON.stringify(buildModelInput(profile));
