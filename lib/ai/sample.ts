@@ -4,6 +4,7 @@ import {
   analyzeItalianPrograms,
   computeFinancialFitScore,
 } from "@/lib/ai/italy-analyze";
+import { recommendUniversities } from "@/lib/data/recommend";
 
 // Demo: a Kazakhstan AI-startup founder applying to BOTH the US (business) and
 // Italy (CS + economics). This exercises the full product — the multi-country
@@ -103,11 +104,9 @@ export const SAMPLE_ANALYSIS: Analysis = {
     { name: "University of Michigan, Ann Arbor", tier: "target", likelihood_low: 25, likelihood_high: 40, confidence: "medium", fit_score: 8, reason: "Ross is strong for business and your stats sit above the mid-range; international aid is limited, though." },
     { name: "Boston University", tier: "likely", likelihood_low: 45, likelihood_high: 65, confidence: "medium", fit_score: 8, reason: "Your SAT is at the top of BU's range and Questrom fits well; the friendliest odds on your current list." },
   ],
-  recommended_schools: [
-    { name: "University of Rochester", tier: "target", fit_score: 8, why: "Strong in economics/business, generous merit aid for internationals, and far friendlier admit odds — a smart addition." },
-    { name: "New York University", tier: "target", fit_score: 8, why: "Stern is a top fit for finance and a global founder profile; large international community." },
-    { name: "University of Michigan, Ann Arbor", tier: "target", fit_score: 8, why: "Already on your list — keep it as your anchor target for business." },
-  ],
+  // Computed by the real deterministic recommender so /demo mirrors the live
+  // engine (matches the student's fields + aid needs, excludes their targets).
+  recommended_schools: recommendUniversities(SAMPLE_PROFILE),
   benchmarks: [
     { school: "University of Pennsylvania", metric: "SAT", student_value: 1520, admit_p25: 1490, admit_p75: 1570 },
     { school: "Boston University", metric: "SAT", student_value: 1520, admit_p25: 1380, admit_p75: 1530 },

@@ -21,6 +21,7 @@ import {
   maxDisplayedHigh,
 } from "@/lib/ai/empirical";
 import { scoreAcademicFactors } from "@/lib/ai/tier-score";
+import { recommendUniversities } from "@/lib/data/recommend";
 import type { SchoolLikelihood } from "@/lib/ai/schema";
 
 /**
@@ -232,7 +233,10 @@ export function assembleAnalysis(
     overall_score: computeOverallFromFactors(factors),
     factors,
     schools: blendSchoolLikelihoods(model.schools, profile),
-    recommended_schools: model.recommended_schools,
+    // Recommendations are computed deterministically from our dataset (matching
+    // the student's fields, academic profile, and aid needs) — the model no
+    // longer picks them. Falls back to [] for non-US profiles.
+    recommended_schools: recommendUniversities(profile),
     benchmarks: computeBenchmarks(profile),
     gap_analysis: model.gap_analysis,
     timeline: model.timeline,

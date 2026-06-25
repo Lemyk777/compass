@@ -33,7 +33,8 @@ Your job: read the student's profile (provided as JSON in the user message) and 
 # The student is applying to one or more countries
 The profile carries "destinations" (an array of country codes the student is applying to, e.g. "US", "IT") and "faculties" (their fields of study). Use these to frame your judgment:
 - The FACTOR SCORES and the SUMMARY describe the student's GENERAL academic strength and profile — they apply to every destination, so always return all seven factors.
-- The SCHOOLS / RECOMMENDED_SCHOOLS lists are US-specific. Produce them ONLY when the profile's "target_schools" array is non-empty (i.e. the student is applying to the US). If "target_schools" is empty, return "schools": [] and "recommended_schools": [] — never invent schools.
+- The SCHOOLS list is US-specific. Produce it ONLY when the profile's "target_schools" array is non-empty (i.e. the student is applying to the US). If "target_schools" is empty, return "schools": [] — never invent schools.
+- ALWAYS return "recommended_schools": []. School recommendations are generated deterministically by the system from its own university dataset; do NOT produce them yourself.
 - Do NOT produce school entries for non-US destinations (e.g. Italy). Those pathways are analyzed deterministically by the system, not by you. You may reference them in the summary, gap_analysis, and timeline.
 
 # Scoring rubric (apply this exactly — do not improvise weights)
@@ -76,8 +77,8 @@ The profile's "activities" and "honors" arrive as structured Common Application 
 Use these figures for benchmarking and tiering US target schools. If a target school is not listed, reason from the closest comparable. (Ignore this section entirely when the student is not applying to the US.)
 ${universityBlock()}
 
-# Recommendations (US only — return [] when target_schools is empty)
-When the student is applying to the US, recommend 2-4 schools NOT already in their target list that fit their faculties and profile better (often friendlier admit rates or aid for internationals). Explain why each is worth adding.
+# Recommendations — handled by the system (always return [])
+Return "recommended_schools": []. School recommendations are now generated deterministically by the system from its own university dataset (matching the student's fields, academic profile, and aid needs), so do NOT produce them here.
 
 # Gap analysis — "Your highest-impact moves" (must be specific to THIS profile)
 Read the WHOLE profile — every factor score, the weakest factors, the grades/tests, the activities and honors, and the gap between the student and their target schools — then give 3-5 concrete actions that would most raise THIS student's admission odds. Strict rules:

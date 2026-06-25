@@ -5,6 +5,8 @@
 // Set before relying on them publicly. Figures here are approximate, drawn from
 // recently reported public data, and are meant as a reasonable v1 seed.
 
+import type { FacultyValue } from "@/lib/data/faculties";
+
 export type University = {
   id: string;
   name: string;
@@ -96,3 +98,79 @@ export function findUniversity(nameOrId: string): University | undefined {
     (u) => u.id === q || u.name.toLowerCase() === q
   );
 }
+
+// Standout field strengths (0–10) per faculty, keyed by university id. Used by
+// the deterministic recommender (lib/data/recommend.ts) to match schools to the
+// student's chosen faculties. SPARSE on purpose: list only the fields where a
+// school is notably strong; any unlisted field falls back to a selectivity
+// baseline in recommend.ts, so every school still gets a reasonable score.
+//
+// FOUNDER: these are reputation-based v1 seeds (like the figures above). Refine
+// per program as you gather real outcome data.
+export const FIELD_STRENGTHS: Record<string, Partial<Record<FacultyValue, number>>> = {
+  harvard: { business_economics: 10, law: 10, medicine_health: 10, humanities_social: 10, natural_sciences: 9 },
+  stanford: { computer_science: 10, engineering: 10, business_economics: 9, natural_sciences: 9 },
+  mit: { computer_science: 10, engineering: 10, natural_sciences: 10, business_economics: 8 },
+  princeton: { natural_sciences: 9, humanities_social: 9, business_economics: 9, engineering: 8 },
+  yale: { law: 10, humanities_social: 10, arts_design: 9, medicine_health: 9, business_economics: 8 },
+  columbia: { business_economics: 9, law: 9, humanities_social: 9, medicine_health: 9, engineering: 8 },
+  upenn: { business_economics: 10, medicine_health: 9, law: 9, computer_science: 8, engineering: 8 },
+  brown: { humanities_social: 9, computer_science: 8, medicine_health: 8 },
+  dartmouth: { business_economics: 8, humanities_social: 8, engineering: 7 },
+  cornell: { engineering: 9, computer_science: 9, natural_sciences: 9, business_economics: 8 },
+  caltech: { natural_sciences: 10, engineering: 10, computer_science: 9 },
+  uchicago: { business_economics: 10, humanities_social: 10, law: 9, natural_sciences: 8 },
+  duke: { medicine_health: 9, law: 9, business_economics: 8, engineering: 8, humanities_social: 8 },
+  northwestern: { business_economics: 9, arts_design: 9, engineering: 8, humanities_social: 8, medicine_health: 8 },
+  jhu: { medicine_health: 10, natural_sciences: 9, engineering: 8 },
+  vanderbilt: { medicine_health: 9, arts_design: 8, humanities_social: 8 },
+  rice: { engineering: 9, natural_sciences: 9, arts_design: 8 },
+  washu: { medicine_health: 9, arts_design: 9, business_economics: 8, natural_sciences: 8 },
+  "notre-dame": { business_economics: 9, humanities_social: 8, law: 8 },
+  georgetown: { business_economics: 9, law: 9, humanities_social: 9 },
+  cmu: { computer_science: 10, engineering: 9, arts_design: 9, business_economics: 8 },
+  emory: { medicine_health: 9, business_economics: 8 },
+  usc: { arts_design: 10, business_economics: 8, engineering: 8, computer_science: 8 },
+  uva: { law: 9, business_economics: 8, humanities_social: 8 },
+  unc: { medicine_health: 8, business_economics: 8, humanities_social: 8 },
+  nyu: { arts_design: 10, business_economics: 9, law: 9, humanities_social: 8 },
+  tufts: { humanities_social: 9, medicine_health: 8 },
+  bc: { business_economics: 8, humanities_social: 8, law: 8 },
+  bu: { business_economics: 8, medicine_health: 8, arts_design: 7 },
+  northeastern: { engineering: 8, computer_science: 8, business_economics: 8 },
+  rochester: { arts_design: 9, natural_sciences: 8, medicine_health: 8 },
+  "case-western": { engineering: 9, medicine_health: 9, computer_science: 8, natural_sciences: 8 },
+  "wake-forest": { business_economics: 8, medicine_health: 7 },
+  lehigh: { engineering: 9, business_economics: 8 },
+  brandeis: { natural_sciences: 8, humanities_social: 8 },
+  tulane: { medicine_health: 8, business_economics: 7 },
+  miami: { arts_design: 8, medicine_health: 8, natural_sciences: 7 },
+  fordham: { business_economics: 8, law: 8 },
+  purdue: { engineering: 10, computer_science: 9, natural_sciences: 8 },
+  pitt: { medicine_health: 9, natural_sciences: 8 },
+  syracuse: { arts_design: 9, business_economics: 7, humanities_social: 7 },
+  rpi: { engineering: 9, computer_science: 9, natural_sciences: 8 },
+  rit: { engineering: 8, computer_science: 8, arts_design: 8 },
+  drexel: { engineering: 8, computer_science: 7, business_economics: 7 },
+  stevens: { engineering: 9, computer_science: 8 },
+  wpi: { engineering: 9, computer_science: 8 },
+  villanova: { business_economics: 9, engineering: 8 },
+  "santa-clara": { business_economics: 8, engineering: 8, computer_science: 8 },
+  smu: { business_economics: 8, arts_design: 7 },
+  williams: { humanities_social: 10, business_economics: 8, natural_sciences: 8 },
+  amherst: { humanities_social: 10, natural_sciences: 8, business_economics: 8 },
+  swarthmore: { humanities_social: 10, natural_sciences: 9, engineering: 8 },
+  pomona: { humanities_social: 9, natural_sciences: 8, business_economics: 8 },
+  bowdoin: { humanities_social: 9, natural_sciences: 8 },
+  middlebury: { humanities_social: 10, arts_design: 7 },
+  wellesley: { humanities_social: 9, natural_sciences: 8, business_economics: 8 },
+  carleton: { natural_sciences: 9, humanities_social: 9, computer_science: 8 },
+  "harvey-mudd": { engineering: 10, computer_science: 10, natural_sciences: 9 },
+  cmc: { business_economics: 10, humanities_social: 9 },
+  colgate: { humanities_social: 8, business_economics: 7 },
+  hamilton: { humanities_social: 9, arts_design: 7 },
+  davidson: { humanities_social: 8, natural_sciences: 8, medicine_health: 7 },
+  vassar: { humanities_social: 9, arts_design: 9 },
+  grinnell: { natural_sciences: 9, humanities_social: 9, computer_science: 8 },
+  barnard: { humanities_social: 9, arts_design: 8 },
+};
