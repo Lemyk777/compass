@@ -216,6 +216,14 @@ export default async function LandingPage() {
       <footer className="mx-auto max-w-6xl px-6 py-10 text-sm font-light text-ink/40">
         <div className="flex flex-col items-start justify-between gap-4 border-t border-black/10 pt-8 sm:flex-row sm:items-center">
           <Logo className="text-ink/80" />
+          <nav className="flex items-center gap-5">
+            <a href="/privacy" className="transition hover:text-ink/70">
+              Privacy Policy
+            </a>
+            <a href="/terms" className="transition hover:text-ink/70">
+              Terms of Use
+            </a>
+          </nav>
           <p>
             © {new Date().getFullYear()} Compass. {t("landing.footer")}
           </p>
