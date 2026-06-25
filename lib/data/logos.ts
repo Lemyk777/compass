@@ -33,6 +33,16 @@ const LABELS: Record<string, string> = {
   smu: "SMU",
   cmc: "Claremont McKenna",
   washu: "WashU",
+  // Italian universities (map + marquee)
+  polimi: "Politecnico di Milano",
+  polito: "Politecnico di Torino",
+  bocconi: "Bocconi",
+  bologna: "Università di Bologna",
+  padova: "Università di Padova",
+  sapienza: "Sapienza",
+  normale: "Scuola Normale Superiore",
+  firenze: "Università di Firenze",
+  federico2: "Federico II",
 };
 
 function labelFor(base: string): string {

@@ -43,15 +43,15 @@ const US_MARKERS: UniMarker[] = [
 ];
 
 const IT_MARKERS: UniMarker[] = [
-  { name: "Politecnico di Milano", lat: 45.478, lon: 9.227, mono: "PM" },
-  { name: "Bocconi", lat: 45.4459, lon: 9.188, mono: "B" },
-  { name: "Politecnico di Torino", lat: 45.063, lon: 7.662, mono: "PT" },
-  { name: "Università di Bologna", lat: 44.4949, lon: 11.3426, mono: "BO" },
-  { name: "Università di Padova", lat: 45.4064, lon: 11.8768, mono: "PD" },
-  { name: "Sapienza Roma", lat: 41.9038, lon: 12.5147, mono: "S" },
-  { name: "Scuola Normale, Pisa", lat: 43.7196, lon: 10.4083, mono: "SN" },
-  { name: "Università di Firenze", lat: 43.8, lon: 11.253, mono: "FI" },
-  { name: "Federico II, Napoli", lat: 40.847, lon: 14.255, mono: "F2" },
+  { name: "Politecnico di Milano", lat: 45.478, lon: 9.227, logo: "/logos/polimi.svg" },
+  { name: "Bocconi", lat: 45.4459, lon: 9.188, logo: "/logos/bocconi.svg" },
+  { name: "Politecnico di Torino", lat: 45.063, lon: 7.662, logo: "/logos/polito.svg" },
+  { name: "Università di Bologna", lat: 44.4949, lon: 11.3426, logo: "/logos/bologna.svg" },
+  { name: "Università di Padova", lat: 45.4064, lon: 11.8768, logo: "/logos/padova.svg" },
+  { name: "Sapienza Roma", lat: 41.9038, lon: 12.5147, logo: "/logos/sapienza.svg" },
+  { name: "Scuola Normale, Pisa", lat: 43.7196, lon: 10.4083, logo: "/logos/normale.svg" },
+  { name: "Università di Firenze", lat: 43.8, lon: 11.253, logo: "/logos/firenze.svg" },
+  { name: "Federico II, Napoli", lat: 40.847, lon: 14.255, logo: "/logos/federico2.svg" },
 ];
 
 const HK_MARKERS: UniMarker[] = [
