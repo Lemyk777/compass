@@ -6,15 +6,13 @@ import type { StepKey } from "../types";
 import type { DestinationCode } from "@/lib/data/destinations";
 import { stepSchemas } from "../schemas";
 
-export function buildSteps(
-  destinations: DestinationCode[],
-  showSurvey = false
-): StepKey[] {
+export function buildSteps(destinations: DestinationCode[]): StepKey[] {
   const wantsUS = destinations.includes("US");
   const wantsIT = destinations.includes("IT");
   const wantsHK = destinations.includes("HK");
   return [
-    ...(showSurvey ? (["source"] as StepKey[]) : []),
+    // The "how did you hear about us?" survey is no longer a standalone step;
+    // it's folded into the first ("origin") step for non-referral signups.
     "origin",
     "destinations",
     "faculties",
@@ -30,13 +28,10 @@ export function buildSteps(
 }
 
 export function useOnboardingWizard() {
-  const { data, showSurvey, setErrorMsg, clearError } = useOnboardingContext();
+  const { data, setErrorMsg, clearError } = useOnboardingContext();
   const [stepIndex, setStepIndex] = useState(0);
 
-  const steps = useMemo(
-    () => buildSteps(data.destinations, showSurvey),
-    [data.destinations, showSurvey]
-  );
+  const steps = useMemo(() => buildSteps(data.destinations), [data.destinations]);
 
   // Clamp stepIndex defensively in case the list of steps shrinks dynamically
   const clampedIndex = Math.min(stepIndex, steps.length - 1);

@@ -305,8 +305,6 @@ const en: Dict = {
   "dest.soon": "Soon",
   // Attribution survey ("how did you hear about us?")
   "ob.tSource": "How did you hear about us?",
-  "ob.sSource": "One quick question — it helps us reach more students like you.",
-  "ob.errSource": "Pick one option.",
   "src.social": "Social media",
   "src.friend": "A friend told me",
   "src.search": "Search (Google)",

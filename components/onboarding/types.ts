@@ -2,7 +2,6 @@ import type { ZodSchema } from "zod";
 import type { StudentProfileInput } from "@/lib/types";
 
 export type StepKey =
-  | "source"
   | "origin"
   | "destinations"
   | "faculties"

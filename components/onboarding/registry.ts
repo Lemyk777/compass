@@ -1,7 +1,6 @@
 import type { StepConfig } from "./types";
 import { stepSchemas } from "./schemas";
 
-import StepSource from "./steps/StepSource";
 import StepOrigin from "./steps/StepOrigin";
 import StepDestinations from "./steps/StepDestinations";
 import StepFaculties from "./steps/StepFaculties";
@@ -15,13 +14,6 @@ import StepHKTargets from "./steps/StepHKTargets";
 import StepReview from "./steps/StepReview";
 
 export const STEP_REGISTRY: Record<string, StepConfig> = {
-  source: {
-    key: "source",
-    titleKey: "ob.tSource",
-    subKey: "ob.sSource",
-    schema: stepSchemas.source,
-    component: StepSource,
-  },
   origin: {
     key: "origin",
     titleKey: "ob.tOrigin",

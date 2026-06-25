@@ -1,11 +1,6 @@
 import { z } from "zod";
 import { LIMITS } from "@/lib/limits";
 
-export const sourceSchema = z.object({
-  heard_from: z.string().trim().min(1, "ob.errSource").max(40),
-  heard_from_code: z.string().trim().max(64).optional(),
-});
-
 export const originSchema = z.object({
   country: z
     .string()
@@ -185,7 +180,6 @@ export const hkSchema = z.object({
 export const reviewSchema = z.any();
 
 export const stepSchemas = {
-  source: sourceSchema,
   origin: originSchema,
   destinations: destinationsSchema,
   faculties: facultiesSchema,
