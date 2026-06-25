@@ -47,6 +47,7 @@ export const inputSchema = z
       raw: z.string().trim().min(1, "Add your grades.").max(LIMITS.grades),
       ib_total: z.number().optional(),
       gpa: z.number().optional(),
+      gpa_scale: z.number().optional(),
       national_percent: z.number().optional(),
     }),
     tests: z.object({
