@@ -18,20 +18,38 @@ export default async function AdminPage() {
   const t = getT();
   const admin = createAdminClient();
 
-  const [{ data: profiles }, { data: analyses }, { data: ambassadors }, { count: referredCount }] =
-    await Promise.all([
-      admin.from("profiles").select("id, country, created_at"),
-      admin.from("analyses").select("user_id, created_at, usage"),
-      admin.from("ambassadors").select("user_id"),
-      admin
-        .from("events")
-        .select("id", { count: "exact", head: true })
-        .eq("type", "signup")
-        .not("ref_code", "is", null),
-    ]);
+  const [
+    { data: profiles },
+    { data: analyses, error: analysesErr },
+    { data: ambassadors },
+    { count: referredCount },
+  ] = await Promise.all([
+    admin.from("profiles").select("id, country, created_at"),
+    admin.from("analyses").select("user_id, created_at, usage"),
+    admin.from("ambassadors").select("user_id"),
+    admin
+      .from("events")
+      .select("id", { count: "exact", head: true })
+      .eq("type", "signup")
+      .not("ref_code", "is", null),
+  ]);
 
   const users = profiles ?? [];
-  const runs = analyses ?? [];
+
+  // `usage` arrives in migration 0007. Until it's applied, PostgREST rejects
+  // the WHOLE select above (one unknown column fails the request), which used
+  // to silently zero every analysis metric and report all users as "never
+  // analyzed". If that happens, retry with only the always-present columns so
+  // the user counts stay correct; cost then falls back to the per-analysis
+  // estimate (rows simply look like they predate 0007).
+  let runs = analyses ?? [];
+  if (analysesErr) {
+    console.error("admin: analyses select failed; retrying without usage", analysesErr);
+    const { data: fallback } = await admin
+      .from("analyses")
+      .select("user_id, created_at");
+    runs = (fallback ?? []).map((r) => ({ ...r, usage: null }));
+  }
   const ambassadorCount = ambassadors?.length ?? 0;
   const referredSignups = referredCount ?? 0;
 
