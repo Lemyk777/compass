@@ -356,6 +356,19 @@ const en: Dict = {
     "The analysis service is busy right now. Please try again in a moment.",
   "dash.errGeneric": "Something went wrong running your analysis. Please try again.",
   "dash.editProfile": "Edit profile",
+  "dash.hello": "Hello",
+  "dash.seeFull": "See your full standing",
+  "dash.firstStep": "First step",
+  "dash.oddsCta": "See your admission odds",
+  "dash.oddsTime": "2 min",
+  "dash.noAnalysisTitle": "No analysis yet",
+  "dash.noAnalysisBody":
+    "Run your analysis from the dashboard to unlock this section.",
+  "dash.goDashboard": "Go to dashboard",
+  "dash.noOdds": "No target schools on your profile yet — add some to see your odds.",
+  "dash.noPlan": "No action items right now. You're in good shape.",
+  "dash.noTimeline": "No timeline items yet.",
+  "dash.noSummary": "No summary available yet.",
 
   // report
   "report.yourStanding": "Your standing",

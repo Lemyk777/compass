@@ -4,17 +4,20 @@ import {
   analyzeItalianPrograms,
   computeFinancialFitScore,
 } from "@/lib/ai/italy-analyze";
+import { analyzeHkPrograms } from "@/lib/ai/hk-analyze";
 import { recommendUniversities } from "@/lib/data/recommend";
 
-// Demo: a Kazakhstan AI-startup founder applying to BOTH the US (business) and
-// Italy (CS + economics). This exercises the full product — the multi-country
-// selector, per-country scorecards, the Italian graduatoria breakdown, and the
+// Demo: a Kazakhstan AI-startup founder applying to the US (business), Italy
+// (CS + economics), AND Hong Kong (CS + business). This exercises the full
+// product — the multi-country selector, per-country scorecards, the Italian
+// graduatoria breakdown, the Hong Kong holistic breakdown, and the
 // application-cost sections — so /demo mirrors what real users actually see.
 const SAMPLE_ITALY_PROGRAMS = [
   "polimi-cs-eng",
   "bocconi-econ-mgmt",
   "unibo-business",
 ];
+const SAMPLE_HK_PROGRAMS = ["ust-cs", "hku-bba", "cuhk-business"];
 const SAMPLE_FAMILY_INCOME = 30000; // EUR/year — moderate DSU fit
 
 // The §12 acceptance-test student, used to develop and demo the dashboard
@@ -22,7 +25,7 @@ const SAMPLE_FAMILY_INCOME = 30000; // EUR/year — moderate DSU fit
 export const SAMPLE_PROFILE: StudentProfileInput = {
   country: "Kazakhstan",
   citizenship: "Kazakhstan",
-  destinations: ["US", "IT"],
+  destinations: ["US", "IT", "HK"],
   faculties: ["computer_science", "business_economics"],
   intended_major: "Finance / Business",
   curriculum: "A-Level",
@@ -83,8 +86,8 @@ export const SAMPLE_PROFILE: StudentProfileInput = {
   needs_aid: true,
   italy_programs: SAMPLE_ITALY_PROGRAMS,
   italy_family_income: SAMPLE_FAMILY_INCOME,
-  hk_programs: [],
-  hk_grade_status: undefined,
+  hk_programs: SAMPLE_HK_PROGRAMS,
+  hk_grade_status: "predicted",
 };
 
 export const SAMPLE_ANALYSIS: Analysis = {
@@ -136,4 +139,13 @@ export const SAMPLE_ANALYSIS: Analysis = {
     SAMPLE_FAMILY_INCOME,
     true
   ),
+  // Hong Kong pathway — computed deterministically by the engine, exactly as a
+  // real analysis would assemble it (holistic, interview-aware, IB-45 scaled).
+  hk_programs: analyzeHkPrograms(SAMPLE_HK_PROGRAMS, {
+    sat: SAMPLE_PROFILE.tests.SAT,
+    ielts: SAMPLE_PROFILE.tests.IELTS,
+    gradeStatus: "predicted",
+    activities: SAMPLE_PROFILE.activities,
+    honors: SAMPLE_PROFILE.honors,
+  }),
 };
