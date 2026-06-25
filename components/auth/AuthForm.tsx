@@ -167,6 +167,30 @@ export function AuthForm({
               : t("auth.loginBtn")}
         </Button>
       </form>
+
+      {mode === "signup" && (
+        <p className="mt-5 text-center text-xs leading-relaxed text-ink-faint">
+          By creating an account, you agree to our{" "}
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-ink-soft underline underline-offset-2 hover:text-ink"
+          >
+            Terms of Use
+          </a>{" "}
+          and{" "}
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-ink-soft underline underline-offset-2 hover:text-ink"
+          >
+            Privacy Policy
+          </a>
+          .
+        </p>
+      )}
     </div>
   );
 }
