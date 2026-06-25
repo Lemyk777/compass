@@ -82,7 +82,7 @@ export function Overview() {
           </h2>
           <div className="flex flex-1 items-center justify-center">
             <div className="w-full">
-              <RadarScorecard factors={analysis.factors} italyFinancialFitScore={italyFin} />
+              <RadarScorecard factors={analysis.factors} italyFinancialFitScore={italyFin} country={country} />
             </div>
           </div>
         </section>

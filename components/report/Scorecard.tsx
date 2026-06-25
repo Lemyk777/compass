@@ -76,6 +76,7 @@ export const Scorecard = forwardRef<
           <RadarScorecard
             factors={analysis.factors}
             italyFinancialFitScore={italyFinancialFitScore}
+            country={country}
           />
         </div>
       </div>

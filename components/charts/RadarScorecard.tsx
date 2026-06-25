@@ -10,22 +10,34 @@ import {
 } from "recharts";
 import type { Factor } from "@/lib/ai/schema";
 import { ACCENT } from "@/lib/tiers";
+import { factorMattersForCountry } from "@/lib/data/country-scorecard";
+import type { DestinationCode } from "@/lib/data/destinations";
 
 type RadarScorecardProps = {
   factors: Factor[];
   // When set, radar enters Italy mode: only Academics + Tests + Financial Fit shown.
   italyFinancialFitScore?: number;
+  // When set (and not Italy mode), plot only the factors that carry meaningful
+  // weight for this country. Without it every country drew all 7 axes, so e.g.
+  // Hong Kong (no Narrative & Fit) looked identical to the US.
+  country?: DestinationCode | null;
 };
 
 export function RadarScorecard({
   factors,
   italyFinancialFitScore,
+  country,
 }: RadarScorecardProps) {
   const isItalyMode = italyFinancialFitScore != null;
 
+  const shown =
+    country && !isItalyMode
+      ? factors.filter((f) => factorMattersForCountry(country, f.key))
+      : factors;
+
   const data = isItalyMode
     ? buildItalyRadarData(factors, italyFinancialFitScore)
-    : factors.map((f) => ({ factor: shortLabel(f.label), score: f.score }));
+    : shown.map((f) => ({ factor: shortLabel(f.label), score: f.score }));
 
   return (
     <ResponsiveContainer width="100%" height={260}>
