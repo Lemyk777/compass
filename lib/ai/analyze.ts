@@ -6,9 +6,14 @@ import { LIMITS } from "@/lib/limits";
 import type { StudentProfileInput } from "@/lib/types";
 
 const MODEL = "claude-haiku-4-5";
-// Output cap. The model no longer emits the overall score or the benchmark
-// table (computed in code), so this is a comfortable ceiling, not a hard wall.
-const MAX_TOKENS = 6000;
+// Output cap. This is a CEILING, not a target — the model stops at end_turn when
+// the JSON is complete, so a higher cap doesn't slow or cost more on normal
+// profiles (you pay for tokens generated, not the cap). It only prevents a rich
+// profile (7 factors with reasoning + up to 12 schools + recommendations + gap +
+// timeline) from being truncated mid-JSON, which surfaced as the "very long
+// analysis" error. 16000 is well under Haiku 4.5's 64K output limit and the call
+// is streamed, so large generations don't hit an SDK/HTTP timeout.
+const MAX_TOKENS = 16000;
 
 export type AnalyzeResult = {
   analysis: Analysis;
