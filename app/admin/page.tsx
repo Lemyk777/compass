@@ -23,6 +23,7 @@ export default async function AdminPage() {
     { data: analyses, error: analysesErr },
     { data: ambassadors },
     { count: referredCount },
+    { data: stepEvents },
   ] = await Promise.all([
     admin.from("profiles").select("id, country, created_at"),
     admin.from("analyses").select("user_id, created_at, usage"),
@@ -32,6 +33,8 @@ export default async function AdminPage() {
       .select("id", { count: "exact", head: true })
       .eq("type", "signup")
       .not("ref_code", "is", null),
+    // Onboarding funnel: every "onboarding_step:<key>" event (see logOnboardingStep).
+    admin.from("events").select("user_id, type").like("type", "onboarding_step:%"),
   ]);
 
   const users = profiles ?? [];
@@ -99,6 +102,32 @@ export default async function AdminPage() {
   const estCost = totalCost.toFixed(2);
   const perAnalysis = (totalAnalyses > 0 ? totalCost / totalAnalyses : 0).toFixed(3);
 
+  // Onboarding funnel: distinct users who reached each step (instrumented via
+  // logOnboardingStep). The drop between consecutive bars is the abandonment
+  // cliff — the whole point of this instrumentation.
+  const FUNNEL_STEPS: { key: string; label: string }[] = [
+    { key: "origin", label: "Origin" },
+    { key: "destinations", label: "Destinations" },
+    { key: "faculties", label: "Faculties" },
+    { key: "grades", label: "Grades" },
+    { key: "tests", label: "Tests" },
+    { key: "activities", label: "Activities" },
+    { key: "honors", label: "Honors" },
+    { key: "review", label: "Review" },
+  ];
+  const stepUsers = new Map<string, Set<string>>();
+  for (const e of stepEvents ?? []) {
+    const key = String(e.type).slice("onboarding_step:".length);
+    if (!stepUsers.has(key)) stepUsers.set(key, new Set());
+    if (e.user_id) stepUsers.get(key)!.add(e.user_id as string);
+  }
+  const funnel = [
+    ...FUNNEL_STEPS.map((s) => ({ label: s.label, count: stepUsers.get(s.key)?.size ?? 0 })),
+    { label: "Analyzed", count: analyzedUsers },
+  ];
+  const funnelBase = Math.max(funnel[0]?.count ?? 0, 1);
+  const hasFunnelData = (stepEvents?.length ?? 0) > 0;
+
   return (
     <main className="min-h-dvh bg-surface">
       <AppHeader
@@ -163,6 +192,20 @@ export default async function AdminPage() {
 
         <div className="mt-6 space-y-6">
           <Card>
+            <h2 className="text-base font-semibold text-ink">Onboarding funnel</h2>
+            <p className="mb-3 mt-0.5 text-xs text-ink-soft">
+              Distinct users reaching each step → where they drop off.
+            </p>
+            {hasFunnelData ? (
+              <Funnel rows={funnel} base={funnelBase} />
+            ) : (
+              <p className="text-sm text-ink-faint">
+                Collecting data — bars fill once users move through onboarding.
+              </p>
+            )}
+          </Card>
+
+          <Card>
             <h2 className="mb-3 text-base font-semibold text-ink">
               {t("admin.signups14")}
             </h2>
@@ -205,5 +248,42 @@ function Stat({ label, value }: { label: string; value: number }) {
       </div>
       <div className="mt-0.5 text-xs text-ink-soft">{label}</div>
     </div>
+  );
+}
+
+function Funnel({
+  rows,
+  base,
+}: {
+  rows: { label: string; count: number }[];
+  base: number;
+}) {
+  return (
+    <ul className="space-y-2.5">
+      {rows.map((r, i) => {
+        const pct = Math.min(100, Math.round((r.count / base) * 100));
+        const prev = i > 0 ? rows[i - 1].count : r.count;
+        const drop = prev > 0 ? Math.round(((prev - r.count) / prev) * 100) : 0;
+        return (
+          <li key={r.label}>
+            <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
+              <span className="text-ink">{r.label}</span>
+              <span data-num className="text-ink-soft">
+                {r.count}
+                {i > 0 && drop > 0 && (
+                  <span className="ml-2 text-xs text-reach">−{drop}%</span>
+                )}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-line">
+              <div
+                className="h-full rounded-full bg-accent transition-[width]"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

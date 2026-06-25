@@ -7,9 +7,40 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { StudentProfileInput } from "@/lib/types";
 import { creditSurveyReferral } from "@/lib/auth/provision";
 import { inputSchema, describeIssue, type SaveResult } from "./schema";
+
+// Valid onboarding step keys — guards the events.type value against junk.
+const ONBOARDING_STEPS = new Set([
+  "origin", "destinations", "faculties", "grades", "tests",
+  "activities", "honors", "us", "it", "hk", "review",
+]);
+
+/**
+ * Funnel instrumentation: record that the signed-in user reached an onboarding
+ * step, so /admin can see WHERE users drop off (not just that they did). The step
+ * is encoded in the event `type` ("onboarding_step:<key>") to avoid a schema
+ * migration — events already has a (type, created_at) index. Best-effort: never
+ * throws, so a logging hiccup can never break the onboarding flow. Written with
+ * the service role, matching how signup / analysis_run events are recorded.
+ */
+export async function logOnboardingStep(step: string): Promise<void> {
+  if (!ONBOARDING_STEPS.has(step)) return;
+  try {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    await createAdminClient()
+      .from("events")
+      .insert({ user_id: user.id, type: `onboarding_step:${step}` });
+  } catch (e) {
+    console.error("logOnboardingStep failed", e);
+  }
+}
 
 export async function saveProfile(
   input: StudentProfileInput

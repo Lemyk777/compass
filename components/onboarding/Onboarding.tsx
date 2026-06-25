@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -11,6 +11,7 @@ import type { StudentProfileInput } from "@/lib/types";
 import { OnboardingContextProvider, useOnboardingContext } from "./context/OnboardingContext";
 import { useOnboardingWizard } from "./hooks/useOnboardingWizard";
 import { STEP_REGISTRY } from "./registry";
+import { logOnboardingStep } from "@/app/onboarding/actions";
 
 function OnboardingWizard({ hasAnalysis }: { hasAnalysis: boolean }) {
   const t = useT();
@@ -25,6 +26,16 @@ function OnboardingWizard({ hasAnalysis }: { hasAnalysis: boolean }) {
     setDirection(stepIndex > prevIndex ? 1 : -1);
     setPrevIndex(stepIndex);
   }
+
+  // Funnel instrumentation: record each onboarding step the user reaches, once
+  // per session, so /admin can see where the drop-off is. Fire-and-forget — it
+  // must never block navigation or surface an error to the user.
+  const loggedSteps = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!stepKey || loggedSteps.current.has(stepKey)) return;
+    loggedSteps.current.add(stepKey);
+    void logOnboardingStep(stepKey).catch(() => {});
+  }, [stepKey]);
 
   const stepMeta = STEP_REGISTRY[stepKey];
   const StepComponent = stepMeta?.component;
