@@ -38,7 +38,7 @@ export function Overview() {
   const autoAnalyze = searchParams.get("analyze") === "1";
   const started = useRef(false);
   useEffect(() => {
-    if (autoAnalyze && !analysis && hasProfile && canAnalyze && !started.current) {
+    if (autoAnalyze && hasProfile && canAnalyze && !started.current) {
       started.current = true;
       runAnalysis();
     }
