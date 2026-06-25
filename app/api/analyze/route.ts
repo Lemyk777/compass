@@ -16,8 +16,11 @@ import {
 
 // Streaming analysis can take a while on rich profiles; give it headroom so a
 // large request finishes instead of being killed mid-flight (which returned a
-// non-JSON error page the client couldn't parse).
-export const maxDuration = 60;
+// non-JSON "took too long" error the client couldn't parse). 300s is the Vercel
+// Pro/Enterprise max; on Hobby this is automatically clamped to that plan's 60s
+// ceiling (harmless) — but on Hobby a slow generation + a retry can still pass
+// 60s, so the durable fix on Hobby is upgrading the plan or an async job.
+export const maxDuration = 300;
 
 const MAX_PER_HOUR = 5; // cost safety: max analyses / hour / user
 
