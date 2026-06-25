@@ -61,6 +61,15 @@ export function ReportNav({ analysis }: { analysis: Analysis }) {
           current = el.id;
         }
       }
+      // The final section (e.g. "Summary") is often too short to ever push its
+      // top above the threshold line — the page bottoms out first — so the loop
+      // can never mark it active and the marker sticks on the previous item.
+      // When scrolled to the very bottom, the last section is by definition the
+      // one in view: select it explicitly.
+      const atBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 2;
+      if (atBottom) current = els[els.length - 1].id;
       setActive(current);
     };
     const onScroll = () => {
