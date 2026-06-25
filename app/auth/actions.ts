@@ -2,22 +2,24 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type AuthMethodHint = "google-only" | "has-password" | "unknown";
+export type AuthMethodHint = "google-only" | "unknown";
 
 /**
- * Best-effort lookup of how an email's account can sign in. Used ONLY to show a
- * friendlier message after a failed password attempt — e.g. when the account
- * was created with Google and has no password, we can say so instead of the
- * generic "invalid login credentials".
+ * Best-effort hint, shown after a failed password sign-in, to steer a user whose
+ * account was created with Google (and therefore has NO password) to the Google
+ * button instead of a confusing "invalid login credentials".
  *
  * Runs with the service role (server-only). Returns "unknown" on any failure or
- * ambiguity so the caller falls back to the normal error — this must never
- * block a real sign-in. We only ever assert "google-only" when we positively
- * see a Google identity AND no email/password identity.
+ * ambiguity so the caller falls back to the normal error — this must never block
+ * a real sign-in.
  *
- * Note: this is only consulted after the user has already proven they know the
- * email (they just tried to log in with it), so it doesn't add a meaningful
- * account-enumeration surface beyond what the login form already exposes.
+ * Account-enumeration hardening: a "use server" action is a public POST endpoint
+ * anyone can call with any email. So this is deliberately one-directional — it
+ * ONLY ever reveals the "google-only" case. A password account, a Google+
+ * password account, and a non-existent email all return "unknown" and are
+ * indistinguishable, so this confirms nothing about ordinary accounts. The hard
+ * per-IP cap on probing still belongs in the Supabase Auth rate-limit settings;
+ * this just keeps the endpoint from being a free existence/method oracle.
  */
 export async function lookupAuthMethod(rawEmail: string): Promise<AuthMethodHint> {
   const email = rawEmail.trim().toLowerCase();
@@ -53,9 +55,10 @@ export async function lookupAuthMethod(rawEmail: string): Promise<AuthMethodHint
       ]);
       const hasPassword = providers.has("email");
       const hasGoogle = providers.has("google");
-      // Only claim "google-only" when we're sure there's no password to use.
+      // Only ever reveal the Google-only case; never confirm that a password
+      // account exists (that would make this an account-enumeration oracle).
       if (hasGoogle && !hasPassword) return "google-only";
-      return "has-password";
+      return "unknown";
     }
 
     if (data.users.length < perPage) break; // reached the last page

@@ -22,7 +22,7 @@ import {
 // 60s, so the durable fix on Hobby is upgrading the plan or an async job.
 export const maxDuration = 300;
 
-const MAX_PER_HOUR = 5; // cost safety: max analyses / hour / user
+const MAX_PER_DAY = 2; // cost safety: max analyses / day / user (admins exempt)
 
 export async function POST(_req: NextRequest) {
   const supabase = createClient();
@@ -41,7 +41,7 @@ export async function POST(_req: NextRequest) {
     .maybeSingle();
   const { data: prof } = await supabase
     .from("profiles")
-    .select("country, referred_by")
+    .select("country, referred_by, role")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -67,20 +67,24 @@ export async function POST(_req: NextRequest) {
 
   const admin = createAdminClient();
 
-  // Rate limit: count this user's analyses in the last hour.
-  const sinceIso = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const { count } = await admin
-    .from("analyses")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .gte("created_at", sinceIso);
-  if ((count ?? 0) >= MAX_PER_HOUR) {
-    return NextResponse.json(
-      {
-        error: `You've reached the limit of ${MAX_PER_HOUR} analyses per hour. Please try again later.`,
-      },
-      { status: 429 }
-    );
+  // Rate limit: cap analyses per rolling 24h per user. Admins (founder/staff)
+  // are exempt so they can re-run freely while testing. Role is read from the
+  // user's own profile row (RLS: own row only), so it can't be spoofed.
+  if (prof?.role !== "admin") {
+    const sinceIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count } = await admin
+      .from("analyses")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", sinceIso);
+    if ((count ?? 0) >= MAX_PER_DAY) {
+      return NextResponse.json(
+        {
+          error: `You've reached the limit of ${MAX_PER_DAY} analyses per day. Please try again tomorrow.`,
+        },
+        { status: 429 }
+      );
+    }
   }
 
   const profile: StudentProfileInput = {
