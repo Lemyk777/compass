@@ -11,6 +11,9 @@
   --line: #e6e2da;
   --accent: #2f6fed;
   --accent-soft: #e4ecfd;
+  /* Deep, muted navy for the hero headline — the "serious" 10% accent against
+     the black-on-off-white composition (not the brighter UI/brand --accent). */
+  --accent-ink: #22427d;
   --ivy: #0e7b57;
   --ivy-ink: #0a5c41;
   --ivy-soft: #e7f2ec;
@@ -79,34 +82,51 @@
   animation: rise-in 0.7s cubic-bezier(0.21, 0.7, 0.35, 1) both;
 }
 
-/* Animated violet headline line — the gradient continuously pans, and each
-   rotated phrase fades up on mount. prefers-reduced-motion (global guard at the
-   bottom) freezes both; the gradient stays violet, so the text is always legible. */
-@keyframes gradient-pan {
-  to {
-    background-position: 200% center;
-  }
+/* Headline line — a deep-navy phrase that smoothly "shuffles" between full
+   sentences: the new line glides DOWN into place (soft blur→sharp, fades in)
+   while the old one slips down and fades out at the SAME time — a true
+   crossfade, so the slot never goes blank between phrases. Both are blurred and
+   semi-transparent as they cross, so the overlap reads as one soft shuffle, not
+   a collision. The phrases are layered absolutely over an invisible sizer (in
+   the component), so they never shift the text around them. The deep navy
+   (--accent-ink ≈ 9:1 on the light hero) keeps the composition serious and is
+   the 10% accent. prefers-reduced-motion (global guard below) makes the swap
+   instant and holds the first phrase. */
+.roll-word {
+  color: var(--accent-ink);
+  will-change: transform, opacity, filter;
 }
-@keyframes phrase-in {
-  from {
+@keyframes roll-in {
+  0% {
     opacity: 0;
-    transform: translateY(0.35em);
+    transform: translateY(-0.42em);
+    filter: blur(5px);
   }
-  to {
+  100% {
     opacity: 1;
     transform: translateY(0);
+    filter: blur(0);
   }
 }
-.text-violet-anim {
-  background-image: linear-gradient(100deg, #7c3aed, #a855f7, #6366f1, #7c3aed);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  animation:
-    gradient-pan 5s linear infinite,
-    phrase-in 0.55s cubic-bezier(0.21, 0.7, 0.35, 1) both;
+@keyframes roll-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(0.46em);
+    filter: blur(5px);
+  }
+}
+/* Enter: smooth ease-out-expo (≤500ms). Exit: faster ease-in-expo (~68% of the
+   enter, per motion guidance). Both run together for an overlapping crossfade. */
+.roll-in {
+  animation: roll-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.roll-out {
+  animation: roll-out 0.34s cubic-bezier(0.7, 0, 0.84, 0) both;
 }
 
 @keyframes marquee-left {
