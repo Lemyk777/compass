@@ -333,7 +333,6 @@ const en: Dict = {
   // dashboard
   "dash.yourStanding": "Your standing",
   "dash.basedOn": "Based on the profile you gave us.",
-  "dash.reanalyze": "Re-analyze",
   "nav.onThisPage": "On this page",
   "nav.standing": "Your standing",
   "nav.results": "Admission odds",

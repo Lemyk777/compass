@@ -72,7 +72,13 @@ export function DashboardClient({
   }
 
   useEffect(() => {
-    if (autoAnalyze && !initialAnalysis && hasProfile && !started.current) {
+    // `autoAnalyze` (the ?analyze=1 flag) is set ONLY by the onboarding save
+    // redirect — it's an explicit "the profile just changed, re-run" signal. So
+    // honor it even when a prior analysis already exists; otherwise a returning
+    // student who edits their profile keeps seeing the stale result until they
+    // click "Reanalyze" by hand. A plain dashboard visit carries no flag, so
+    // this never re-runs on every load.
+    if (autoAnalyze && hasProfile && !started.current) {
       started.current = true;
       runAnalysis();
     }
@@ -110,16 +116,11 @@ export function DashboardClient({
         </div>
       ) : analysis ? (
         <div className="mx-auto max-w-6xl px-5 py-6">
-          <div className="mb-6 flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-ink">
-                {t("dash.yourStanding")}
-              </h1>
-              <p className="text-sm text-ink-soft">{t("dash.basedOn")}</p>
-            </div>
-            <Button variant="subtle" size="sm" onClick={runAnalysis}>
-              {t("dash.reanalyze")}
-            </Button>
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold tracking-tight text-ink">
+              {t("dash.yourStanding")}
+            </h1>
+            <p className="text-sm text-ink-soft">{t("dash.basedOn")}</p>
           </div>
           {/* Wide results layout: sticky section rail on the left, report fills
               the rest. Single column on mobile (the rail hides itself). */}
