@@ -44,6 +44,9 @@ export const inputSchema = z
       .min(1, "Pick at least one field of study.")
       .max(LIMITS.faculties),
     intended_major: z.string().trim().max(LIMITS.shortText).optional().default(""),
+    // Year they finish high school — anchors the date-based timeline. Bounded
+    // loosely so the schema doesn't need touching each year.
+    graduation_year: z.number().int().min(2000).max(2100).optional(),
     curriculum: z.enum(["IB", "A-Level", "national", "US-GPA", "other"], {
       errorMap: () => ({ message: "Pick your curriculum." }),
     }),

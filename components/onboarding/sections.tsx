@@ -28,6 +28,14 @@ export function GeneralSection() {
     return { value: code, label: t(d.labelKey), icon: <Flag code={code} size={16} /> };
   });
 
+  // Graduation-year choices: this year through +6 (covers roughly grades 7–12),
+  // so the timeline can target the student's actual application cycle.
+  const thisYear = new Date().getFullYear();
+  const gradYearOptions = Array.from({ length: 7 }, (_, i) => {
+    const y = String(thisYear + i);
+    return { value: y, label: y };
+  });
+
   return (
     <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
       {/* Left column */}
@@ -57,15 +65,22 @@ export function GeneralSection() {
         placeholder="Select your citizenship"
         options={COUNTRIES.map((c) => ({ value: c, label: c }))}
       />
-      {/* "Where" spans both rows on the right, balancing the two left fields. */}
-      <div className="sm:row-span-2">
-        <OptionStack
-          label="Where do you want to study?"
-          values={data.destinations}
-          onChange={(v) => updateField("destinations", v as typeof data.destinations)}
-          options={destOptions}
-        />
-      </div>
+
+      <SelectField
+        id="graduation_year"
+        label="High-school graduation year"
+        value={data.graduation_year ? String(data.graduation_year) : ""}
+        onChange={(v) => updateField("graduation_year", v ? Number(v) : undefined)}
+        placeholder="Select your graduation year"
+        options={gradYearOptions}
+        hint="When you'll finish school — we use it to time your SAT and deadlines."
+      />
+      <OptionStack
+        label="Where do you want to study?"
+        values={data.destinations}
+        onChange={(v) => updateField("destinations", v as typeof data.destinations)}
+        options={destOptions}
+      />
 
       <MultiSelectField
         label="What major do you want to study?"

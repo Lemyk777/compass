@@ -101,6 +101,7 @@ export async function saveProfile(
     honors: data.honors,
     destinations: data.destinations,
     faculties: data.faculties,
+    graduation_year: data.graduation_year ?? null,
     target_schools: data.target_schools,
     intended_major: data.intended_major,
     citizenship: data.citizenship,
@@ -142,9 +143,11 @@ export async function saveProfile(
     // Redesigned-intake columns (migration 0009) may also be missing.
     delete safeRow.school_name;
     delete safeRow.budget_annual_usd;
+    // graduation_year (migration 0010) may not be applied yet.
+    delete safeRow.graduation_year;
     console.warn(
       "student_profiles is missing newer columns — saving without them. " +
-        "Run supabase/migrations/0005_hong_kong.sql and 0009_onboarding_extras.sql.",
+        "Run migrations 0005_hong_kong.sql, 0009_onboarding_extras.sql, 0010_graduation_year.sql.",
       writeErr.message
     );
     ({ error: writeErr } = await write(safeRow));

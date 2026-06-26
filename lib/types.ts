@@ -143,6 +143,7 @@ export type StudentProfileInput = {
   destinations: DestinationCode[]; // countries applying to (≥1)
   faculties: FacultyValue[]; // fields of study (up to LIMITS.faculties)
   intended_major: string; // optional free-text specialization (may be "")
+  graduation_year?: number; // year they finish high school — anchors the timeline
   // ── Academics (country-agnostic) ──
   curriculum: Curriculum | "";
   grades: Grades;
@@ -182,6 +183,7 @@ export function emptyProfile(): StudentProfileInput {
     destinations: [],
     faculties: [],
     intended_major: "",
+    graduation_year: undefined,
     curriculum: "",
     grades: { raw: "" },
     tests: {},

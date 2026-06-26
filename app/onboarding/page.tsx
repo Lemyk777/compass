@@ -52,6 +52,7 @@ export default async function OnboardingPage() {
       destinations: normalizeDestinations(sp.destinations, sp.include_italy),
       faculties: normalizeFaculties(sp.faculties),
       intended_major: sp.intended_major ?? "",
+      graduation_year: (sp.graduation_year as number | null) ?? undefined,
       curriculum: sp.curriculum ?? "",
       grades: sp.grades ?? base.grades,
       tests: sp.tests ?? {},

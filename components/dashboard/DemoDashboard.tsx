@@ -29,6 +29,11 @@ export function DemoDashboard({ children }: { children: React.ReactNode }) {
       basePath="/demo"
       canAnalyze={false}
       demo
+      profileMeta={{
+        graduationYear: new Date().getFullYear() + 1,
+        faculties: ["computer_science", "business_economics"],
+        satScore: 1480,
+      }}
     >
       <DashboardShell>{children}</DashboardShell>
     </DashboardProvider>

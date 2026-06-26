@@ -61,6 +61,11 @@ export default async function DashboardLayout({
       isAdmin={session.role === "admin"}
       basePath="/dashboard"
       canAnalyze
+      profileMeta={{
+        graduationYear: (sp?.graduation_year as number | null) ?? undefined,
+        faculties: Array.isArray(sp?.faculties) ? (sp!.faculties as string[]) : [],
+        satScore: (sp?.tests as { SAT?: number } | null)?.SAT,
+      }}
     >
       <DashboardShell>{children}</DashboardShell>
     </DashboardProvider>

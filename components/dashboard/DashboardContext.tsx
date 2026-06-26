@@ -32,6 +32,15 @@ type DashboardCtx = {
   tabs: DestinationCode[];
   country: DestinationCode;
   setCountry: (code: DestinationCode) => void;
+  // Lightweight profile facts the date-anchored Timeline needs (not the full
+  // profile). Empty defaults keep older callers working.
+  profileMeta: ProfileMeta;
+};
+
+export type ProfileMeta = {
+  graduationYear?: number;
+  faculties: string[];
+  satScore?: number;
 };
 
 const Ctx = createContext<DashboardCtx | null>(null);
@@ -59,6 +68,7 @@ export function DashboardProvider({
   basePath,
   canAnalyze,
   demo = false,
+  profileMeta = { faculties: [] },
   children,
 }: {
   initialAnalysis: Analysis | null;
@@ -68,6 +78,7 @@ export function DashboardProvider({
   basePath: string;
   canAnalyze: boolean;
   demo?: boolean;
+  profileMeta?: ProfileMeta;
   children: React.ReactNode;
 }) {
   const t = useT();
@@ -132,6 +143,7 @@ export function DashboardProvider({
       tabs,
       country: activeCountry,
       setCountry,
+      profileMeta,
     }),
     [
       analysis,
@@ -146,6 +158,7 @@ export function DashboardProvider({
       demo,
       tabs,
       activeCountry,
+      profileMeta,
     ]
   );
 
