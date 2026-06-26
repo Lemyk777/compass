@@ -45,8 +45,8 @@ export const RUBRIC: RubricFactor[] = [
     key: "course_rigor",
     label: "Course rigor",
     weight: 0.1,
-    measures: `9-10 (Tier 1): Most demanding curriculum available (e.g. full IB Diploma, 10+ APs).
-7-8 (Tier 2): Very demanding (many APs/Honors/A-levels).
+    measures: `9-10 (Tier 1): Most demanding curriculum available (e.g. full IB Diploma, full A-Level slate, 10+ APs).
+7-8 (Tier 2): Very demanding (many APs/Honors).
 5-6 (Tier 3): Moderately demanding (some advanced classes).
 2-4 (Tier 4): Standard high school curriculum.
 0-1 (Tier 5): Below standard or remedial.`,

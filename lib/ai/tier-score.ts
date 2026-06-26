@@ -222,8 +222,14 @@ function testScore100(t: Tests): number | null {
 }
 /** Curriculum demand → 0–10 (most demanding curricula carry full weight). */
 function rigorScore10(curriculum?: string): number {
+  // A-Level scores 9 (Tier 1) alongside IB: a full A-Level slate is a
+  // most-demanding curriculum, and where it's offered (e.g. NIS-Cambridge) it
+  // is the ceiling available to the student — which is how admissions judges
+  // rigor. course_rigor is only 10% of the overall, so crediting the occasional
+  // light A-Level load at 9 is an acceptable tradeoff for not under-rating the
+  // common full-slate case.
   return curriculum === "IB" ? 9
-    : curriculum === "A-Level" ? 8
+    : curriculum === "A-Level" ? 9
     : curriculum === "US-GPA" || curriculum === "national" ? 6
     : 4;
 }
@@ -273,14 +279,14 @@ function scoreTestScores(t: Tests): ArguedScore {
 
 function scoreCourseRigor(curriculum?: string): ArguedScore {
   const score = roundScore(rigorScore10(curriculum));
-  const label = score >= 9 ? "most demanding (full IB)"
-    : score >= 8 ? "very demanding (A-Level)"
+  const label = score >= 9 ? "most demanding (full IB or A-Level)"
+    : score >= 8 ? "very demanding"
     : score >= 6 ? "moderate (national / US-GPA)"
     : "standard / unknown";
   return {
     factor: "course_rigor", tier: tierFromScore(score), score,
     tierName: `Course rigor ${score}/10 — ${label}`,
-    rule: "Deterministic: curriculum demand on the published rubric (IB 9 / A-Level 8 / national·US-GPA 6 / other 4).",
+    rule: "Deterministic: curriculum demand on the published rubric (IB 9 / A-Level 9 / national·US-GPA 6 / other 4).",
     evidence: [`curriculum: '${curriculum || "unknown"}'`],
   };
 }
