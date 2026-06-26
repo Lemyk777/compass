@@ -11,6 +11,7 @@ import { useT } from "@/lib/i18n/client";
 const SECTIONS: { slug: string; labelKey: string; icon: keyof typeof ICONS }[] = [
   { slug: "", labelKey: "common.dashboard", icon: "grid" },
   { slug: "standing", labelKey: "nav.standing", icon: "user" },
+  { slug: "rankings", labelKey: "nav.rankings", icon: "trophy" },
   { slug: "odds", labelKey: "nav.results", icon: "bars" },
   { slug: "costs", labelKey: "nav.costs", icon: "dollar" },
   { slug: "plan", labelKey: "nav.plan", icon: "check" },
@@ -108,6 +109,12 @@ const ICONS = {
     <svg className={iconCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="8" r="3.5" />
       <path d="M5 20a7 7 0 0 1 14 0" />
+    </svg>
+  ),
+  trophy: (
+    <svg className={iconCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" />
     </svg>
   ),
   bars: (
