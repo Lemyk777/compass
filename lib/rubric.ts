@@ -87,10 +87,10 @@ export const RUBRIC: RubricFactor[] = [
     key: "narrative_fit",
     label: "Narrative / fit",
     weight: 0.1,
-    measures: `9-10 (Tier 1): Extremely compelling, cohesive story connecting background, ECs, and intended major.
-7-8 (Tier 2): Clear direction and logical connection between activities and goals.
+    measures: `9-10 (Tier 1): A cohesive throughline where the field(s), activities, and goal all point the same direction. Coherence is judged by the throughline, NOT by the number of fields — a focused single-field spike and a tightly INTEGRATED interdisciplinary combo (e.g. CS + Economics aimed at fintech/a startup, where the same projects fuse building and business) score equally here.
+7-8 (Tier 2): Clear direction and logical connection between activities and goals, but the story is not yet tightly integrated.
 5-6 (Tier 3): Generic but plausible intended major without deep backing evidence.
-2-4 (Tier 4): Disjointed story, contradictory goals.
+2-4 (Tier 4): Genuinely scattered across unrelated fields, or goals that contradict the activities.
 0-1 (None): Unclear why they are applying to this field.`,
   },
 ];
