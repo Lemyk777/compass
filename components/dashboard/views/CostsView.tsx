@@ -3,12 +3,37 @@
 import { CostBreakdown } from "@/components/report/CostBreakdown";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { CountryTabs, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
+import { LockedSection } from "@/components/dashboard/LockedSection";
+import { CostsTeaser, CostsArt } from "@/components/dashboard/LockedTeasers";
 import { useT } from "@/lib/i18n/client";
 
 export function CostsView() {
   const t = useT();
-  const { analysis, country, tabs } = useDashboard();
+  const { analysis, country, tabs, basePath } = useDashboard();
   if (!analysis) return <NoAnalysisYet />;
+
+  // No college list yet → tease the section behind a lock + promo pop-up.
+  if (tabs.length === 0) {
+    return (
+      <div className="space-y-5">
+        <PageHeader title={t("nav.costs")} hint={t("report.costApprox")} />
+        <LockedSection
+          eyebrow={t("nav.costs")}
+          headline="Know what it costs before you apply"
+          description="Add your target universities and Compass adds up the one-time application fees per school and per country — so there are no surprises when it's time to hit submit."
+          bullets={[
+            "Per-school application fees",
+            "A clear total to apply, by country",
+            "Spot the free-to-apply schools instantly",
+          ]}
+          ctaLabel="Build your college list"
+          ctaHref={`${basePath}/college-list`}
+          teaser={<CostsTeaser />}
+          art={<CostsArt />}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -18,11 +43,7 @@ export function CostsView() {
           <CountryTabs />
         </div>
       </div>
-      {tabs.length === 0 ? (
-        <p className="text-sm text-ink-soft">{t("dash.noOdds")}</p>
-      ) : (
-        <CostBreakdown analysis={analysis} country={country} />
-      )}
+      <CostBreakdown analysis={analysis} country={country} />
     </div>
   );
 }

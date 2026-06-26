@@ -10,12 +10,37 @@ import { ItalyBreakdown } from "@/components/report/ItalyBreakdown";
 import { HkBreakdown } from "@/components/report/HkBreakdown";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { CountryTabs, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
+import { LockedSection } from "@/components/dashboard/LockedSection";
+import { OddsTeaser, OddsArt } from "@/components/dashboard/LockedTeasers";
 import { useT } from "@/lib/i18n/client";
 
 export function OddsView() {
   const t = useT();
-  const { analysis, country, tabs } = useDashboard();
+  const { analysis, country, tabs, basePath } = useDashboard();
   if (!analysis) return <NoAnalysisYet />;
+
+  // No college list yet → tease the section behind a lock + promo pop-up.
+  if (tabs.length === 0) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title={t("nav.results")} hint={t("report.schoolsHint")} />
+        <LockedSection
+          eyebrow={t("nav.results")}
+          headline="See your real odds at every school"
+          description="Add the universities you're aiming for and Compass scores your admission likelihood at each one — a reach/target/likely read, with a confidence level, built from your profile and real admitted-student data."
+          bullets={[
+            "Per-school admission-likelihood ranges",
+            "Reach / target / likely tiers, side by side",
+            "Your scores benchmarked against admitted students",
+          ]}
+          ctaLabel="Build your college list"
+          ctaHref={`${basePath}/college-list`}
+          teaser={<OddsTeaser />}
+          art={<OddsArt />}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -26,9 +51,6 @@ export function OddsView() {
         </div>
       </div>
 
-      {tabs.length === 0 && (
-        <p className="text-sm text-ink-soft">{t("dash.noOdds")}</p>
-      )}
       {country === "US" && <UsOdds analysis={analysis} />}
       {country === "IT" && <ItalyOdds analysis={analysis} />}
       {country === "HK" && <HkOdds analysis={analysis} />}

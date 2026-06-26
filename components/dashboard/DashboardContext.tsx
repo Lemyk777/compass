@@ -19,6 +19,7 @@ import { useT } from "@/lib/i18n/client";
 // user navigates between the sidebar pages.
 type DashboardCtx = {
   analysis: Analysis | null;
+  setAnalysis: (a: Analysis | null) => void;
   name: string | null;
   hasProfile: boolean;
   loading: boolean;
@@ -118,6 +119,7 @@ export function DashboardProvider({
   const value = useMemo<DashboardCtx>(
     () => ({
       analysis,
+      setAnalysis,
       name,
       hasProfile,
       loading,
