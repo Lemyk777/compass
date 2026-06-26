@@ -40,9 +40,15 @@ export default async function DashboardLayout({
     if (parsed.success) analysis = sanitizeAnalysis(parsed.data);
   }
 
+  // A profile is "ready to analyze" once the student has a curriculum and at
+  // least one destination — target schools are NOT required anymore (admission
+  // odds unlock later via the college list). Legacy rows with targets but no
+  // `destinations` column still count.
   const hasProfile = Boolean(
     sp?.curriculum &&
-      ((sp.target_schools && sp.target_schools.length > 0) ||
+      ((Array.isArray(sp.destinations) && sp.destinations.length > 0) ||
+        sp.include_italy ||
+        (sp.target_schools && sp.target_schools.length > 0) ||
         (sp.italy_programs && sp.italy_programs.length > 0) ||
         (sp.hk_programs && sp.hk_programs.length > 0))
   );

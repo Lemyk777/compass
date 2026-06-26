@@ -46,19 +46,12 @@ export async function POST(_req: NextRequest) {
     .maybeSingle();
 
   const destinations = normalizeDestinations(sp?.destinations, sp?.include_italy);
-  const wantsUS = destinations.includes("US");
-  const wantsIT = destinations.includes("IT");
-  const wantsHK = destinations.includes("HK");
-  const hasUSTargets = (sp?.target_schools?.length ?? 0) > 0;
-  const hasITTargets = (sp?.italy_programs?.length ?? 0) > 0;
-  const hasHKTargets = (sp?.hk_programs?.length ?? 0) > 0;
-  // Ready when every selected destination has its targets in place.
-  const targetsReady =
-    (!wantsUS || hasUSTargets) &&
-    (!wantsIT || hasITTargets) &&
-    (!wantsHK || hasHKTargets);
 
-  if (!sp || !sp.curriculum || destinations.length === 0 || !targetsReady) {
+  // Target schools/programs are NO LONGER required to analyze. The standing
+  // (factors, scorecard, gaps, timeline, summary) is produced from the student's
+  // own data; per-school admission odds simply stay empty until the student adds
+  // a college list. We only need a curriculum and at least one destination.
+  if (!sp || !sp.curriculum || destinations.length === 0) {
     return NextResponse.json(
       { error: "Complete your profile first." },
       { status: 400 }
