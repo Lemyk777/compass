@@ -66,8 +66,9 @@ export const RUBRIC: RubricFactor[] = [
     key: "extracurricular_depth",
     label: "Extracurricular depth",
     weight: 0.15,
-    measures: `9-10 (Tier 1): Pre-professional level, published research, elite selective summer programs.
-7-8 (Tier 2): Sustained focus (3-4 years) in a clear 'spike' area, significant personal projects.
+    measures: `10 (Tier 1, elite): Pre-professional level — published research in a peer-reviewed venue, recruited athlete, professional-level performer, or a venture with real revenue/users at scale.
+9 (Tier 1): Elite selective program (e.g. top-university summer school on scholarship/grant, RSI, MOSTEC, TASP), OR top international placement in a competitive field with tangible outcomes (seed funding, international finals, paid delegate invitations), OR a sustained multi-year spike (3-4 years, 300+ hrs/yr) combining depth, international exposure, and real-world output (products shipped, organizations built, competitions won).
+7-8 (Tier 2): Sustained focus (2-3 years) in a clear 'spike' area, significant personal projects with meaningful outputs, but without the international-elite markers of Tier 1.
 5-6 (Tier 3): Standard school clubs, scattered interests, moderate commitment.
 2-4 (Tier 4): Superficial activities, low hours.
 0-1 (None): Barely any extracurriculars.`,
