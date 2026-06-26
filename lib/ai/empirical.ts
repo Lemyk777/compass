@@ -73,11 +73,14 @@ export function tierForPct(pct: number): Tier {
  * over-optimistic model guess (e.g. 33–45% at a 6%-admit school) to ever reach
  * the user, regardless of how the AI/empirical blend lands. It encodes the same
  * honesty rule the prompt asks the model to follow: schools under 15% admit stay
- * single/low-double digits (≤20), and the ceiling rises with the base rate.
+ * single/low-double digits, and the ceiling rises with the base rate. Below the
+ * 15% line the ceiling is NOT flat — it scales from ~10 (a 3%-admit Ivy) up to 20
+ * (a 14%-admit school) so the most selective schools can't show the same
+ * optimistic top as a meaningfully less selective one.
  */
 export function maxDisplayedHigh(acceptanceRate: number): number {
   const ar = clamp(acceptanceRate, 0, 1);
-  if (ar < 0.15) return 20;
+  if (ar < 0.15) return Math.round(clamp(10 + ar * 67, 10, 20));
   return Math.round(clamp(20 + (ar - 0.15) * 90, 20, 95));
 }
 
@@ -138,8 +141,14 @@ export type LikelihoodEstimate = {
 /** Turn a point admit probability into a displayed band + tier + confidence. */
 function toEstimate(prob: number, source: "empirical" | "heuristic", n: number): LikelihoodEstimate {
   const pct = clamp(prob * 100, 0, 100);
-  // Wider band when we trust the point estimate less (fewer samples / heuristic).
-  const halfWidth = source === "empirical" ? clamp(22 - n * 0.25, 6, 22) : 18;
+  // Model/sampling uncertainty: wider when we trust the point estimate less.
+  const baseHalf = source === "empirical" ? clamp(22 - n * 0.25, 6, 22) : 18;
+  // Shrink the band toward the extremes: a 2–3% point estimate must NOT show an
+  // 8%+ optimistic tail. The displayed half-width can't exceed ~the distance to
+  // the nearer bound (0% or 100%), so ultra-selective schools get a tight band
+  // hugging their real (low) odds, while mid-range schools are unaffected.
+  const edgeHalf = Math.max(2, Math.min(pct, 100 - pct) * 0.9);
+  const halfWidth = Math.min(baseHalf, edgeHalf);
   const confidence: Confidence =
     source === "heuristic" ? "low" : n >= 40 ? "high" : n >= 15 ? "medium" : "low";
   return {
