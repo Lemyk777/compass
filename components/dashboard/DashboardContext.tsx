@@ -61,7 +61,7 @@ export function useDashboard(): DashboardCtx {
 
 // Whether the analysis already carries content for a country (its college list /
 // program picks have been analyzed).
-function analysisHasCountry(analysis: Analysis, code: DestinationCode): boolean {
+export function analysisHasCountry(analysis: Analysis, code: DestinationCode): boolean {
   if (code === "US") return analysis.schools.length > 0;
   if (code === "IT") return (analysis.italy_programs?.length ?? 0) > 0;
   if (code === "HK") return (analysis.hk_programs?.length ?? 0) > 0;

@@ -132,6 +132,29 @@ export function CountryTabs() {
   );
 }
 
+// Shown on the odds/costs pages when the active country tab has no college list
+// yet (e.g. the student built a US list but hasn't picked Italy programs). Points
+// them at the multi-country builder, which opens on the active country tab.
+export function EmptyCountryList({ code }: { code: DestinationCode }) {
+  const { basePath } = useDashboard();
+  const d = DESTINATIONS.find((x) => x.code === code);
+  const label = useT()(d?.labelKey ?? "");
+  return (
+    <div className="rounded-2xl border border-dashed border-line bg-card px-6 py-12 text-center">
+      <h2 className="text-lg font-semibold tracking-tight text-ink">
+        No {label} universities yet
+      </h2>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
+        Add the {label} universities or programs you&apos;re aiming for and Compass
+        will score your admission odds at each.
+      </p>
+      <ButtonLink href={`${basePath}/college-list`} size="lg" className="mt-6">
+        Build your {label} list
+      </ButtonLink>
+    </div>
+  );
+}
+
 // Title + subtitle shown at the top of every section page.
 export function PageHeader({ title, hint }: { title: string; hint?: string }) {
   return (

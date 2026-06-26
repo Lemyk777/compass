@@ -24,6 +24,9 @@ export const LIMITS = {
   subjects: 400,
   shortText: 80, // country / citizenship / intended major
   targetSchools: 12,
+  // Italy / Hong Kong program lists (built per-country in the dashboard).
+  italyPrograms: 8,
+  hkPrograms: 6,
   // Country-first intake: destinations applied to, and fields of study.
   destinations: 6,
   faculties: 3,

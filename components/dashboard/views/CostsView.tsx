@@ -1,8 +1,8 @@
 "use client";
 
 import { CostBreakdown } from "@/components/report/CostBreakdown";
-import { useDashboard } from "@/components/dashboard/DashboardContext";
-import { CountryTabs, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
+import { analysisHasCountry, useDashboard } from "@/components/dashboard/DashboardContext";
+import { CountryTabs, EmptyCountryList, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
 import { LockedSection } from "@/components/dashboard/LockedSection";
 import { CostsTeaser, CostsArt } from "@/components/dashboard/LockedTeasers";
 import { useT } from "@/lib/i18n/client";
@@ -49,7 +49,11 @@ export function CostsView() {
           <CountryTabs />
         </div>
       </div>
-      <CostBreakdown analysis={analysis} country={country} />
+      {analysisHasCountry(analysis, country) ? (
+        <CostBreakdown analysis={analysis} country={country} />
+      ) : (
+        <EmptyCountryList code={country} />
+      )}
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { Recommendations } from "@/components/report/Recommendations";
 import { ItalyBreakdown } from "@/components/report/ItalyBreakdown";
 import { HkBreakdown } from "@/components/report/HkBreakdown";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
-import { CountryTabs, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
+import { CountryTabs, EmptyCountryList, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
 import { LockedSection } from "@/components/dashboard/LockedSection";
 import { OddsTeaser, OddsArt } from "@/components/dashboard/LockedTeasers";
 import { useT } from "@/lib/i18n/client";
@@ -67,6 +67,7 @@ export function OddsView() {
 
 function UsOdds({ analysis }: { analysis: Analysis }) {
   const t = useT();
+  if (analysis.schools.length === 0) return <EmptyCountryList code="US" />;
   return (
     <div className="space-y-8">
       {analysis.schools.length > 0 && (
@@ -104,7 +105,7 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
 
 function ItalyOdds({ analysis }: { analysis: Analysis }) {
   const t = useT();
-  if (!analysis.italy_programs?.length) return null;
+  if (!analysis.italy_programs?.length) return <EmptyCountryList code="IT" />;
   return (
     <Section title={t("report.italyTitle")} hint={t("report.italyHint")}>
       <ItalyBreakdown programs={analysis.italy_programs} />
@@ -114,7 +115,7 @@ function ItalyOdds({ analysis }: { analysis: Analysis }) {
 
 function HkOdds({ analysis }: { analysis: Analysis }) {
   const t = useT();
-  if (!analysis.hk_programs?.length) return null;
+  if (!analysis.hk_programs?.length) return <EmptyCountryList code="HK" />;
   return (
     <Section title={t("report.hkTitle")} hint={t("report.hkHint")}>
       <HkBreakdown programs={analysis.hk_programs} />
