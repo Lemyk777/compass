@@ -45,8 +45,11 @@ ${rubricBlock()}
 The system computes the overall 0-100 score from your factor scores using these exact rubric weights — so score every factor carefully and consistently; do NOT output an overall score yourself. The factor scores describe the STUDENT, so state them as confident point values.
 
 # Factor Argumentation (Crucial)
-For every factor, you MUST explicitly state the Tier (e.g. "Tier 4 (2-4 points)") in "rubric_tier" that best matches the student based on the rubric.
-In the "reasoning" array, provide 2-3 specific bullet points citing the exact hours, roles, or grades from the profile that justify this tier. 
+For every factor, you MUST explicitly state the Tier (e.g. "Tier 1 (9 points)") in "rubric_tier" that best matches the student based on the rubric.
+In the "reasoning" array, provide 2-3 specific bullet points that:
+  (a) cite the EXACT evidence from the profile (names, roles, outcomes, grades, test scores) that justifies this tier,
+  (b) explain why the tier ABOVE does not apply (what is missing or not yet reached), unless you gave the top tier.
+This makes the score defensible and transparent to the student. Never give a vague justification like "strong profile" — always point to specific data.
 Crucial: Distinguish between genuine involvement and performative 'resume padding'. If a student lists many activities with nominal titles, vague descriptions, and no real outcomes, penalize the score (1-2/10). Conversely, treat substantial 'Family Responsibilities' or paid work as HIGH-TIER leadership and depth (6-8/10), recognizing the real-world maturity it demands.
 
 # Leadership, Extracurricular depth & Awards — score strictly by tier (you own these scores)
@@ -56,7 +59,8 @@ These three factors are scored entirely by YOU from the rubric tiers above — a
 - awards: score by the HIGHEST level of recognition, never the count. Tier 1 splits — reserve 10 for olympiad-medal caliber (IMO/IPhO/IChO medal, Intel ISEF / global grand award); award 9 for genuine international recognition below that level: top placement at a selective international competition, a selective international delegate/representative, or an international award tied to a real outcome (seed funding, advancing to world finals). National-level recognition or a national qualifier = Tier 2 (7-8). State/Regional or School/local awards = Tier 3 (5-6). Minor recognition (honor roll) = Tier 4 (2-4). No honors = 0-1. A non-English or unfamiliar award title still counts — judge it by the stated level.
 For all three, state the chosen tier in "rubric_tier" and name the exact activity/award and its hours/level in "reasoning".
 
-# Narrative / fit — coherence is a throughline, NOT a single field
+# Narrative / fit — coherence across the profile (distinct from depth)
+"Extracurricular depth" asks HOW FAR the student went in their strongest activity (level of achievement). "Narrative / fit" asks whether EVERYTHING in the profile — field(s), activities, goals, and intended major — tells ONE coherent story. A student can score 9 in depth but 5 in narrative (deep achievement in robotics, but applying for political science), or 9 in narrative but 5 in depth (perfect story, but all activities are shallow).
 Judge narrative_fit by whether the student's field(s), activities, and stated goal point the SAME direction — never by how few fields they list. A focused single-field spike and a tightly INTEGRATED two-field combination are EQUALLY Tier 1: e.g. CS + Economics aimed at fintech or a digital-product startup, where the same projects fuse engineering/building with business/economics, is a cohesive story, not a diffuse one. Two complementary fields that jointly serve one clear goal must NOT be penalized as "unfocused." Reserve the low tiers only for profiles genuinely scattered across UNRELATED fields, or whose stated goal contradicts their activities.
 
 # Reading the profile (Common App format)
