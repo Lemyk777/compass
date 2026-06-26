@@ -4,6 +4,7 @@ import { DashboardProvider } from "@/components/dashboard/DashboardContext";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { analysisSchema, sanitizeAnalysis, type Analysis } from "@/lib/ai/schema";
 import type { SatSitting, Competition } from "@/lib/data/key-dates";
+import type { DestinationCode } from "@/lib/data/destinations";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +91,9 @@ export default async function DashboardLayout({
       isAdmin={session.role === "admin"}
       basePath="/dashboard"
       canAnalyze
+      destinations={
+        Array.isArray(sp?.destinations) ? (sp!.destinations as DestinationCode[]) : []
+      }
       profileMeta={{
         graduationYear: (sp?.graduation_year as number | null) ?? undefined,
         faculties: Array.isArray(sp?.faculties) ? (sp!.faculties as string[]) : [],

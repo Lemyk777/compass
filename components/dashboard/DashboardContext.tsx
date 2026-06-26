@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import type { Analysis } from "@/lib/ai/schema";
-import type { DestinationCode } from "@/lib/data/destinations";
+import { AVAILABLE_DESTINATION_CODES, type DestinationCode } from "@/lib/data/destinations";
 import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import { useT } from "@/lib/i18n/client";
 
@@ -59,13 +59,34 @@ export function useDashboard(): DashboardCtx {
   return ctx;
 }
 
-function tabsFor(analysis: Analysis | null): DestinationCode[] {
-  if (!analysis) return [];
+// Country tabs derived from what the analysis actually contains. Used as the
+// fallback for legacy rows / the demo, which don't carry a destinations list.
+function tabsFromContent(analysis: Analysis): DestinationCode[] {
   const out: DestinationCode[] = [];
   if (analysis.schools.length > 0) out.push("US");
   if ((analysis.italy_programs?.length ?? 0) > 0) out.push("IT");
   if ((analysis.hk_programs?.length ?? 0) > 0) out.push("HK");
   return out;
+}
+
+// Which country tabs to show. Prefer the student's EXPLICITLY chosen
+// destinations so every selected country gets a tab — even before its college
+// list is built — instead of inferring tabs from which program arrays happen to
+// be populated. The old content-only logic hid IT/HK on multi-country profiles
+// (and could surface a spurious US tab when the model returned US schools the
+// student never asked for). Restricted to destinations we actually analyze
+// (US/IT/HK) and emitted in canonical order.
+function tabsFor(
+  analysis: Analysis | null,
+  destinations: DestinationCode[]
+): DestinationCode[] {
+  if (!analysis) return [];
+  const chosen = AVAILABLE_DESTINATION_CODES.filter((c) =>
+    destinations.includes(c)
+  );
+  if (chosen.length) return chosen;
+  // Legacy rows / demo without a destinations list: fall back to content.
+  return tabsFromContent(analysis);
 }
 
 export function DashboardProvider({
@@ -76,6 +97,7 @@ export function DashboardProvider({
   basePath,
   canAnalyze,
   demo = false,
+  destinations = [],
   profileMeta = { faculties: [] },
   liveDates = { satSittings: [], competitions: [] },
   children,
@@ -87,6 +109,9 @@ export function DashboardProvider({
   basePath: string;
   canAnalyze: boolean;
   demo?: boolean;
+  // The student's chosen destination countries — drives the country tabs so
+  // every selected country shows. Optional: demo/legacy fall back to content.
+  destinations?: DestinationCode[];
   profileMeta?: ProfileMeta;
   liveDates?: LiveDates;
   children: React.ReactNode;
@@ -98,7 +123,7 @@ export function DashboardProvider({
   const [error, setError] = useState<string | null>(null);
   const running = useRef(false);
 
-  const tabs = useMemo(() => tabsFor(analysis), [analysis]);
+  const tabs = useMemo(() => tabsFor(analysis, destinations), [analysis, destinations]);
   const [country, setCountry] = useState<DestinationCode>(tabs[0] ?? "US");
   const activeCountry = tabs.includes(country) ? country : (tabs[0] ?? "US");
 

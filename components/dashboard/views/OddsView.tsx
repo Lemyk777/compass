@@ -16,11 +16,18 @@ import { useT } from "@/lib/i18n/client";
 
 export function OddsView() {
   const t = useT();
-  const { analysis, country, tabs, basePath } = useDashboard();
+  const { analysis, country, basePath } = useDashboard();
   if (!analysis) return <NoAnalysisYet />;
 
   // No college list yet → tease the section behind a lock + promo pop-up.
-  if (tabs.length === 0) {
+  // Country tabs now reflect the student's chosen destinations (so the standing
+  // shows every selected country), so gate this on actual school/program
+  // content rather than the tab count.
+  const hasCollegeList =
+    analysis.schools.length > 0 ||
+    (analysis.italy_programs?.length ?? 0) > 0 ||
+    (analysis.hk_programs?.length ?? 0) > 0;
+  if (!hasCollegeList) {
     return (
       <div className="space-y-6">
         <PageHeader title={t("nav.results")} hint={t("report.schoolsHint")} />
