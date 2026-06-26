@@ -69,15 +69,17 @@ export async function saveProfile(
     .from("profiles")
     .update(profileUpdate)
     .eq("id", user.id);
-  // Schema-drift safety net: if the heard_from columns aren't migrated yet
-  // (run supabase/migrations/0006_heard_from.sql), save the country alone.
-  if (profileErr && (profileErr.code === "42703" || profileErr.code === "PGRST204")) {
-    // heard_from columns may be missing; keep the always-present country + name.
-    const safeProfile: Record<string, unknown> = { country: data.country };
-    if (data.full_name) safeProfile.full_name = data.full_name;
+  // Safety net: the broader update can be rejected either because newer columns
+  // aren't migrated yet (42703 / PGRST204 — run 0006_heard_from.sql) or because
+  // the authenticated role lacks a column-level UPDATE grant on full_name /
+  // heard_from* (42501 "permission denied for column" — migration 0008 locked
+  // profiles down to country + heard_from*; run 0012_grant_full_name.sql so the
+  // student's own name can be saved). Either way, retry with the always-present,
+  // always-granted country alone so onboarding can never hard-fail on this drift.
+  if (profileErr && ["42703", "PGRST204", "42501"].includes(profileErr.code ?? "")) {
     ({ error: profileErr } = await supabase
       .from("profiles")
-      .update(safeProfile)
+      .update({ country: data.country })
       .eq("id", user.id));
   }
   if (profileErr) return { ok: false, error: "Could not save. Please retry." };
