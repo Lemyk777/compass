@@ -11,6 +11,7 @@ import {
 import { useRouter } from "next/navigation";
 import type { Analysis } from "@/lib/ai/schema";
 import type { DestinationCode } from "@/lib/data/destinations";
+import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import { useT } from "@/lib/i18n/client";
 
 // Shared state for the whole dashboard. The layout fetches the analysis once and
@@ -35,12 +36,19 @@ type DashboardCtx = {
   // Lightweight profile facts the date-anchored Timeline needs (not the full
   // profile). Empty defaults keep older callers working.
   profileMeta: ProfileMeta;
+  // Live dates from Supabase — when present, override hardcoded SAT/competition data.
+  liveDates: LiveDates;
 };
 
 export type ProfileMeta = {
   graduationYear?: number;
   faculties: string[];
   satScore?: number;
+};
+
+export type LiveDates = {
+  satSittings: SatSitting[];
+  competitions: Competition[];
 };
 
 const Ctx = createContext<DashboardCtx | null>(null);
@@ -69,6 +77,7 @@ export function DashboardProvider({
   canAnalyze,
   demo = false,
   profileMeta = { faculties: [] },
+  liveDates = { satSittings: [], competitions: [] },
   children,
 }: {
   initialAnalysis: Analysis | null;
@@ -79,6 +88,7 @@ export function DashboardProvider({
   canAnalyze: boolean;
   demo?: boolean;
   profileMeta?: ProfileMeta;
+  liveDates?: LiveDates;
   children: React.ReactNode;
 }) {
   const t = useT();
@@ -144,6 +154,7 @@ export function DashboardProvider({
       country: activeCountry,
       setCountry,
       profileMeta,
+      liveDates,
     }),
     [
       analysis,
@@ -159,6 +170,7 @@ export function DashboardProvider({
       tabs,
       activeCountry,
       profileMeta,
+      liveDates,
     ]
   );
 

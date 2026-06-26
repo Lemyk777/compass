@@ -15,7 +15,7 @@ import { useT } from "@/lib/i18n/client";
 
 export function TimelineView() {
   const t = useT();
-  const { analysis, profileMeta, basePath } = useDashboard();
+  const { analysis, profileMeta, basePath, liveDates } = useDashboard();
 
   // "today" depends on the visitor's clock, so resolve it on the client to avoid
   // a hydration mismatch. Until then, render nothing date-dependent.
@@ -30,6 +30,8 @@ export function TimelineView() {
         graduationYear: profileMeta.graduationYear,
         faculties: profileMeta.faculties,
         satScore: profileMeta.satScore,
+        liveSatSittings: liveDates.satSittings,
+        liveCompetitions: liveDates.competitions,
       })
     : null;
 

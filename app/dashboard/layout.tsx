@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardProvider } from "@/components/dashboard/DashboardContext";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { analysisSchema, sanitizeAnalysis, type Analysis } from "@/lib/ai/schema";
+import type { SatSitting, Competition } from "@/lib/data/key-dates";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export default async function DashboardLayout({
   const session = await requireSession("/dashboard");
   const supabase = createClient();
 
-  const [{ data: latest }, { data: sp }] = await Promise.all([
+  const [{ data: latest }, { data: sp }, { data: satRows }, { data: compRows }] = await Promise.all([
     supabase
       .from("analyses")
       .select("output")
@@ -32,6 +33,17 @@ export default async function DashboardLayout({
       .select("*")
       .eq("user_id", session.id)
       .maybeSingle(),
+    // Live SAT dates from Supabase (populated by the cron scraper).
+    // If the table doesn't exist yet (migration not applied), this returns null
+    // and the Timeline falls back to hardcoded dates in key-dates.ts.
+    supabase
+      .from("sat_sittings")
+      .select("test_date, reg_deadline")
+      .order("test_date", { ascending: true }),
+    supabase
+      .from("competition_deadlines")
+      .select("*")
+      .order("deadline", { ascending: true }),
   ]);
 
   let analysis: Analysis | null = null;
@@ -53,6 +65,23 @@ export default async function DashboardLayout({
         (sp.hk_programs && sp.hk_programs.length > 0))
   );
 
+  // Build live dates from Supabase rows (empty arrays if table missing/empty).
+  const liveSatSittings: SatSitting[] = (satRows ?? []).map((r: { test_date: string; reg_deadline: string }) => ({
+    test: r.test_date,
+    regDeadline: r.reg_deadline,
+  }));
+
+  const liveCompetitions: Competition[] = (compRows ?? []).map((r: Record<string, unknown>) => ({
+    id: r.id as string,
+    name: r.name as string,
+    fields: r.fields as Competition["fields"],
+    deadline: r.deadline as string,
+    window: r.event_window as string,
+    level: r.level as Competition["level"],
+    url: r.url as string,
+    blurb: r.blurb as string,
+  }));
+
   return (
     <DashboardProvider
       initialAnalysis={analysis}
@@ -66,8 +95,13 @@ export default async function DashboardLayout({
         faculties: Array.isArray(sp?.faculties) ? (sp!.faculties as string[]) : [],
         satScore: (sp?.tests as { SAT?: number } | null)?.SAT,
       }}
+      liveDates={{
+        satSittings: liveSatSittings,
+        competitions: liveCompetitions,
+      }}
     >
       <DashboardShell>{children}</DashboardShell>
     </DashboardProvider>
   );
 }
+

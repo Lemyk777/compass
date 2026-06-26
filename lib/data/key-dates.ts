@@ -18,11 +18,12 @@ import type { FacultyValue } from "@/lib/data/faculties";
 export type SatSitting = { test: string; regDeadline: string }; // ISO YYYY-MM-DD
 
 export const SAT_SITTINGS: SatSitting[] = [
-  { test: "2026-08-29", regDeadline: "2026-08-14" },
-  { test: "2026-10-03", regDeadline: "2026-09-19" },
-  { test: "2026-11-07", regDeadline: "2026-10-24" },
+  { test: "2026-08-22", regDeadline: "2026-08-07" },
+  { test: "2026-09-12", regDeadline: "2026-08-28" },
+  { test: "2026-10-03", regDeadline: "2026-09-18" },
+  { test: "2026-11-07", regDeadline: "2026-10-23" },
   { test: "2026-12-05", regDeadline: "2026-11-20" },
-  { test: "2027-03-13", regDeadline: "2027-02-26" },
+  { test: "2027-03-06", regDeadline: "2027-02-19" },
   { test: "2027-05-01", regDeadline: "2027-04-16" },
   { test: "2027-06-05", regDeadline: "2027-05-21" },
 ];
@@ -163,6 +164,10 @@ export type StudyPlanInputs = {
   graduationYear?: number;
   faculties: string[];
   satScore?: number;
+  // Live data from Supabase (injected by the dashboard layout). When provided,
+  // these override the hardcoded SAT_SITTINGS / COMPETITIONS arrays.
+  liveSatSittings?: SatSitting[];
+  liveCompetitions?: Competition[];
 };
 
 export type SatStep = {
@@ -193,7 +198,13 @@ export function buildStudyPlan({
   graduationYear,
   faculties,
   satScore,
+  liveSatSittings,
+  liveCompetitions,
 }: StudyPlanInputs): StudyPlan {
+  // Use live data when available, fall back to hardcoded arrays.
+  const sittings = liveSatSittings && liveSatSittings.length > 0 ? liveSatSittings : SAT_SITTINGS;
+  const comps = liveCompetitions && liveCompetitions.length > 0 ? liveCompetitions : COMPETITIONS;
+
   // Application-deadline window from graduation year. A "Class of G" student
   // applies in the fall before — Early ≈ Nov 1 (G-1), Regular ≈ Jan 5 (G).
   let deadlines: Deadline[] = [];
@@ -214,7 +225,7 @@ export function buildStudyPlan({
   // SAT sittings whose registration is still open, soonest first. The "last
   // before apps" sitting is the latest test ≥ 3 weeks before the early deadline
   // (scores need time to arrive).
-  const openSittings = SAT_SITTINGS.filter(
+  const openSittings = sittings.filter(
     (s) => daysBetween(today, s.regDeadline) >= 0
   );
   let lastBeforeIdx = -1;
@@ -233,7 +244,7 @@ export function buildStudyPlan({
 
   // Competitions matching the student's field(s), nearest deadline first.
   const fac = new Set(faculties);
-  const competitions: CompetitionStep[] = COMPETITIONS.filter(
+  const competitions: CompetitionStep[] = comps.filter(
     (c) => c.fields === "all" || c.fields.some((f) => fac.has(f))
   )
     .filter((c) => daysBetween(today, c.deadline) >= 0)
@@ -250,3 +261,4 @@ export function buildStudyPlan({
     deadlines,
   };
 }
+
