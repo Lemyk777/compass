@@ -115,16 +115,6 @@ export default function StepActivities({ data, updateField }: StepProps) {
                     {t("ob.timing") || "Timing"}: {a.timing.join(", ")}
                   </span>
                 )}
-                {a.hours_per_week !== undefined && (
-                  <span className="bg-line px-2 py-0.5 rounded">
-                    {a.hours_per_week} {t("ob.hoursShort") || "hrs/wk"}
-                  </span>
-                )}
-                {a.weeks_per_year !== undefined && (
-                  <span className="bg-line px-2 py-0.5 rounded">
-                    {a.weeks_per_year} {t("ob.weeksShort") || "wks/yr"}
-                  </span>
-                )}
                 {a.continue_in_college && (
                   <span className="bg-accent-soft text-accent px-2 py-0.5 rounded font-medium">
                     {t("ob.collegeBound") || "College bound"}

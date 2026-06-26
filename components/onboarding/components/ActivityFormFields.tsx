@@ -15,12 +15,6 @@ const selectClass =
 const textareaClass =
   "w-full rounded-xl border border-line bg-card px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus-visible:focus-ring";
 
-function numOrUndef(v: string): number | undefined {
-  if (v.trim() === "") return undefined;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
-}
-
 function toggleIn(arr: string[] | undefined, v: string): string[] {
   const cur = arr ?? [];
   return cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v];
@@ -126,35 +120,6 @@ export default function ActivityFormFields({
           ))}
         </div>
       </fieldset>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor="dialog-act-hours" className="mb-1.5 block text-xs font-medium text-ink-soft">{t("ob.hoursWeek")}</label>
-          <Input
-            id="dialog-act-hours"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={LIMITS.hoursPerWeek}
-            value={activity.hours_per_week ?? ""}
-            onChange={(e) => update({ hours_per_week: numOrUndef(e.target.value) })}
-            placeholder="e.g. 5"
-          />
-        </div>
-        <div>
-          <label htmlFor="dialog-act-weeks" className="mb-1.5 block text-xs font-medium text-ink-soft">{t("ob.weeksYear")}</label>
-          <Input
-            id="dialog-act-weeks"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={LIMITS.weeksPerYear}
-            value={activity.weeks_per_year ?? ""}
-            onChange={(e) => update({ weeks_per_year: numOrUndef(e.target.value) })}
-            placeholder="e.g. 30"
-          />
-        </div>
-      </div>
 
       <label className="flex items-center justify-between min-h-[44px] cursor-pointer">
         <span className="text-sm text-ink">{t("ob.continueCollege")}</span>

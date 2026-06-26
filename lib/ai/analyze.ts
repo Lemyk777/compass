@@ -197,8 +197,6 @@ function buildModelInput(p: StudentProfileInput) {
         description: clamp(a.description, LIMITS.activityDescription),
         grades: a.grades?.length ? a.grades : undefined,
         timing: a.timing?.length ? a.timing : undefined,
-        hours_per_week: a.hours_per_week || undefined,
-        weeks_per_year: a.weeks_per_year || undefined,
         continue_in_college: a.continue_in_college || undefined,
       })),
     // Common App honors — title + grade levels + level of recognition; feeds
