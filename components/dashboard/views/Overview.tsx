@@ -6,6 +6,7 @@ import { OverallGauge } from "@/components/charts/OverallGauge";
 import { RadarScorecard } from "@/components/charts/RadarScorecard";
 import { ButtonLink } from "@/components/ui/Button";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
+import { Greeting } from "@/components/dashboard/DateGreeting";
 import {
   CountryTabs,
   EmptyState,
@@ -61,15 +62,10 @@ export function Overview() {
     .filter((f) => factorMattersForCountry(country, f.key))
     .slice(0, 4);
 
-  const greeting = name ? `${t("dash.hello")}, ${name}` : t("dash.hello");
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-ink">{greeting}</h1>
-          <p className="mt-1 text-sm text-ink-soft">{t("dash.yourStanding")}</p>
-        </div>
+        <Greeting name={name} />
         <CountryTabs />
       </div>
 
