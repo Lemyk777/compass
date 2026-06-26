@@ -87,6 +87,13 @@ export async function analyzeProfile(
         .stream({
           model: MODEL,
           max_tokens: MAX_TOKENS,
+          // temperature 0: the four model-judged factors (leadership,
+          // extracurricular_depth, awards, narrative_fit) must not wobble
+          // run-to-run. Without this the SDK default (1.0) made the SAME
+          // profile score 9 one run and 8 the next, "silently downgrading" a
+          // student who changed nothing. 0 makes the qualitative read as
+          // reproducible as the deterministic factors.
+          temperature: 0,
           system: [
             {
               type: "text",

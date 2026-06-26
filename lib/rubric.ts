@@ -55,8 +55,9 @@ export const RUBRIC: RubricFactor[] = [
     key: "leadership",
     label: "Leadership",
     weight: 0.15,
-    measures: `9-10 (Tier 1): Founder/President of national/global initiative with massive impact.
-7-8 (Tier 2): President of major regional org OR Significant Family Responsibilities/Work (20+ hrs/wk).
+    measures: `10 (Tier 1, elite): Founder/President of a national or global initiative with massive, proven impact.
+9 (Tier 1): Ownership-level role (founder/co-founder/president/director/lead organizer) operating at large or cross-border scale with demonstrated, measurable impact — e.g. an international initiative, or dramatically scaling access/participation — even without national prominence.
+7-8 (Tier 2): President/captain/founder of a significant regional org or venture OR Significant Family Responsibilities/Work (20+ hrs/wk).
 5-6 (Tier 3): Core officer in school clubs OR Moderate Family Responsibilities (10-15 hrs/wk).
 2-4 (Tier 4): Active participation in clubs (e.g. 3-5 hrs/wk), minor volunteering. General member.
 0-1 (Performative/None): Blank list or resume padding (listing clubs with 1 hr/wk and no impact).`,
@@ -75,8 +76,9 @@ export const RUBRIC: RubricFactor[] = [
     key: "awards",
     label: "Awards & recognition",
     weight: 0.1,
-    measures: `9-10 (Tier 1): International or highly selective national awards (e.g. IMO, Intel ISEF).
-7-8 (Tier 2): State/Regional level awards or significant national qualifiers.
+    measures: `10 (Tier 1, elite): Olympiad-medal caliber — IMO/IPhO/IChO medal, Intel ISEF / global grand award. The very top of the international pool.
+9 (Tier 1): Genuine international recognition below olympiad-medal level — top placement at a selective international competition, a selective international delegate/representative, or an international award tied to a real outcome (e.g. seed funding, advancing to world finals).
+7-8 (Tier 2): National-level recognition — a national award, top placement against a national field, or a national qualifier; strong State/Regional awards.
 5-6 (Tier 3): School/Local level awards.
 2-4 (Tier 4): Minor recognition (e.g. Honor Roll).
 0-1 (None): No awards.`,
