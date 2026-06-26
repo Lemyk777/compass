@@ -4,7 +4,11 @@ import { analysisSchema } from "@/lib/ai/schema";
 import { facultyLabelKey } from "@/lib/data/faculties";
 import { getT } from "@/lib/i18n/server";
 import { RankingsView } from "@/components/dashboard/views/RankingsView";
-import { orderFactors, type LeaderboardRow } from "@/lib/data/leaderboard";
+import {
+  orderFactors,
+  type CountryCode,
+  type LeaderboardRow,
+} from "@/lib/data/leaderboard";
 
 export const dynamic = "force-dynamic";
 
@@ -59,11 +63,19 @@ export default async function RankingsPage() {
       nameById.get(userId)?.trim() ||
       nameFromEmail(emailById.get(userId)) ||
       "Student";
+    // Destination cohorts, derived from the analysis content: US school
+    // likelihoods, Italy programs, and HK programs are each only present when
+    // the student targeted that country. Drives the per-country mini-sections.
+    const countries: CountryCode[] = [];
+    if (an.schools.length > 0) countries.push("US");
+    if (an.italy_programs?.length) countries.push("IT");
+    if (an.hk_programs?.length) countries.push("HK");
     rows.push({
       userId,
       name,
       major,
       overall: Math.round(an.overall_score),
+      countries,
       // Carry the student's full factor set (3–7), country-agnostic. The view
       // renders whatever's here — no fixed columns. Scores shown as whole
       // numbers on the 0–10 rubric scale, like the Your-standing scorecard.

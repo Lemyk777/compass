@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
+  COUNTRY_SECTIONS,
   computeStanding,
   factorColor,
   legendFactors,
+  rowsForCountry,
   type LeaderboardFactor,
   type LeaderboardRow,
 } from "@/lib/data/leaderboard";
@@ -37,7 +39,6 @@ export function RankingsView({
     );
   }
 
-  const visible = hidden ? rows.filter((r) => r.userId !== currentUserId) : rows;
   const legend = legendFactors(rows);
 
   function toggle(userId: string) {
@@ -80,13 +81,18 @@ export function RankingsView({
         </div>
       )}
 
-      {/* Leaderboard */}
-      <section className="overflow-hidden rounded-2xl border border-line bg-card shadow-card">
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-5 py-4">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
-            <TrophyIcon /> Leaderboard
-          </h2>
-          {currentUserId && (
+      {/* Main board: everyone, ranked by overall profile score. */}
+      <Board
+        title="Leaderboard"
+        icon={<TrophyIcon />}
+        rows={rows}
+        hidden={hidden}
+        currentUserId={currentUserId}
+        open={open}
+        onToggle={toggle}
+        legend={legend}
+        headerRight={
+          currentUserId && (
             <button
               type="button"
               onClick={() => setHidden((h) => !h)}
@@ -94,85 +100,183 @@ export function RankingsView({
             >
               {hidden ? "Show my profile" : "Hide my profile"}
             </button>
-          )}
+          )
+        }
+      />
+
+      {/* Per-country mini-sections: the SAME profiles and scores, filtered to
+          students who applied to that destination and re-ranked within it. */}
+      {COUNTRY_SECTIONS.map(({ code, label, flag }) => {
+        const cohort = rowsForCountry(rows, code);
+        if (cohort.length === 0) return null;
+        return (
+          <Board
+            key={code}
+            title={label}
+            flag={flag}
+            rows={cohort}
+            hidden={hidden}
+            currentUserId={currentUserId}
+            open={open}
+            onToggle={toggle}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * One leaderboard surface: header, optional color legend, and the ranked rows.
+ * Reused by the main board and each country mini-section so they stay visually
+ * and behaviorally identical. Rank is the row's position within THIS cohort, and
+ * is computed from the full (sorted) cohort so hiding your own row never shifts
+ * everyone else's number.
+ */
+function Board({
+  title,
+  icon,
+  flag,
+  rows,
+  hidden,
+  currentUserId,
+  open,
+  onToggle,
+  legend,
+  headerRight,
+}: {
+  title: string;
+  icon?: ReactNode;
+  flag?: string;
+  rows: LeaderboardRow[];
+  hidden: boolean;
+  currentUserId: string | null;
+  open: Set<string>;
+  onToggle: (userId: string) => void;
+  legend?: { key: string; label: string }[];
+  headerRight?: ReactNode;
+}) {
+  if (rows.length === 0) return null;
+  const visible = hidden ? rows.filter((r) => r.userId !== currentUserId) : rows;
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-line bg-card shadow-card">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-5 py-4">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
+          {flag ? (
+            <span aria-hidden className="text-lg leading-none">
+              {flag}
+            </span>
+          ) : (
+            icon
+          )}{" "}
+          {title}
+          <span data-num className="text-xs font-normal text-ink-faint">
+            ({rows.length})
+          </span>
+        </h2>
+        {headerRight}
+      </div>
+
+      {/* Shared color legend — the collapsed rows show colors only, so this is
+          what maps each hue back to a factor (works for any 3–7 set). */}
+      {legend && legend.length > 0 && (
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-line bg-surface/60 px-5 py-2.5">
+          {legend.map((f) => (
+            <li key={f.key} className="flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: factorColor(f.key) }}
+              />
+              <span className="text-[11px] font-medium text-ink-soft">
+                {f.label}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <ul className="max-h-[64vh] divide-y divide-line overflow-y-auto">
+        {visible.map((r) => {
+          const rank = rows.findIndex((x) => x.userId === r.userId) + 1;
+          return (
+            <RowItem
+              key={r.userId}
+              row={r}
+              rank={rank}
+              me={r.userId === currentUserId}
+              isOpen={open.has(r.userId)}
+              onToggle={() => onToggle(r.userId)}
+            />
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/** A single ranked profile row, with an expandable factor breakdown. */
+function RowItem({
+  row: r,
+  rank,
+  me,
+  isOpen,
+  onToggle,
+}: {
+  row: LeaderboardRow;
+  rank: number;
+  me: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <li className={me ? "bg-accent-soft/40" : ""}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface/70 focus-visible:focus-ring sm:gap-4 sm:px-5"
+      >
+        <RankBadge rank={rank} />
+
+        <Avatar name={r.name} highlight={me} />
+
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink">
+            {r.name}
+            {me && (
+              <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                You
+              </span>
+            )}
+          </p>
+          <p className="truncate text-xs text-ink-soft">{r.major}</p>
         </div>
 
-        {/* Shared color legend — the collapsed rows show colors only, so this is
-            what maps each hue back to a factor (works for any 3–7 set). */}
-        {legend.length > 0 && (
-          <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-line bg-surface/60 px-5 py-2.5">
-            {legend.map((f) => (
-              <li key={f.key} className="flex items-center gap-1.5">
-                <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: factorColor(f.key) }}
-                />
-                <span className="text-[11px] font-medium text-ink-soft">
-                  {f.label}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* Factor fingerprint: one mini-bar per factor, any 3–7. */}
+        <FactorSparkline factors={r.factors} />
 
-        <ul className="max-h-[64vh] divide-y divide-line overflow-y-auto">
-          {visible.map((r) => {
-            const rank = rows.findIndex((x) => x.userId === r.userId) + 1;
-            const me = r.userId === currentUserId;
-            const isOpen = open.has(r.userId);
-            return (
-              <li key={r.userId} className={me ? "bg-accent-soft/40" : ""}>
-                <button
-                  type="button"
-                  onClick={() => toggle(r.userId)}
-                  aria-expanded={isOpen}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface/70 focus-visible:focus-ring sm:gap-4 sm:px-5"
-                >
-                  <RankBadge rank={rank} />
+        <div className="w-[3.25rem] shrink-0 text-right">
+          <span data-num className="text-lg font-semibold tabular-nums text-ink">
+            {r.overall}
+          </span>
+          <span className="text-[11px] text-ink-faint">/100</span>
+        </div>
 
-                  <Avatar name={r.name} highlight={me} />
+        <Chevron open={isOpen} />
+      </button>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink">
-                      {r.name}
-                      {me && (
-                        <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                          You
-                        </span>
-                      )}
-                    </p>
-                    <p className="truncate text-xs text-ink-soft">{r.major}</p>
-                  </div>
-
-                  {/* Factor fingerprint: one mini-bar per factor, any 3–7. */}
-                  <FactorSparkline factors={r.factors} />
-
-                  <div className="w-[3.25rem] shrink-0 text-right">
-                    <span data-num className="text-lg font-semibold tabular-nums text-ink">
-                      {r.overall}
-                    </span>
-                    <span className="text-[11px] text-ink-faint">/100</span>
-                  </div>
-
-                  <Chevron open={isOpen} />
-                </button>
-
-                {/* Expandable labeled breakdown — adapts to this row's factors. */}
-                <div
-                  className={`grid px-4 motion-safe:transition-all motion-safe:duration-200 sm:px-5 ${
-                    isOpen ? "grid-rows-[1fr] pb-4" : "grid-rows-[0fr]"
-                  }`}
-                >
-                  <div className="overflow-hidden">
-                    <FactorBreakdown factors={r.factors} />
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-    </div>
+      {/* Expandable labeled breakdown — adapts to this row's factors. */}
+      <div
+        className={`grid px-4 motion-safe:transition-all motion-safe:duration-200 sm:px-5 ${
+          isOpen ? "grid-rows-[1fr] pb-4" : "grid-rows-[0fr]"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <FactorBreakdown factors={r.factors} />
+        </div>
+      </div>
+    </li>
   );
 }
 

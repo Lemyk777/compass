@@ -15,13 +15,36 @@ export type LeaderboardFactor = {
   score: number; // 0–10, our rubric scale
 };
 
+// Which destination cohorts a student belongs to. A student can appear on more
+// than one board (e.g. applying to both the US and Italy). Derived from the
+// analysis content: Italy/HK programs present → that country's board.
+export type CountryCode = "US" | "IT" | "HK";
+
 export type LeaderboardRow = {
   userId: string;
   name: string;
   major: string;
   overall: number;
   factors: LeaderboardFactor[];
+  // Destination cohorts this student is part of. The main board shows everyone;
+  // the per-country mini-sections filter on this.
+  countries: CountryCode[];
 };
+
+// The country mini-sections rendered above/below the main board, in order. The
+// US cohort is the main board itself, so only IT and HK get their own section.
+export const COUNTRY_SECTIONS: { code: CountryCode; label: string; flag: string }[] = [
+  { code: "IT", label: "Italy applicants", flag: "🇮🇹" },
+  { code: "HK", label: "Hong Kong applicants", flag: "🇭🇰" },
+];
+
+/** Rows belonging to a given destination cohort, preserving sort order. */
+export function rowsForCountry(
+  rows: LeaderboardRow[],
+  code: CountryCode
+): LeaderboardRow[] {
+  return rows.filter((r) => r.countries.includes(code));
+}
 
 // Stable, accessible categorical palette — one hue per factor, ~3:1+ on white
 // so the thin bars stay legible (WCAG graphical-object contrast). Colors never
