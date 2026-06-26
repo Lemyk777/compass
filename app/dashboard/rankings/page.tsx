@@ -4,16 +4,9 @@ import { analysisSchema } from "@/lib/ai/schema";
 import { facultyLabelKey } from "@/lib/data/faculties";
 import { getT } from "@/lib/i18n/server";
 import { RankingsView } from "@/components/dashboard/views/RankingsView";
-import type { LeaderboardRow } from "@/lib/data/leaderboard";
+import { orderFactors, type LeaderboardRow } from "@/lib/data/leaderboard";
 
 export const dynamic = "force-dynamic";
-
-// Our rubric scores each factor 0–10 — show them as-is (whole numbers, like the
-// Your-standing scorecard). The overall stays on the 0–100 scale.
-function factorScore(factors: { key: string; score: number }[], key: string): number {
-  const f = factors.find((x) => x.key === key);
-  return f ? Math.round(f.score) : 0;
-}
 
 // A readable display name from the auth email when a student didn't set one.
 function nameFromEmail(email?: string | null): string | null {
@@ -71,10 +64,16 @@ export default async function RankingsPage() {
       name,
       major,
       overall: Math.round(an.overall_score),
-      academics: factorScore(an.factors, "academics"),
-      activities: factorScore(an.factors, "extracurricular_depth"),
-      awards: factorScore(an.factors, "awards"),
-      leadership: factorScore(an.factors, "leadership"),
+      // Carry the student's full factor set (3–7), country-agnostic. The view
+      // renders whatever's here — no fixed columns. Scores shown as whole
+      // numbers on the 0–10 rubric scale, like the Your-standing scorecard.
+      factors: orderFactors(
+        an.factors.map((f) => ({
+          key: f.key,
+          label: f.label,
+          score: Math.round(f.score),
+        }))
+      ),
     });
   }
   rows.sort((a, b) => b.overall - a.overall);
