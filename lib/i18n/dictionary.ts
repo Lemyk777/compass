@@ -333,6 +333,7 @@ const en: Dict = {
   "dash.basedOn": "Based on the profile you gave us.",
   "nav.onThisPage": "On this page",
   "nav.standing": "Your standing",
+  "nav.rankings": "Rankings",
   "nav.results": "Admission odds",
   "nav.costs": "Application costs",
   "nav.plan": "Action plan",

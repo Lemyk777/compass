@@ -59,8 +59,9 @@ export async function saveProfile(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Please log in again." };
 
-  // Keep the origin country (+ attribution survey) on the identity profile.
+  // Keep the origin country (+ name + attribution survey) on the identity profile.
   const profileUpdate: Record<string, unknown> = { country: data.country };
+  if (data.full_name) profileUpdate.full_name = data.full_name;
   if (data.heard_from) profileUpdate.heard_from = data.heard_from;
   if (data.heard_from_code) profileUpdate.heard_from_code = data.heard_from_code;
 
@@ -71,9 +72,12 @@ export async function saveProfile(
   // Schema-drift safety net: if the heard_from columns aren't migrated yet
   // (run supabase/migrations/0006_heard_from.sql), save the country alone.
   if (profileErr && (profileErr.code === "42703" || profileErr.code === "PGRST204")) {
+    // heard_from columns may be missing; keep the always-present country + name.
+    const safeProfile: Record<string, unknown> = { country: data.country };
+    if (data.full_name) safeProfile.full_name = data.full_name;
     ({ error: profileErr } = await supabase
       .from("profiles")
-      .update({ country: data.country })
+      .update(safeProfile)
       .eq("id", user.id));
   }
   if (profileErr) return { ok: false, error: "Could not save. Please retry." };
@@ -100,6 +104,8 @@ export async function saveProfile(
     target_schools: data.target_schools,
     intended_major: data.intended_major,
     citizenship: data.citizenship,
+    school_name: data.school_name ?? null,
+    budget_annual_usd: data.budget_annual_usd ?? null,
     needs_aid: data.needs_aid,
     // Keep the legacy include_italy column in sync for any old readers.
     include_italy: data.destinations.includes("IT"),
@@ -133,9 +139,12 @@ export async function saveProfile(
     const safeRow: Record<string, unknown> = { ...row };
     delete safeRow.hk_programs;
     delete safeRow.hk_grade_status;
+    // Redesigned-intake columns (migration 0009) may also be missing.
+    delete safeRow.school_name;
+    delete safeRow.budget_annual_usd;
     console.warn(
-      "student_profiles is missing the Hong Kong columns — saving without them. " +
-        "Run supabase/migrations/0005_hong_kong.sql.",
+      "student_profiles is missing newer columns — saving without them. " +
+        "Run supabase/migrations/0005_hong_kong.sql and 0009_onboarding_extras.sql.",
       writeErr.message
     );
     ({ error: writeErr } = await write(safeRow));
