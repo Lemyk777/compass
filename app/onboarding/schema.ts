@@ -95,32 +95,12 @@ export const inputSchema = z
     // who never sees the step — always saves cleanly.
     heard_from: z.string().trim().max(40).optional().default(""),
     heard_from_code: z.string().trim().max(64).optional().default(""),
-  })
-  .superRefine((val, ctx) => {
-    // Each selected destination needs its own targets (mirrors the per-country
-    // step the UI enforces).
-    if (val.destinations.includes("US") && val.target_schools.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Add at least one US target school.",
-        path: ["target_schools"],
-      });
-    }
-    if (val.destinations.includes("IT") && val.italy_programs.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Add at least one Italian program.",
-        path: ["italy_programs"],
-      });
-    }
-    if (val.destinations.includes("HK") && val.hk_programs.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Add at least one Hong Kong program.",
-        path: ["hk_programs"],
-      });
-    }
   });
+  // Target schools/programs are NO LONGER required at intake. The redesigned
+  // onboarding collects only the student's own data; the analysis produces the
+  // standing/scorecard from that. Admission odds & application costs unlock
+  // later, once the student adds a college list (see the locked sections on the
+  // dashboard). So no per-destination target requirement here.
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
