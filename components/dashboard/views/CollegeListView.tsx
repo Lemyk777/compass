@@ -13,7 +13,7 @@ const SORTED = [...UNIVERSITIES].sort((a, b) => a.acceptance_rate - b.acceptance
 
 export function CollegeListView() {
   const router = useRouter();
-  const { analysis, setAnalysis, basePath, demo } = useDashboard();
+  const { analysis, setAnalysis, setCountry, basePath, demo } = useDashboard();
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
@@ -45,6 +45,10 @@ export function CollegeListView() {
     setBusy(true);
     setError(null);
     try {
+      // The college list is US-specific — land the user on the US odds tab so
+      // the schools they just picked are shown (not whatever country tab they
+      // happened to be viewing before).
+      setCountry("US");
       if (demo) {
         await new Promise((r) => setTimeout(r, 2600));
         router.push(`${basePath}/odds`);

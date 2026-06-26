@@ -59,34 +59,31 @@ export function useDashboard(): DashboardCtx {
   return ctx;
 }
 
-// Country tabs derived from what the analysis actually contains. Used as the
-// fallback for legacy rows / the demo, which don't carry a destinations list.
-function tabsFromContent(analysis: Analysis): DestinationCode[] {
-  const out: DestinationCode[] = [];
-  if (analysis.schools.length > 0) out.push("US");
-  if ((analysis.italy_programs?.length ?? 0) > 0) out.push("IT");
-  if ((analysis.hk_programs?.length ?? 0) > 0) out.push("HK");
-  return out;
+// Whether the analysis already carries content for a country (its college list /
+// program picks have been analyzed).
+function analysisHasCountry(analysis: Analysis, code: DestinationCode): boolean {
+  if (code === "US") return analysis.schools.length > 0;
+  if (code === "IT") return (analysis.italy_programs?.length ?? 0) > 0;
+  if (code === "HK") return (analysis.hk_programs?.length ?? 0) > 0;
+  return false;
 }
 
-// Which country tabs to show. Prefer the student's EXPLICITLY chosen
-// destinations so every selected country gets a tab — even before its college
-// list is built — instead of inferring tabs from which program arrays happen to
-// be populated. The old content-only logic hid IT/HK on multi-country profiles
-// (and could surface a spurious US tab when the model returned US schools the
-// student never asked for). Restricted to destinations we actually analyze
-// (US/IT/HK) and emitted in canonical order.
+// Which country tabs to show. A country gets a tab if the student CHOSE it as a
+// destination (so every selected country shows — even before its college list is
+// built) OR the analysis already has content for it. The content half matters
+// because `destinations` is sourced from the server layout and goes stale after
+// a client-side mutation (e.g. building a US college list adds "US" in the DB +
+// the fresh analysis, but the prop only refreshes on a full reload) — without it
+// the just-added US odds wouldn't appear on the results page. Restricted to the
+// destinations we actually analyze (US/IT/HK) and emitted in canonical order.
 function tabsFor(
   analysis: Analysis | null,
   destinations: DestinationCode[]
 ): DestinationCode[] {
   if (!analysis) return [];
-  const chosen = AVAILABLE_DESTINATION_CODES.filter((c) =>
-    destinations.includes(c)
+  return AVAILABLE_DESTINATION_CODES.filter(
+    (c) => destinations.includes(c) || analysisHasCountry(analysis, c)
   );
-  if (chosen.length) return chosen;
-  // Legacy rows / demo without a destinations list: fall back to content.
-  return tabsFromContent(analysis);
 }
 
 export function DashboardProvider({
