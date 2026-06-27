@@ -20,7 +20,7 @@ import {
   tierForPct,
   maxDisplayedHigh,
 } from "@/lib/ai/empirical";
-import { scoreAcademicFactors } from "@/lib/ai/tier-score";
+import { scoreAcademicFactors, scoreAwards, hasRankedAward } from "@/lib/ai/tier-score";
 import { recommendUniversities } from "@/lib/data/recommend";
 import type { SchoolLikelihood } from "@/lib/ai/schema";
 
@@ -132,12 +132,21 @@ export function blendSchoolLikelihoods(
 // number is reproducible and fully arguable, instead of trusting the model to do
 // (and hide) the arithmetic.
 //
-// leadership, extracurricular_depth, awards, and narrative_fit are left to the
-// model: rigid keyword/threshold formulas mis-scored genuine strong profiles
-// (e.g. a 1-year startup co-founder floored to Tier 3, non-English titles, blank
-// hours), so the model now judges these holistically against the rubric tiers
-// (see the prompt's tier instructions). academics is ALSO conditional — see
-// applyDeterministicFactors: it only overrides the model when real numeric
+// leadership, extracurricular_depth, and narrative_fit are left to the model:
+// rigid keyword/threshold formulas mis-scored genuine strong profiles (e.g. a
+// 1-year startup co-founder floored to Tier 3, non-English titles, blank hours),
+// so the model judges these holistically against the rubric tiers (see the
+// prompt's tier instructions).
+//
+// awards is deterministic when a recognized level exists: it's keyed off the
+// structured Common-App honor LEVEL (school..international), which has none of
+// the hours/title pitfalls above — so International always scores 9, never
+// drifting to 8 run-to-run and never gated behind olympiad medals (the AI used
+// to conflate the 9 and 10 tiers and under-score genuine international awards).
+// It stays conditional (see applyDeterministicFactors): with no ranked honor we
+// keep the model's read, so awards entered as free-text/activities aren't lost.
+//
+// academics is ALSO conditional: it only overrides the model when real numeric
 // grades exist, otherwise the model's read of the free-text grades wins (a rigid
 // formula with no numbers wrongly showed "no grades provided → neutral 5.0").
 const DETERMINISTIC_FACTORS = new Set([
@@ -173,20 +182,29 @@ function applyDeterministicFactors(
   });
   const byKey = new Map(academic.map((f) => [f.factor as string, f]));
   const gradesKnown = hasStructuredGrades(profile);
+  // Awards: deterministic only when the student has a recognized honor level —
+  // otherwise (free-text/activity awards) keep the model's holistic read.
+  const honors = profile.honors ?? [];
+  const awards = hasRankedAward(honors) ? scoreAwards(honors) : null;
+  const apply = (
+    f: ModelAnalysis["factors"][number],
+    s: { score: number; tierName: string; rule: string; evidence: string[] }
+  ) => ({
+    ...f,
+    score: s.score,
+    rubric_tier: s.tierName,
+    reasoning: [s.rule, ...s.evidence],
+    note: s.rule,
+  });
   return factors.map((f) => {
+    if (f.key === "awards") return awards ? apply(f, awards) : f;
     if (!DETERMINISTIC_FACTORS.has(f.key)) return f;
     // academics needs real numbers; with only free-text grades, keep the
     // model's read instead of flooring to the formula's neutral 5.0.
     if (f.key === "academics" && !gradesKnown) return f;
     const s = byKey.get(f.key);
     if (!s) return f;
-    return {
-      ...f,
-      score: s.score,
-      rubric_tier: s.tierName,
-      reasoning: [s.rule, ...s.evidence],
-      note: s.rule,
-    };
+    return apply(f, s);
   });
 }
 

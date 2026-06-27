@@ -34,7 +34,11 @@ export type ArguedScore = {
 
 // Tier → score (fixed midpoints). Same tier ⇒ same number, always.
 const SOFT_SCORE: Record<Tier, number> = { 1: 9, 2: 7, 3: 5, 4: 2.5 };
-const AWARD_SCORE: Record<Tier, number> = { 1: 9.5, 2: 8, 3: 6, 4: 3.5 };
+// Awards map to the rubric's recognition bands: International = 9 (genuine
+// international recognition — NOT gated behind olympiad medals; the rubric's 10
+// is reserved for olympiad/ISEF caliber, which a structured level can't verify,
+// so international tops out at 9), National = 8, State/Regional = 7, School = 5.
+const AWARD_SCORE: Record<Tier, number> = { 1: 9, 2: 8, 3: 7, 4: 5 };
 
 const LEADER_RE = /\b(found|founder|president|captain|chair|lead|director|head|editor[- ]in[- ]chief|ceo)\b/i;
 // Top, ownership-level titles that carry weight on their own — credited even
@@ -184,7 +188,15 @@ function scoreEcDepth(acts: Activity[]): ArguedScore {
 
 // ── Awards ────────────────────────────────────────────────────────────────────
 const AWARD_TIER: Record<string, Tier> = { international: 1, national: 2, "state/regional": 3, state: 3, regional: 3, school: 4, local: 4 };
-function scoreAwards(honors: Honor[]): ArguedScore {
+
+/** True when at least one honor carries a recognized level (school..international). */
+export function hasRankedAward(honors: Honor[]): boolean {
+  return honors.some((h) =>
+    (h.levels ?? []).some((lv) => AWARD_TIER[lv.toLowerCase()] != null)
+  );
+}
+
+export function scoreAwards(honors: Honor[]): ArguedScore {
   let top: Tier | null = null;
   let topLevel = "none";
   let topTitle = "";
