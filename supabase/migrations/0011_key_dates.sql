@@ -76,8 +76,8 @@ INSERT INTO competition_deadlines (id, name, fields, deadline, event_window, lev
     'amc',
     'AMC 10/12 (math)',
     '["computer_science", "engineering", "natural_sciences"]'::jsonb,
-    '2026-10-15',
-    'AMC 10/12 A: Nov 5, AMC 10/12 B: Nov 13',
+    '2026-10-28',
+    'Contests Nov 5 & 13, 2026',
     'national',
     'https://maa.org/maa-invitational-competitions/',
     'Gateway to AIME/USAMO — the standard math-talent signal for STEM.'
@@ -86,8 +86,8 @@ INSERT INTO competition_deadlines (id, name, fields, deadline, event_window, lev
     'usaco',
     'USACO (competitive programming)',
     '["computer_science", "engineering"]'::jsonb,
-    '2026-12-01',
-    'Online contests Dec–Mar',
+    '2027-01-09',
+    'Online contests Jan–Mar (no pre-registration)',
     'national',
     'https://usaco.org/',
     'Promote through Bronze→Silver→Gold to prove real CS ability.'
@@ -97,7 +97,7 @@ INSERT INTO competition_deadlines (id, name, fields, deadline, event_window, lev
     'Regeneron ISEF (research)',
     '["natural_sciences", "engineering", "medicine_health", "computer_science"]'::jsonb,
     '2027-02-01',
-    'Regional fairs Feb–Mar, finals May',
+    'Regional fairs Feb–Mar, finals May 12–18, 2027',
     'international',
     'https://www.societyforscience.org/isef/',
     'Original research project — the strongest STEM spike you can build.'
@@ -106,8 +106,8 @@ INSERT INTO competition_deadlines (id, name, fields, deadline, event_window, lev
     'usabo',
     'USABO (biology olympiad)',
     '["medicine_health", "natural_sciences"]'::jsonb,
-    '2027-01-15',
-    'Open exam early February',
+    '2026-11-15',
+    'Register by mid-Nov; Open Exam in February',
     'national',
     'https://www.usabo-trc.org/',
     'Top biology signal for pre-med / life-science applicants.'
@@ -117,7 +117,7 @@ INSERT INTO competition_deadlines (id, name, fields, deadline, event_window, lev
     'DECA (business & marketing)',
     '["business_economics"]'::jsonb,
     '2026-11-15',
-    'Regionals winter, ICDC in April',
+    'Regionals winter, ICDC Apr 17–20, 2027 (Anaheim)',
     'international',
     'https://www.deca.org/',
     'Case-based business competition — leadership + commercial sense.'
@@ -136,8 +136,8 @@ INSERT INTO competition_deadlines (id, name, fields, deadline, event_window, lev
     'john-locke',
     'John Locke Essay Prize',
     '["humanities_social", "law", "business_economics"]'::jsonb,
-    '2027-06-30',
-    'Submissions due end of June',
+    '2027-05-31',
+    'Register by Mar 31; submit by end of May',
     'international',
     'https://www.johnlockeinstitute.com/essay-competition',
     'Flagship essay prize for humanities, law, philosophy and econ.'
