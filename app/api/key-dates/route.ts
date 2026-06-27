@@ -10,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   SAT_SITTINGS,
   COMPETITIONS,
+  mergeCompetitionMeta,
   type SatSitting,
   type Competition,
 } from "@/lib/data/key-dates";
@@ -43,16 +44,21 @@ export async function GET() {
       .order("deadline", { ascending: true });
 
     if (compRows && compRows.length > 0) {
-      competitions = compRows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        fields: r.fields as Competition["fields"],
-        deadline: r.deadline,
-        window: r.event_window,
-        level: r.level as Competition["level"],
-        url: r.url,
-        blurb: r.blurb,
-      }));
+      // Take the fresh date from the DB row, but enrich category/tier/blurb from
+      // the curated registry by id (mergeCompetitionMeta) — the scraper only
+      // refreshes dates, so those fields live in code, not the DB.
+      competitions = compRows.map((r) =>
+        mergeCompetitionMeta({
+          id: r.id,
+          name: r.name,
+          fields: r.fields as Competition["fields"],
+          deadline: r.deadline,
+          window: r.event_window,
+          level: r.level as Competition["level"],
+          url: r.url,
+          blurb: r.blurb,
+        })
+      );
     }
   } catch (e) {
     console.error("Failed to fetch live dates from Supabase:", e);

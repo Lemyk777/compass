@@ -31,21 +31,53 @@ export const SAT_SITTINGS: SatSitting[] = [
 export const SAT_REGISTER_URL =
   "https://satsuite.collegeboard.org/sat/dates-deadlines";
 
-// ── Competitions / olympiads, tagged by field ────────────────────────────────
+// ── Competitions / olympiads, tagged by field, category and tier ──────────────
 // `fields: "all"` = relevant to any applicant. `deadline` is the next
 // registration/submission deadline for the 2026–27 cycle (VERIFY per source).
+//
+// `category` and `tier` drive the Extracurriculars section:
+//  • category — "olympiad" (subject olympiads: math/physics/bio/CS/…) vs.
+//    "competition" (everything else contest-like: research fairs, essays, MUN…).
+//  • tier — how hard/prestigious the prize is, which is what we match to the
+//    student's strength: "accessible" (entry-level, build experience),
+//    "selective" (national-calibre), "elite" (international flagship — the
+//    "one clean win" a strong applicant should chase).
+// Both are optional on the TYPE so live rows from a DB that predates the columns
+// still validate; `competitionTier`/`competitionCategory` supply a sane default.
+export type CompetitionLevel = "international" | "national" | "regional";
+export type CompetitionCategory = "competition" | "olympiad";
+export type CompetitionTier = "accessible" | "selective" | "elite";
+
 export type Competition = {
   id: string;
   name: string;
   fields: FacultyValue[] | "all";
   deadline: string; // ISO YYYY-MM-DD — registration / submission cutoff
   window: string; // human-readable timing of the event itself
-  level: "international" | "national" | "regional";
+  level: CompetitionLevel;
+  category?: CompetitionCategory;
+  tier?: CompetitionTier;
   url: string;
   blurb: string;
 };
 
+/** Resolved tier — falls back from `level` when a row predates the column. */
+export function competitionTier(c: Competition): CompetitionTier {
+  if (c.tier) return c.tier;
+  return c.level === "international"
+    ? "elite"
+    : c.level === "national"
+      ? "selective"
+      : "accessible";
+}
+
+/** Resolved category — defaults to "competition" for rows without the column. */
+export function competitionCategory(c: Competition): CompetitionCategory {
+  return c.category ?? "competition";
+}
+
 export const COMPETITIONS: Competition[] = [
+  // ── Math / CS / engineering olympiads ──────────────────────────────────────
   {
     id: "amc",
     name: "AMC 10/12 (math)",
@@ -53,8 +85,22 @@ export const COMPETITIONS: Competition[] = [
     deadline: "2026-10-15",
     window: "Contest in November",
     level: "national",
+    category: "olympiad",
+    tier: "selective",
     url: "https://maa.org/maa-invitational-competitions/",
     blurb: "Gateway to AIME/USAMO — the standard math-talent signal for STEM.",
+  },
+  {
+    id: "math-kangaroo",
+    name: "Math Kangaroo",
+    fields: ["computer_science", "engineering", "natural_sciences"],
+    deadline: "2026-12-15",
+    window: "Contest in March",
+    level: "international",
+    category: "olympiad",
+    tier: "accessible",
+    url: "https://mathkangaroo.org/mks/",
+    blurb: "Friendly entry-level math contest — a good first competition signal.",
   },
   {
     id: "usaco",
@@ -63,19 +109,24 @@ export const COMPETITIONS: Competition[] = [
     deadline: "2026-12-01",
     window: "Online contests Dec–Mar",
     level: "national",
+    category: "olympiad",
+    tier: "selective",
     url: "https://usaco.org/",
-    blurb: "Promote through Bronze→Silver→Gold to prove real CS ability.",
+    blurb: "Promote through Bronze→Silver→Gold→Platinum to prove real CS ability.",
   },
   {
-    id: "isef",
-    name: "Regeneron ISEF (research)",
-    fields: ["natural_sciences", "engineering", "medicine_health", "computer_science"],
-    deadline: "2027-02-01",
-    window: "Regional fairs Feb–Mar, finals May",
-    level: "international",
-    url: "https://www.societyforscience.org/isef/",
-    blurb: "Original research project — the strongest STEM 'spike' you can build.",
+    id: "naclo",
+    name: "NACLO (computational linguistics)",
+    fields: ["computer_science", "humanities_social"],
+    deadline: "2027-01-25",
+    window: "Open round late January",
+    level: "national",
+    category: "olympiad",
+    tier: "selective",
+    url: "https://www.nacloweb.org/",
+    blurb: "Logic-puzzle olympiad bridging languages and CS — no prior knowledge needed.",
   },
+  // ── Science olympiads ──────────────────────────────────────────────────────
   {
     id: "usabo",
     name: "USABO (biology olympiad)",
@@ -83,9 +134,97 @@ export const COMPETITIONS: Competition[] = [
     deadline: "2027-01-15",
     window: "Open exam early February",
     level: "national",
+    category: "olympiad",
+    tier: "selective",
     url: "https://www.usabo-trc.org/",
     blurb: "Top biology signal for pre-med / life-science applicants.",
   },
+  {
+    id: "usapho",
+    name: "F=ma / USAPhO (physics olympiad)",
+    fields: ["engineering", "natural_sciences"],
+    deadline: "2027-01-20",
+    window: "F=ma exam late January",
+    level: "national",
+    category: "olympiad",
+    tier: "selective",
+    url: "https://www.aapt.org/physicsteam/",
+    blurb: "The U.S. physics olympiad pipeline — a sharp signal for physics/engineering.",
+  },
+  {
+    id: "usnco",
+    name: "USNCO (chemistry olympiad)",
+    fields: ["medicine_health", "natural_sciences"],
+    deadline: "2027-03-01",
+    window: "Local exams in March",
+    level: "national",
+    category: "olympiad",
+    tier: "selective",
+    url: "https://www.acs.org/education/students/highschool/olympiad.html",
+    blurb: "National chemistry olympiad — strong for chem / pre-med profiles.",
+  },
+  {
+    id: "brain-bee",
+    name: "International Brain Bee (neuroscience)",
+    fields: ["medicine_health", "natural_sciences"],
+    deadline: "2027-01-31",
+    window: "Local rounds winter, nationals spring",
+    level: "international",
+    category: "olympiad",
+    tier: "selective",
+    url: "https://thebrainbee.org/",
+    blurb: "Neuroscience olympiad — a focused spike for aspiring doctors and researchers.",
+  },
+  // ── STEM research / innovation competitions ────────────────────────────────
+  {
+    id: "isef",
+    name: "Regeneron ISEF (research)",
+    fields: ["natural_sciences", "engineering", "medicine_health", "computer_science"],
+    deadline: "2027-02-01",
+    window: "Regional fairs Feb–Mar, finals May",
+    level: "international",
+    category: "competition",
+    tier: "elite",
+    url: "https://www.societyforscience.org/isef/",
+    blurb: "Original research project — the strongest STEM 'spike' you can build.",
+  },
+  {
+    id: "regeneron-sts",
+    name: "Regeneron Science Talent Search",
+    fields: ["natural_sciences", "engineering", "medicine_health", "computer_science"],
+    deadline: "2026-11-12",
+    window: "Applications due mid-November",
+    level: "national",
+    category: "competition",
+    tier: "elite",
+    url: "https://www.societyforscience.org/regeneron-sts/",
+    blurb: "The most prestigious U.S. high-school research competition — senior-year capstone.",
+  },
+  {
+    id: "conrad-challenge",
+    name: "Conrad Challenge (innovation)",
+    fields: ["engineering", "computer_science", "business_economics", "natural_sciences"],
+    deadline: "2026-11-09",
+    window: "Activation deadline Nov, finals April",
+    level: "international",
+    category: "competition",
+    tier: "selective",
+    url: "https://www.conradchallenge.org/",
+    blurb: "Team innovation contest — build a real product solving a global problem.",
+  },
+  {
+    id: "technovation",
+    name: "Technovation Girls",
+    fields: ["computer_science", "business_economics"],
+    deadline: "2027-01-25",
+    window: "Season runs Jan–Apr",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    url: "https://www.technovation.org/",
+    blurb: "Beginner-friendly app + startup challenge — great first tech project.",
+  },
+  // ── Business / economics ───────────────────────────────────────────────────
   {
     id: "decca",
     name: "DECA (business & marketing)",
@@ -93,6 +232,8 @@ export const COMPETITIONS: Competition[] = [
     deadline: "2026-11-15",
     window: "Regionals winter, ICDC in April",
     level: "international",
+    category: "competition",
+    tier: "selective",
     url: "https://www.deca.org/",
     blurb: "Case-based business competition — leadership + commercial sense.",
   },
@@ -103,9 +244,48 @@ export const COMPETITIONS: Competition[] = [
     deadline: "2027-02-15",
     window: "State rounds spring",
     level: "national",
+    category: "competition",
+    tier: "selective",
     url: "https://www.councilforeconed.org/national-economics-challenge/",
     blurb: "Team econ contest — a sharp signal for economics applicants.",
   },
+  {
+    id: "ieo",
+    name: "International Economics Olympiad",
+    fields: ["business_economics", "humanities_social"],
+    deadline: "2027-04-15",
+    window: "National rounds spring, finals summer",
+    level: "international",
+    category: "olympiad",
+    tier: "elite",
+    url: "https://ecolymp.org/",
+    blurb: "The global economics olympiad — the top international econ credential.",
+  },
+  {
+    id: "diamond-challenge",
+    name: "Diamond Challenge (entrepreneurship)",
+    fields: ["business_economics"],
+    deadline: "2026-11-12",
+    window: "Submissions due November",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    url: "https://diamondchallenge.org/",
+    blurb: "Entry-level entrepreneurship pitch — turn an idea into a venture concept.",
+  },
+  {
+    id: "wharton-investment",
+    name: "Wharton Global High School Investment Competition",
+    fields: ["business_economics"],
+    deadline: "2026-10-05",
+    window: "Trading Sep–Dec, finals spring",
+    level: "international",
+    category: "competition",
+    tier: "selective",
+    url: "https://globalyouth.wharton.upenn.edu/investment-competition/",
+    blurb: "Run a real portfolio as a team — finance and strategy under pressure.",
+  },
+  // ── Humanities / law / social sciences ─────────────────────────────────────
   {
     id: "john-locke",
     name: "John Locke Essay Prize",
@@ -113,18 +293,34 @@ export const COMPETITIONS: Competition[] = [
     deadline: "2027-06-30",
     window: "Submissions due end of June",
     level: "international",
+    category: "competition",
+    tier: "elite",
     url: "https://www.johnlockeinstitute.com/essay-competition",
     blurb: "Flagship essay prize for humanities, law, philosophy and econ.",
   },
   {
-    id: "scholastic",
-    name: "Scholastic Art & Writing Awards",
-    fields: ["arts_design", "humanities_social"],
-    deadline: "2026-12-01",
-    window: "Deadlines Dec–Jan by region",
+    id: "nhd",
+    name: "National History Day",
+    fields: ["humanities_social"],
+    deadline: "2027-02-01",
+    window: "Regional contests spring, nationals June",
     level: "national",
-    url: "https://www.artandwriting.org/",
-    blurb: "The most recognized awards for creative arts and writing.",
+    category: "competition",
+    tier: "selective",
+    url: "https://www.nhd.org/",
+    blurb: "Research-and-present history project — depth in argument and sourcing.",
+  },
+  {
+    id: "ippf",
+    name: "International Public Policy Forum",
+    fields: ["humanities_social", "law"],
+    deadline: "2026-09-30",
+    window: "Qualifying essay due fall",
+    level: "international",
+    category: "competition",
+    tier: "selective",
+    url: "https://www.ippfdebate.com/",
+    blurb: "Written + oral public-policy debate — sharp for law and policy applicants.",
   },
   {
     id: "mun",
@@ -133,10 +329,84 @@ export const COMPETITIONS: Competition[] = [
     deadline: "2026-10-01",
     window: "Conferences run year-round",
     level: "regional",
+    category: "competition",
+    tier: "accessible",
     url: "https://www.nmun.org/",
-    blurb: "Diplomacy, public speaking and current-affairs depth.",
+    blurb: "Diplomacy, public speaking and current-affairs depth — easy to start.",
+  },
+  {
+    id: "world-scholars-cup",
+    name: "World Scholar's Cup",
+    fields: ["humanities_social"],
+    deadline: "2027-01-15",
+    window: "Regional rounds spring",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    url: "https://www.scholarscup.org/",
+    blurb: "Team academic tournament across subjects — a welcoming first competition.",
+  },
+  // ── Arts & design ──────────────────────────────────────────────────────────
+  {
+    id: "scholastic",
+    name: "Scholastic Art & Writing Awards",
+    fields: ["arts_design", "humanities_social"],
+    deadline: "2026-12-01",
+    window: "Deadlines Dec–Jan by region",
+    level: "national",
+    category: "competition",
+    tier: "selective",
+    url: "https://www.artandwriting.org/",
+    blurb: "The most recognized awards for creative arts and writing.",
+  },
+  {
+    id: "youngarts",
+    name: "YoungArts",
+    fields: ["arts_design"],
+    deadline: "2026-10-10",
+    window: "Applications due October",
+    level: "national",
+    category: "competition",
+    tier: "elite",
+    url: "https://youngarts.org/",
+    blurb: "National honor for emerging artists — the top pre-college arts credential.",
   },
 ];
+
+const COMPETITION_BY_ID = new Map(COMPETITIONS.map((c) => [c.id, c]));
+
+/**
+ * Enrich a live competition row (from Supabase, refreshed by the scraper) with
+ * the curated metadata by id. The scraper only updates the DATE, so we keep the
+ * fresh `deadline`/`window` but take category/tier/fields/blurb/level from the
+ * registry — that's the source of truth for them and needs no DB columns. A row
+ * whose id isn't in the registry (only ever added straight to the DB) passes
+ * through unchanged, with tier/category derived from `level`.
+ */
+export function mergeCompetitionMeta(live: Competition): Competition {
+  const base = COMPETITION_BY_ID.get(live.id);
+  if (!base) return live;
+  return { ...base, deadline: live.deadline, window: live.window };
+}
+
+/**
+ * The full competition list to plan from: the curated registry is the BASE (so
+ * every competition we know about always shows, even before the DB is seeded),
+ * with the scraper's fresh `deadline`/`window` overlaid where a live row exists.
+ * Live-only rows (added straight to the DB) are appended. This is the inverse of
+ * "live replaces everything" — which used to hide newly-added registry entries
+ * until they were also inserted into Supabase.
+ */
+export function resolveCompetitions(live?: Competition[]): Competition[] {
+  if (!live || live.length === 0) return COMPETITIONS;
+  const liveById = new Map(live.map((c) => [c.id, c]));
+  const merged = COMPETITIONS.map((c) => {
+    const l = liveById.get(c.id);
+    return l ? { ...c, deadline: l.deadline, window: l.window } : c;
+  });
+  for (const l of live) if (!COMPETITION_BY_ID.has(l.id)) merged.push(l);
+  return merged;
+}
 
 // ── Date helpers (UTC, date-only — no timezone drift) ─────────────────────────
 function toUTC(d: Date | string): number {
@@ -201,9 +471,11 @@ export function buildStudyPlan({
   liveSatSittings,
   liveCompetitions,
 }: StudyPlanInputs): StudyPlan {
-  // Use live data when available, fall back to hardcoded arrays.
+  // Use live data when available, fall back to hardcoded arrays. Competitions
+  // use the registry as the base with live dates overlaid, so the full curated
+  // list always shows (not just whatever's been seeded into the DB).
   const sittings = liveSatSittings && liveSatSittings.length > 0 ? liveSatSittings : SAT_SITTINGS;
-  const comps = liveCompetitions && liveCompetitions.length > 0 ? liveCompetitions : COMPETITIONS;
+  const comps = resolveCompetitions(liveCompetitions);
 
   // Application-deadline window from graduation year. A "Class of G" student
   // applies in the fall before — Early ≈ Nov 1 (G-1), Regular ≈ Jan 5 (G).
@@ -260,5 +532,130 @@ export function buildStudyPlan({
     competitions,
     deadlines,
   };
+}
+
+// ── Extracurriculars: strength-matched competition/olympiad recommendations ───
+// The idea (founder's): a student with little to show should see ACCESSIBLE
+// events to build experience; a strong student doesn't need more entries, they
+// need one elite win — so we surface only the top tier for them. "Strength" here
+// is the student's extracurricular standing, read off the same rubric factors
+// the scorecard uses, not the overall academic score.
+
+const clamp10 = (x: number) => Math.max(0, Math.min(10, x));
+
+/**
+ * Extracurricular strength on a 0–10 scale from the profile factors. Achievements
+ * weigh most (awards), then sustained activity depth, then academics as a small
+ * baseline — the same blend the HK board / scorecard use for "achievements".
+ */
+export function extracurricularStrength(
+  factors: { key: string; score: number }[]
+): number {
+  const get = (k: string) => factors.find((f) => f.key === k)?.score ?? 0;
+  return clamp10(
+    0.45 * get("awards") +
+      0.35 * get("extracurricular_depth") +
+      0.2 * get("academics")
+  );
+}
+
+export type StrengthBand = "emerging" | "developing" | "competitive" | "elite";
+
+export function strengthBand(strength: number): StrengthBand {
+  if (strength < 4) return "emerging";
+  if (strength < 6) return "developing";
+  if (strength < 8) return "competitive";
+  return "elite";
+}
+
+// Which tiers each band should focus on. Emerging students build a record on
+// accessible events; the strongest chase only elite ("one clean win").
+const BAND_TIERS: Record<StrengthBand, CompetitionTier[]> = {
+  emerging: ["accessible"],
+  developing: ["accessible", "selective"],
+  competitive: ["selective", "elite"],
+  elite: ["elite"],
+};
+
+const TIER_RANK: Record<CompetitionTier, number> = {
+  accessible: 0,
+  selective: 1,
+  elite: 2,
+};
+
+// How an opportunity relates to the student's target band:
+//  • recommended — in their band (do these now)
+//  • stretch     — above their band (aspirational, worth a look)
+//  • foundational— below their band (a strong student has likely outgrown it)
+export type OpportunityFit = "recommended" | "stretch" | "foundational";
+
+export type Opportunity = Competition & {
+  daysToDeadline: number;
+  tierResolved: CompetitionTier;
+  categoryResolved: CompetitionCategory;
+  fit: OpportunityFit;
+};
+
+export type ExtracurricularsPlan = {
+  strength: number;
+  band: StrengthBand;
+  targetTiers: CompetitionTier[];
+  items: Opportunity[];
+};
+
+const FIT_ORDER: Record<OpportunityFit, number> = {
+  recommended: 0,
+  stretch: 1,
+  foundational: 2,
+};
+
+/**
+ * Field-matched competitions/olympiads, each tagged with how it fits the
+ * student's strength, sorted recommended-first then by nearest deadline. The
+ * view groups/filters from this; the matching is all deterministic.
+ */
+export function buildExtracurriculars({
+  today,
+  faculties,
+  factors,
+  liveCompetitions,
+}: {
+  today: Date;
+  faculties: string[];
+  factors: { key: string; score: number }[];
+  liveCompetitions?: Competition[];
+}): ExtracurricularsPlan {
+  const comps = resolveCompetitions(liveCompetitions);
+  const strength = extracurricularStrength(factors);
+  const band = strengthBand(strength);
+  const targetTiers = BAND_TIERS[band];
+  const targetMax = Math.max(...targetTiers.map((t) => TIER_RANK[t]));
+  const fac = new Set(faculties);
+
+  const items: Opportunity[] = comps
+    .filter((c) => c.fields === "all" || c.fields.some((f) => fac.has(f)))
+    .filter((c) => daysBetween(today, c.deadline) >= 0)
+    .map((c) => {
+      const tierResolved = competitionTier(c);
+      const fit: OpportunityFit = targetTiers.includes(tierResolved)
+        ? "recommended"
+        : TIER_RANK[tierResolved] > targetMax
+          ? "stretch"
+          : "foundational";
+      return {
+        ...c,
+        daysToDeadline: daysBetween(today, c.deadline),
+        tierResolved,
+        categoryResolved: competitionCategory(c),
+        fit,
+      };
+    })
+    .sort((a, b) => {
+      if (FIT_ORDER[a.fit] !== FIT_ORDER[b.fit])
+        return FIT_ORDER[a.fit] - FIT_ORDER[b.fit];
+      return a.daysToDeadline - b.daysToDeadline;
+    });
+
+  return { strength, band, targetTiers, items };
 }
 

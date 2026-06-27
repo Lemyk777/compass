@@ -337,6 +337,7 @@ const en: Dict = {
   "nav.results": "Admission odds",
   "nav.costs": "Application costs",
   "nav.plan": "Action plan",
+  "nav.opportunities": "Opportunities",
   "nav.timeline": "Timeline",
   "nav.summary": "Summary",
   "dash.loadingTitle": "Reading your profile…",
