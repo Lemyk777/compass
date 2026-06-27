@@ -25,18 +25,35 @@ export type LeaderboardRow = {
   name: string;
   major: string;
   overall: number;
+  // Default (US) factor breakdown. Each board ranks by the same `overall`, but
+  // shows a COUNTRY-NATIVE breakdown — `factorsByCountry` carries the Italy/HK
+  // factor sets so the Italy board talks about SAT-vs-cutoff margins and DSU fit
+  // instead of US admission factors, and so on.
   factors: LeaderboardFactor[];
-  // Destination cohorts this student is part of. The main board shows everyone;
-  // the per-country mini-sections filter on this.
+  factorsByCountry?: Partial<Record<CountryCode, LeaderboardFactor[]>>;
+  // Destination cohorts this student is part of — drives which board(s) they
+  // appear on. A student can belong to several (e.g. US + HK).
   countries: CountryCode[];
 };
 
-// The country mini-sections rendered above/below the main board, in order. The
-// US cohort is the main board itself, so only IT and HK get their own section.
-export const COUNTRY_SECTIONS: { code: CountryCode; label: string; flag: string }[] = [
-  { code: "IT", label: "Italy applicants", flag: "🇮🇹" },
-  { code: "HK", label: "Hong Kong applicants", flag: "🇭🇰" },
+// The three boards, in display (toggle) order. Each is a destination cohort with
+// its own native breakdown; students are ranked within the cohort by `overall`.
+export const LEADERBOARD_COUNTRIES: { code: CountryCode; label: string }[] = [
+  { code: "US", label: "United States" },
+  { code: "IT", label: "Italy" },
+  { code: "HK", label: "Hong Kong" },
 ];
+
+export function countryLabel(code: CountryCode): string {
+  return LEADERBOARD_COUNTRIES.find((c) => c.code === code)?.label ?? code;
+}
+
+/** Which boards actually have students, in canonical order — drives the toggle. */
+export function availableCountries(rows: LeaderboardRow[]): CountryCode[] {
+  const present = new Set<CountryCode>();
+  for (const r of rows) for (const c of r.countries) present.add(c);
+  return LEADERBOARD_COUNTRIES.map((c) => c.code).filter((c) => present.has(c));
+}
 
 /** Rows belonging to a given destination cohort, preserving sort order. */
 export function rowsForCountry(
@@ -44,6 +61,30 @@ export function rowsForCountry(
   code: CountryCode
 ): LeaderboardRow[] {
   return rows.filter((r) => r.countries.includes(code));
+}
+
+/** The country-native breakdown for a row, falling back to the US factors. */
+export function factorsFor(
+  row: LeaderboardRow,
+  code: CountryCode
+): LeaderboardFactor[] {
+  return row.factorsByCountry?.[code] ?? row.factors;
+}
+
+/**
+ * The rows for one board: the country cohort, sort order preserved, with each
+ * row's `factors` swapped to that country's native breakdown. The rest of the
+ * view (legend, sparkline, expanded breakdown, standing) renders straight off
+ * `.factors`, so this is all that country-specific data needs.
+ */
+export function boardRows(
+  rows: LeaderboardRow[],
+  code: CountryCode
+): LeaderboardRow[] {
+  return rowsForCountry(rows, code).map((r) => ({
+    ...r,
+    factors: factorsFor(r, code),
+  }));
 }
 
 // Stable, accessible categorical palette — one hue per factor, ~3:1+ on white
@@ -57,6 +98,13 @@ export const FACTOR_COLORS: Record<string, string> = {
   extracurricular_depth: "#f59f00", // amber
   awards: "#e64980", // pink
   narrative_fit: "#e8590c", // orange
+  // Italy-native factors (green family, echoing the flag).
+  it_academic: "#0ca678", // teal-green
+  it_security: "#2f9e44", // green
+  it_finance: "#f59f00", // amber (money)
+  // Hong Kong board reuses the academics/test/rigor hues for its spine and adds
+  // one combined achievements bar (the tie-breaker).
+  hk_achievements: "#e64980", // pink
 };
 export const FACTOR_FALLBACK_COLOR = "#868e96"; // any future/unknown factor key
 
@@ -74,6 +122,13 @@ export const FACTOR_ORDER = [
   "extracurricular_depth",
   "awards",
   "narrative_fit",
+  // Italy-native (only ever appear together on the Italy board).
+  "it_academic",
+  "it_security",
+  "it_finance",
+  // Hong Kong board: academics/test_scores/course_rigor spine + this combined
+  // achievements bar.
+  "hk_achievements",
 ] as const;
 
 function orderIndex(key: string): number {
@@ -141,4 +196,82 @@ export function computeStanding(
   }
 
   return { rank, total, topPct, current, focus };
+}
+
+// ── Country-native factor breakdowns ──────────────────────────────────────────
+// Every board ranks by the same `overall`, but each shows factors that mean
+// something for THAT country's admissions. These are derived deterministically
+// from the (already deterministic) Italy/HK program analyses — no AI, same
+// profile → same bars. Inputs are typed as the subset of fields we read so the
+// full ItalyProgramAnalysis / HkProgramAnalysis objects pass straight through.
+
+const clamp10 = (x: number) => Math.max(0, Math.min(10, x));
+const mean = (xs: number[]) =>
+  xs.length ? xs.reduce((s, v) => s + v, 0) / xs.length : 0;
+
+type ItalyFactorInput = {
+  user_sat: number;
+  historical_cutoff: number;
+  status: string;
+};
+
+/**
+ * Italy board factors: how the student's SAT clears the cutoffs, how secure
+ * their admission is across their picked programs, and DSU financial fit.
+ */
+export function italyFactors(
+  programs: ItalyFactorInput[],
+  financialFit: number | undefined
+): LeaderboardFactor[] {
+  if (!programs.length) return [];
+  // Avg SAT margin vs. last year's cutoff, mapped onto the 0–10 rubric scale:
+  // on the line ≈ 5, ~+200 → 10, ~−200 → 0.
+  const avgDiff = mean(programs.map((p) => p.user_sat - p.historical_cutoff));
+  const academic = clamp10(5 + avgDiff / 40);
+  const statusPts: Record<string, number> = {
+    guaranteed: 10,
+    likely: 8,
+    target: 5,
+    reach: 2,
+  };
+  const security = mean(programs.map((p) => statusPts[p.status] ?? 5));
+  return [
+    { key: "it_academic", label: "Academic margin", score: Math.round(academic) },
+    { key: "it_security", label: "Admission odds", score: Math.round(security) },
+    { key: "it_finance", label: "Financial fit", score: Math.round(financialFit ?? 5) },
+  ];
+}
+
+function scoreByKey(
+  factors: LeaderboardFactor[],
+  key: string,
+  fallback = 5
+): number {
+  return factors.find((f) => f.key === key)?.score ?? fallback;
+}
+
+/**
+ * Hong Kong board factors. HK international admission is grades-first: a GPA +
+ * standardized-test (SAT / A-Level / IB) spine, with a combined achievements bar
+ * as the tie-breaker that separates applicants clustered at the same scores.
+ * Within achievements, olympiads/competitions/awards count most, then research /
+ * EC depth, then general leadership — so we weight `awards` heaviest. Derived
+ * from the profile factors (not the programs), so it works for any applicant.
+ *
+ * Sources: HKU, HKUST ("significant prizes and awards (if any)") and CUHK (OEA —
+ * Other Experiences and Achievements in Competitions/Activities) admissions pages.
+ */
+export function hkFactors(profileFactors: LeaderboardFactor[]): LeaderboardFactor[] {
+  if (!profileFactors.length) return [];
+  const achievements = clamp10(
+    0.5 * scoreByKey(profileFactors, "awards") +
+      0.3 * scoreByKey(profileFactors, "extracurricular_depth") +
+      0.2 * scoreByKey(profileFactors, "leadership")
+  );
+  return [
+    { key: "academics", label: "Academics", score: Math.round(scoreByKey(profileFactors, "academics")) },
+    { key: "test_scores", label: "Test score", score: Math.round(scoreByKey(profileFactors, "test_scores")) },
+    { key: "course_rigor", label: "Course rigor", score: Math.round(scoreByKey(profileFactors, "course_rigor")) },
+    { key: "hk_achievements", label: "Achievements", score: Math.round(achievements) },
+  ];
 }

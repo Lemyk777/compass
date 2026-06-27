@@ -6,6 +6,8 @@ import { getT } from "@/lib/i18n/server";
 import { RankingsView } from "@/components/dashboard/views/RankingsView";
 import {
   orderFactors,
+  italyFactors,
+  hkFactors,
   type CountryCode,
   type LeaderboardRow,
 } from "@/lib/data/leaderboard";
@@ -70,22 +72,37 @@ export default async function RankingsPage() {
     if (an.schools.length > 0) countries.push("US");
     if (an.italy_programs?.length) countries.push("IT");
     if (an.hk_programs?.length) countries.push("HK");
+    // Default (US) breakdown: the student's profile factors on the 0–10 rubric
+    // scale, like the Your-standing scorecard.
+    const profileFactors = orderFactors(
+      an.factors.map((f) => ({
+        key: f.key,
+        label: f.label,
+        score: Math.round(f.score),
+      }))
+    );
+    // Each board ranks by the same `overall`, but shows a country-native
+    // breakdown. Italy is derived from its program analyses; HK re-weights the
+    // profile factors the grades-first way HK admissions actually reads them.
+    const factorsByCountry: LeaderboardRow["factorsByCountry"] = {};
+    if (an.italy_programs?.length) {
+      factorsByCountry.IT = orderFactors(
+        italyFactors(an.italy_programs, an.italy_financial_fit_score)
+      );
+    }
+    if (an.hk_programs?.length) {
+      factorsByCountry.HK = orderFactors(hkFactors(profileFactors));
+    }
     rows.push({
       userId,
       name,
       major,
       overall: Math.round(an.overall_score),
       countries,
-      // Carry the student's full factor set (3–7), country-agnostic. The view
-      // renders whatever's here — no fixed columns. Scores shown as whole
-      // numbers on the 0–10 rubric scale, like the Your-standing scorecard.
-      factors: orderFactors(
-        an.factors.map((f) => ({
-          key: f.key,
-          label: f.label,
-          score: Math.round(f.score),
-        }))
-      ),
+      factors: profileFactors,
+      factorsByCountry: Object.keys(factorsByCountry).length
+        ? factorsByCountry
+        : undefined,
     });
   }
   rows.sort((a, b) => b.overall - a.overall);

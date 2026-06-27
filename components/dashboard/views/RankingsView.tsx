@@ -2,15 +2,18 @@
 
 import { useState, type ReactNode } from "react";
 import {
-  COUNTRY_SECTIONS,
+  availableCountries,
+  boardRows,
   computeStanding,
+  countryLabel,
   factorColor,
   legendFactors,
-  rowsForCountry,
+  type CountryCode,
   type LeaderboardFactor,
   type LeaderboardRow,
 } from "@/lib/data/leaderboard";
 import { PageHeader } from "@/components/dashboard/states";
+import { Flag } from "@/components/ui/Flag";
 
 export function RankingsView({
   rows,
@@ -19,13 +22,25 @@ export function RankingsView({
   rows: LeaderboardRow[];
   currentUserId: string | null;
 }) {
+  const countries = availableCountries(rows);
+  const [country, setCountry] = useState<CountryCode>(
+    () => countries[0] ?? "US"
+  );
   const [hidden, setHidden] = useState(false);
   // Allow several rows open at once; the current user's row starts expanded so
   // they see their own breakdown immediately.
   const [open, setOpen] = useState<Set<string>>(
     () => new Set(currentUserId ? [currentUserId] : [])
   );
-  const standing = computeStanding(rows, currentUserId);
+
+  function toggle(userId: string) {
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  }
 
   if (rows.length === 0) {
     return (
@@ -39,60 +54,48 @@ export function RankingsView({
     );
   }
 
-  const legend = legendFactors(rows);
-
-  function toggle(userId: string) {
-    setOpen((prev) => {
-      const next = new Set(prev);
-      if (next.has(userId)) next.delete(userId);
-      else next.add(userId);
-      return next;
-    });
-  }
+  // The active board: its cohort, ranked by overall, with each row's breakdown
+  // swapped to that country's native factors. Standing + legend follow from it.
+  const active = countries.includes(country) ? country : countries[0] ?? "US";
+  const activeRows = boardRows(rows, active);
+  const standing = computeStanding(activeRows, currentUserId);
+  const legend = legendFactors(activeRows);
 
   return (
     <div className="space-y-5">
-      {/* Header: title + compact standing badge (no two big cards — tighter). */}
+      {/* Header: title + the country switch (one board at a time, not stacked). */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeader
           title="Rankings"
-          hint="How your profile stacks up against everyone who's completed Compass."
+          hint="See how your profile ranks against other students applying to the same country."
         />
-        {standing && <StandingBadge standing={standing} />}
+        <CountryToggle
+          countries={countries}
+          active={active}
+          onChange={setCountry}
+        />
       </div>
 
-      {/* Where-to-focus callout */}
-      {standing?.focus && (
-        <div className="flex items-start gap-3 rounded-xl border border-accent/25 bg-accent-soft/60 px-4 py-3">
-          <TargetIcon />
-          <p className="text-pretty text-sm leading-relaxed text-ink">
-            <span className="font-semibold">{standing.focus.label}</span> is your
-            weakest dimension at{" "}
-            <span data-num className="font-semibold text-accent">
-              {standing.focus.score}/10
-            </span>
-            . The top {standing.focus.topK}{" "}
-            {standing.focus.topK === 1 ? "student averages" : "students average"}{" "}
-            <span data-num className="font-semibold text-accent">
-              {standing.focus.topAvg}/10
-            </span>{" "}
-            — closing this gap is the fastest path up the board.
-          </p>
+      {/* Per-country standing + where-to-focus callout (this cohort only). */}
+      {standing && (
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
+          <StandingBadge standing={standing} country={active} />
+          {standing.focus && <FocusCallout focus={standing.focus} />}
         </div>
       )}
 
-      {/* Main board: everyone, ranked by overall profile score. */}
       <Board
-        title="Leaderboard"
-        icon={<TrophyIcon />}
-        rows={rows}
+        title={countryLabel(active)}
+        icon={<Flag code={active} size={18} />}
+        rows={activeRows}
         hidden={hidden}
         currentUserId={currentUserId}
         open={open}
         onToggle={toggle}
         legend={legend}
         headerRight={
-          currentUserId && (
+          currentUserId &&
+          standing && (
             <button
               type="button"
               onClick={() => setHidden((h) => !h)}
@@ -103,25 +106,70 @@ export function RankingsView({
           )
         }
       />
+    </div>
+  );
+}
 
-      {/* Per-country mini-sections: the SAME profiles and scores, filtered to
-          students who applied to that destination and re-ranked within it. */}
-      {COUNTRY_SECTIONS.map(({ code, label, flag }) => {
-        const cohort = rowsForCountry(rows, code);
-        if (cohort.length === 0) return null;
+/**
+ * The US / Italy / Hong Kong switch — same segmented-control pattern as the
+ * dashboard's country tabs, so the rankings page reads as one board you flip
+ * between rather than three tables stacked down the page.
+ */
+function CountryToggle({
+  countries,
+  active,
+  onChange,
+}: {
+  countries: CountryCode[];
+  active: CountryCode;
+  onChange: (code: CountryCode) => void;
+}) {
+  if (countries.length < 2) return null;
+  return (
+    <div className="inline-flex rounded-xl border border-line bg-card p-1 shadow-card">
+      {countries.map((code) => {
+        const on = code === active;
         return (
-          <Board
+          <button
             key={code}
-            title={label}
-            flag={flag}
-            rows={cohort}
-            hidden={hidden}
-            currentUserId={currentUserId}
-            open={open}
-            onToggle={toggle}
-          />
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(code)}
+            className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus-visible:focus-ring ${
+              on ? "bg-accent text-white" : "text-ink-soft hover:text-ink"
+            }`}
+          >
+            <Flag code={code} />
+            {countryLabel(code)}
+          </button>
         );
       })}
+    </div>
+  );
+}
+
+function FocusCallout({
+  focus,
+}: {
+  focus: NonNullable<ReturnType<typeof computeStanding>>["focus"];
+}) {
+  if (!focus) return null;
+  return (
+    <div className="flex flex-1 items-start gap-3 rounded-xl border border-accent/25 bg-accent-soft/60 px-4 py-3">
+      <TargetIcon />
+      <p className="text-pretty text-sm leading-relaxed text-ink">
+        <span className="font-semibold">{focus.label}</span> is your weakest
+        dimension here at{" "}
+        <span data-num className="font-semibold text-accent">
+          {focus.score}/10
+        </span>
+        . The top {focus.topK}{" "}
+        {focus.topK === 1 ? "student averages" : "students average"}{" "}
+        <span data-num className="font-semibold text-accent">
+          {focus.topAvg}/10
+        </span>{" "}
+        — closing this gap is the fastest path up the board.
+      </p>
     </div>
   );
 }
@@ -136,7 +184,6 @@ export function RankingsView({
 function Board({
   title,
   icon,
-  flag,
   rows,
   hidden,
   currentUserId,
@@ -147,7 +194,6 @@ function Board({
 }: {
   title: string;
   icon?: ReactNode;
-  flag?: string;
   rows: LeaderboardRow[];
   hidden: boolean;
   currentUserId: string | null;
@@ -163,13 +209,7 @@ function Board({
     <section className="overflow-hidden rounded-2xl border border-line bg-card shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-5 py-4">
         <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
-          {flag ? (
-            <span aria-hidden className="text-lg leading-none">
-              {flag}
-            </span>
-          ) : (
-            icon
-          )}{" "}
+          {icon}{" "}
           {title}
           <span data-num className="text-xs font-normal text-ink-faint">
             ({rows.length})
@@ -282,14 +322,16 @@ function RowItem({
 
 function StandingBadge({
   standing,
+  country,
 }: {
   standing: NonNullable<ReturnType<typeof computeStanding>>;
+  country: CountryCode;
 }) {
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-line bg-card px-4 py-2.5 shadow-card">
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
-          Your standing
+          Your standing · {countryLabel(country)}
         </p>
         <p className="leading-tight">
           <span data-num className="font-display text-2xl font-semibold tabular-nums text-ink">

@@ -27,6 +27,26 @@ const f = (scores: Record<string, number>) =>
     }))
   );
 
+// Country-native breakdowns (same shape the live page derives from the Italy/HK
+// program analyses) so /demo/rankings shows each board talking about its own
+// country, not US factors.
+const itf = (academic: number, security: number, finance: number) =>
+  orderFactors([
+    { key: "it_academic", label: "Academic margin", score: academic },
+    { key: "it_security", label: "Admission odds", score: security },
+    { key: "it_finance", label: "Financial fit", score: finance },
+  ]);
+
+// HK is grades-first: GPA + test + rigor spine, with one combined achievements
+// bar (olympiads/awards weighted heaviest) as the tie-breaker.
+const hkf = (gpa: number, test: number, rigor: number, achievements: number) =>
+  orderFactors([
+    { key: "academics", label: "Academics", score: gpa },
+    { key: "test_scores", label: "Test score", score: test },
+    { key: "course_rigor", label: "Course rigor", score: rigor },
+    { key: "hk_achievements", label: "Achievements", score: achievements },
+  ]);
+
 const SAMPLE: LeaderboardRow[] = [
   {
     userId: "u1",
@@ -43,6 +63,7 @@ const SAMPLE: LeaderboardRow[] = [
     overall: 90,
     countries: ["US", "HK"],
     factors: f({ academics: 9, test_scores: 9, course_rigor: 8, leadership: 9, extracurricular_depth: 9, awards: 8, narrative_fit: 9 }),
+    factorsByCountry: { HK: hkf(9, 9, 8, 8) },
   },
   {
     userId: "u3",
@@ -51,6 +72,7 @@ const SAMPLE: LeaderboardRow[] = [
     overall: 88,
     countries: ["IT"],
     factors: f({ academics: 9, test_scores: 10, course_rigor: 8, leadership: 7, extracurricular_depth: 6, awards: 7, narrative_fit: 7 }),
+    factorsByCountry: { IT: itf(9, 7, 6) },
   },
   {
     userId: "u4",
@@ -67,6 +89,7 @@ const SAMPLE: LeaderboardRow[] = [
     overall: 76,
     countries: ["US", "HK"],
     factors: f({ academics: 8, test_scores: 7, course_rigor: 7, leadership: 8, extracurricular_depth: 7, awards: 6, narrative_fit: 7 }),
+    factorsByCountry: { HK: hkf(8, 7, 7, 7) },
   },
   {
     userId: "u6",
@@ -91,6 +114,7 @@ const SAMPLE: LeaderboardRow[] = [
     overall: 68,
     countries: ["HK"],
     factors: f({ academics: 7, test_scores: 6, course_rigor: 6, leadership: 7, extracurricular_depth: 8, awards: 5, narrative_fit: 8 }),
+    factorsByCountry: { HK: hkf(7, 6, 6, 6) },
   },
   {
     userId: "u9",
@@ -99,6 +123,7 @@ const SAMPLE: LeaderboardRow[] = [
     overall: 65,
     countries: ["IT"],
     factors: f({ academics: 8, test_scores: 7, course_rigor: 6, leadership: 5, extracurricular_depth: 6, awards: 5, narrative_fit: 5 }),
+    factorsByCountry: { IT: itf(7, 4, 8) },
   },
 ];
 
