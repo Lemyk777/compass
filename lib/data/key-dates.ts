@@ -49,7 +49,16 @@ export const SAT_REGISTER_URL =
 // Both are optional on the TYPE so live rows from a DB that predates the columns
 // still validate; `competitionTier`/`competitionCategory` supply a sane default.
 export type CompetitionLevel = "international" | "national" | "regional";
-export type CompetitionCategory = "competition" | "olympiad";
+// The Opportunities pool is designed to GROW well beyond competitions: courses,
+// research programs and summer schools/programs are next. The category union is
+// pre-widened so adding them later is data-only (the UI filter derives its tabs
+// from the categories actually present). v1 only populates competition/olympiad.
+export type CompetitionCategory =
+  | "competition"
+  | "olympiad"
+  | "course"
+  | "research_program"
+  | "summer_program";
 export type CompetitionTier = "accessible" | "selective" | "elite";
 
 export type Competition = {
@@ -61,6 +70,13 @@ export type Competition = {
   level: CompetitionLevel;
   category?: CompetitionCategory;
   tier?: CompetitionTier;
+  // True only when `deadline` is a real, sourced date for the CURRENT cycle.
+  // When false/absent the date is an estimate (or the cycle isn't published yet)
+  // and the UI says "Dates not yet announced" instead of showing a countdown we
+  // can't stand behind — students must never miss a deadline because of a guess.
+  // The scraper can flip this to true (with guardrails); it never silently
+  // overwrites a curated date with an unconfirmed scrape (see resolveCompetitions).
+  dateConfirmed?: boolean;
   url: string;
   blurb: string;
 };
@@ -91,6 +107,7 @@ export const COMPETITIONS: Competition[] = [
     level: "national",
     category: "olympiad",
     tier: "selective",
+    dateConfirmed: true,
     url: "https://maa.org/maa-invitational-competitions/",
     blurb: "Gateway to AIME/USAMO — the standard math-talent signal for STEM.",
   },
@@ -103,6 +120,7 @@ export const COMPETITIONS: Competition[] = [
     level: "international",
     category: "olympiad",
     tier: "accessible",
+    dateConfirmed: true,
     url: "https://mathkangaroo.org/mks/",
     blurb: "Friendly entry-level math contest — a good first competition signal.",
   },
@@ -115,6 +133,7 @@ export const COMPETITIONS: Competition[] = [
     level: "national",
     category: "olympiad",
     tier: "selective",
+    dateConfirmed: true,
     url: "https://usaco.org/",
     blurb: "Promote through Bronze→Silver→Gold→Platinum to prove real CS ability.",
   },
@@ -152,6 +171,7 @@ export const COMPETITIONS: Competition[] = [
     level: "national",
     category: "olympiad",
     tier: "selective",
+    dateConfirmed: true,
     url: "https://www.aapt.org/physicsteam/",
     blurb: "The U.S. physics olympiad pipeline — a sharp signal for physics/engineering.",
   },
@@ -189,6 +209,7 @@ export const COMPETITIONS: Competition[] = [
     level: "international",
     category: "competition",
     tier: "elite",
+    dateConfirmed: true,
     url: "https://www.societyforscience.org/isef/",
     blurb: "Original research project — the strongest STEM 'spike' you can build.",
   },
@@ -201,6 +222,7 @@ export const COMPETITIONS: Competition[] = [
     level: "national",
     category: "competition",
     tier: "elite",
+    dateConfirmed: true,
     url: "https://www.societyforscience.org/regeneron-sts/",
     blurb: "The most prestigious U.S. high-school research competition — senior-year capstone.",
   },
@@ -238,6 +260,7 @@ export const COMPETITIONS: Competition[] = [
     level: "international",
     category: "competition",
     tier: "selective",
+    dateConfirmed: true,
     url: "https://www.deca.org/",
     blurb: "Case-based business competition — leadership + commercial sense.",
   },
@@ -380,33 +403,23 @@ export const COMPETITIONS: Competition[] = [
 const COMPETITION_BY_ID = new Map(COMPETITIONS.map((c) => [c.id, c]));
 
 /**
- * Enrich a live competition row (from Supabase, refreshed by the scraper) with
- * the curated metadata by id. The scraper only updates the DATE, so we keep the
- * fresh `deadline`/`window` but take category/tier/fields/blurb/level from the
- * registry — that's the source of truth for them and needs no DB columns. A row
- * whose id isn't in the registry (only ever added straight to the DB) passes
- * through unchanged, with tier/category derived from `level`.
- */
-export function mergeCompetitionMeta(live: Competition): Competition {
-  const base = COMPETITION_BY_ID.get(live.id);
-  if (!base) return live;
-  return { ...base, deadline: live.deadline, window: live.window };
-}
-
-/**
- * The full competition list to plan from: the curated registry is the BASE (so
- * every competition we know about always shows, even before the DB is seeded),
- * with the scraper's fresh `deadline`/`window` overlaid where a live row exists.
- * Live-only rows (added straight to the DB) are appended. This is the inverse of
- * "live replaces everything" — which used to hide newly-added registry entries
- * until they were also inserted into Supabase.
+ * The full competition list to plan from. The curated registry is the
+ * AUTHORITATIVE BASE (every competition we know about always shows, even before
+ * the DB is seeded), and a live row from Supabase overlays its date ONLY when
+ * the scraper has marked it `dateConfirmed` — i.e. it found a real, in-range
+ * date for the current cycle. An unconfirmed live row (a stale seed, or a scrape
+ * that wasn't trustworthy) is IGNORED, so a bad/auto date can never silently
+ * replace a curated one and push a student past a real deadline. Live-only rows
+ * (added straight to the DB) are appended as-is.
  */
 export function resolveCompetitions(live?: Competition[]): Competition[] {
   if (!live || live.length === 0) return COMPETITIONS;
   const liveById = new Map(live.map((c) => [c.id, c]));
   const merged = COMPETITIONS.map((c) => {
     const l = liveById.get(c.id);
-    return l ? { ...c, deadline: l.deadline, window: l.window } : c;
+    return l && l.dateConfirmed
+      ? { ...c, deadline: l.deadline, window: l.window, dateConfirmed: true }
+      : c;
   });
   for (const l of live) if (!COMPETITION_BY_ID.has(l.id)) merged.push(l);
   return merged;
@@ -518,12 +531,15 @@ export function buildStudyPlan({
     lastBeforeApps: i === lastBeforeIdx,
   }));
 
-  // Competitions matching the student's field(s), nearest deadline first.
+  // Competitions matching the student's field(s), nearest deadline first. The
+  // Timeline is a DATED plan with countdowns, so it only carries competitions
+  // whose date is confirmed — never a "typically November" estimate. The full
+  // catalog (incl. not-yet-announced ones) lives in the Opportunities section.
   const fac = new Set(faculties);
   const competitions: CompetitionStep[] = comps.filter(
     (c) => c.fields === "all" || c.fields.some((f) => fac.has(f))
   )
-    .filter((c) => daysBetween(today, c.deadline) >= 0)
+    .filter((c) => c.dateConfirmed && daysBetween(today, c.deadline) >= 0)
     .map((c) => ({ ...c, daysToDeadline: daysBetween(today, c.deadline) }))
     .sort((a, b) => a.daysToDeadline - b.daysToDeadline)
     .slice(0, 4);
@@ -638,7 +654,11 @@ export function buildExtracurriculars({
 
   const items: Opportunity[] = comps
     .filter((c) => c.fields === "all" || c.fields.some((f) => fac.has(f)))
-    .filter((c) => daysBetween(today, c.deadline) >= 0)
+    // Drop a CONFIRMED competition once its date has passed. Keep
+    // not-yet-announced ones (the catalog shows them as "Dates not yet
+    // announced") — their stored date is only an estimate, so we don't filter on
+    // it and we never present it as a hard deadline.
+    .filter((c) => !c.dateConfirmed || daysBetween(today, c.deadline) >= 0)
     .map((c) => {
       const tierResolved = competitionTier(c);
       const fit: OpportunityFit = targetTiers.includes(tierResolved)
@@ -657,6 +677,10 @@ export function buildExtracurriculars({
     .sort((a, b) => {
       if (FIT_ORDER[a.fit] !== FIT_ORDER[b.fit])
         return FIT_ORDER[a.fit] - FIT_ORDER[b.fit];
+      // Confirmed-date items first (actionable now), then "dates TBA".
+      const ac = a.dateConfirmed ? 0 : 1;
+      const bc = b.dateConfirmed ? 0 : 1;
+      if (ac !== bc) return ac - bc;
       return a.daysToDeadline - b.daysToDeadline;
     });
 

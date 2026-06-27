@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardProvider } from "@/components/dashboard/DashboardContext";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { analysisSchema, sanitizeAnalysis, type Analysis } from "@/lib/ai/schema";
-import { mergeCompetitionMeta, type SatSitting, type Competition } from "@/lib/data/key-dates";
+import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import type { DestinationCode } from "@/lib/data/destinations";
 
 export const dynamic = "force-dynamic";
@@ -72,20 +72,21 @@ export default async function DashboardLayout({
     regDeadline: r.reg_deadline,
   }));
 
-  // Fresh date from the DB row, enriched with curated category/tier/blurb from
-  // the registry by id — the scraper only refreshes dates, the rest lives in code.
-  const liveCompetitions: Competition[] = (compRows ?? []).map((r: Record<string, unknown>) =>
-    mergeCompetitionMeta({
-      id: r.id as string,
-      name: r.name as string,
-      fields: r.fields as Competition["fields"],
-      deadline: r.deadline as string,
-      window: r.event_window as string,
-      level: r.level as Competition["level"],
-      url: r.url as string,
-      blurb: r.blurb as string,
-    })
-  );
+  // Raw live rows; resolveCompetitions (in the key-dates builders) keeps the
+  // curated code as authoritative and overlays a live date ONLY when the scraper
+  // marked it confirmed (date_confirmed). The column may not exist before
+  // migration 0015 — then it's undefined → treated as unconfirmed → code wins.
+  const liveCompetitions: Competition[] = (compRows ?? []).map((r: Record<string, unknown>) => ({
+    id: r.id as string,
+    name: r.name as string,
+    fields: r.fields as Competition["fields"],
+    deadline: r.deadline as string,
+    window: r.event_window as string,
+    level: r.level as Competition["level"],
+    url: r.url as string,
+    blurb: r.blurb as string,
+    dateConfirmed: r.date_confirmed === true,
+  }));
 
   return (
     <DashboardProvider

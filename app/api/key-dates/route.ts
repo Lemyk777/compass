@@ -9,8 +9,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   SAT_SITTINGS,
-  COMPETITIONS,
-  mergeCompetitionMeta,
+  resolveCompetitions,
   type SatSitting,
   type Competition,
 } from "@/lib/data/key-dates";
@@ -44,11 +43,11 @@ export async function GET() {
       .order("deadline", { ascending: true });
 
     if (compRows && compRows.length > 0) {
-      // Take the fresh date from the DB row, but enrich category/tier/blurb from
-      // the curated registry by id (mergeCompetitionMeta) — the scraper only
-      // refreshes dates, so those fields live in code, not the DB.
-      competitions = compRows.map((r) =>
-        mergeCompetitionMeta({
+      // resolveCompetitions keeps the curated code authoritative and overlays a
+      // live date only when the scraper confirmed it (date_confirmed) — so a
+      // stale seed or an unconfirmed scrape can't surface a wrong date here.
+      competitions = resolveCompetitions(
+        compRows.map((r) => ({
           id: r.id,
           name: r.name,
           fields: r.fields as Competition["fields"],
@@ -57,16 +56,17 @@ export async function GET() {
           level: r.level as Competition["level"],
           url: r.url,
           blurb: r.blurb,
-        })
+          dateConfirmed: r.date_confirmed === true,
+        }))
       );
     }
   } catch (e) {
     console.error("Failed to fetch live dates from Supabase:", e);
   }
 
-  // Fallback to hardcoded data if DB returned nothing
+  // Fallback to the curated registry if the DB returned nothing.
   if (satSittings.length === 0) satSittings = SAT_SITTINGS;
-  if (competitions.length === 0) competitions = COMPETITIONS;
+  if (competitions.length === 0) competitions = resolveCompetitions();
 
   return NextResponse.json({ satSittings, competitions });
 }

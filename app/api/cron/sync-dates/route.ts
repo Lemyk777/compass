@@ -8,9 +8,30 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { scrapeSatDates, scrapeCompetitionDeadline } from "@/lib/scraper/scrape-dates";
-import { COMPETITIONS } from "@/lib/data/key-dates";
+import { COMPETITIONS, daysBetween, type Competition } from "@/lib/data/key-dates";
 
 export const maxDuration = 120; // scraping multiple sites can be slow
+
+// Guardrail before trusting a scraped competition date. A wrong auto-date can
+// push a student past a real deadline, so we only accept a scrape that is in the
+// future, not absurdly far out, and reasonably close to the curated estimate for
+// this competition. Anything else is rejected and the curated date is kept.
+function acceptScrapedDate(
+  scrapedISO: string,
+  curated: Competition,
+): { ok: true } | { ok: false; reason: string } {
+  const today = new Date();
+  const dToScraped = daysBetween(today, scrapedISO);
+  if (dToScraped < 0) return { ok: false, reason: "date is in the past" };
+  if (dToScraped > 430)
+    return { ok: false, reason: "date is more than ~14 months out" };
+  // Sanity vs. the curated estimate: a real cycle shift is small; a date half a
+  // year off the known pattern is almost certainly the wrong event/cycle.
+  const drift = Math.abs(daysBetween(curated.deadline, scrapedISO));
+  if (drift > 200)
+    return { ok: false, reason: `drifts ${drift}d from curated estimate` };
+  return { ok: true };
+}
 
 export async function GET(req: NextRequest) {
   // Auth: either Vercel Cron header or a manual trigger from admin
@@ -58,6 +79,14 @@ export async function GET(req: NextRequest) {
     try {
       const scraped = await scrapeCompetitionDeadline(comp.url, comp.name);
       if (scraped) {
+        // Never trust a scrape blindly — it must clear the guardrail before it
+        // can overwrite the curated date and drive a countdown.
+        const verdict = acceptScrapedDate(scraped.deadline, comp);
+        if (!verdict.ok) {
+          console.warn(`Rejected ${comp.id} scrape (${scraped.deadline}): ${verdict.reason}`);
+          results[comp.id] = `rejected: ${verdict.reason} (kept existing)`;
+          continue;
+        }
         const { error } = await supabase
           .from("competition_deadlines")
           .upsert(
@@ -70,6 +99,9 @@ export async function GET(req: NextRequest) {
               level: comp.level,
               url: comp.url,
               blurb: comp.blurb,
+              // Only a guardrail-passed scrape is marked confirmed; this flag is
+              // what lets the date overlay the curated one in the UI.
+              date_confirmed: true,
               cycle: getCurrentCycle(),
               updated_at: new Date().toISOString(),
             },
@@ -79,7 +111,7 @@ export async function GET(req: NextRequest) {
           console.error(`Failed to upsert ${comp.id}:`, error);
           results[comp.id] = `error: ${error.message}`;
         } else {
-          results[comp.id] = `synced: deadline ${scraped.deadline}`;
+          results[comp.id] = `synced: deadline ${scraped.deadline} (confirmed)`;
         }
       } else {
         results[comp.id] = "skipped: scraper returned null (kept existing)";

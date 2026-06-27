@@ -1,5 +1,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+// A browser-like User-Agent — many official sites return 403 / a block page to
+// the default fetch agent. This recovers a chunk of otherwise-failing scrapes.
+const BROWSER_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+
+const FETCH_INIT: RequestInit = {
+  headers: {
+    "User-Agent": BROWSER_UA,
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -86,6 +99,7 @@ export async function scrapeSatDates(): Promise<
     // 1. Fetch the official SAT dates page
     const res = await fetch(
       "https://satsuite.collegeboard.org/sat/dates-deadlines",
+      FETCH_INIT,
     );
     if (!res.ok) {
       console.error(
@@ -166,7 +180,7 @@ export async function scrapeCompetitionDeadline(
 ): Promise<{ deadline: string; window: string } | null> {
   try {
     // 1. Fetch the competition page
-    const res = await fetch(url);
+    const res = await fetch(url, FETCH_INIT);
     if (!res.ok) {
       console.error(
         `[scrapeCompetitionDeadline] fetch failed for ${name}: ${res.status} ${res.statusText}`,
@@ -179,16 +193,23 @@ export async function scrapeCompetitionDeadline(
     const text = cleanHtml(rawHtml);
 
     // 3. Ask Claude to extract the deadline
+    const today = new Date().toISOString().slice(0, 10);
     const anthropic = getClient();
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 2000,
       system: [
-        `You are a data extraction assistant. From the provided HTML of the "${name}" competition website, extract:`,
-        `1. The next registration or submission deadline (ISO YYYY-MM-DD format)`,
-        `2. A brief description of the event window/timing (e.g., "Contest in November", "Regional fairs Feb–Mar")`,
+        `You are a careful data-extraction assistant. Today's date is ${today}.`,
+        `From the provided HTML of the "${name}" competition website, extract the NEXT registration or submission deadline that is in the FUTURE relative to today, for the upcoming cycle.`,
         ``,
-        `Return ONLY a JSON object with fields: "deadline" (string, YYYY-MM-DD) and "window" (string). If you cannot find the information, return null.`,
+        `Be conservative — a wrong date causes students to miss real deadlines:`,
+        `- Only return a date you can clearly tie to "${name}"'s next cycle.`,
+        `- IGNORE dates from past/previous cycles still shown on the page.`,
+        `- If the page only shows past dates, no clear date, or you are at all unsure which date is the real upcoming deadline, return null.`,
+        ``,
+        `Return ONLY one of:`,
+        `- a JSON object {"deadline": "YYYY-MM-DD", "window": "<short timing, e.g. 'Contest in November'>"}, or`,
+        `- the literal null.`,
       ].join("\n"),
       messages: [{ role: "user", content: text }],
     });

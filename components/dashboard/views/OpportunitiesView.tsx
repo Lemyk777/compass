@@ -266,16 +266,25 @@ function OpportunityRow({ o }: { o: Opportunity }) {
             </span>
           </p>
           <p className="mt-0.5 text-xs text-ink-soft">{o.blurb}</p>
-          <p className="mt-1 text-xs text-ink-faint">
-            Deadline{" "}
-            <span data-num className="tabular-nums">
-              {formatDate(o.deadline)}
-            </span>{" "}
-            · {o.window}
-          </p>
+          {o.dateConfirmed ? (
+            <p className="mt-1 text-xs text-ink-faint">
+              Deadline{" "}
+              <span data-num className="tabular-nums">
+                {formatDate(o.deadline)}
+              </span>{" "}
+              · {o.window}
+            </p>
+          ) : (
+            // We never show a countdown for a date we can't stand behind — a wrong
+            // one could make a student miss a real deadline. Show the typical
+            // timing as a hint and point them to the official site to confirm.
+            <p className="mt-1 text-xs text-ink-faint">
+              Dates for the next cycle not yet announced — typically {o.window}.
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <Countdown days={o.daysToDeadline} />
+          {o.dateConfirmed ? <Countdown days={o.daysToDeadline} /> : <TbaPill />}
           <a
             href={o.url}
             target="_blank"
@@ -287,6 +296,15 @@ function OpportunityRow({ o }: { o: Opportunity }) {
         </div>
       </div>
     </li>
+  );
+}
+
+/** Neutral pill for opportunities whose next-cycle date isn't published yet. */
+function TbaPill() {
+  return (
+    <span className="whitespace-nowrap rounded-full bg-surface px-2.5 py-1 text-xs font-semibold text-ink-faint">
+      Dates TBA
+    </span>
   );
 }
 
