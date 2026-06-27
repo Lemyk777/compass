@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { HkProgramAnalysis } from "@/lib/ai/schema";
 import { Flag } from "@/components/ui/Flag";
+import { OfficialSourceLink } from "@/components/ui/OfficialSourceLink";
+import { hkOfficialSources } from "@/lib/data/official-sources";
 import { useT } from "@/lib/i18n/client";
 
 type Props = {
@@ -105,6 +107,8 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
             <ScholarshipBadge status={p.scholarship} />
           </div>
         </div>
+
+        <HkCardSources university={p.university} />
       </div>
 
       {/* Expandable reasoning */}
@@ -232,6 +236,30 @@ function HkRoadmap({ programs }: { programs: HkProgramAnalysis[] }) {
           </li>
         ))}
       </ol>
+    </div>
+  );
+}
+
+// ── Official sources ──────────────────────────────────────────────────────────
+
+// HK admission is per-university (non-JUPAS), so each card links straight to its
+// university's official admissions, English-requirement and entrance-scholarship
+// pages — the real gates, not a single government portal.
+function HkCardSources({ university }: { university: string }) {
+  const s = hkOfficialSources(university);
+  if (!s) return null;
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line pt-2.5">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+        Official
+      </span>
+      <OfficialSourceLink href={s.admissions} label="Admissions" />
+      {s.english && (
+        <OfficialSourceLink href={s.english} label="English requirement" />
+      )}
+      {s.scholarship && (
+        <OfficialSourceLink href={s.scholarship} label="Scholarships" />
+      )}
     </div>
   );
 }

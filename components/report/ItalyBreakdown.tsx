@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { ItalyProgramAnalysis, ItalyDSUFit } from "@/lib/ai/schema";
 import { Flag } from "@/components/ui/Flag";
+import { OfficialSourceLink } from "@/components/ui/OfficialSourceLink";
+import { ITALY_GOV_SOURCES, italyOfficialUrl } from "@/lib/data/official-sources";
 
 type Props = {
   programs: ItalyProgramAnalysis[];
@@ -27,6 +29,16 @@ export function ItalyBreakdown({ programs }: Props) {
               simultaneously. Your analysis below separates them — read each card to
               understand exactly how the rules work for that specific program.
             </p>
+            {/* Government source — Italy publishes the official Extra-UE rules and
+                pre-enrollment procedure here, updated every cycle. */}
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-line pt-2.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                Official source
+              </span>
+              {ITALY_GOV_SOURCES.map((s) => (
+                <OfficialSourceLink key={s.url} href={s.url} label={s.label} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -149,6 +161,8 @@ function GuaranteedCard({ program: p }: { program: ItalyProgramAnalysis }) {
           <Stat label="Threshold" value={String(p.guaranteed_threshold ?? "—")} />
           <DSUBadge fit={p.dsu_fit} feeEur={p.annual_fee_eur} />
         </div>
+
+        <ItalyCardSource university={p.university} />
       </div>
 
       {/* Expandable reasoning */}
@@ -225,6 +239,8 @@ function GraduatoriaCard({ program: p }: { program: ItalyProgramAnalysis }) {
             <DSUBadge fit={p.dsu_fit} feeEur={p.annual_fee_eur} />
           </div>
         )}
+
+        <ItalyCardSource university={p.university} />
       </div>
 
       {/* Expandable reasoning */}
@@ -283,6 +299,18 @@ function ItalyRoadmap({ programs }: { programs: ItalyProgramAnalysis[] }) {
 }
 
 // ── Micro-components ───────────────────────────────────────────────────────────
+
+// Links the card to this university's official "foreign qualification"
+// admissions page, where the program's Bando di Ammissione is published.
+function ItalyCardSource({ university }: { university: string }) {
+  const url = italyOfficialUrl(university);
+  if (!url) return null;
+  return (
+    <div className="mt-3 border-t border-line pt-2.5">
+      <OfficialSourceLink href={url} label="Official admissions page" />
+    </div>
+  );
+}
 
 function StatusPill({ status }: { status: ItalyProgramAnalysis["status"] }) {
   const config: Record<
