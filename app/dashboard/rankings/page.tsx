@@ -11,6 +11,7 @@ import {
   type CountryCode,
   type LeaderboardRow,
 } from "@/lib/data/leaderboard";
+import { countryOverall } from "@/lib/data/country-scorecard";
 
 export const dynamic = "force-dynamic";
 
@@ -81,17 +82,27 @@ export default async function RankingsPage() {
         score: Math.round(f.score),
       }))
     );
-    // Each board ranks by the same `overall`, but shows a country-native
-    // breakdown. Italy is derived from its program analyses; HK re-weights the
+    // Each board ranks by and shows that COUNTRY'S OWN overall + a country-
+    // native breakdown. The overall is the same country-weighted score the
+    // dashboard scorecard shows (countryOverall) — score-based for Italy, grades-
+    // first for HK — so a student's Italy rank can differ from their US rank.
+    // Italy's breakdown is derived from its program analyses; HK re-weights the
     // profile factors the grades-first way HK admissions actually reads them.
     const factorsByCountry: LeaderboardRow["factorsByCountry"] = {};
+    const overallByCountry: LeaderboardRow["overallByCountry"] = {};
     if (an.italy_programs?.length) {
       factorsByCountry.IT = orderFactors(
         italyFactors(an.italy_programs, an.italy_financial_fit_score)
       );
+      overallByCountry.IT = countryOverall(
+        "IT",
+        an.factors,
+        an.italy_financial_fit_score
+      );
     }
     if (an.hk_programs?.length) {
       factorsByCountry.HK = orderFactors(hkFactors(profileFactors));
+      overallByCountry.HK = countryOverall("HK", an.factors);
     }
     rows.push({
       userId,
@@ -102,6 +113,9 @@ export default async function RankingsPage() {
       factors: profileFactors,
       factorsByCountry: Object.keys(factorsByCountry).length
         ? factorsByCountry
+        : undefined,
+      overallByCountry: Object.keys(overallByCountry).length
+        ? overallByCountry
         : undefined,
     });
   }

@@ -2,12 +2,14 @@
 // the actual data fetch (service-role) lives in the rankings page server
 // component.
 //
-// One table for everyone, regardless of destination country. `overall` is the
-// analysis overall_score (0–100) — the single cross-country-comparable number,
-// so it's what we rank by. Each row also carries its OWN factor breakdown
-// (`factors`), which is 3–7 entries depending on the profile/country. The view
-// never assumes a fixed set of columns: it renders whatever factors a row has,
-// colored by a stable per-factor palette so the legend stays consistent.
+// One board per destination, switched between in the view. Each board ranks by
+// and shows that COUNTRY'S OWN overall (0–100): the US board uses the US
+// overall_score, the Italy board the Italy-weighted score, the HK board the
+// grades-first HK score (see `overallByCountry`). Each row also carries its own
+// factor breakdown (`factors`), which is 3–7 entries depending on the
+// profile/country. The view never assumes a fixed set of columns: it renders
+// whatever factors a row has, colored by a stable per-factor palette so the
+// legend stays consistent.
 
 export type LeaderboardFactor = {
   key: string;
@@ -24,11 +26,16 @@ export type LeaderboardRow = {
   userId: string;
   name: string;
   major: string;
+  // Default (US) overall, 0–100. Each board shows its OWN country-weighted
+  // overall instead — `overallByCountry` carries the Italy/HK numbers so the
+  // Italy board ranks on the Italy score (SAT cut-offs + DSU fit) and the HK
+  // board on the grades-first HK score, not the US number. Falls back to this.
   overall: number;
-  // Default (US) factor breakdown. Each board ranks by the same `overall`, but
-  // shows a COUNTRY-NATIVE breakdown — `factorsByCountry` carries the Italy/HK
-  // factor sets so the Italy board talks about SAT-vs-cutoff margins and DSU fit
-  // instead of US admission factors, and so on.
+  overallByCountry?: Partial<Record<CountryCode, number>>;
+  // Default (US) factor breakdown. Each board shows a COUNTRY-NATIVE breakdown —
+  // `factorsByCountry` carries the Italy/HK factor sets so the Italy board talks
+  // about SAT-vs-cutoff margins and DSU fit instead of US admission factors, and
+  // so on.
   factors: LeaderboardFactor[];
   factorsByCountry?: Partial<Record<CountryCode, LeaderboardFactor[]>>;
   // Destination cohorts this student is part of — drives which board(s) they
@@ -71,20 +78,29 @@ export function factorsFor(
   return row.factorsByCountry?.[code] ?? row.factors;
 }
 
+/** This board's overall for a row (0–100), falling back to the US overall. */
+export function overallFor(row: LeaderboardRow, code: CountryCode): number {
+  return row.overallByCountry?.[code] ?? row.overall;
+}
+
 /**
- * The rows for one board: the country cohort, sort order preserved, with each
- * row's `factors` swapped to that country's native breakdown. The rest of the
- * view (legend, sparkline, expanded breakdown, standing) renders straight off
- * `.factors`, so this is all that country-specific data needs.
+ * The rows for one board: the country cohort, with each row's `overall` and
+ * `factors` swapped to that country's own number/breakdown, then re-ranked by
+ * that country overall (a student's US rank and Italy rank differ). The rest of
+ * the view (standing, legend, sparkline, breakdown) renders straight off
+ * `.overall`/`.factors`, so this is all the country-specific data it needs.
  */
 export function boardRows(
   rows: LeaderboardRow[],
   code: CountryCode
 ): LeaderboardRow[] {
-  return rowsForCountry(rows, code).map((r) => ({
-    ...r,
-    factors: factorsFor(r, code),
-  }));
+  return rowsForCountry(rows, code)
+    .map((r) => ({
+      ...r,
+      overall: overallFor(r, code),
+      factors: factorsFor(r, code),
+    }))
+    .sort((a, b) => b.overall - a.overall);
 }
 
 // Stable, accessible categorical palette — one hue per factor, ~3:1+ on white

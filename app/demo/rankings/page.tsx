@@ -1,5 +1,6 @@
 import { RankingsView } from "@/components/dashboard/views/RankingsView";
 import { orderFactors, type LeaderboardRow } from "@/lib/data/leaderboard";
+import { countryOverall } from "@/lib/data/country-scorecard";
 
 // Sample leaderboard so /demo/rankings shows the design without a database.
 // Factor scores are on our 0–10 rubric, exactly like the Your-standing scorecard.
@@ -127,6 +128,22 @@ const SAMPLE: LeaderboardRow[] = [
   },
 ];
 
+// Derive each row's per-country overall the same way the live page does — the
+// country-weighted score from the US profile factors (+ Italy's financial fit) —
+// so each board ranks on its own number, not the shared US overall.
+const ROWS: LeaderboardRow[] = SAMPLE.map((r) => {
+  if (!r.factorsByCountry) return r;
+  const overallByCountry: LeaderboardRow["overallByCountry"] = {};
+  if (r.factorsByCountry.IT) {
+    const fin = r.factorsByCountry.IT.find((f) => f.key === "it_finance")?.score;
+    overallByCountry.IT = countryOverall("IT", r.factors, fin);
+  }
+  if (r.factorsByCountry.HK) {
+    overallByCountry.HK = countryOverall("HK", r.factors);
+  }
+  return { ...r, overallByCountry };
+});
+
 export default function DemoRankingsPage() {
-  return <RankingsView rows={SAMPLE} currentUserId="u-aizhan" />;
+  return <RankingsView rows={ROWS} currentUserId="u-aizhan" />;
 }
