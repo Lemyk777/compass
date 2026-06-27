@@ -10,7 +10,10 @@ import {
 } from "recharts";
 import type { Factor } from "@/lib/ai/schema";
 import { ACCENT } from "@/lib/tiers";
-import { factorMattersForCountry } from "@/lib/data/country-scorecard";
+import {
+  factorMattersForCountry,
+  hkScorecardFactors,
+} from "@/lib/data/country-scorecard";
 import type { DestinationCode } from "@/lib/data/destinations";
 
 type RadarScorecardProps = {
@@ -29,9 +32,14 @@ export function RadarScorecard({
   country,
 }: RadarScorecardProps) {
   const isItalyMode = italyFinancialFitScore != null;
+  // HK plots a grades-first quadrilateral (Academics / Test / Rigor / one
+  // combined Achievements), not all 6 weighted factors — matches the rankings
+  // board and how HK admission actually reads a profile.
+  const isHkMode = country === "HK" && !isItalyMode;
 
-  const shown =
-    country && !isItalyMode
+  const shown = isHkMode
+    ? hkScorecardFactors(factors)
+    : country && !isItalyMode
       ? factors.filter((f) => factorMattersForCountry(country, f.key))
       : factors;
 

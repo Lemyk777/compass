@@ -17,6 +17,7 @@ import {
   countryOverall,
   factorsByCountryRelevance,
   factorMattersForCountry,
+  hkScorecardFactors,
 } from "@/lib/data/country-scorecard";
 import { useT } from "@/lib/i18n/client";
 
@@ -58,9 +59,14 @@ export function Overview() {
   const italyFin = country === "IT" ? analysis.italy_financial_fit_score : undefined;
 
   // Top factors for the compact bar list — relevant ones for the country first.
-  const topFactors = factorsByCountryRelevance(country, analysis.factors)
-    .filter((f) => factorMattersForCountry(country, f.key))
-    .slice(0, 4);
+  // HK uses its grades-first 4-factor set (with one combined Achievements bar)
+  // so this list agrees with the radar beside it.
+  const topFactors =
+    country === "HK"
+      ? hkScorecardFactors(analysis.factors)
+      : factorsByCountryRelevance(country, analysis.factors)
+          .filter((f) => factorMattersForCountry(country, f.key))
+          .slice(0, 4);
 
   return (
     <div className="space-y-6">

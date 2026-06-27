@@ -7,6 +7,7 @@
 
 import { RUBRIC } from "@/lib/rubric";
 import type { DestinationCode } from "@/lib/data/destinations";
+import type { Factor } from "@/lib/ai/schema";
 
 // Pseudo-factor: Italy's DSU financial fit, scored separately from the 7
 // profile factors (lives on the analysis as italy_financial_fit_score).
@@ -97,4 +98,48 @@ export function factorMattersForCountry(
   key: string
 ): boolean {
   return (countryWeights(country)[key] ?? 0) >= 0.05;
+}
+
+/**
+ * Hong Kong scorecard factors: a grades-first set the way HK international
+ * admission actually reads a profile — Academics, Test score and Course rigor as
+ * the spine, plus ONE combined "Achievements" axis instead of three separate
+ * extracurricular/leadership/awards bars. Within achievements, olympiads /
+ * competitions / awards count most (weight 0.5), then research / activity depth
+ * (0.3), then general leadership (0.2) — the same blend the rankings board uses.
+ * This is why the HK radar is a quadrilateral, not a hexagon. Narrative is
+ * dropped entirely (no essay-driven holistic read in HK).
+ */
+export function hkScorecardFactors(factors: Factor[]): Factor[] {
+  const byKey = new Map(factors.map((f) => [f.key, f]));
+  const score = (key: string) => byKey.get(key)?.score ?? 0;
+  const achievementScore = Math.max(
+    0,
+    Math.min(
+      10,
+      0.5 * score("awards") +
+        0.3 * score("extracurricular_depth") +
+        0.2 * score("leadership")
+    )
+  );
+  const achievements: Factor = {
+    key: "hk_achievements",
+    label: "Achievements",
+    score: achievementScore,
+    rubric_tier: "",
+    reasoning: [
+      byKey.get("awards"),
+      byKey.get("extracurricular_depth"),
+      byKey.get("leadership"),
+    ]
+      .flatMap((f) => f?.reasoning ?? [])
+      .slice(0, 4),
+    note: "Your combined record. In HK this is the tie-breaker once grades and tests are in range — olympiads, competitions and awards weigh most, then research and activities, then leadership.",
+  };
+  return [
+    byKey.get("academics"),
+    byKey.get("test_scores"),
+    byKey.get("course_rigor"),
+    achievements,
+  ].filter((f): f is Factor => f != null);
 }

@@ -11,6 +11,7 @@ import {
   countryOverall,
   factorsByCountryRelevance,
   factorMattersForCountry,
+  hkScorecardFactors,
 } from "@/lib/data/country-scorecard";
 import { useT } from "@/lib/i18n/client";
 
@@ -30,16 +31,22 @@ export const Scorecard = forwardRef<
   const overall = country
     ? countryOverall(country, analysis.factors, analysis.italy_financial_fit_score)
     : analysis.overall_score;
-  const orderedFactors = country
-    ? factorsByCountryRelevance(country, analysis.factors)
-    : analysis.factors;
-  const mutedKeys = country
-    ? new Set(
-        analysis.factors
-          .filter((f) => !factorMattersForCountry(country, f.key))
-          .map((f) => f.key)
-      )
-    : undefined;
+  // HK reads grades-first with a single combined Achievements factor, so its
+  // bars (and radar) use the 4-factor set rather than the 6 weighted ones.
+  const orderedFactors =
+    country === "HK"
+      ? hkScorecardFactors(analysis.factors)
+      : country
+        ? factorsByCountryRelevance(country, analysis.factors)
+        : analysis.factors;
+  const mutedKeys =
+    country && country !== "HK"
+      ? new Set(
+          analysis.factors
+            .filter((f) => !factorMattersForCountry(country, f.key))
+            .map((f) => f.key)
+        )
+      : undefined;
   const italyFinancialFitScore =
     country === "IT" ? analysis.italy_financial_fit_score : undefined;
 
