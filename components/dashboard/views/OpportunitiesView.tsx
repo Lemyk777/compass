@@ -195,6 +195,7 @@ function CategoryTabs({
     { key: "olympiad", label: "Olympiads" },
     { key: "competition", label: "Competitions" },
     { key: "summer_program", label: "Summer Programs" },
+    { key: "research_program", label: "Research" },
   ];
   return (
     <div className="inline-flex rounded-xl border border-line bg-card p-1 shadow-card">
