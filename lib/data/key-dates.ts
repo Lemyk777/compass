@@ -409,7 +409,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "elite",
     url: "https://www.cee.org/programs/research-science-institute",
-    blurb: "The most prestigious and selective STEM summer research program in the world.",
+    blurb: "The most prestigious and selective STEM summer research program in the world [Fully Funded].",
   },
   {
     id: "ssp",
@@ -421,7 +421,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "elite",
     url: "https://summerscience.org/",
-    blurb: "Intensive 39-day residential research program in astrophysics, biochemistry, or genomics.",
+    blurb: "Intensive 39-day residential research program in astrophysics, biochemistry, or genomics [Financial aid available].",
   },
   {
     id: "mostec",
@@ -433,7 +433,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "selective",
     url: "https://mites.mit.edu/",
-    blurb: "Online science and engineering program for rising seniors from underrepresented backgrounds.",
+    blurb: "Online science and engineering program for rising seniors from underrepresented backgrounds [Fully Funded].",
   },
   {
     id: "yygs",
@@ -445,7 +445,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "selective",
     url: "https://globalscholars.yale.edu/",
-    blurb: "Highly diverse international summer program covering global challenges, politics, and STEM.",
+    blurb: "Highly diverse international summer program covering global challenges, politics, and STEM [Financial aid available].",
   },
   {
     id: "nyu-shanghai-summer",
@@ -457,7 +457,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "accessible",
     url: "https://shanghai.nyu.edu/academics/summer",
-    blurb: "Pre-college immersion in China's financial hub, great for business and international relations.",
+    blurb: "Pre-college immersion in China's financial hub, great for business and international relations [Financial aid available].",
   },
   {
     id: "cuhk-shenzhen-summer",
@@ -469,7 +469,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "selective",
     url: "https://admissions.cuhk.edu.cn/en",
-    blurb: "Selective summer immersion in China's tech capital, excellent for entrepreneurship and STEM.",
+    blurb: "Selective summer immersion in China's tech capital, excellent for entrepreneurship and STEM [Financial aid available].",
   },
   // ── Research Programs ────────────────────────────────────────────────────────
   {
@@ -482,7 +482,7 @@ export const COMPETITIONS: Competition[] = [
     category: "research_program",
     tier: "selective",
     url: "https://pioneeracademics.com/",
-    blurb: "Respected, college-credit bearing online research program with university faculty.",
+    blurb: "Respected, college-credit bearing online research program with university faculty [Financial aid available].",
   },
   {
     id: "lumiere-research",
@@ -494,7 +494,7 @@ export const COMPETITIONS: Competition[] = [
     category: "research_program",
     tier: "accessible",
     url: "https://www.lumiere-education.com/",
-    blurb: "Mentored research program pairing high school students with PhD researchers.",
+    blurb: "Mentored research program pairing high school students with PhD researchers [Financial aid available].",
   },
   {
     id: "telluride-tasp",
@@ -506,7 +506,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "elite",
     url: "https://www.tellurideassociation.org/",
-    blurb: "The absolute pinnacle for humanities and social sciences — highly intellectual and fully free.",
+    blurb: "The absolute pinnacle for humanities and social sciences — highly intellectual and fully free [Fully Funded].",
   },
   {
     id: "promys",
@@ -518,7 +518,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "elite",
     url: "https://promys.org/",
-    blurb: "Legendary mathematics summer program for exceptionally talented high schoolers.",
+    blurb: "Legendary mathematics summer program for exceptionally talented high schoolers [Financial aid available].",
   },
   {
     id: "launchx",
@@ -530,7 +530,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "selective",
     url: "https://launchx.com/",
-    blurb: "Premier high school entrepreneurship program — build a real startup.",
+    blurb: "Premier high school entrepreneurship program — build a real startup [Financial aid available].",
   },
   {
     id: "garcia-center",
@@ -542,7 +542,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "elite",
     url: "https://www.stonybrook.edu/commcms/garcia/summer_program/",
-    blurb: "Elite polymer engineering and materials science research program.",
+    blurb: "Elite polymer engineering and materials science research program [Some aid/stipends available].",
   },
   {
     id: "clark-scholars",
@@ -554,7 +554,7 @@ export const COMPETITIONS: Competition[] = [
     category: "research_program",
     tier: "elite",
     url: "https://www.depts.ttu.edu/honors/academicsandenrichment/affiliatedandhighschool/clarks/",
-    blurb: "Highly selective, fully-funded research program accepting only 12 students globally.",
+    blurb: "Highly selective, fully-funded research program accepting only 12 students globally [Fully Funded/Stipend].",
   },
   {
     id: "sumac",
@@ -566,7 +566,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "elite",
     url: "https://sumac.spcs.stanford.edu/",
-    blurb: "Intensive mathematics camp at Stanford for advanced high school students.",
+    blurb: "Intensive mathematics camp at Stanford for advanced high school students [Financial aid available].",
   },
   {
     id: "cmu-sams",
@@ -578,7 +578,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "selective",
     url: "https://www.cmu.edu/pre-college/academic-programs/sams.html",
-    blurb: "Fully-funded STEM program focused on diversity and rigorous academic preparation.",
+    blurb: "Fully-funded STEM program focused on diversity and rigorous academic preparation [Fully Funded].",
   },
   {
     id: "horizon-academic",
@@ -590,7 +590,7 @@ export const COMPETITIONS: Competition[] = [
     category: "research_program",
     tier: "accessible",
     url: "https://www.horizoninspires.com/",
-    blurb: "Guided research program ending with a college-level paper.",
+    blurb: "Guided research program ending with a college-level paper [Financial aid available].",
   },
 ];
 
