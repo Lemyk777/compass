@@ -398,6 +398,43 @@ export const COMPETITIONS: Competition[] = [
     url: "https://youngarts.org/",
     blurb: "National honor for emerging artists — the top pre-college arts credential.",
   },
+  // ── Summer Programs ────────────────────────────────────────────────────────
+  {
+    id: "rsi",
+    name: "Research Science Institute (RSI)",
+    fields: ["natural_sciences", "engineering", "medicine_health", "computer_science"],
+    deadline: "2026-12-15",
+    window: "Six weeks in summer (late June to early Aug)",
+    level: "international",
+    category: "summer_program",
+    tier: "elite",
+    url: "https://www.cee.org/programs/research-science-institute",
+    blurb: "The most prestigious and selective STEM summer research program in the world.",
+  },
+  {
+    id: "ssp",
+    name: "Summer Science Program (SSP)",
+    fields: ["natural_sciences", "computer_science", "engineering"],
+    deadline: "2027-02-15",
+    window: "Mid-June to late July",
+    level: "international",
+    category: "summer_program",
+    tier: "elite",
+    url: "https://summerscience.org/",
+    blurb: "Intensive 39-day residential research program in astrophysics, biochemistry, or genomics.",
+  },
+  {
+    id: "mostec",
+    name: "MIT MOSTEC",
+    fields: ["engineering", "computer_science", "natural_sciences"],
+    deadline: "2027-02-01",
+    window: "June to December",
+    level: "national",
+    category: "summer_program",
+    tier: "selective",
+    url: "https://mites.mit.edu/",
+    blurb: "Online science and engineering program for rising seniors from underrepresented backgrounds.",
+  },
 ];
 
 const COMPETITION_BY_ID = new Map(COMPETITIONS.map((c) => [c.id, c]));

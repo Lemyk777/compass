@@ -32,3 +32,43 @@ Integrity mode: benchmark
 - [ ] Левый и правый блоки под главным текстом визуально сбалансированы (имеют одинаковую высоту или гармонично вписаны в сетку).
 - [ ] Адаптивность не сломана (на мобильных устройствах блоки корректно выстраиваются в колонку).
 - [ ] В отчете аудиторов есть подтверждение визуальной проверки через браузер.
+
+
+## Follow-up — 2026-06-29T10:17:45Z
+
+# Teamwork Project Prompt — Draft
+
+> Status: Launched
+> Goal: Craft prompt → get user approval → delegate to teamwork_preview
+
+Add a third subsection for "summer programs" within the Opportunities section. The UI should display summer programs similarly to the existing olympiads and competitions, using existing data fetching/scraping infrastructure.
+
+Working directory: c:\Users\alibe\Desktop\compass-main
+Integrity mode: development
+
+## Requirements
+
+### R1. UI Updates in OpportunitiesView
+- Add a new category/tab for "Summer Programs" alongside "Olympiads" and "Competitions" in `OpportunitiesView.tsx`.
+- Ensure summer programs are filtered and displayed properly when the tab is clicked.
+
+### R2. Data Model & Fetching
+- The existing scraper and data structures (`CompetitionCategory`) should be leveraged to include summer programs.
+- The agent team should decide whether to add seed data directly to `key-dates.ts` or as a Supabase migration, following existing patterns in the project.
+
+### R3. Content Population
+- Populate the system with real, representative summer programs (e.g., top-tier research programs or summer schools) using the exact same structure as existing competitions.
+
+## Verification Resources
+- Use existing patterns, types, and logic already implemented in the project as the primary reference (e.g., `lib/data/key-dates.ts`, `app/api/cron/sync-dates/route.ts`, and `OpportunitiesView.tsx`).
+
+## Acceptance Criteria
+
+### UI & Functionality
+- [ ] The Opportunities page shows three tabs: All, Olympiads, Competitions, Summer Programs (or similar).
+- [ ] Summer programs display their deadlines and details when the corresponding tab is selected.
+
+### Data Validation (Programmatic / Agent-as-judge)
+- [ ] The `CompetitionCategory` type successfully accommodates the new category.
+- [ ] A test script or agent-as-judge confirms that at least 3 valid summer programs are returned by the data layer.
+
