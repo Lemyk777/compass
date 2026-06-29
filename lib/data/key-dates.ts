@@ -475,7 +475,7 @@ export const COMPETITIONS: Competition[] = [
   {
     id: "pioneer-academics",
     name: "Pioneer Academics",
-    fields: ["all"],
+    fields: "all",
     deadline: "2027-02-15",
     window: "Spring through Summer cohorts",
     level: "international",
@@ -487,7 +487,7 @@ export const COMPETITIONS: Competition[] = [
   {
     id: "lumiere-research",
     name: "Lumiere Research Scholar Program",
-    fields: ["all"],
+    fields: "all",
     deadline: "2027-02-10",
     window: "Multiple cohorts year-round",
     level: "international",
