@@ -23,11 +23,13 @@ export default async function LandingPage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#F7F8FA] text-ink selection:bg-ink selection:text-white">
-      {/* Nav */}
       <header className="absolute inset-x-0 top-0 z-50">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-6 py-6 md:px-12 md:py-8 xl:px-20">
-          <Logo className="shrink-0 text-ink" />
-          <nav className="flex items-center gap-1.5 sm:gap-3">
+          <Logo
+            className="shrink-0 text-ink"
+            style={{ viewTransitionName: "brand-logo" }}
+          />
+          <nav className="flex items-center gap-2 sm:gap-3">
             {isAdmin && <AdminSwitcher className="mr-1 hidden lg:inline-flex" />}
             <ButtonLink
               href="/auth/login"

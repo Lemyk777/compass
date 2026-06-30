@@ -41,8 +41,8 @@ export function FactorBars({
               aria-label={`${f.label}: ${shown} out of 10`}
             >
               <div
-                className="h-full rounded-full bg-accent transition-[width] duration-700 ease-out"
-                style={{ width: `${shown * 10}%` }}
+                className="h-full w-full rounded-full bg-accent origin-left transition-transform duration-700 ease-out"
+                style={{ transform: `scaleX(${shown / 10})` }}
               />
             </div>
             

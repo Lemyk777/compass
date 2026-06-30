@@ -1,6 +1,7 @@
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { cookies } from "next/headers";
 import { Logo } from "@/components/ui/Logo";
+
 import { AuthForm } from "@/components/auth/AuthForm";
 import { AuthAside } from "@/components/marketing/AuthAside";
 import { REF_COOKIE } from "@/lib/supabase/middleware";
@@ -15,7 +16,7 @@ export default function SignupPage() {
       <div className="flex flex-col bg-surface">
         <header className="mx-auto flex w-full max-w-md items-center justify-between px-5 py-6">
           <Link href="/" className="rounded focus-visible:focus-ring">
-            <Logo className="text-ink" />
+            <Logo className="text-ink" style={{ viewTransitionName: "brand-logo" }} />
           </Link>
         </header>
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 pb-16">

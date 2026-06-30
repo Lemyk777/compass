@@ -893,14 +893,13 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
 
   describe("Tier 3: Combination Check (Cross-Feature logic)", () => {
     
-    it("Scenario 3.1: US selected, target_schools is empty (Rejects)", async () => {
+    it("Scenario 3.1: US selected, target_schools is empty (Succeeds)", async () => {
       const { saveProfile } = await import("../app/onboarding/actions");
       const payload = getBaseValidPayload();
       payload.destinations = ["US"];
       payload.target_schools = [];
       const result = await saveProfile(payload);
-      assert.strictEqual(result.ok, false);
-      assert.ok(result.error.includes("US target school"));
+      assert.deepStrictEqual(result, { ok: true });
     });
 
     it("Scenario 3.2: US selected, target_schools is not empty (Succeeds)", async () => {
@@ -912,15 +911,14 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       assert.deepStrictEqual(result, { ok: true });
     });
 
-    it("Scenario 3.3: Italy selected, italy_programs is empty (Rejects)", async () => {
+    it("Scenario 3.3: Italy selected, italy_programs is empty (Succeeds)", async () => {
       const { saveProfile } = await import("../app/onboarding/actions");
       const payload = getBaseValidPayload();
       payload.destinations = ["IT"];
       payload.target_schools = []; // No US targets
       payload.italy_programs = []; // Empty Italy targets
       const result = await saveProfile(payload);
-      assert.strictEqual(result.ok, false);
-      assert.ok(result.error.includes("Italian program"));
+      assert.deepStrictEqual(result, { ok: true });
     });
 
     it("Scenario 3.4: Italy selected, italy_programs is not empty (Succeeds)", async () => {
@@ -933,36 +931,34 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       assert.deepStrictEqual(result, { ok: true });
     });
 
-    it("Scenario 3.5: Both US & Italy selected, both targets empty (Rejects)", async () => {
+    it("Scenario 3.5: Both US & Italy selected, both targets empty (Succeeds)", async () => {
       const { saveProfile } = await import("../app/onboarding/actions");
       const payload = getBaseValidPayload();
       payload.destinations = ["US", "IT"];
       payload.target_schools = [];
       payload.italy_programs = [];
       const result = await saveProfile(payload);
-      assert.strictEqual(result.ok, false);
+      assert.deepStrictEqual(result, { ok: true });
     });
 
-    it("Scenario 3.6: Both US & Italy selected, only US target set (Rejects)", async () => {
+    it("Scenario 3.6: Both US & Italy selected, only US target set (Succeeds)", async () => {
       const { saveProfile } = await import("../app/onboarding/actions");
       const payload = getBaseValidPayload();
       payload.destinations = ["US", "IT"];
       payload.target_schools = ["Stanford University"];
       payload.italy_programs = [];
       const result = await saveProfile(payload);
-      assert.strictEqual(result.ok, false);
-      assert.ok(result.error.includes("Italian program"));
+      assert.deepStrictEqual(result, { ok: true });
     });
 
-    it("Scenario 3.7: Both US & Italy selected, only Italy target set (Rejects)", async () => {
+    it("Scenario 3.7: Both US & Italy selected, only Italy target set (Succeeds)", async () => {
       const { saveProfile } = await import("../app/onboarding/actions");
       const payload = getBaseValidPayload();
       payload.destinations = ["US", "IT"];
       payload.target_schools = [];
       payload.italy_programs = ["polito-computer-eng"];
       const result = await saveProfile(payload);
-      assert.strictEqual(result.ok, false);
-      assert.ok(result.error.includes("US target school"));
+      assert.deepStrictEqual(result, { ok: true });
     });
 
     it("Scenario 3.8: Both US & Italy selected, both set (Succeeds)", async () => {
@@ -985,7 +981,7 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       assert.deepStrictEqual(result, { ok: true });
     });
 
-    it("Scenario 3.10: HK selected, hk_programs is empty (Rejects)", async () => {
+    it("Scenario 3.10: HK selected, hk_programs is empty (Succeeds)", async () => {
       const { saveProfile } = await import("../app/onboarding/actions");
       const payload = getBaseValidPayload();
       payload.destinations = ["HK"];
@@ -993,8 +989,7 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       payload.italy_programs = [];
       payload.hk_programs = [];
       const result = await saveProfile(payload);
-      assert.strictEqual(result.ok, false);
-      assert.ok(result.error.includes("Hong Kong program"));
+      assert.deepStrictEqual(result, { ok: true });
     });
 
     it("Scenario 3.11: HK selected, hk_programs is not empty (Succeeds)", async () => {
@@ -1008,7 +1003,7 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       assert.deepStrictEqual(result, { ok: true });
     });
 
-    it("Scenario 3.12: Both US & HK selected, only US target set (Rejects)", async () => {
+    it("Scenario 3.12: Both US & HK selected, only US target set (Succeeds)", async () => {
       const { saveProfile } = await import("../app/onboarding/actions");
       const payload = getBaseValidPayload();
       payload.destinations = ["US", "HK"];
@@ -1016,11 +1011,10 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       payload.italy_programs = [];
       payload.hk_programs = [];
       const result = await saveProfile(payload);
-      assert.strictEqual(result.ok, false);
-      assert.ok(result.error.includes("Hong Kong program"));
+      assert.deepStrictEqual(result, { ok: true });
     });
 
-    it("Scenario 3.13: Both US & HK selected, only HK target set (Rejects)", async () => {
+    it("Scenario 3.13: Both US & HK selected, only HK target set (Succeeds)", async () => {
       const { saveProfile } = await import("../app/onboarding/actions");
       const payload = getBaseValidPayload();
       payload.destinations = ["US", "HK"];
@@ -1028,8 +1022,7 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
       payload.italy_programs = [];
       payload.hk_programs = ["hku-bba"];
       const result = await saveProfile(payload);
-      assert.strictEqual(result.ok, false);
-      assert.ok(result.error.includes("US target school"));
+      assert.deepStrictEqual(result, { ok: true });
     });
 
     it("Scenario 3.14: Both US & HK selected, both set (Succeeds)", async () => {

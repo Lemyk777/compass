@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { useT } from "@/lib/i18n/client";

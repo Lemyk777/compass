@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -32,17 +32,21 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="border-line bg-card lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-64 lg:shrink-0 lg:flex-col lg:border-r">
+    <aside
+      className="border-line bg-card lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-64 lg:shrink-0 lg:flex-col lg:border-r"
+      style={{ viewTransitionName: "sidebar" }}
+    >
       <div className="hidden px-6 py-6 lg:block">
-        <Logo className="text-ink" />
+        <Logo className="text-ink" style={{ viewTransitionName: "brand-logo" }} />
       </div>
+
 
       <nav
         aria-label="Dashboard"
         // Mobile: wrap every section so all of them are visible at once (a
         // horizontal scroller hid Costs/Plan/Timeline/Summary off the right edge
         // with no scroll affordance). Desktop: vertical rail.
-        className="flex flex-wrap gap-1.5 border-b border-line px-3 py-3 lg:flex-1 lg:flex-col lg:flex-nowrap lg:gap-1 lg:border-b-0 lg:px-3 lg:py-2"
+        className="flex flex-wrap gap-2 border-b border-line px-3 py-3 lg:flex-1 lg:flex-col lg:flex-nowrap lg:gap-2 lg:border-b-0 lg:px-3 lg:py-2"
       >
         {SECTIONS.map((s) => {
           const on = isActive(s.slug);
@@ -51,7 +55,7 @@ export function Sidebar() {
               key={s.slug || "overview"}
               href={hrefFor(s.slug)}
               aria-current={on ? "page" : undefined}
-              className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors focus-visible:focus-ring lg:shrink ${
+              className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-colors focus-visible:focus-ring lg:shrink ${
                 on
                   ? "bg-accent-soft text-accent-ink"
                   : "text-ink-soft hover:bg-surface hover:text-ink"

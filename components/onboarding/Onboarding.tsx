@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useTransitionRouter } from "@/components/ui/ViewTransitions";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/ui/Logo";
@@ -78,7 +78,8 @@ function Wizard({
   basePath: string;
   preview: boolean;
 }) {
-  const router = useRouter();
+  const router = useTransitionRouter();
+
   const { isSaving, errors, saveProfile } = useOnboardingContext();
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
@@ -115,7 +116,7 @@ function Wizard({
     <main className="min-h-dvh bg-surface">
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <Logo className="text-ink" />
+          <Logo className="text-ink" style={{ viewTransitionName: "brand-logo" }} />
           <ButtonLink href={basePath} variant="ghost" size="sm">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="m15 18-6-6 6-6" />

@@ -8,7 +8,10 @@ import { DateClock } from "@/components/dashboard/DateGreeting";
  */
 export function TopBar() {
   return (
-    <div className="sticky top-0 z-20 border-b border-line bg-surface/85 backdrop-blur">
+    <div
+      className="sticky top-0 z-20 border-b border-line bg-surface/85 backdrop-blur"
+      style={{ viewTransitionName: "header" }}
+    >
       <div className="mx-auto flex w-full max-w-[1500px] items-center justify-end px-4 py-2.5 sm:px-8">
         <DateClock />
       </div>

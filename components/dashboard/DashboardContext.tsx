@@ -8,11 +8,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useTransitionRouter } from "@/components/ui/ViewTransitions";
 import type { Analysis } from "@/lib/ai/schema";
 import { AVAILABLE_DESTINATION_CODES, type DestinationCode } from "@/lib/data/destinations";
 import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import { useT } from "@/lib/i18n/client";
+
 
 // Shared state for the whole dashboard. The layout fetches the analysis once and
 // drops it in here; every section page (overview, standing, odds, …) reads from
@@ -114,7 +115,8 @@ export function DashboardProvider({
   children: React.ReactNode;
 }) {
   const t = useT();
-  const router = useRouter();
+  const router = useTransitionRouter();
+
   const [analysis, setAnalysis] = useState<Analysis | null>(initialAnalysis);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

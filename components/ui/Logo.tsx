@@ -1,6 +1,15 @@
-export function Logo({ className = "" }: { className?: string }) {
+export function Logo({
+  className = "",
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
-    <span className={`inline-flex items-center gap-2 font-display ${className}`}>
+    <span
+      className={`inline-flex items-center gap-2 font-display ${className}`}
+      style={style}
+    >
       <svg
         width="22"
         height="22"
@@ -23,3 +32,4 @@ export function Logo({ className = "" }: { className?: string }) {
     </span>
   );
 }
+

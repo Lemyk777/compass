@@ -1,5 +1,6 @@
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { requireRole } from "@/lib/auth/session";
+
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Card } from "@/components/report/Section";

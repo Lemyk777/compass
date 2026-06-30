@@ -4,6 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n/client";
 import { getLang } from "@/lib/i18n/server";
 import { CANONICAL_URL } from "@/lib/site";
+import { ViewTransitions } from "@/components/ui/ViewTransitions";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -46,10 +47,13 @@ export default function RootLayout({
 }) {
   const lang = getLang();
   return (
-    <html lang={lang} className={`${display.variable} ${body.variable}`}>
-      <body>
-        <LanguageProvider initial={lang}>{children}</LanguageProvider>
-      </body>
-    </html>
+    <ViewTransitions>
+      <html lang={lang} className={`${display.variable} ${body.variable}`}>
+        <body>
+          <LanguageProvider initial={lang}>{children}</LanguageProvider>
+        </body>
+      </html>
+    </ViewTransitions>
   );
 }
+

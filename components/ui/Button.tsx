@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { ComponentProps } from "react";
+import Link from "./Link";
+import { ComponentProps, forwardRef } from "react";
 
 type Variant = "primary" | "ghost" | "subtle";
 
@@ -38,16 +38,28 @@ export function Button({
   );
 }
 
-export function ButtonLink({
-  variant = "primary",
-  size = "md",
-  className = "",
-  ...props
-}: CommonProps & ComponentProps<typeof Link>) {
-  return (
-    <Link
-      className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
-      {...props}
-    />
-  );
-}
+export const ButtonLink = forwardRef<
+  HTMLAnchorElement,
+  CommonProps & ComponentProps<typeof Link>
+>(
+  (
+    {
+      variant = "primary",
+      size = "md",
+      className = "",
+      ...props
+    },
+    ref
+  ) => {
+    return (
+      <Link
+        ref={ref}
+        className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
+        {...props}
+      />
+    );
+  }
+);
+
+ButtonLink.displayName = "ButtonLink";
+
