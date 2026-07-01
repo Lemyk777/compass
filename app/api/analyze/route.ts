@@ -98,6 +98,8 @@ export async function POST(_req: NextRequest) {
     italy_family_income: sp.italy_family_income ?? undefined,
     hk_programs: sp.hk_programs ?? [],
     hk_grade_status: sp.hk_grade_status ?? undefined,
+    uae_programs: sp.uae_programs ?? [],
+    uae_grade_status: sp.uae_grade_status ?? undefined,
   };
 
   try {

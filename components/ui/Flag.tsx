@@ -28,6 +28,14 @@ const SHAPES: Record<DestinationCode, JSX.Element> = {
       <circle cx="10" cy="7" r="1.2" fill="#DE2910" />
     </>
   ),
+  AE: (
+    <>
+      <rect width="20" height="14" fill="#fff" />
+      <rect x="5" y="0" width="15" height="4.67" fill="#009739" />
+      <rect x="5" y="9.33" width="15" height="4.67" fill="#000" />
+      <rect width="5" height="14" fill="#EF3340" />
+    </>
+  ),
   KR: (
     <>
       <rect width="20" height="14" fill="#fff" />

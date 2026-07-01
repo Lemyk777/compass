@@ -47,6 +47,18 @@ export const COUNTRY_SCORECARD_WEIGHTS: Record<DestinationCode, WeightMap> = {
     awards: 0.1,
     narrative_fit: 0,
   },
+  // Grades-first + SAT-driven: the SAT index and academic record dominate, with
+  // achievements standing in for the holistic/interview seats (NYUAD, Medicine).
+  // A little narrative weight for NYU Abu Dhabi's holistic, US-style review.
+  AE: {
+    test_scores: 0.3,
+    academics: 0.3,
+    course_rigor: 0.14,
+    extracurricular_depth: 0.1,
+    leadership: 0.06,
+    awards: 0.06,
+    narrative_fit: 0.04,
+  },
   // Not yet tuned — fall back to an even, holistic blend.
   KR: {},
   CN: {},

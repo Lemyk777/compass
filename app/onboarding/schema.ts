@@ -98,6 +98,8 @@ export const inputSchema = z
     italy_family_income: z.number().min(0).max(10_000_000).optional(),
     hk_programs: z.array(z.string().max(80)).max(6).default([]),
     hk_grade_status: z.enum(["predicted", "achieved"]).optional(),
+    uae_programs: z.array(z.string().max(80)).max(6).default([]),
+    uae_grade_status: z.enum(["predicted", "achieved"]).optional(),
     // Attribution survey (non-referral signups). Optional so a referral user —
     // who never sees the step — always saves cleanly.
     heard_from: z.string().trim().max(40).optional().default(""),

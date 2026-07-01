@@ -29,3 +29,13 @@ export function usApplicationFee(schoolName: string): number {
 export function italyApplicationFee(isPrivate: boolean): number {
   return isPrivate ? 100 : 0; // state pre-enrollment is free
 }
+
+// UAE universities charge a small non-refundable application/registration fee
+// (typically AED 200–500). Approximate, quoted in USD to match the rest of the
+// UAE module; the UI labels it approximate and tells the student to verify.
+export const DEFAULT_UAE_APPLICATION_FEE = 100; // USD, approximate
+
+/** Approximate application fee (USD) for a UAE university. */
+export function uaeApplicationFee(): number {
+  return DEFAULT_UAE_APPLICATION_FEE;
+}

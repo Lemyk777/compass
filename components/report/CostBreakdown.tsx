@@ -2,7 +2,7 @@
 
 import type { Analysis } from "@/lib/ai/schema";
 import { Section, Card } from "@/components/report/Section";
-import { usApplicationFee } from "@/lib/data/application-fees";
+import { usApplicationFee, uaeApplicationFee } from "@/lib/data/application-fees";
 import type { DestinationCode } from "@/lib/data/destinations";
 import { useT } from "@/lib/i18n/client";
 
@@ -33,7 +33,12 @@ export function CostBreakdown({
               name: `${p.university} — ${p.program_name}`,
               fee: 450,
             }))
-          : [];
+          : country === "AE"
+            ? (analysis.uae_programs ?? []).map((p) => ({
+                name: `${p.university} — ${p.program_name}`,
+                fee: uaeApplicationFee(),
+              }))
+            : [];
 
   if (rows.length === 0) return null;
 
@@ -41,7 +46,7 @@ export function CostBreakdown({
   const fmt = (n: number) =>
     n === 0
       ? t("report.costFree")
-      : country === "US"
+      : country === "US" || country === "AE"
         ? `$${n.toLocaleString()}`
         : country === "IT"
           ? `€${n.toLocaleString()}`
@@ -55,7 +60,9 @@ export function CostBreakdown({
           ? t("report.costHintUS")
           : country === "IT"
             ? t("report.costHintIT")
-            : t("report.costHintHK")
+            : country === "AE"
+              ? t("report.costHintAE")
+              : t("report.costHintHK")
       }
     >
       <Card>
@@ -77,7 +84,7 @@ export function CostBreakdown({
             {t("report.costTotal")}
           </span>
           <span data-num className="text-base font-semibold text-ink">
-            {country === "US"
+            {country === "US" || country === "AE"
               ? `$${total.toLocaleString()}`
               : country === "IT"
                 ? `€${total.toLocaleString()}`

@@ -1,6 +1,6 @@
 import { RUBRIC } from "@/lib/rubric";
 import { findUniversity } from "@/lib/data/universities";
-import type { StudentProfileInput } from "@/lib/types";
+import { gpaToPercent, type StudentProfileInput } from "@/lib/types";
 import {
   analysisSchema,
   sanitizeAnalysis,
@@ -13,6 +13,7 @@ import {
   computeFinancialFitScore,
 } from "@/lib/ai/italy-analyze";
 import { analyzeHkPrograms } from "@/lib/ai/hk-analyze";
+import { analyzeUaePrograms } from "@/lib/ai/uae-analyze";
 import {
   academicIndexFromProfile,
   estimateSchoolLikelihood,
@@ -245,6 +246,25 @@ export function assembleAnalysis(
       })
     : undefined;
 
+  const hasUae =
+    (profile.destinations ?? []).includes("AE") &&
+    (profile.uae_programs ?? []).length > 0;
+
+  const uaePrograms = hasUae
+    ? analyzeUaePrograms(profile.uae_programs ?? [], {
+        sat: profile.tests?.SAT,
+        gpaPercent:
+          profile.grades?.gpa != null
+            ? gpaToPercent(profile.grades.gpa, profile.grades.gpa_scale)
+            : undefined,
+        ielts: profile.tests?.IELTS,
+        toefl: profile.tests?.TOEFL,
+        gradeStatus: profile.uae_grade_status ?? "predicted",
+        activities: profile.activities,
+        honors: profile.honors,
+      })
+    : undefined;
+
   const factors = applyDeterministicFactors(model.factors, profile);
 
   const full: Analysis = {
@@ -264,6 +284,7 @@ export function assembleAnalysis(
       ? computeFinancialFitScore(profile.italy_family_income, true)
       : undefined,
     hk_programs: hkPrograms,
+    uae_programs: uaePrograms,
   };
   return sanitizeAnalysis(analysisSchema.parse(full));
 }

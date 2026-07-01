@@ -36,6 +36,8 @@ const HK_TEST_PROFILE: StudentProfileInput = {
   italy_family_income: undefined,
   hk_programs: ["hku-bba", "ust-cs"],
   hk_grade_status: "predicted",
+  uae_programs: [],
+  uae_grade_status: undefined,
 };
 
 async function runHkFlowTest() {

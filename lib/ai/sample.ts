@@ -88,6 +88,8 @@ export const SAMPLE_PROFILE: StudentProfileInput = {
   italy_family_income: SAMPLE_FAMILY_INCOME,
   hk_programs: SAMPLE_HK_PROGRAMS,
   hk_grade_status: "predicted",
+  uae_programs: [],
+  uae_grade_status: undefined,
 };
 
 export const SAMPLE_ANALYSIS: Analysis = {

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { UNIVERSITIES } from "@/lib/data/universities";
 import { ITALIAN_PROGRAMS } from "@/lib/data/italian-universities";
 import { HK_PROGRAMS } from "@/lib/data/hk-universities";
+import { UAE_PROGRAMS } from "@/lib/data/uae-universities";
 import { normalizeDestinations } from "@/lib/types";
 import { LIMITS } from "@/lib/limits";
 
@@ -14,7 +15,7 @@ export type SaveResult = { ok: true } | { ok: false; error: string };
 // them so the matching analysis pathway runs. Shared by every per-country list
 // save below. Returns the row id and the merged destination list, or an error.
 async function profileForCountryList(
-  code: "US" | "IT" | "HK"
+  code: "US" | "IT" | "HK" | "AE"
 ): Promise<
   | { ok: true; id: string; destinations: string[] }
   | { ok: false; error: string }
@@ -164,6 +165,56 @@ export async function saveHkList(
       };
     }
     return { ok: false, error: "Could not save your Hong Kong list." };
+  }
+
+  try {
+    revalidatePath("/dashboard");
+  } catch {
+    // ignore cache revalidation errors
+  }
+  return { ok: true };
+}
+
+// Persist the student's UAE program list (uae_programs) plus whether their grades
+// are predicted or achieved (drives the conditional-offer logic). Validates ids,
+// caps the count, and ensures "AE" is in the destinations so the UAE pathway runs.
+export async function saveUaeList(
+  programIds: string[],
+  gradeStatus: "predicted" | "achieved"
+): Promise<SaveResult> {
+  const valid = new Set(UAE_PROGRAMS.map((p) => p.id));
+  const cleaned = Array.from(
+    new Set((programIds ?? []).filter((id) => valid.has(id)))
+  ).slice(0, LIMITS.uaePrograms);
+
+  if (cleaned.length === 0) {
+    return { ok: false, error: "Pick at least one program." };
+  }
+
+  const prof = await profileForCountryList("AE");
+  if (!prof.ok) return prof;
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("student_profiles")
+    .update({
+      uae_programs: cleaned,
+      uae_grade_status: gradeStatus === "achieved" ? "achieved" : "predicted",
+      destinations: prof.destinations,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", prof.id);
+
+  if (error) {
+    // The UAE columns ship in migration 0016 — surface an actionable message
+    // instead of a generic failure if the DB hasn't been migrated.
+    if (error.code === "42703" || error.code === "PGRST204") {
+      return {
+        ok: false,
+        error: "UAE isn't enabled on this database yet. Apply migration 0016_uae.sql.",
+      };
+    }
+    return { ok: false, error: "Could not save your UAE list." };
   }
 
   try {

@@ -3,7 +3,7 @@
 // all read from here. Adding a country later (once it has a dataset + an
 // analysis path) is a one-line change in DESTINATIONS plus its data file.
 
-export type DestinationCode = "US" | "IT" | "HK" | "KR" | "CN" | "CA";
+export type DestinationCode = "US" | "IT" | "HK" | "AE" | "KR" | "CN" | "CA";
 
 export type Destination = {
   code: DestinationCode;
@@ -20,6 +20,7 @@ export const DESTINATIONS: Destination[] = [
   { code: "US", labelKey: "dest.US", flag: "🇺🇸", available: true },
   { code: "IT", labelKey: "dest.IT", flag: "🇮🇹", available: true },
   { code: "HK", labelKey: "dest.HK", flag: "🇭🇰", available: true },
+  { code: "AE", labelKey: "dest.AE", flag: "🇦🇪", available: true },
   { code: "KR", labelKey: "dest.KR", flag: "🇰🇷", available: false },
   { code: "CN", labelKey: "dest.CN", flag: "🇨🇳", available: false },
   { code: "CA", labelKey: "dest.CA", flag: "🇨🇦", available: false },

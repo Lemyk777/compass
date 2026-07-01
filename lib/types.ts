@@ -159,6 +159,9 @@ export type StudentProfileInput = {
   // ── Hong Kong pathway (active when destinations includes "HK") ──
   hk_programs: string[]; // HK program IDs from the dataset
   hk_grade_status?: "predicted" | "achieved"; // are reported grades predicted or achieved?
+  // ── UAE pathway (active when destinations includes "AE") ──
+  uae_programs: string[]; // UAE program IDs from the dataset
+  uae_grade_status?: "predicted" | "achieved"; // are reported grades predicted or achieved?
   // ── Budget (redesigned intake) ── how much family can pay per year, in USD.
   budget_annual_usd?: number;
   // ── Attribution (shown only to non-referral signups) ──
@@ -195,6 +198,8 @@ export function emptyProfile(): StudentProfileInput {
     italy_family_income: undefined,
     hk_programs: [],
     hk_grade_status: undefined,
+    uae_programs: [],
+    uae_grade_status: undefined,
     heard_from: "",
     heard_from_code: "",
   };

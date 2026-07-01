@@ -299,6 +299,7 @@ const en: Dict = {
   "dest.US": "United States",
   "dest.IT": "Italy",
   "dest.HK": "Hong Kong",
+  "dest.AE": "UAE",
   "dest.KR": "South Korea",
   "dest.CN": "China",
   "dest.CA": "Canada",
@@ -499,7 +500,10 @@ const en: Dict = {
   "report.italyHint": "Two distinct admission systems — read each card to understand the rules for that program.",
   "report.hkTitle": "Hong Kong University Breakdown",
   "report.hkHint": "Hong Kong university admission is meritocracy-driven but holistic. Check your standings and scorecards below.",
+  "report.uaeTitle": "UAE University Breakdown",
+  "report.uaeHint": "UAE university admission is grades-first and SAT-driven, with generous merit scholarships. Check your standings and scorecards below.",
   "report.costHintHK": "Approximate flat application fees per Hong Kong university program.",
+  "report.costHintAE": "Approximate flat application fees per UAE university program.",
 
   // error / not-found
   "nf.body": "We couldn't find that page.",

@@ -6,6 +6,7 @@ import type { Analysis } from "@/lib/ai/schema";
 import { UNIVERSITIES } from "@/lib/data/universities";
 import { ITALIAN_PROGRAMS } from "@/lib/data/italian-universities";
 import { HK_PROGRAMS } from "@/lib/data/hk-universities";
+import { UAE_PROGRAMS } from "@/lib/data/uae-universities";
 import { LIMITS } from "@/lib/limits";
 import { Button } from "@/components/ui/Button";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
@@ -38,6 +39,7 @@ export function CollegeListView() {
       {country === "US" && <UsBuilder />}
       {country === "IT" && <ItalyBuilder />}
       {country === "HK" && <HkBuilder />}
+      {country === "AE" && <UaeBuilder />}
     </div>
   );
 }
@@ -45,7 +47,7 @@ export function CollegeListView() {
 // ── Shared submit flow ────────────────────────────────────────────────────────
 // Save this country's list, run one re-analysis, then land on its odds tab so the
 // targets the student just picked are shown.
-function useListSubmit(targetCountry: "US" | "IT" | "HK") {
+function useListSubmit(targetCountry: "US" | "IT" | "HK" | "AE") {
   const router = useRouter();
   const { setAnalysis, setCountry, basePath, demo } = useDashboard();
   const [busy, setBusy] = useState(false);
@@ -367,6 +369,121 @@ function HkBuilder() {
               meta={[
                 `Typical IB ~${p.typical_ib}`,
                 p.interview_required ? "Interview" : "No interview",
+              ]}
+              note={p.notes}
+            />
+          );
+        })}
+      </div>
+
+      <StickyActionBar
+        error={error}
+        message={
+          selected.length === 0
+            ? "Select at least one program to continue."
+            : `${selected.length} ${selected.length === 1 ? "program" : "programs"} selected`
+        }
+        ctaLabel="See my admission odds"
+        ctaDisabled={selected.length === 0 || busy}
+        onCta={run}
+      />
+      {busy && <AnalyzingOverlay />}
+    </div>
+  );
+}
+
+// ── UAE ───────────────────────────────────────────────────────────────────────
+const AE_SORTED = [...UAE_PROGRAMS].sort((a, b) =>
+  a.university === b.university
+    ? b.typical_sat - a.typical_sat
+    : a.university.localeCompare(b.university)
+);
+
+function UaeBuilder() {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [gradeStatus, setGradeStatus] = useState<"predicted" | "achieved">("predicted");
+  const [query, setQuery] = useState("");
+  const { busy, error, submit } = useListSubmit("AE");
+
+  const atCap = selected.length >= LIMITS.uaePrograms;
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return AE_SORTED;
+    return AE_SORTED.filter(
+      (p) =>
+        p.university.toLowerCase().includes(q) ||
+        p.program_name.toLowerCase().includes(q) ||
+        p.field.toLowerCase().includes(q) ||
+        p.emirate.toLowerCase().includes(q)
+    );
+  }, [query]);
+
+  const toggle = (id: string) =>
+    setSelected((cur) =>
+      cur.includes(id)
+        ? cur.filter((n) => n !== id)
+        : atCap
+          ? cur
+          : [...cur, id]
+    );
+
+  const run = () =>
+    submit(async () => {
+      const { saveUaeList } = await import("@/app/dashboard/actions");
+      return saveUaeList(selected, gradeStatus);
+    });
+
+  return (
+    <div className="space-y-6">
+      <SearchBar
+        query={query}
+        onQuery={setQuery}
+        placeholder="Search by university, program, field, or emirate…"
+        count={selected.length}
+        cap={LIMITS.uaePrograms}
+      />
+
+      <div className="max-w-md">
+        <span className="text-sm font-medium text-ink">Your grades are</span>
+        <p className="mb-2 text-xs text-ink-soft">
+          Predicted grades get a conditional-offer read; achieved grades are scored as final.
+        </p>
+        <div className="flex gap-2">
+          {(["predicted", "achieved"] as const).map((s) => {
+            const on = gradeStatus === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setGradeStatus(s)}
+                aria-pressed={on}
+                className={`min-h-[44px] flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-colors focus-visible:focus-ring ${
+                  on
+                    ? "border-accent bg-accent-soft text-ink"
+                    : "border-line bg-card text-ink-soft hover:border-ink/30"
+                }`}
+              >
+                {s === "predicted" ? "Predicted" : "Achieved"}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {filtered.map((p) => {
+          const on = selected.includes(p.id);
+          return (
+            <PickCard
+              key={p.id}
+              on={on}
+              disabled={!on && atCap}
+              onClick={() => toggle(p.id)}
+              title={p.university}
+              subtitle={`${p.program_name} · ${p.emirate}`}
+              meta={[
+                `Typical SAT ~${p.typical_sat}`,
+                p.need_blind ? "Need-blind" : p.interview_required ? "Interview" : "No interview",
               ]}
               note={p.notes}
             />

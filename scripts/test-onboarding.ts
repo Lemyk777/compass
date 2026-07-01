@@ -1097,6 +1097,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         italy_family_income: 24000,
         hk_programs: [],
         hk_grade_status: undefined,
+        uae_programs: [],
+        uae_grade_status: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1141,6 +1143,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         italy_programs: [],
         hk_programs: [],
         hk_grade_status: undefined,
+        uae_programs: [],
+        uae_grade_status: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1196,6 +1200,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         italy_programs: [],
         hk_programs: [],
         hk_grade_status: undefined,
+        uae_programs: [],
+        uae_grade_status: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1235,6 +1241,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         italy_family_income: 14500, // Low income, eligible for DSU
         hk_programs: [],
         hk_grade_status: undefined,
+        uae_programs: [],
+        uae_grade_status: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1272,6 +1280,8 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         italy_programs: [],
         hk_programs: [],
         hk_grade_status: undefined,
+        uae_programs: [],
+        uae_grade_status: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
