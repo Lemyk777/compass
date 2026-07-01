@@ -53,9 +53,31 @@ export function HkBreakdown({ programs }: Props) {
   );
 }
 
+// A stored analysis is "native-scale valid" only when it matches the current
+// engine output. Older rows (produced before the native-scale rewrite) can carry
+// index_source "sat" with a low IB-equivalent in user_index and no typical_sat —
+// guard against rendering that as a nonsensical "Your SAT 41 / Min -79". Such a
+// row (and a blank estimate) resolves to "stale" and shows a refresh prompt
+// instead of a broken number/bar.
+type HkIndexView =
+  | { kind: "ib"; value: string }
+  | { kind: "sat"; value: string }
+  | { kind: "stale"; needsRefresh: boolean };
+
+function hkIndexView(p: HkProgramAnalysis): HkIndexView {
+  if (p.index_source === "ib") return { kind: "ib", value: `${p.user_index}/45` };
+  // A real SAT is on the 400–1600 scale AND new rows always carry typical_sat.
+  if (p.index_source === "sat" && p.typical_sat != null && p.user_index >= 400) {
+    return { kind: "sat", value: String(p.user_index) };
+  }
+  // "estimate" = blank profile; a "sat" row that failed the check = outdated.
+  return { kind: "stale", needsRefresh: p.index_source !== "estimate" };
+}
+
 // ── HkProgramCard ─────────────────────────────────────────────────────────────
 
 function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
+  const view = hkIndexView(p);
   const t = useT();
   const [open, setOpen] = useState(false);
 
@@ -81,14 +103,10 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
           <StatusPill status={p.status} />
           <div className="text-right">
             <p className="text-[10px] text-ink-faint">
-              {p.index_source === "sat" ? "Your SAT" : p.index_source === "ib" ? "Your IB" : "Academic standing"}
+              {view.kind === "sat" ? "Your SAT" : view.kind === "ib" ? "Your IB" : "Academic standing"}
             </p>
             <p className="text-base font-bold tabular-nums text-ink">
-              {p.index_source === "estimate"
-                ? "—"
-                : p.index_source === "sat"
-                  ? p.user_index
-                  : `${p.user_index}/45`}
+              {view.kind === "stale" ? "—" : view.value}
             </p>
           </div>
         </div>
@@ -144,17 +162,20 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
 // ── HkScoreBar ────────────────────────────────────────────────────────────────
 
 function HkScoreBar({ program: p }: { program: HkProgramAnalysis }) {
-  // Estimate: no real score to place — prompt instead of drawing a fake bar.
-  if (p.index_source === "estimate") {
+  const view = hkIndexView(p);
+  // No real score to place (blank estimate, or an outdated stored row) — show a
+  // prompt instead of drawing a fake bar.
+  if (view.kind === "stale") {
     return (
       <div className="mt-3 rounded-lg border border-dashed border-line px-3 py-2 text-[11px] leading-relaxed text-ink-faint">
-        Add your IB total or SAT to see exactly where you stand against this
-        programme&apos;s typical admitted range.
+        {view.needsRefresh
+          ? "Re-run your analysis to refresh this standing with the latest scoring."
+          : "Add your IB total or SAT to see exactly where you stand against this programme's typical admitted range."}
       </div>
     );
   }
 
-  const isSat = p.index_source === "sat";
+  const isSat = view.kind === "sat";
   const userIndex = p.user_index;
   const typical = isSat ? p.typical_sat ?? userIndex : p.typical_ib;
   const min = isSat ? p.min_sat ?? typical - 120 : p.min_ib;
