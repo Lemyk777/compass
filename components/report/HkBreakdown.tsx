@@ -76,23 +76,25 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
           <p className="text-xs text-ink-soft">{p.program_name}</p>
         </div>
 
-        {/* Status + academic index */}
+        {/* Status + academic index (shown in the student's native scale) */}
         <div className="mb-3 flex items-center justify-between">
           <StatusPill status={p.status} />
           <div className="text-right">
-            <p className="text-[10px] text-ink-faint">Academic Index</p>
+            <p className="text-[10px] text-ink-faint">
+              {p.index_source === "sat" ? "Your SAT" : p.index_source === "ib" ? "Your IB" : "Academic standing"}
+            </p>
             <p className="text-base font-bold tabular-nums text-ink">
-              {p.user_index}/45
+              {p.index_source === "estimate"
+                ? "—"
+                : p.index_source === "sat"
+                  ? p.user_index
+                  : `${p.user_index}/45`}
             </p>
           </div>
         </div>
 
-        {/* Custom HK Score Bar */}
-        <HkScoreBar
-          userIndex={p.user_index}
-          minIb={p.min_ib}
-          typicalIb={p.typical_ib}
-        />
+        {/* Custom HK Score Bar — scale-native (IB vs IB, SAT vs SAT) */}
+        <HkScoreBar program={p} />
 
         {/* Specific Entry Gates and Details */}
         <div className="mt-4 space-y-2 border-t border-line pt-3">
@@ -141,28 +143,37 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
 
 // ── HkScoreBar ────────────────────────────────────────────────────────────────
 
-function HkScoreBar({
-  userIndex,
-  minIb,
-  typicalIb,
-}: {
-  userIndex: number;
-  minIb: number;
-  typicalIb: number;
-}) {
-  const minRange = Math.min(userIndex, minIb) - 3;
-  const maxRange = Math.max(userIndex, typicalIb) + 3;
+function HkScoreBar({ program: p }: { program: HkProgramAnalysis }) {
+  // Estimate: no real score to place — prompt instead of drawing a fake bar.
+  if (p.index_source === "estimate") {
+    return (
+      <div className="mt-3 rounded-lg border border-dashed border-line px-3 py-2 text-[11px] leading-relaxed text-ink-faint">
+        Add your IB total or SAT to see exactly where you stand against this
+        programme&apos;s typical admitted range.
+      </div>
+    );
+  }
+
+  const isSat = p.index_source === "sat";
+  const userIndex = p.user_index;
+  const typical = isSat ? p.typical_sat ?? userIndex : p.typical_ib;
+  const min = isSat ? p.min_sat ?? typical - 120 : p.min_ib;
+  const scaleLabel = isSat ? "SAT scale" : "IB scale";
+  const pad = isSat ? 40 : 3;
+
+  const minRange = Math.min(userIndex, min) - pad;
+  const maxRange = Math.max(userIndex, typical) + pad;
   const range = maxRange - minRange;
 
-  const minPct = ((minIb - minRange) / range) * 100;
-  const typicalPct = ((typicalIb - minRange) / range) * 100;
+  const minPct = ((min - minRange) / range) * 100;
+  const typicalPct = ((typical - minRange) / range) * 100;
   const userPct = ((userIndex - minRange) / range) * 100;
 
   return (
     <div className="mt-3">
       <div className="mb-1 flex items-center justify-between text-[10px] text-ink-faint">
-        <span>Academic standing vs. typical range</span>
-        <span>IB scale</span>
+        <span>Standing vs. typical range</span>
+        <span>{scaleLabel}</span>
       </div>
       <div className="relative h-6">
         <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-line" />
@@ -171,7 +182,7 @@ function HkScoreBar({
           className="absolute top-1/2 h-2.5 -translate-y-1/2 rounded bg-accent/15"
           style={{ left: `${minPct}%`, width: `${typicalPct - minPct}%` }}
         />
-        {/* Min IB marker */}
+        {/* Min marker */}
         <div
           className="absolute top-0 h-6 w-px bg-ink-faint"
           style={{ left: `${minPct}%` }}
@@ -180,9 +191,9 @@ function HkScoreBar({
           className="absolute -bottom-4 text-[9px] text-ink-faint"
           style={{ left: `${minPct}%`, transform: "translateX(-50%)" }}
         >
-          Min: {minIb}
+          Min: {min}
         </p>
-        {/* Typical IB marker */}
+        {/* Typical marker */}
         <div
           className="absolute top-0 h-6 w-px bg-accent/40"
           style={{ left: `${typicalPct}%` }}
@@ -191,12 +202,12 @@ function HkScoreBar({
           className="absolute -bottom-4 text-[9px] text-accent font-medium"
           style={{ left: `${typicalPct}%`, transform: "translateX(-50%)" }}
         >
-          Typ: {typicalIb}
+          Typ: {typical}
         </p>
-        {/* User Index Dot */}
+        {/* User score dot */}
         <div
           className={`absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow transition-transform group-hover:scale-110 ${
-            userIndex >= typicalIb ? "bg-likely" : userIndex >= minIb ? "bg-target" : "bg-reach"
+            userIndex >= typical ? "bg-likely" : userIndex >= min ? "bg-target" : "bg-reach"
           }`}
           style={{ left: `${Math.max(2, Math.min(98, userPct))}%` }}
         />

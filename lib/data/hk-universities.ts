@@ -9,8 +9,10 @@
 // returns wide, honest ranges because interviews and holistic review add real
 // variance.
 //
-// Academic index is expressed on the IB 45-point scale. Non-IB applicants are
-// mapped onto it from SAT (the universal yardstick) or A-Level in hk-analyze.ts.
+// A candidate is compared in their OWN system, not a synthetic universal index:
+// IB applicants against the IB band (min_ib/typical_ib), SAT applicants against
+// the SAT band (sat_reference ± a competitive margin). We deliberately do NOT
+// invent an IB-equivalent from SAT — see lib/ai/hk-analyze.ts.
 
 export type HkField =
   | "engineering"
@@ -35,7 +37,11 @@ export type HkProgram = {
   scholarship_ib_cutoff: number;
   /** Typical competitive A-Level grades (best 3), for context. */
   typical_alevel: string;
-  /** Indicative SAT (1600 scale) aligned to the typical admitted index. */
+  /**
+   * Indicative competitive SAT (1600 scale) for this programme, from public
+   * international-admission info — the reference SAT applicants are compared
+   * against directly (NOT converted to an IB number).
+   */
   sat_reference: number;
   /** Minimum IELTS overall (TOEFL ≈ IELTS*15 handled in the engine). */
   english_ielts: number;

@@ -60,11 +60,18 @@ export const hkProgramSchema = z.object({
   field: z.string(),
   status: z.enum(["likely", "target", "reach"]),
   grade_status: z.enum(["predicted", "achieved"]),
-  // Student's academic index on the IB 45-point scale (mapped from SAT when needed).
+  // Student's academic index reported in its NATIVE scale (IB total when on IB,
+  // SAT total when on SAT) — no cross-system conversion. `index_source` says which
+  // scale `user_index` is on, and the display picks the matching reference band.
   user_index: z.number(),
   index_source: z.enum(["ib", "sat", "estimate"]),
+  // Programme reference band on the IB scale (used when index_source === "ib").
   min_ib: z.number(),
   typical_ib: z.number(),
+  // Programme reference band on the SAT scale (used when index_source === "sat").
+  // Optional so older stored analyses (pre-native-scale) still validate.
+  min_sat: z.number().optional(),
+  typical_sat: z.number().optional(),
   interview_required: z.boolean(),
   scholarship: z.enum(["likely_full", "likely_partial", "unlikely", "unknown"]),
   english: z.enum(["meets", "below", "unknown"]),

@@ -3,17 +3,20 @@
 // No AI involvement: all reasoning is computed from hard dataset values, so
 // there is zero hallucination risk on the HK pathway (mirrors italy-analyze.ts).
 //
-// HK admission differs from the US and Italy: it is holistic, academically
-// meritocratic, and interview-based for the most competitive programmes. There
-// is no numeric "guaranteed" branch like Italy's Bando. We therefore:
-//   - normalise the candidate onto the IB 45-point scale (SAT is the universal
-//     yardstick when the student isn't on IB),
-//   - place them against each programme's typical-admitted and lower-boundary
-//     index to produce a reach/target/likely band,
-//   - treat a required interview as a genuine gate (never "likely" on grades
-//     alone),
-//   - frame predicted grades as a Conditional Offer, and
-//   - flag merit-scholarship range — and keep the read honest and directional.
+// HONEST INDEX (no fabricated conversion): a candidate is compared in their OWN
+// system against the programme's published reference in that SAME system —
+//   - IB applicants: their IB total vs the IB band (min_ib / typical_ib),
+//   - SAT applicants: their SAT vs the SAT reference (sat_reference ± a
+//     competitive margin),
+//   - neither: an honest, deliberately-rough estimate.
+// We do NOT synthesise an "IB-equivalent" from SAT — HK universities publish real
+// IB, A-Level and SAT requirements, so there's no need to invent a cross-walk.
+//
+// HK admission is holistic and interview-based for the most competitive
+// programmes, so there is no numeric "guaranteed" branch: we place the candidate
+// into a reach/target/likely band, treat a required interview as a genuine gate,
+// frame predicted grades as a Conditional Offer, and flag merit-scholarship range
+// — keeping the read honest and directional.
 
 import { findHkProgram, type HkProgram } from "@/lib/data/hk-universities";
 import type { HkProgramAnalysis } from "@/lib/ai/schema";
@@ -38,6 +41,17 @@ export type HkInputs = {
   honors?: Honor[];
 };
 
+// Width (in SAT points) of the competitive band below a programme's reference
+// SAT. A transparent ± range around the published typical — NOT a cross-system
+// conversion. A SAT within this margin of the reference counts as "in range".
+const SAT_BAND = 120;
+
+// Neutral IB midpoint used only when the student gave neither IB nor SAT, so the
+// read stays deliberately rough (wide) rather than pretending to a number.
+const ESTIMATE_IB = 33;
+
+type Scale = "ib" | "sat" | "estimate";
+
 export function analyzeHkPrograms(
   programIds: string[],
   inputs: HkInputs
@@ -51,31 +65,33 @@ export function analyzeHkPrograms(
 }
 
 /**
- * How a strong record nudges a HK read. Academics stay dominant: the bonus is
- * capped at +2 on the IB-45 scale, so achievements lift a borderline candidate
- * but never carry a clearly-underqualified one. interviewReady marks a record
- * strong enough that an interview gate is an opportunity, not just a cap.
+ * How a strong record nudges the read. Academics stay dominant: the bonus is
+ * capped and expressed in the candidate's native scale (IB points or SAT points),
+ * so achievements lift a borderline candidate but never carry a clearly-
+ * underqualified one. interviewReady marks a record strong enough that an
+ * interview gate is an opportunity, not just a cap.
  */
-function achievementEffect(a: AchievementSignal): { bonus: number; interviewReady: boolean } {
-  const bonus = a.score >= 8 ? 2 : a.score >= 5 ? 1 : 0;
-  return { bonus, interviewReady: a.score >= 7 };
+function achievementBonus(a: AchievementSignal, scale: Scale): number {
+  if (a.score >= 8) return scale === "sat" ? 60 : 2;
+  if (a.score >= 5) return scale === "sat" ? 30 : 1;
+  return 0;
 }
 
-// ── Academic index (IB 45-scale) ──────────────────────────────────────────────
+// ── Native academic index ─────────────────────────────────────────────────────
 
-function ibFromSat(sat: number): number {
-  // Directional alignment: SAT 1100 ≈ IB 24, SAT 1600 ≈ IB 45.
-  const ib = 24 + ((sat - 1100) * (45 - 24)) / (1600 - 1100);
-  return Math.round(Math.max(20, Math.min(45, ib)));
+/** The candidate's index in their OWN system — no conversion. */
+function pickIndex(inputs: HkInputs): { index: number; scale: Scale } {
+  if (inputs.ibTotal != null) return { index: inputs.ibTotal, scale: "ib" };
+  if (inputs.sat != null) return { index: inputs.sat, scale: "sat" };
+  return { index: ESTIMATE_IB, scale: "estimate" }; // keep ranges wide
 }
 
-function computeIndex(inputs: HkInputs): {
-  index: number;
-  source: "ib" | "sat" | "estimate";
-} {
-  if (inputs.ibTotal != null) return { index: inputs.ibTotal, source: "ib" };
-  if (inputs.sat != null) return { index: ibFromSat(inputs.sat), source: "sat" };
-  return { index: 33, source: "estimate" }; // neutral midpoint → keep ranges wide
+/** The programme's reference band in the candidate's native scale. */
+function bandFor(p: HkProgram, scale: Scale): { min: number; typical: number } {
+  if (scale === "sat") {
+    return { min: p.sat_reference - SAT_BAND, typical: p.sat_reference };
+  }
+  return { min: p.min_ib, typical: p.typical_ib }; // ib + estimate read on the IB band
 }
 
 // ── English ───────────────────────────────────────────────────────────────────
@@ -98,19 +114,30 @@ function englishStatus(p: HkProgram, inputs: HkInputs): "meets" | "below" | "unk
 
 // ── Band ──────────────────────────────────────────────────────────────────────
 
-/** Pure academic band, before the interview gate. */
-function bandFor(p: HkProgram, index: number): "likely" | "target" | "reach" {
-  if (index >= p.typical_ib) return "likely";
-  if (index >= p.min_ib) return "target";
+/** Reach/target/likely from the index vs the programme's band (same scale). */
+function bandStatus(
+  index: number,
+  band: { min: number; typical: number }
+): "likely" | "target" | "reach" {
+  if (index >= band.typical) return "likely";
+  if (index >= band.min) return "target";
   return "reach";
 }
 
 function computeScholarship(
   p: HkProgram,
   index: number,
-  source: "ib" | "sat" | "estimate"
+  scale: Scale
 ): "likely_full" | "likely_partial" | "unlikely" | "unknown" {
-  if (source === "estimate") return "unknown";
+  if (scale === "estimate") return "unknown";
+  if (scale === "sat") {
+    // Full-tuition entrance scholarships in HK go to the very top admits; partial
+    // aid tracks scoring at/above the programme's competitive reference.
+    if (index >= 1520) return "likely_full";
+    if (index >= p.sat_reference - 30) return "likely_partial";
+    return "unlikely";
+  }
+  // IB scale.
   if (index >= 44) return "likely_full";
   if (index >= p.scholarship_ib_cutoff) return "likely_partial";
   return "unlikely";
@@ -119,19 +146,21 @@ function computeScholarship(
 // ── One programme ─────────────────────────────────────────────────────────────
 
 function analyzeOne(p: HkProgram, inputs: HkInputs, ach: AchievementSignal): HkProgramAnalysis {
-  const { index, source } = computeIndex(inputs);
-  const { bonus, interviewReady } = achievementEffect(ach);
+  const { index, scale } = pickIndex(inputs);
+  const band = bandFor(p, scale);
+  const bonus = achievementBonus(ach, scale);
+  const interviewReady = ach.score >= 7;
   // Achievements give a capped lift to the index used for banding/scholarship,
   // while user_index keeps reporting the honest academic index.
-  const effectiveIndex = Math.max(20, Math.min(45, index + bonus));
+  const effectiveIndex = index + bonus;
 
-  const rawStatus = bandFor(p, index); // grades alone
-  let status = bandFor(p, effectiveIndex); // grades + record
+  const rawStatus = bandStatus(index, band); // grades alone
+  let status = bandStatus(effectiveIndex, band); // grades + record
   // The interview is a real gate — strong grades alone never make it "likely",
   // UNLESS the student's record is strong enough to carry the interview.
   if (p.interview_required && status === "likely" && !interviewReady) status = "target";
 
-  const scholarship = computeScholarship(p, effectiveIndex, source);
+  const scholarship = computeScholarship(p, effectiveIndex, scale);
   const english = englishStatus(p, inputs);
   const conditional_offer = inputs.gradeStatus === "predicted";
 
@@ -143,15 +172,17 @@ function analyzeOne(p: HkProgram, inputs: HkInputs, ach: AchievementSignal): HkP
     status,
     grade_status: inputs.gradeStatus,
     user_index: index,
-    index_source: source,
+    index_source: scale,
     min_ib: p.min_ib,
     typical_ib: p.typical_ib,
+    min_sat: p.sat_reference - SAT_BAND,
+    typical_sat: p.sat_reference,
     interview_required: p.interview_required,
     scholarship,
     english,
     conditional_offer,
     annual_fee_hkd: p.annual_fee_hkd,
-    reasoning: buildReasoning(p, { index, source, status, rawStatus, scholarship, english, conditional_offer, ach, interviewReady }),
+    reasoning: buildReasoning(p, { index, scale, band, status, rawStatus, scholarship, english, conditional_offer, ach, interviewReady }),
     roadmap: buildRoadmap(p, conditional_offer),
     notes: p.notes,
   };
@@ -161,7 +192,8 @@ function analyzeOne(p: HkProgram, inputs: HkInputs, ach: AchievementSignal): HkP
 
 type Computed = {
   index: number;
-  source: "ib" | "sat" | "estimate";
+  scale: Scale;
+  band: { min: number; typical: number };
   status: "likely" | "target" | "reach";
   rawStatus: "likely" | "target" | "reach";
   scholarship: "likely_full" | "likely_partial" | "unlikely" | "unknown";
@@ -172,26 +204,33 @@ type Computed = {
 };
 
 function buildReasoning(p: HkProgram, c: Computed): string {
+  // Everything is phrased in the candidate's native system — never a fabricated
+  // IB-equivalent for a SAT applicant.
   const sourceNote =
-    c.source === "ib"
+    c.scale === "ib"
       ? `Your IB total of ${c.index}`
-      : c.source === "sat"
-        ? `Your SAT maps to an IB-equivalent of ~${c.index}`
-        : `Without grades or an SAT we've assumed a neutral index (~${c.index}), so this read is deliberately rough`;
+      : c.scale === "sat"
+        ? `Your SAT of ${c.index}`
+        : `Without an IB total or SAT we've assumed a neutral read, so this is deliberately rough`;
+
+  const typLabel = c.scale === "ib" ? `~${c.band.typical}/45` : `~${c.band.typical}`;
+  const minLabel = c.scale === "ib" ? `~${c.band.min}` : `~${c.band.min}`;
 
   const placement =
-    c.index >= p.typical_ib
-      ? `is at or above the typical admitted index (~${p.typical_ib})`
-      : c.index >= p.min_ib
-        ? `is between the lower boundary (~${p.min_ib}) and the typical admitted index (~${p.typical_ib})`
-        : `is below the lower boundary for serious contention (~${p.min_ib})`;
+    c.scale === "estimate"
+      ? ``
+      : c.index >= c.band.typical
+        ? ` is at or above this programme's competitive level (${typLabel})`
+        : c.index >= c.band.min
+          ? ` is between the lower boundary (${minLabel}) and the competitive level (${typLabel})`
+          : ` is below the lower boundary for serious contention (${minLabel})`;
 
   const bandLine =
     c.status === "likely"
       ? `On academics you are a strong, likely candidate for ${p.university} ${p.program_name}.`
       : c.status === "target"
         ? `${p.university} ${p.program_name} is a realistic target — competitive, but in range.`
-        : `${p.university} ${p.program_name} is a reach at your current index.`;
+        : `${p.university} ${p.program_name} is a reach at your current standing.`;
 
   const interviewLine = p.interview_required
     ? c.interviewReady && c.status === "likely"
@@ -208,11 +247,11 @@ function buildReasoning(p: HkProgram, c: Computed): string {
 
   const scholarshipLine =
     c.scholarship === "likely_full"
-      ? ` At your index you are in full-tuition entrance-scholarship territory (awarded automatically with the offer — no separate application).`
+      ? ` At your standing you are in full-tuition entrance-scholarship territory (awarded automatically with the offer — no separate application).`
       : c.scholarship === "likely_partial"
-        ? ` You are within range of a partial entrance scholarship, which HK universities consider automatically; a higher index raises the award.`
+        ? ` You are within range of a partial entrance scholarship, which HK universities consider automatically; a higher score raises the award.`
         : c.scholarship === "unlikely"
-          ? ` A merit scholarship is unlikely at this index — they are reserved for the very top admits.`
+          ? ` A merit scholarship is unlikely at this level — they are reserved for the very top admits.`
           : "";
 
   const englishLine =
@@ -223,7 +262,7 @@ function buildReasoning(p: HkProgram, c: Computed): string {
         : "";
 
   return (
-    `${bandLine} ${sourceNote} ${placement}.` +
+    `${bandLine} ${sourceNote}${placement}.` +
     achLine +
     interviewLine +
     offerLine +
@@ -273,7 +312,7 @@ function buildRoadmap(p: HkProgram, conditional: boolean): string[] {
   }
 
   steps.push(
-    "Entrance scholarships are considered automatically from your application — there is no separate form; a stronger academic index raises the award."
+    "Entrance scholarships are considered automatically from your application — there is no separate form; a stronger academic record raises the award."
   );
 
   steps.push(
