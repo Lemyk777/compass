@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Analysis } from "@/lib/ai/schema";
 import { UNIVERSITIES } from "@/lib/data/universities";
+import { earliestDeadlineHint } from "@/lib/data/app-deadlines";
 import { ITALIAN_PROGRAMS } from "@/lib/data/italian-universities";
 import { HK_PROGRAMS } from "@/lib/data/hk-universities";
 import { UAE_PROGRAMS } from "@/lib/data/uae-universities";
@@ -142,7 +143,11 @@ function UsBuilder() {
               disabled={!on && atCap}
               onClick={() => toggle(u.name)}
               title={u.name}
-              meta={[`Admit ~${Math.round(u.acceptance_rate * 100)}%`, `SAT ${u.sat_p25}–${u.sat_p75}`]}
+              meta={[
+                `Admit ~${Math.round(u.acceptance_rate * 100)}%`,
+                `SAT ${u.sat_p25}–${u.sat_p75}`,
+                ...(earliestDeadlineHint(u.id) ? [earliestDeadlineHint(u.id)!] : []),
+              ]}
               note={u.notes_international}
             />
           );

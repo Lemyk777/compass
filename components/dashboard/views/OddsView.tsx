@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
 import type { Analysis } from "@/lib/ai/schema";
 import { Section, Card } from "@/components/report/Section";
 import { LikelihoodGauge } from "@/components/charts/LikelihoodGauge";
@@ -83,6 +84,13 @@ export function OddsView() {
 
 function UsOdds({ analysis }: { analysis: Analysis }) {
   const t = useT();
+  const { profileMeta } = useDashboard();
+
+  // "today" depends on the visitor's clock; resolve it on the client so the
+  // deadline countdowns don't cause a hydration mismatch.
+  const [today, setToday] = useState<Date | null>(null);
+  useEffect(() => setToday(new Date()), []);
+
   if (analysis.schools.length === 0) return <EmptyCountryList code="US" />;
   return (
     <div className="space-y-8">
@@ -90,9 +98,21 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
         <Section title={t("report.schoolsTitle")} hint={t("report.schoolsHint")}>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {analysis.schools.map((s) => (
-              <LikelihoodGauge key={s.name} school={s} />
+              <LikelihoodGauge
+                key={s.name}
+                school={s}
+                today={today}
+                graduationYear={profileMeta.graduationYear}
+              />
             ))}
           </div>
+          <p className="mt-3 text-xs text-ink-faint">
+            Deadlines are dated to your graduation year and indicative — always
+            confirm the exact date on each school&apos;s official admissions
+            site. <span className="font-medium text-ink-soft">Binding</span> =
+            Early Decision: if admitted you must enrol and withdraw other
+            applications.
+          </p>
         </Section>
       )}
       {analysis.schools.length > 1 && (
