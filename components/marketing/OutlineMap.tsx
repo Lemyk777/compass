@@ -82,9 +82,18 @@ function decluster(pts: ProjPoint[]): Placed[] {
   return out;
 }
 
-// Web-Mercator bbox → Esri World_Topo export URL for a country. Exported so the
-// wizard can preload all countries' terrain for instant, flicker-free switches.
+// Locally-hosted terrain raster for a country. The three bboxes are fixed
+// (derived from static geo data), so the ArcGIS export is baked once into
+// /public/terrain — served from our own origin, cached, no third-party stall.
+// `remoteTopoUrl` below is kept only as a runtime fallback if the local file is
+// ever missing. Exported so the map can preload all countries for instant switches.
 export function topoUrlForCountry(country: CountryView): string {
+  const code = (SHAPE[country.code] ? country.code : "IT").toLowerCase();
+  return `/terrain/${code}.png`;
+}
+
+// Web-Mercator bbox → Esri World_Topo export URL for a country. Fallback only.
+export function remoteTopoUrl(country: CountryView): string {
   const geo = (SHAPE[country.code] ?? italyGeo) as unknown as { features: any[] };
   const rings = outerRings(geo, country.code === "US" ? US_EXCLUDE : undefined);
   let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
@@ -117,8 +126,11 @@ export function OutlineMap({ country }: { country: CountryView }) {
   // Hold the whole map hidden until the terrain raster is decoded, then reveal
   // everything (silhouette + relief + markers) together — no staged pop-in.
   const [loaded, setLoaded] = useState(false);
+  // If the local raster is ever missing, fall back to the live ArcGIS export.
+  // OutlineMap remounts per country (keyed AnimatePresence), so this resets.
+  const [useRemote, setUseRemote] = useState(false);
 
-  const { clip, url, img, placed } = useMemo(() => {
+  const { clip, url, remoteUrl, img, placed } = useMemo(() => {
     const geo = (SHAPE[country.code] ?? italyGeo) as unknown as { features: any[] };
     const rings = outerRings(geo, country.code === "US" ? US_EXCLUDE : undefined);
 
@@ -155,13 +167,14 @@ export function OutlineMap({ country }: { country: CountryView }) {
     }
 
     const url = topoUrlForCountry(country);
+    const remoteUrl = remoteTopoUrl(country);
 
     const pts: ProjPoint[] = country.markers.map((m) => {
       const [x, y] = project(m.lon, m.lat);
       return { ...m, x, y };
     });
 
-    return { clip, url, img: { x: offX, y: offY, w: drawW, h: drawH }, placed: decluster(pts) };
+    return { clip, url, remoteUrl, img: { x: offX, y: offY, w: drawW, h: drawH }, placed: decluster(pts) };
   }, [country]);
 
   // Render the hovered chip last so it sits above its neighbours.
@@ -203,7 +216,7 @@ export function OutlineMap({ country }: { country: CountryView }) {
             waits on the remote raster, fading in over the silhouette below it —
             so the shape, border and university chips never hide behind a slow image. */}
         <image
-          href={url}
+          href={useRemote ? remoteUrl : url}
           x={img.x}
           y={img.y}
           width={img.w}
@@ -211,7 +224,12 @@ export function OutlineMap({ country }: { country: CountryView }) {
           clipPath={`url(#${clipId})`}
           preserveAspectRatio="none"
           onLoad={() => setLoaded(true)}
-          onError={() => setLoaded(true)}
+          onError={() => {
+            // Local file missing → retry once against the live ArcGIS export
+            // before giving up and revealing the silhouette on its own.
+            if (!useRemote) setUseRemote(true);
+            else setLoaded(true);
+          }}
           style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.4s ease-out" }}
         />
 
