@@ -42,7 +42,12 @@ export function Card({
 }) {
   return (
     <motion.div
-      layout
+      // `layout="position"` animates only the card's POSITION when the list
+      // reflows (e.g. switching Opportunities category tabs), so siblings slide
+      // smoothly into place. Plain `layout` would also scale-animate the card's
+      // SIZE, which squashes-then-stretches the text inside ("shoots out from a
+      // compressed state"). Position-only reflow keeps the switch clean.
+      layout="position"
       className={cn(
         "rounded-2xl border border-line/70 bg-card p-5 shadow-sm transition-shadow hover:shadow-md",
         className
