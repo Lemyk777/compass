@@ -83,6 +83,23 @@
   animation: rise-in 0.7s cubic-bezier(0.21, 0.7, 0.35, 1) both;
 }
 
+/* Section entrance — the CSS equivalent of the former framer-motion fade
+   (opacity 0→1, y 10px→0, 0.4s), so Section ships zero JS. Covered by the
+   global prefers-reduced-motion guard below. */
+@keyframes section-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.section-in {
+  animation: section-in 0.4s ease-out both;
+}
+
 /* Headline line — a deep-navy phrase that smoothly "shuffles" between full
    sentences: the new line glides DOWN into place (soft blur→sharp) while the old
    one slips down and out at the SAME time. The trick that keeps it clean: motion

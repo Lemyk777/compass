@@ -1,9 +1,22 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import type { Analysis } from "@/lib/ai/schema";
 import { Section, Card } from "@/components/report/Section";
 import { LikelihoodGauge } from "@/components/charts/LikelihoodGauge";
-import { SchoolComparison } from "@/components/charts/SchoolComparison";
+
+// The comparison bar chart is the only Recharts component on this page. Load it
+// lazily (client-only) so Recharts stays out of the odds route's initial bundle;
+// the skeleton reserves height to avoid layout shift when it swaps in.
+const SchoolComparison = dynamic(
+  () => import("@/components/charts/SchoolComparison").then((m) => m.SchoolComparison),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 w-full animate-pulse rounded-xl bg-line/20" />
+    ),
+  }
+);
 import { Benchmarks } from "@/components/report/Benchmarks";
 import { Recommendations } from "@/components/report/Recommendations";
 import { ItalyBreakdown } from "@/components/report/ItalyBreakdown";

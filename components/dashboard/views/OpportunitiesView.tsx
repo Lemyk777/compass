@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card } from "@/components/report/Section";
+// Opportunities is the one view whose cards reflow on tab switch, so it uses the
+// framer-backed MotionCard (position animation) instead of the plain Card.
+import { MotionCard as Card } from "@/components/report/MotionCard";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
 import {

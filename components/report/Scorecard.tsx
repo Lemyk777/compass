@@ -1,10 +1,35 @@
 "use client";
 
 import { forwardRef } from "react";
+import dynamic from "next/dynamic";
 import type { Analysis } from "@/lib/ai/schema";
-import { OverallGauge } from "@/components/charts/OverallGauge";
-import { RadarScorecard } from "@/components/charts/RadarScorecard";
 import { FactorBars } from "@/components/charts/FactorBars";
+
+// The gauge and radar are the Recharts pieces — load them lazily (client-only)
+// so Recharts stays out of the standing route's initial bundle. Skeletons reserve
+// the exact footprint to avoid layout shift (mirrors the Overview view). FactorBars
+// is a lightweight custom SVG, so it stays statically imported.
+const OverallGauge = dynamic(
+  () => import("@/components/charts/OverallGauge").then((m) => m.OverallGauge),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-40 w-40 animate-pulse rounded-full bg-line/20 flex items-center justify-center">
+        <div className="h-28 w-28 rounded-full bg-card" />
+      </div>
+    ),
+  }
+);
+
+const RadarScorecard = dynamic(
+  () => import("@/components/charts/RadarScorecard").then((m) => m.RadarScorecard),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 w-full animate-pulse rounded-xl bg-line/20" />
+    ),
+  }
+);
 import { Logo } from "@/components/ui/Logo";
 import { DESTINATIONS, type DestinationCode } from "@/lib/data/destinations";
 import {
