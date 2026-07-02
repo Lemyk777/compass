@@ -41,11 +41,12 @@ export const UNIVERSITIES: University[] = [
   { id: "emory", name: "Emory University", acceptance_rate: 0.13, sat_p25: 1450, sat_p75: 1540, notes_international: "Some need-based aid for internationals." },
   { id: "usc", name: "University of Southern California", acceptance_rate: 0.1, sat_p25: 1450, sat_p75: 1540, notes_international: "Merit scholarships available to internationals." },
   { id: "uva", name: "University of Virginia", acceptance_rate: 0.19, sat_p25: 1410, sat_p75: 1530, notes_international: "Need-aware for internationals; some aid." },
+  { id: "umich", name: "University of Michigan, Ann Arbor", acceptance_rate: 0.18, sat_p25: 1350, sat_p75: 1530, notes_international: "Top public flagship; international admit rate runs below the overall rate and aid for internationals is very limited." },
   { id: "unc", name: "University of North Carolina, Chapel Hill", acceptance_rate: 0.19, sat_p25: 1390, sat_p75: 1520, notes_international: "Few international spots; competitive aid." },
-  { id: "nyu", name: "New York University", acceptance_rate: 0.12, sat_p25: 1450, sat_p75: 1570, notes_international: "Large international population; aid is limited/competitive." },
+  { id: "nyu", name: "New York University", acceptance_rate: 0.09, sat_p25: 1450, sat_p75: 1570, notes_international: "Large international population; aid is limited/competitive." },
   { id: "tufts", name: "Tufts University", acceptance_rate: 0.1, sat_p25: 1450, sat_p75: 1550, notes_international: "Need-aware for internationals; meets full need if admitted." },
   { id: "bc", name: "Boston College", acceptance_rate: 0.16, sat_p25: 1420, sat_p75: 1520, notes_international: "Limited aid for internationals." },
-  { id: "bu", name: "Boston University", acceptance_rate: 0.14, sat_p25: 1380, sat_p75: 1530, notes_international: "Some merit aid; large international community." },
+  { id: "bu", name: "Boston University", acceptance_rate: 0.11, sat_p25: 1380, sat_p75: 1530, notes_international: "Some merit aid; large international community." },
   { id: "northeastern", name: "Northeastern University", acceptance_rate: 0.06, sat_p25: 1450, sat_p75: 1540, notes_international: "Co-op program; merit aid for internationals." },
   { id: "rochester", name: "University of Rochester", acceptance_rate: 0.36, sat_p25: 1370, sat_p75: 1520, notes_international: "Generous merit aid for internationals; strong in research." },
   { id: "case-western", name: "Case Western Reserve University", acceptance_rate: 0.27, sat_p25: 1400, sat_p75: 1520, notes_international: "Good merit aid; strong STEM." },
@@ -88,6 +89,26 @@ export const UNIVERSITIES: University[] = [
   { id: "vassar", name: "Vassar College", acceptance_rate: 0.19, sat_p25: 1370, sat_p75: 1520, notes_international: "Need-blind for internationals (recent); meets full need." },
   { id: "grinnell", name: "Grinnell College", acceptance_rate: 0.11, sat_p25: 1400, sat_p75: 1530, notes_international: "Generous aid for internationals; strong sciences." },
   { id: "barnard", name: "Barnard College", acceptance_rate: 0.09, sat_p25: 1390, sat_p75: 1530, notes_international: "Women's college partnered with Columbia; need-aware for internationals." },
+
+  // ── US-system branch campuses abroad (hybrid schools) ─────────────────────
+  // Physically overseas, but admissions run on the US system — Common App (or
+  // the parent's US application) with holistic review. Kept in this dataset so
+  // the whole US pipeline (AI odds, benchmarks, recommender) scores them like
+  // any US school; lib/data/branch-campuses.ts carries the hybrid metadata the
+  // UI uses to explain the split.
+  //
+  // Figures checked against official admissions pages / class profiles on
+  // 2026-07-02 (NYUAD Class of 2026 infographic; DKU Class of 2029 admit news;
+  // GU-Q/NU-Q/CMU-Q/TUJ admissions pages). NYU Shanghai publishes no rate or
+  // SAT band — its figures are proxied from NYU's other degree-granting
+  // campuses and marked as estimates. Re-verify annually.
+  { id: "nyu-shanghai", name: "NYU Shanghai", acceptance_rate: 0.07, sat_p25: 1450, sat_p75: 1560, notes_international: "Branch campus in Shanghai, China — full NYU degree; US-style holistic review via the Common App. Publishes no admit rate or SAT band; selectivity is comparable to NYU's other campuses (figures here are estimates). Generous scholarships for internationals." },
+  { id: "nyu-abu-dhabi", name: "NYU Abu Dhabi", acceptance_rate: 0.04, sat_p25: 1450, sat_p75: 1560, notes_international: "Branch campus in Abu Dhabi, UAE — need-blind, meets full need incl. travel; US-style holistic review via the Common App; Candidate Weekend for finalists. Admit rate ~4-5%, among the lowest anywhere." },
+  { id: "duke-kunshan", name: "Duke Kunshan University", acceptance_rate: 0.05, sat_p25: 1510, sat_p75: 1540, notes_international: "Branch campus in Kunshan, China — Duke degree conferred; US-style holistic review via the Common App, test-optional. International admit rate ~3% (Class of 2029: 165 of 5,882); need-based and merit aid for internationals." },
+  { id: "georgetown-qatar", name: "Georgetown University in Qatar", acceptance_rate: 0.15, sat_p25: 1400, sat_p75: 1550, notes_international: "Branch campus in Doha, Qatar — Georgetown SFS degree in international affairs; US-style holistic review via the Georgetown application, test-flexible (admitted average SAT ~1480, GPA ~3.9). ~94% of aid applicants receive Qatar Foundation support." },
+  { id: "northwestern-qatar", name: "Northwestern University in Qatar", acceptance_rate: 0.17, sat_p25: 1050, sat_p75: 1250, notes_international: "Branch campus in Doha, Qatar — journalism, media and communication; US-style holistic review via the Common App, test-optional (~1 in 6 admitted); Qatar Foundation aid available." },
+  { id: "cmu-qatar", name: "Carnegie Mellon University in Qatar", acceptance_rate: 0.24, sat_p25: 1400, sat_p75: 1550, notes_international: "Branch campus in Doha, Qatar — CS, AI, information systems, business, biology; CMU degree conferred from Pittsburgh; US-style review via the Common App; Qatar Foundation aid available." },
+  { id: "temple-japan", name: "Temple University, Japan Campus", acceptance_rate: 0.8, sat_p25: 1150, sat_p75: 1370, notes_international: "Branch campus in Tokyo, Japan — US Temple degree; test-optional with year-round rolling admissions via TUJ's own application (decisions in ~4 weeks); accessible admit rate, some merit aid." },
 ];
 
 export const UNIVERSITY_NAMES = UNIVERSITIES.map((u) => u.name);
@@ -132,6 +153,7 @@ export const FIELD_STRENGTHS: Record<string, Partial<Record<FacultyValue, number
   emory: { medicine_health: 9, business_economics: 8 },
   usc: { arts_design: 10, business_economics: 8, engineering: 8, computer_science: 8 },
   uva: { law: 9, business_economics: 8, humanities_social: 8 },
+  umich: { engineering: 10, computer_science: 9, business_economics: 9, medicine_health: 8, natural_sciences: 8, humanities_social: 8 },
   unc: { medicine_health: 8, business_economics: 8, humanities_social: 8 },
   nyu: { arts_design: 10, business_economics: 9, law: 9, humanities_social: 8 },
   tufts: { humanities_social: 9, medicine_health: 8 },
@@ -173,4 +195,14 @@ export const FIELD_STRENGTHS: Record<string, Partial<Record<FacultyValue, number
   vassar: { humanities_social: 9, arts_design: 9 },
   grinnell: { natural_sciences: 9, humanities_social: 9, computer_science: 8 },
   barnard: { humanities_social: 9, arts_design: 8 },
+  // US-system branch campuses abroad — strengths mirror each campus's actual
+  // program focus, not the parent's full catalogue (NU-Q is a media school,
+  // CMU-Q teaches CS/IS/business, GU-Q is SFS international affairs only).
+  "nyu-shanghai": { business_economics: 9, computer_science: 8, natural_sciences: 8, humanities_social: 8 },
+  "nyu-abu-dhabi": { humanities_social: 9, engineering: 8, computer_science: 8, natural_sciences: 8, business_economics: 8 },
+  "duke-kunshan": { natural_sciences: 8, business_economics: 8, computer_science: 8, humanities_social: 8 },
+  "georgetown-qatar": { humanities_social: 9, business_economics: 8 },
+  "northwestern-qatar": { arts_design: 8, humanities_social: 8 },
+  "cmu-qatar": { computer_science: 9, business_economics: 8, natural_sciences: 7 },
+  "temple-japan": { business_economics: 7, humanities_social: 7, arts_design: 7 },
 };

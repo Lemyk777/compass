@@ -81,6 +81,9 @@ The profile's "activities" and "honors" arrive as structured Common Application 
 - "target": the student is roughly in the admitted range; plausible but not assured.
 - "likely": the student is comfortably above the admitted range.
 
+# US-system branch campuses abroad (hybrid schools)
+Some schools in the dataset are overseas branch campuses of US universities — their notes say "Branch campus in …" (e.g. NYU Shanghai, NYU Abu Dhabi, Duke Kunshan University, the Doha/Qatar campuses, Temple University Japan Campus). Although the campus is physically in another country, admissions run entirely on the US system: the student applies through the Common App or the parent school's US application and is reviewed holistically like any US applicant. Treat them EXACTLY like the other US schools — tier them, produce likelihood ranges, and apply the same honesty constraints (a branch campus can be just as selective as its parent; NYU Abu Dhabi's admit rate is single-digit). Mention the host country in the school's "reason" so the student understands where they'd study.
+
 # US university reference data (admit rate + SAT mid-50% + international/aid notes)
 Use these figures for benchmarking and tiering US target schools. If a target school is not listed, reason from the closest comparable. (Ignore this section entirely when the student is not applying to the US.)
 ${universityBlock()}

@@ -4,6 +4,8 @@ import type { SchoolLikelihood } from "@/lib/ai/schema";
 import { TIER_HEX, TIER_META } from "@/lib/tiers";
 import { resolveSchoolDeadlines } from "@/lib/data/app-deadlines";
 import { formatDate } from "@/lib/data/key-dates";
+import { branchCampusFor, type BranchCampus } from "@/lib/data/branch-campuses";
+import { Flag } from "@/components/ui/Flag";
 import { useT } from "@/lib/i18n/client";
 
 // Per-school admission-likelihood gauge: a range band (low–high) on a 0–100
@@ -23,6 +25,7 @@ export function LikelihoodGauge({
   const t = useT();
   const color = TIER_HEX[school.tier];
   const meta = TIER_META[school.tier];
+  const branch = branchCampusFor(school.name);
   const low = Math.max(0, Math.min(100, school.likelihood_low));
   const high = Math.max(low, Math.min(100, school.likelihood_high));
 
@@ -77,6 +80,8 @@ export function LikelihoodGauge({
         {school.reason}
       </p>
 
+      {branch && <BranchCampusPanel branch={branch} />}
+
       {deadlines.length > 0 && (
         <div className="mt-3 border-t border-line pt-2.5">
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
@@ -107,6 +112,29 @@ export function LikelihoodGauge({
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Hybrid-school explainer: this campus is in another country, but its odds
+ * above were computed under the US system — the student applies through the
+ * Common App (or the parent's US application) and is reviewed holistically.
+ */
+function BranchCampusPanel({ branch }: { branch: BranchCampus }) {
+  return (
+    <div className="mt-3 rounded-xl border border-accent/20 bg-accent-soft/50 p-3">
+      <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-accent-ink">
+        <Flag code={branch.host_code} size={11} className="shrink-0" />
+        Campus in {branch.host_country.replace(/^the /, "")} · US-system
+        admissions
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+        This is {branch.parent_name}&apos;s campus in {branch.host_city},{" "}
+        {branch.host_country} — admissions don&apos;t follow the local system.
+        You apply through {branch.application} and are reviewed holistically,
+        like a US applicant, so the odds above use the US methodology.
+      </p>
     </div>
   );
 }

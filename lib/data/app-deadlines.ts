@@ -143,6 +143,7 @@ export const SCHOOL_DEADLINES: Record<string, AppDeadline[]> = {
   georgetown: [{ stage: "EA", month: 11, day: 1 }, { stage: "RD", month: 1, day: 10 }],
   usc: [{ stage: "EA", month: 11, day: 1 }, { stage: "RD", month: 1, day: 10 }],
   unc: [{ stage: "EA", month: 10, day: 15 }, { stage: "RD", month: 1, day: 15 }],
+  umich: [{ stage: "EA", month: 11, day: 1 }, { stage: "RD", month: 2, day: 1 }],
   purdue: [{ stage: "EA", month: 11, day: 1 }, { stage: "RD", month: 1, day: 15 }],
   northeastern: [
     { stage: "EA", month: 11, day: 1 },
@@ -290,6 +291,28 @@ export const SCHOOL_DEADLINES: Record<string, AppDeadline[]> = {
     { stage: "ED2", month: 1, day: 1 },
     { stage: "RD", month: 1, day: 1 },
   ],
+  // ── US-system branch campuses abroad ─────────────────────────────────────
+  // Verified against each campus's official admissions pages on 2026-07-02:
+  // NYU's portal campuses share NYU's rounds; DKU published ED Nov 2 / RD Jan 4
+  // for the 2026-27 cycle; GU-Q is EA Nov 1 / RD Jan 15; NU-Q is EA Nov 1 /
+  // RD Jan 15 (Common App, test-optional); CMU-Q is ED Nov 1 / RD Feb 1.
+  // temple-japan is omitted on purpose — TUJ runs year-round rolling
+  // admissions with no fixed deadline. ⚠ Same annual-verify rule as above.
+  "nyu-shanghai": [
+    { stage: "ED", month: 11, day: 1 },
+    { stage: "ED2", month: 1, day: 1 },
+    { stage: "RD", month: 1, day: 5 },
+  ],
+  "nyu-abu-dhabi": [
+    { stage: "ED", month: 11, day: 1 },
+    { stage: "ED2", month: 1, day: 1 },
+    { stage: "RD", month: 1, day: 5 },
+  ],
+  "duke-kunshan": [{ stage: "ED", month: 11, day: 2 }, { stage: "RD", month: 1, day: 4 }],
+  "georgetown-qatar": [{ stage: "EA", month: 11, day: 1 }, { stage: "RD", month: 1, day: 15 }],
+  "northwestern-qatar": [{ stage: "EA", month: 11, day: 1 }, { stage: "RD", month: 1, day: 15 }],
+  "cmu-qatar": [{ stage: "ED", month: 11, day: 1 }, { stage: "RD", month: 2, day: 1 }],
+
   // Note: pitt (rolling) and syracuse-style schools without a fixed early
   // round are represented above only where a real deadline exists.
 };

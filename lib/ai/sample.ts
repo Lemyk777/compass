@@ -82,6 +82,7 @@ export const SAMPLE_PROFILE: StudentProfileInput = {
     "Princeton University",
     "Boston University",
     "University of Michigan, Ann Arbor",
+    "NYU Shanghai",
   ],
   needs_aid: true,
   italy_programs: SAMPLE_ITALY_PROGRAMS,
@@ -109,8 +110,9 @@ export const SAMPLE_ANALYSIS: Analysis = {
   schools: [
     { name: "Princeton University", tier: "reach", likelihood_low: 4, likelihood_high: 9, confidence: "low", fit_score: 7, reason: "Excellent profile, but ~4% admit rates make this a reach for everyone — and Princeton has no undergrad business major." },
     { name: "University of Pennsylvania", tier: "reach", likelihood_low: 6, likelihood_high: 12, confidence: "low", fit_score: 9, reason: "Wharton is a superb fit for your founder story, but admit rates are single digits and aid is need-aware for internationals." },
-    { name: "University of Michigan, Ann Arbor", tier: "target", likelihood_low: 25, likelihood_high: 40, confidence: "medium", fit_score: 8, reason: "Ross is strong for business and your stats sit above the mid-range; international aid is limited, though." },
+    { name: "University of Michigan, Ann Arbor", tier: "reach", likelihood_low: 12, likelihood_high: 23, confidence: "medium", fit_score: 8, reason: "Ross is strong for business and your stats sit above the mid-range, but the international pool is far more competitive than the ~18% overall rate suggests, and aid for internationals is very limited." },
     { name: "Boston University", tier: "likely", likelihood_low: 45, likelihood_high: 65, confidence: "medium", fit_score: 8, reason: "Your SAT is at the top of BU's range and Questrom fits well; the friendliest odds on your current list." },
+    { name: "NYU Shanghai", tier: "reach", likelihood_low: 8, likelihood_high: 18, confidence: "low", fit_score: 8, reason: "Your SAT 1520 sits inside the admitted band and the founder story fits its business focus, but single-digit admit rates keep this a reach; you'd study in Shanghai, China, while the review is US-style holistic via the Common App." },
   ],
   // Computed by the real deterministic recommender so /demo mirrors the live
   // engine (matches the student's fields + aid needs, excludes their targets).
@@ -118,7 +120,8 @@ export const SAMPLE_ANALYSIS: Analysis = {
   benchmarks: [
     { school: "University of Pennsylvania", metric: "SAT", student_value: 1520, admit_p25: 1490, admit_p75: 1570 },
     { school: "Boston University", metric: "SAT", student_value: 1520, admit_p25: 1380, admit_p75: 1530 },
-    { school: "University of Michigan, Ann Arbor", metric: "SAT", student_value: 1520, admit_p25: 1380, admit_p75: 1530 },
+    { school: "University of Michigan, Ann Arbor", metric: "SAT", student_value: 1520, admit_p25: 1350, admit_p75: 1530 },
+    { school: "NYU Shanghai", metric: "SAT", student_value: 1520, admit_p25: 1450, admit_p75: 1560 },
   ],
   gap_analysis: [
     { action: "Raise SAT 1520 → 1550+", impact: "+3 to competitiveness; nudges Penn/Michigan reasoning upward", effort: "medium", priority: 1 },
@@ -132,7 +135,7 @@ export const SAMPLE_ANALYSIS: Analysis = {
     { horizon: "6 months", items: ["Finalize a balanced school list (reach/target/likely)", "Secure strong recommenders", "Complete aid paperwork (CSS Profile)"] },
   ],
   summary:
-    "You have a genuinely strong, coherent profile — top-decile test scores, real entrepreneurial leadership, and rigorous A-Levels. Your list is reach-heavy, and as an aid-seeking international that raises the stakes, so the highest-value moves are balancing the list with aid-friendly targets like Rochester and nudging your SAT and awards up. Penn and Princeton stay aspirational (single-digit odds for everyone); Michigan and BU are where your profile competes hardest. In Italy your SAT clears the Politecnico early-admission threshold outright — a far more predictable, score-based path worth securing alongside the US list.",
+    "You have a genuinely strong, coherent profile — top-decile test scores, real entrepreneurial leadership, and rigorous A-Levels. Your list is reach-heavy, and as an aid-seeking international that raises the stakes, so the highest-value moves are balancing the list with aid-friendly targets like Rochester and nudging your SAT and awards up. Penn and Princeton stay aspirational (single-digit odds for everyone); BU is where your profile competes hardest, and Michigan is a competitive reach in the tougher international pool. In Italy your SAT clears the Politecnico early-admission threshold outright — a far more predictable, score-based path worth securing alongside the US list.",
   // Italy pathway — computed deterministically by the engine, exactly as a real
   // analysis would assemble it, so the demo stays faithful to production.
   italy_programs: analyzeItalianPrograms(

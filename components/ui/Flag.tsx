@@ -3,7 +3,12 @@ import type { DestinationCode } from "@/lib/data/destinations";
 // Small SVG flags. Emoji flags don't render on Windows (they fall back to the
 // two-letter code, e.g. "US"), so we draw simple, consistent flags instead.
 // Shapes are intentionally simplified — recognizable at ~14–28px, not heraldic.
-const SHAPES: Record<DestinationCode, JSX.Element> = {
+//
+// Beyond destination countries, we also draw the HOST countries of US-system
+// branch campuses (Qatar, Japan) for the hybrid-school badges.
+export type FlagCode = DestinationCode | "QA" | "JP";
+
+const SHAPES: Record<FlagCode, JSX.Element> = {
   US: (
     <>
       <rect width="20" height="14" fill="#fff" />
@@ -80,6 +85,23 @@ const SHAPES: Record<DestinationCode, JSX.Element> = {
       <rect x="9.2" y="5.5" width="1.6" height="3" fill="#FF0000" />
     </>
   ),
+  QA: (
+    // Maroon field, white hoist band with a serrated edge (simplified to six
+    // teeth — the real nine dissolve at badge size).
+    <>
+      <rect width="20" height="14" fill="#8A1538" />
+      <path
+        d="M0 0h6l2 1.17-2 1.16 2 1.17-2 1.17 2 1.16-2 1.17 2 1.16-2 1.17 2 1.16-2 1.17 2 1.17-2 1.16H0Z"
+        fill="#fff"
+      />
+    </>
+  ),
+  JP: (
+    <>
+      <rect width="20" height="14" fill="#fff" />
+      <circle cx="10" cy="7" r="4" fill="#BC002D" />
+    </>
+  ),
 };
 
 export function Flag({
@@ -87,7 +109,7 @@ export function Flag({
   size = 14,
   className,
 }: {
-  code: DestinationCode;
+  code: FlagCode;
   size?: number;
   className?: string;
 }) {

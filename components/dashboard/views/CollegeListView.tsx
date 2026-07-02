@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { Analysis } from "@/lib/ai/schema";
 import { UNIVERSITIES } from "@/lib/data/universities";
 import { earliestDeadlineHint } from "@/lib/data/app-deadlines";
+import { branchCampusFor } from "@/lib/data/branch-campuses";
+import { Flag } from "@/components/ui/Flag";
 import { ITALIAN_PROGRAMS } from "@/lib/data/italian-universities";
 import { HK_PROGRAMS } from "@/lib/data/hk-universities";
 import { UAE_PROGRAMS } from "@/lib/data/uae-universities";
@@ -138,6 +140,7 @@ function UsBuilder() {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {filtered.map((u) => {
           const on = selected.includes(u.name);
+          const branch = branchCampusFor(u.id);
           return (
             <PickCard
               key={u.id}
@@ -145,6 +148,15 @@ function UsBuilder() {
               disabled={!on && atCap}
               onClick={() => toggle(u.name)}
               title={u.name}
+              badge={
+                branch ? (
+                  <span className="mt-1.5 inline-flex w-fit items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent-ink">
+                    <Flag code={branch.host_code} size={10} className="shrink-0" />
+                    Campus in {branch.host_country.replace(/^the /, "")} ·
+                    US-system admissions
+                  </span>
+                ) : undefined
+              }
               meta={[
                 `Admit ~${Math.round(u.acceptance_rate * 100)}%`,
                 `SAT ${u.sat_p25}–${u.sat_p75}`,
@@ -705,6 +717,7 @@ function PickCard({
   onClick,
   title,
   subtitle,
+  badge,
   meta,
   note,
 }: {
@@ -713,6 +726,8 @@ function PickCard({
   onClick: () => void;
   title: string;
   subtitle?: string;
+  /** Optional pill under the title (e.g. the hybrid branch-campus badge). */
+  badge?: ReactNode;
   meta: string[];
   note?: string;
 }) {
@@ -731,9 +746,10 @@ function PickCard({
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+        <div className="flex min-w-0 flex-col">
           <h3 className="text-[0.95rem] font-semibold leading-tight text-ink">{title}</h3>
           {subtitle && <p className="mt-0.5 text-xs text-ink-soft">{subtitle}</p>}
+          {badge}
         </div>
         <span
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${

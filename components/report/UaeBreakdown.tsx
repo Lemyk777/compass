@@ -5,6 +5,7 @@ import type { UaeProgramAnalysis } from "@/lib/ai/schema";
 import { Flag } from "@/components/ui/Flag";
 import { OfficialSourceLink } from "@/components/ui/OfficialSourceLink";
 import { uaeOfficialSources } from "@/lib/data/official-sources";
+import { branchCampusFor } from "@/lib/data/branch-campuses";
 
 type Props = {
   programs: UaeProgramAnalysis[];
@@ -56,6 +57,7 @@ export function UaeBreakdown({ programs }: Props) {
 
 function UaeProgramCard({ program: p }: { program: UaeProgramAnalysis }) {
   const [open, setOpen] = useState(false);
+  const branch = branchCampusFor(p.university);
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-line bg-card shadow-card transition-shadow hover:shadow-lift">
@@ -73,6 +75,23 @@ function UaeProgramCard({ program: p }: { program: UaeProgramAnalysis }) {
           </p>
           <p className="text-xs text-ink-soft">{p.program_name}</p>
         </div>
+
+        {/* Hybrid school: a US university's campus — admissions run on the US
+            system, not the grades-first UAE process this tab models. */}
+        {branch && (
+          <div className="mb-3 rounded-xl border border-accent/20 bg-accent-soft/50 p-2.5">
+            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-accent-ink">
+              <Flag code="US" size={11} className="shrink-0" />
+              US university abroad · evaluated differently
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
+              {p.university} is {branch.parent_name}&apos;s campus — you apply
+              through {branch.application} with US-style holistic review, not
+              the grades-first process used by the other UAE universities. For
+              the full US-methodology read, also add it on your US list.
+            </p>
+          </div>
+        )}
 
         {/* Status + academic index */}
         <div className="mb-3 flex items-center justify-between">
