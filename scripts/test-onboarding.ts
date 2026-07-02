@@ -1099,6 +1099,9 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         hk_grade_status: undefined,
         uae_programs: [],
         uae_grade_status: undefined,
+        kr_programs: [],
+        kr_grade_status: undefined,
+        kr_topik_level: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1145,6 +1148,9 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         hk_grade_status: undefined,
         uae_programs: [],
         uae_grade_status: undefined,
+        kr_programs: [],
+        kr_grade_status: undefined,
+        kr_topik_level: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1202,6 +1208,9 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         hk_grade_status: undefined,
         uae_programs: [],
         uae_grade_status: undefined,
+        kr_programs: [],
+        kr_grade_status: undefined,
+        kr_topik_level: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1243,6 +1252,9 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         hk_grade_status: undefined,
         uae_programs: [],
         uae_grade_status: undefined,
+        kr_programs: [],
+        kr_grade_status: undefined,
+        kr_topik_level: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });
@@ -1282,6 +1294,9 @@ describe("Compass Onboarding E2E & Server Action Test Suite", () => {
         hk_grade_status: undefined,
         uae_programs: [],
         uae_grade_status: undefined,
+        kr_programs: [],
+        kr_grade_status: undefined,
+        kr_topik_level: undefined,
       };
       const result = await saveProfile(payload);
       assert.deepStrictEqual(result, { ok: true });

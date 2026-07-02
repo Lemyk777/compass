@@ -87,6 +87,8 @@ export async function POST(_req: NextRequest) {
     destinations,
     faculties: normalizeFaculties(sp.faculties),
     intended_major: sp.intended_major ?? "",
+    graduation_year: (sp.graduation_year as number | null) ?? undefined,
+    school_years: (sp.school_years as number | null) ?? undefined,
     curriculum: sp.curriculum,
     grades: sp.grades ?? { raw: "" },
     tests: sp.tests ?? {},
@@ -100,6 +102,9 @@ export async function POST(_req: NextRequest) {
     hk_grade_status: sp.hk_grade_status ?? undefined,
     uae_programs: sp.uae_programs ?? [],
     uae_grade_status: sp.uae_grade_status ?? undefined,
+    kr_programs: sp.kr_programs ?? [],
+    kr_grade_status: sp.kr_grade_status ?? undefined,
+    kr_topik_level: (sp.kr_topik_level as number | null) ?? undefined,
   };
 
   try {

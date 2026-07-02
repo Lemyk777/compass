@@ -14,6 +14,7 @@ import {
 } from "@/lib/ai/italy-analyze";
 import { analyzeHkPrograms } from "@/lib/ai/hk-analyze";
 import { analyzeUaePrograms } from "@/lib/ai/uae-analyze";
+import { analyzeKoreaPrograms } from "@/lib/ai/korea-analyze";
 import {
   academicIndexFromProfile,
   estimateSchoolLikelihood,
@@ -265,6 +266,29 @@ export function assembleAnalysis(
       })
     : undefined;
 
+  const hasKorea =
+    (profile.destinations ?? []).includes("KR") &&
+    (profile.kr_programs ?? []).length > 0;
+
+  const krPrograms = hasKorea
+    ? analyzeKoreaPrograms(profile.kr_programs ?? [], {
+        gpaPercent:
+          profile.grades?.gpa != null
+            ? gpaToPercent(profile.grades.gpa, profile.grades.gpa_scale)
+            : profile.grades?.national_percent != null
+              ? profile.grades.national_percent
+              : undefined,
+        ibTotal: profile.grades?.ib_total,
+        sat: profile.tests?.SAT,
+        topik: profile.kr_topik_level,
+        ielts: profile.tests?.IELTS,
+        toefl: profile.tests?.TOEFL,
+        gradeStatus: profile.kr_grade_status ?? "predicted",
+        activities: profile.activities,
+        honors: profile.honors,
+      })
+    : undefined;
+
   const factors = applyDeterministicFactors(model.factors, profile);
 
   const full: Analysis = {
@@ -285,6 +309,7 @@ export function assembleAnalysis(
       : undefined,
     hk_programs: hkPrograms,
     uae_programs: uaePrograms,
+    kr_programs: krPrograms,
   };
   return sanitizeAnalysis(analysisSchema.parse(full));
 }

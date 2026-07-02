@@ -502,8 +502,11 @@ const en: Dict = {
   "report.hkHint": "Hong Kong university admission is meritocracy-driven but holistic. Check your standings and scorecards below.",
   "report.uaeTitle": "UAE University Breakdown",
   "report.uaeHint": "UAE university admission is grades-first and SAT-driven, with generous merit scholarships. Check your standings and scorecards below.",
+  "report.krTitle": "South Korea University Breakdown",
+  "report.krHint": "Korean international admission is a document-based, GPA-first screen with a hard language gate (TOPIK or English). Check your standings and scorecards below.",
   "report.costHintHK": "Approximate flat application fees per Hong Kong university program.",
   "report.costHintAE": "Approximate flat application fees per UAE university program.",
+  "report.costHintKR": "Approximate flat application fees per Korean university program.",
 
   // error / not-found
   "nf.body": "We couldn't find that page.",

@@ -37,10 +37,30 @@ const SHAPES: Record<DestinationCode, JSX.Element> = {
     </>
   ),
   KR: (
+    // Taegeuk with a real yin-yang S-curve (red over blue) + solid corner
+    // trigram bars. The bars are deliberately unbroken — at 14–20px the real
+    // flag's broken-bar detail dissolves into pixel noise.
     <>
       <rect width="20" height="14" fill="#fff" />
-      <path d="M7 7a3 3 0 0 1 6 0z" fill="#CD2E3A" />
-      <path d="M7 7a3 3 0 0 0 6 0z" fill="#0047A0" />
+      <circle cx="10" cy="7" r="3.4" fill="#0047A0" />
+      <path
+        d="M6.6 7a3.4 3.4 0 0 1 6.8 0 1.7 1.7 0 0 1-3.4 0 1.7 1.7 0 0 0-3.4 0Z"
+        fill="#CD2E3A"
+      />
+      <g fill="#212121">
+        <rect x="1.5" y="1.8" width="3.2" height="0.8" rx="0.2" />
+        <rect x="1.5" y="3" width="3.2" height="0.8" rx="0.2" />
+        <rect x="1.5" y="4.2" width="3.2" height="0.8" rx="0.2" />
+        <rect x="15.3" y="1.8" width="3.2" height="0.8" rx="0.2" />
+        <rect x="15.3" y="3" width="3.2" height="0.8" rx="0.2" />
+        <rect x="15.3" y="4.2" width="3.2" height="0.8" rx="0.2" />
+        <rect x="1.5" y="9" width="3.2" height="0.8" rx="0.2" />
+        <rect x="1.5" y="10.2" width="3.2" height="0.8" rx="0.2" />
+        <rect x="1.5" y="11.4" width="3.2" height="0.8" rx="0.2" />
+        <rect x="15.3" y="9" width="3.2" height="0.8" rx="0.2" />
+        <rect x="15.3" y="10.2" width="3.2" height="0.8" rx="0.2" />
+        <rect x="15.3" y="11.4" width="3.2" height="0.8" rx="0.2" />
+      </g>
     </>
   ),
   CN: (

@@ -67,6 +67,7 @@ Judge narrative_fit by whether the student's field(s), activities, and stated go
 The profile's "activities" and "honors" arrive as structured Common Application data:
 - activities[]: { type, position, organization, description, grades, timing, continue_in_college }. Judge leadership and depth from the ROLE (position), the impact and scale (description, organization), and how sustained it is (the grade levels it spans) — never reward a long list of shallow entries.
 - honors[]: { title, grades, levels }. Score the "awards" factor primarily by the highest level of recognition (School < State/Regional < National < International) and its selectivity, not by the number of honors.
+- school_years (when present) is the TOTAL number of grades in the student's school system (11 in Kazakhstan/Russia, 12 in the US, 13 in Italy/Germany), and graduation_year is when they finish. Read grade numbers relative to it: "grade 10" in an 11-grade system is the penultimate year (a US junior), not a sophomore. Judge how much runway the student has left accordingly (gap analysis, timeline).
 
 # Honesty constraints (critical)
 - Per-school admission numbers are ALWAYS a range (likelihood_low to likelihood_high in percent) with a confidence label — never a single percentage.

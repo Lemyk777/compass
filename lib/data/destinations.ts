@@ -21,7 +21,7 @@ export const DESTINATIONS: Destination[] = [
   { code: "IT", labelKey: "dest.IT", flag: "🇮🇹", available: true },
   { code: "HK", labelKey: "dest.HK", flag: "🇭🇰", available: true },
   { code: "AE", labelKey: "dest.AE", flag: "🇦🇪", available: true },
-  { code: "KR", labelKey: "dest.KR", flag: "🇰🇷", available: false },
+  { code: "KR", labelKey: "dest.KR", flag: "🇰🇷", available: true },
   { code: "CN", labelKey: "dest.CN", flag: "🇨🇳", available: false },
   { code: "CA", labelKey: "dest.CA", flag: "🇨🇦", available: false },
 ];

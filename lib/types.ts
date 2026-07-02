@@ -144,6 +144,9 @@ export type StudentProfileInput = {
   faculties: FacultyValue[]; // fields of study (up to LIMITS.faculties)
   intended_major: string; // optional free-text specialization (may be "")
   graduation_year?: number; // year they finish high school — anchors the timeline
+  // Total grades in the student's school system (11 in KZ/RU, 12 in the US,
+  // 13 in IT/DE) — tells the analysis how far "grade N" is from graduation.
+  school_years?: number;
   // ── Academics (country-agnostic) ──
   curriculum: Curriculum | "";
   grades: Grades;
@@ -162,6 +165,10 @@ export type StudentProfileInput = {
   // ── UAE pathway (active when destinations includes "AE") ──
   uae_programs: string[]; // UAE program IDs from the dataset
   uae_grade_status?: "predicted" | "achieved"; // are reported grades predicted or achieved?
+  // ── South Korea pathway (active when destinations includes "KR") ──
+  kr_programs: string[]; // Korean program IDs from the dataset
+  kr_grade_status?: "predicted" | "achieved"; // are reported grades predicted or achieved?
+  kr_topik_level?: number; // TOPIK level held (1–6); undefined = none/not provided
   // ── Budget (redesigned intake) ── how much family can pay per year, in USD.
   budget_annual_usd?: number;
   // ── Attribution (shown only to non-referral signups) ──
@@ -187,6 +194,7 @@ export function emptyProfile(): StudentProfileInput {
     faculties: [],
     intended_major: "",
     graduation_year: undefined,
+    school_years: undefined,
     curriculum: "",
     grades: { raw: "" },
     tests: {},
@@ -200,6 +208,9 @@ export function emptyProfile(): StudentProfileInput {
     hk_grade_status: undefined,
     uae_programs: [],
     uae_grade_status: undefined,
+    kr_programs: [],
+    kr_grade_status: undefined,
+    kr_topik_level: undefined,
     heard_from: "",
     heard_from_code: "",
   };

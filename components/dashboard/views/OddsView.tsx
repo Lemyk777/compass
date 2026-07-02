@@ -23,6 +23,7 @@ import { Recommendations } from "@/components/report/Recommendations";
 import { ItalyBreakdown } from "@/components/report/ItalyBreakdown";
 import { HkBreakdown } from "@/components/report/HkBreakdown";
 import { UaeBreakdown } from "@/components/report/UaeBreakdown";
+import { KoreaBreakdown } from "@/components/report/KoreaBreakdown";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { CountryTabs, EmptyCountryList, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
 import { LockedSection } from "@/components/dashboard/LockedSection";
@@ -42,7 +43,8 @@ export function OddsView() {
     analysis.schools.length > 0 ||
     (analysis.italy_programs?.length ?? 0) > 0 ||
     (analysis.hk_programs?.length ?? 0) > 0 ||
-    (analysis.uae_programs?.length ?? 0) > 0;
+    (analysis.uae_programs?.length ?? 0) > 0 ||
+    (analysis.kr_programs?.length ?? 0) > 0;
   if (!hasCollegeList) {
     return (
       <div className="space-y-6">
@@ -78,6 +80,7 @@ export function OddsView() {
       {country === "IT" && <ItalyOdds analysis={analysis} />}
       {country === "HK" && <HkOdds analysis={analysis} />}
       {country === "AE" && <UaeOdds analysis={analysis} />}
+      {country === "KR" && <KoreaOdds analysis={analysis} />}
     </div>
   );
 }
@@ -165,6 +168,16 @@ function UaeOdds({ analysis }: { analysis: Analysis }) {
   return (
     <Section title={t("report.uaeTitle")} hint={t("report.uaeHint")}>
       <UaeBreakdown programs={analysis.uae_programs} />
+    </Section>
+  );
+}
+
+function KoreaOdds({ analysis }: { analysis: Analysis }) {
+  const t = useT();
+  if (!analysis.kr_programs?.length) return <EmptyCountryList code="KR" />;
+  return (
+    <Section title={t("report.krTitle")} hint={t("report.krHint")}>
+      <KoreaBreakdown programs={analysis.kr_programs} />
     </Section>
   );
 }

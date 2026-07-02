@@ -37,6 +37,9 @@ import {
   factorsByCountryRelevance,
   factorMattersForCountry,
   hkScorecardFactors,
+  uaeScorecardFactors,
+  krScorecardFactors,
+  krLanguageGateScore,
 } from "@/lib/data/country-scorecard";
 import { useT } from "@/lib/i18n/client";
 
@@ -56,16 +59,23 @@ export const Scorecard = forwardRef<
   const overall = country
     ? countryOverall(country, analysis.factors, analysis.italy_financial_fit_score)
     : analysis.overall_score;
-  // HK reads grades-first with a single combined Achievements factor, so its
-  // bars (and radar) use the 4-factor set rather than the 6 weighted ones.
-  const orderedFactors =
+  // HK/AE/KR read a profile through their own native factor set (see
+  // country-scorecard.ts), so their bars and radar use it — not the US seven.
+  const krLanguage =
+    country === "KR" ? krLanguageGateScore(analysis.kr_programs) : undefined;
+  const nativeSet =
     country === "HK"
       ? hkScorecardFactors(analysis.factors)
-      : country
-        ? factorsByCountryRelevance(country, analysis.factors)
-        : analysis.factors;
+      : country === "AE"
+        ? uaeScorecardFactors(analysis.factors)
+        : country === "KR"
+          ? krScorecardFactors(analysis.factors, krLanguage ?? null)
+          : null;
+  const orderedFactors =
+    nativeSet ??
+    (country ? factorsByCountryRelevance(country, analysis.factors) : analysis.factors);
   const mutedKeys =
-    country && country !== "HK"
+    country && !nativeSet
       ? new Set(
           analysis.factors
             .filter((f) => !factorMattersForCountry(country, f.key))
@@ -109,6 +119,7 @@ export const Scorecard = forwardRef<
             factors={analysis.factors}
             italyFinancialFitScore={italyFinancialFitScore}
             country={country}
+            krLanguageScore={krLanguage}
           />
         </div>
       </div>

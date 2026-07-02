@@ -67,6 +67,7 @@ export function analysisHasCountry(analysis: Analysis, code: DestinationCode): b
   if (code === "IT") return (analysis.italy_programs?.length ?? 0) > 0;
   if (code === "HK") return (analysis.hk_programs?.length ?? 0) > 0;
   if (code === "AE") return (analysis.uae_programs?.length ?? 0) > 0;
+  if (code === "KR") return (analysis.kr_programs?.length ?? 0) > 0;
   return false;
 }
 

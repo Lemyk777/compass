@@ -8,6 +8,7 @@ import { earliestDeadlineHint } from "@/lib/data/app-deadlines";
 import { ITALIAN_PROGRAMS } from "@/lib/data/italian-universities";
 import { HK_PROGRAMS } from "@/lib/data/hk-universities";
 import { UAE_PROGRAMS } from "@/lib/data/uae-universities";
+import { KOREA_PROGRAMS } from "@/lib/data/korea-universities";
 import { LIMITS } from "@/lib/limits";
 import { Button } from "@/components/ui/Button";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
@@ -41,6 +42,7 @@ export function CollegeListView() {
       {country === "IT" && <ItalyBuilder />}
       {country === "HK" && <HkBuilder />}
       {country === "AE" && <UaeBuilder />}
+      {country === "KR" && <KoreaBuilder />}
     </div>
   );
 }
@@ -48,7 +50,7 @@ export function CollegeListView() {
 // ── Shared submit flow ────────────────────────────────────────────────────────
 // Save this country's list, run one re-analysis, then land on its odds tab so the
 // targets the student just picked are shown.
-function useListSubmit(targetCountry: "US" | "IT" | "HK" | "AE") {
+function useListSubmit(targetCountry: "US" | "IT" | "HK" | "AE" | "KR") {
   const router = useRouter();
   const { setAnalysis, setCountry, basePath, demo } = useDashboard();
   const [busy, setBusy] = useState(false);
@@ -489,6 +491,154 @@ function UaeBuilder() {
               meta={[
                 `Typical SAT ~${p.typical_sat}`,
                 p.need_blind ? "Need-blind" : p.interview_required ? "Interview" : "No interview",
+              ]}
+              note={p.notes}
+            />
+          );
+        })}
+      </div>
+
+      <StickyActionBar
+        error={error}
+        message={
+          selected.length === 0
+            ? "Select at least one program to continue."
+            : `${selected.length} ${selected.length === 1 ? "program" : "programs"} selected`
+        }
+        ctaLabel="See my admission odds"
+        ctaDisabled={selected.length === 0 || busy}
+        onCta={run}
+      />
+      {busy && <AnalyzingOverlay />}
+    </div>
+  );
+}
+
+// ── South Korea ───────────────────────────────────────────────────────────────
+const KR_SORTED = [...KOREA_PROGRAMS].sort((a, b) =>
+  a.university === b.university
+    ? b.typical_gpa_percent - a.typical_gpa_percent
+    : a.university.localeCompare(b.university)
+);
+
+const TOPIK_LEVELS = [0, 1, 2, 3, 4, 5, 6] as const;
+
+function KoreaBuilder() {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [gradeStatus, setGradeStatus] = useState<"predicted" | "achieved">("predicted");
+  const [topik, setTopik] = useState<number>(0);
+  const [query, setQuery] = useState("");
+  const { busy, error, submit } = useListSubmit("KR");
+
+  const atCap = selected.length >= LIMITS.krPrograms;
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return KR_SORTED;
+    return KR_SORTED.filter(
+      (p) =>
+        p.university.toLowerCase().includes(q) ||
+        p.program_name.toLowerCase().includes(q) ||
+        p.field.toLowerCase().includes(q) ||
+        p.city.toLowerCase().includes(q)
+    );
+  }, [query]);
+
+  const toggle = (id: string) =>
+    setSelected((cur) =>
+      cur.includes(id)
+        ? cur.filter((n) => n !== id)
+        : atCap
+          ? cur
+          : [...cur, id]
+    );
+
+  const run = () =>
+    submit(async () => {
+      const { saveKoreaList } = await import("@/app/dashboard/actions");
+      return saveKoreaList(selected, gradeStatus, topik > 0 ? topik : undefined);
+    });
+
+  return (
+    <div className="space-y-6">
+      <SearchBar
+        query={query}
+        onQuery={setQuery}
+        placeholder="Search by university, program, field, or city…"
+        count={selected.length}
+        cap={LIMITS.krPrograms}
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <span className="text-sm font-medium text-ink">Your grades are</span>
+          <p className="mb-2 text-xs text-ink-soft">
+            Predicted grades get a conditional-offer read; achieved grades are scored as final.
+          </p>
+          <div className="flex gap-2">
+            {(["predicted", "achieved"] as const).map((s) => {
+              const on = gradeStatus === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setGradeStatus(s)}
+                  aria-pressed={on}
+                  className={`min-h-[44px] flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-colors focus-visible:focus-ring ${
+                    on
+                      ? "border-accent bg-accent-soft text-ink"
+                      : "border-line bg-card text-ink-soft hover:border-ink/30"
+                  }`}
+                >
+                  {s === "predicted" ? "Predicted" : "Achieved"}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <span className="text-sm font-medium text-ink">Your TOPIK level</span>
+          <p className="mb-2 text-xs text-ink-soft">
+            Korean-taught programs require TOPIK as an eligibility document — it directly changes your read.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {TOPIK_LEVELS.map((lv) => {
+              const on = topik === lv;
+              return (
+                <button
+                  key={lv}
+                  type="button"
+                  onClick={() => setTopik(lv)}
+                  aria-pressed={on}
+                  className={`min-h-[44px] min-w-[52px] rounded-xl border px-3 py-3 text-sm font-medium transition-colors focus-visible:focus-ring ${
+                    on
+                      ? "border-accent bg-accent-soft text-ink"
+                      : "border-line bg-card text-ink-soft hover:border-ink/30"
+                  }`}
+                >
+                  {lv === 0 ? "None" : lv}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {filtered.map((p) => {
+          const on = selected.includes(p.id);
+          return (
+            <PickCard
+              key={p.id}
+              on={on}
+              disabled={!on && atCap}
+              onClick={() => toggle(p.id)}
+              title={p.university}
+              subtitle={`${p.program_name} · ${p.city}`}
+              meta={[
+                `Typical GPA ~${p.typical_gpa_percent}%`,
+                p.topik_required != null ? `TOPIK ${p.topik_required}+` : "English-taught",
+                ...(p.auto_full_scholarship ? ["Full ride for admits"] : []),
               ]}
               note={p.notes}
             />

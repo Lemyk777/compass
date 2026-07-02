@@ -46,6 +46,9 @@ import {
   factorsByCountryRelevance,
   factorMattersForCountry,
   hkScorecardFactors,
+  uaeScorecardFactors,
+  krScorecardFactors,
+  krLanguageGateScore,
 } from "@/lib/data/country-scorecard";
 import { useT } from "@/lib/i18n/client";
 
@@ -87,14 +90,20 @@ export function Overview() {
   const italyFin = country === "IT" ? analysis.italy_financial_fit_score : undefined;
 
   // Top factors for the compact bar list — relevant ones for the country first.
-  // HK uses its grades-first 4-factor set (with one combined Achievements bar)
-  // so this list agrees with the radar beside it.
+  // HK/AE/KR use their native factor sets (see country-scorecard.ts) so this
+  // list agrees with the radar beside it.
+  const krLanguage =
+    country === "KR" ? krLanguageGateScore(analysis.kr_programs) : undefined;
   const topFactors =
     country === "HK"
       ? hkScorecardFactors(analysis.factors)
-      : factorsByCountryRelevance(country, analysis.factors)
-          .filter((f) => factorMattersForCountry(country, f.key))
-          .slice(0, 4);
+      : country === "AE"
+        ? uaeScorecardFactors(analysis.factors)
+        : country === "KR"
+          ? krScorecardFactors(analysis.factors, krLanguage ?? null)
+          : factorsByCountryRelevance(country, analysis.factors)
+              .filter((f) => factorMattersForCountry(country, f.key))
+              .slice(0, 4);
 
   return (
     <div className="space-y-6">
@@ -112,7 +121,12 @@ export function Overview() {
           </h2>
           <div className="flex flex-1 items-center justify-center">
             <div className="w-full">
-              <RadarScorecard factors={analysis.factors} italyFinancialFitScore={italyFin} country={country} />
+              <RadarScorecard
+                factors={analysis.factors}
+                italyFinancialFitScore={italyFin}
+                country={country}
+                krLanguageScore={krLanguage}
+              />
             </div>
           </div>
         </section>

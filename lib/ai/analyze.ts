@@ -183,6 +183,11 @@ function buildModelInput(p: StudentProfileInput) {
     faculties: p.faculties,
     intended_major: clamp(p.intended_major, LIMITS.shortText) || undefined,
     curriculum: p.curriculum,
+    // School-system context: how many grades the student's system has and when
+    // they graduate — so "grade 10" reads as one-from-final in an 11-grade
+    // system rather than the US junior year.
+    school_years: p.school_years,
+    graduation_year: p.graduation_year,
     grades: { ...p.grades, raw: clamp(p.grades?.raw, LIMITS.grades) ?? "" },
     tests: { ...p.tests, subjects: clamp(p.tests?.subjects, LIMITS.subjects) },
     // Common App activities — structured so the model can weigh role, scale,

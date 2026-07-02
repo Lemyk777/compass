@@ -13,6 +13,8 @@ import { ACCENT } from "@/lib/tiers";
 import {
   factorMattersForCountry,
   hkScorecardFactors,
+  uaeScorecardFactors,
+  krScorecardFactors,
 } from "@/lib/data/country-scorecard";
 import type { DestinationCode } from "@/lib/data/destinations";
 
@@ -20,28 +22,39 @@ type RadarScorecardProps = {
   factors: Factor[];
   // When set, radar enters Italy mode: only Academics + Tests + Financial Fit shown.
   italyFinancialFitScore?: number;
-  // When set (and not Italy mode), plot only the factors that carry meaningful
-  // weight for this country. Without it every country drew all 7 axes, so e.g.
-  // Hong Kong (no Narrative & Fit) looked identical to the US.
+  // When set (and not Italy mode), plot the country-NATIVE axes. Without it
+  // every country drew all 7 axes, so e.g. Hong Kong (no Narrative & Fit)
+  // looked identical to the US. HK/AE/KR each plot the factor set their
+  // admission system actually reads (see country-scorecard.ts).
   country?: DestinationCode | null;
+  // Korea's language-gate score (0–10, from krLanguageGateScore) — null/absent
+  // until the student builds a Korea list; the axis is omitted rather than faked.
+  krLanguageScore?: number | null;
 };
 
 export function RadarScorecard({
   factors,
   italyFinancialFitScore,
   country,
+  krLanguageScore,
 }: RadarScorecardProps) {
   const isItalyMode = italyFinancialFitScore != null;
-  // HK plots a grades-first quadrilateral (Academics / Test / Rigor / one
-  // combined Achievements), not all 6 weighted factors — matches the rankings
-  // board and how HK admission actually reads a profile.
+  // HK/AE plot a grades-first quadrilateral (spine + one combined Achievements);
+  // KR plots the document-screen set (transcript, rigor, language gate, file).
+  // Matches the rankings boards and how each system actually reads a profile.
   const isHkMode = country === "HK" && !isItalyMode;
+  const isAeMode = country === "AE" && !isItalyMode;
+  const isKrMode = country === "KR" && !isItalyMode;
 
   const shown = isHkMode
     ? hkScorecardFactors(factors)
-    : country && !isItalyMode
-      ? factors.filter((f) => factorMattersForCountry(country, f.key))
-      : factors;
+    : isAeMode
+      ? uaeScorecardFactors(factors)
+      : isKrMode
+        ? krScorecardFactors(factors, krLanguageScore ?? null)
+        : country && !isItalyMode
+          ? factors.filter((f) => factorMattersForCountry(country, f.key))
+          : factors;
 
   const data = isItalyMode
     ? buildItalyRadarData(factors, italyFinancialFitScore)

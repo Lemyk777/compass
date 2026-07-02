@@ -25,7 +25,9 @@ export const inputSchema = z
       .min(1, "Add your citizenship.")
       .max(LIMITS.shortText),
     destinations: z
-      .array(z.enum(["US", "IT", "HK", "KR", "CN", "CA"]))
+      // Keep in sync with DestinationCode (lib/data/destinations.ts). "AE" was
+      // missing here once — an onboarding save with UAE selected failed validation.
+      .array(z.enum(["US", "IT", "HK", "AE", "KR", "CN", "CA"]))
       .min(1, "Pick at least one destination country.")
       .max(LIMITS.destinations),
     faculties: z
@@ -47,6 +49,8 @@ export const inputSchema = z
     // Year they finish high school — anchors the date-based timeline. Bounded
     // loosely so the schema doesn't need touching each year.
     graduation_year: z.number().int().min(2000).max(2100).optional(),
+    // Total grades in the student's school system (11 KZ/RU, 12 US, 13 IT/DE).
+    school_years: z.number().int().min(9).max(14).optional(),
     curriculum: z.enum(["IB", "A-Level", "national", "US-GPA", "other"], {
       errorMap: () => ({ message: "Pick your curriculum." }),
     }),
@@ -100,6 +104,9 @@ export const inputSchema = z
     hk_grade_status: z.enum(["predicted", "achieved"]).optional(),
     uae_programs: z.array(z.string().max(80)).max(6).default([]),
     uae_grade_status: z.enum(["predicted", "achieved"]).optional(),
+    kr_programs: z.array(z.string().max(80)).max(6).default([]),
+    kr_grade_status: z.enum(["predicted", "achieved"]).optional(),
+    kr_topik_level: z.number().int().min(1).max(6).optional(),
     // Attribution survey (non-referral signups). Optional so a referral user —
     // who never sees the step — always saves cleanly.
     heard_from: z.string().trim().max(40).optional().default(""),

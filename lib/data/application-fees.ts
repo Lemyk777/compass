@@ -39,3 +39,13 @@ export const DEFAULT_UAE_APPLICATION_FEE = 100; // USD, approximate
 export function uaeApplicationFee(): number {
   return DEFAULT_UAE_APPLICATION_FEE;
 }
+
+// Korean universities charge a non-refundable application fee, typically
+// KRW 100,000–200,000 (KAIST quotes USD 80 directly). Approximate, quoted in
+// USD to match the rest of the Korea module; the UI labels it approximate.
+export const DEFAULT_KOREA_APPLICATION_FEE = 110; // USD, approximate
+
+/** Approximate application fee (USD) for a Korean university. */
+export function koreaApplicationFee(): number {
+  return DEFAULT_KOREA_APPLICATION_FEE;
+}

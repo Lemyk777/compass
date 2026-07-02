@@ -1,6 +1,8 @@
 // Leaderboard types + pure ranking helpers. Client-safe (no server imports) —
 // the actual data fetch (service-role) lives in the rankings page server
 // component.
+
+import { krLanguageGateScore } from "@/lib/data/country-scorecard";
 //
 // One board per destination, switched between in the view. Each board ranks by
 // and shows that COUNTRY'S OWN overall (0–100): the US board uses the US
@@ -19,8 +21,8 @@ export type LeaderboardFactor = {
 
 // Which destination cohorts a student belongs to. A student can appear on more
 // than one board (e.g. applying to both the US and Italy). Derived from the
-// analysis content: Italy/HK programs present → that country's board.
-export type CountryCode = "US" | "IT" | "HK";
+// analysis content: Italy/HK/UAE/Korea programs present → that country's board.
+export type CountryCode = "US" | "IT" | "HK" | "AE" | "KR";
 
 export type LeaderboardRow = {
   userId: string;
@@ -43,12 +45,14 @@ export type LeaderboardRow = {
   countries: CountryCode[];
 };
 
-// The three boards, in display (toggle) order. Each is a destination cohort with
+// The boards, in display (toggle) order. Each is a destination cohort with
 // its own native breakdown; students are ranked within the cohort by `overall`.
 export const LEADERBOARD_COUNTRIES: { code: CountryCode; label: string }[] = [
   { code: "US", label: "United States" },
   { code: "IT", label: "Italy" },
   { code: "HK", label: "Hong Kong" },
+  { code: "AE", label: "UAE" },
+  { code: "KR", label: "South Korea" },
 ];
 
 export function countryLabel(code: CountryCode): string {
@@ -121,6 +125,13 @@ export const FACTOR_COLORS: Record<string, string> = {
   // Hong Kong board reuses the academics/test/rigor hues for its spine and adds
   // one combined achievements bar (the tie-breaker).
   hk_achievements: "#e64980", // pink
+  // UAE board: grades-first spine + one combined achievements bar (stands in for
+  // the holistic/interview seats). Same hue as the HK equivalent — same meaning.
+  ae_achievements: "#e64980", // pink
+  // Korea board: document-screen spine + the language gate + a combined
+  // document-strength bar (awards + record + personal-statement fit).
+  kr_language: "#1098ad", // cyan (a credential, like a test)
+  kr_achievements: "#e64980", // pink
 };
 export const FACTOR_FALLBACK_COLOR = "#868e96"; // any future/unknown factor key
 
@@ -145,6 +156,11 @@ export const FACTOR_ORDER = [
   // Hong Kong board: academics/test_scores/course_rigor spine + this combined
   // achievements bar.
   "hk_achievements",
+  // UAE board: same spine + its combined achievements bar.
+  "ae_achievements",
+  // Korea board: academics/course_rigor spine + language gate + document strength.
+  "kr_language",
+  "kr_achievements",
 ] as const;
 
 function orderIndex(key: string): number {
@@ -289,5 +305,55 @@ export function hkFactors(profileFactors: LeaderboardFactor[]): LeaderboardFacto
     { key: "test_scores", label: "Test score", score: Math.round(scoreByKey(profileFactors, "test_scores")) },
     { key: "course_rigor", label: "Course rigor", score: Math.round(scoreByKey(profileFactors, "course_rigor")) },
     { key: "hk_achievements", label: "Achievements", score: Math.round(achievements) },
+  ];
+}
+
+/**
+ * UAE board factors. UAE admission is grades-first and SAT-driven (see
+ * lib/ai/uae-analyze.ts), with a combined achievements bar standing in for the
+ * holistic/interview seats (NYUAD Candidate Weekend, Medicine MMIs) and merit
+ * scholarships — the same blend the UAE odds engine weighs deterministically.
+ */
+export function uaeFactors(profileFactors: LeaderboardFactor[]): LeaderboardFactor[] {
+  if (!profileFactors.length) return [];
+  const achievements = clamp10(
+    0.5 * scoreByKey(profileFactors, "awards") +
+      0.3 * scoreByKey(profileFactors, "extracurricular_depth") +
+      0.2 * scoreByKey(profileFactors, "leadership")
+  );
+  return [
+    { key: "test_scores", label: "Test score", score: Math.round(scoreByKey(profileFactors, "test_scores")) },
+    { key: "academics", label: "Academics", score: Math.round(scoreByKey(profileFactors, "academics")) },
+    { key: "course_rigor", label: "Course rigor", score: Math.round(scoreByKey(profileFactors, "course_rigor")) },
+    { key: "ae_achievements", label: "Achievements", score: Math.round(achievements) },
+  ];
+}
+
+type KoreaFactorInput = { language: string };
+
+/**
+ * Korea board factors. Korean international admission is a document-based,
+ * GPA-first screen (see lib/ai/korea-analyze.ts): the transcript is the spine,
+ * the language credential (TOPIK/English) is a hard eligibility gate, and the
+ * rest of the file — awards, record and the personal statement — is where the
+ * screen is won. Language readiness comes from the same helper the scorecard
+ * radar uses (krLanguageGateScore), so the board and the radar agree.
+ */
+export function krFactors(
+  profileFactors: LeaderboardFactor[],
+  programs: KoreaFactorInput[]
+): LeaderboardFactor[] {
+  if (!profileFactors.length) return [];
+  const language = krLanguageGateScore(programs) ?? 4;
+  const documents = clamp10(
+    0.4 * scoreByKey(profileFactors, "awards") +
+      0.3 * scoreByKey(profileFactors, "extracurricular_depth") +
+      0.3 * scoreByKey(profileFactors, "narrative_fit")
+  );
+  return [
+    { key: "academics", label: "Academics", score: Math.round(scoreByKey(profileFactors, "academics")) },
+    { key: "course_rigor", label: "Course rigor", score: Math.round(scoreByKey(profileFactors, "course_rigor")) },
+    { key: "kr_language", label: "Language gate", score: Math.round(language) },
+    { key: "kr_achievements", label: "Document strength", score: Math.round(documents) },
   ];
 }

@@ -252,8 +252,16 @@ export function MultiSelectField({
   );
 }
 
-// Stacked option buttons (multi-select) — used for "Where do you want to study?".
-export function OptionStack({
+/**
+ * Compact multi-select grid of option cards (flag + label + check) — used for
+ * "Where do you want to study?". Replaces the old full-width stacked buttons:
+ * with 5+ destination countries a vertical stack stretched the step and broke
+ * the page's symmetry, while a 2-column grid stays 2–4 rows tall no matter how
+ * many countries ship. Selection is signalled by border + tint + a check glyph
+ * (never color alone), targets stay ≥44px, and cards keep a fixed height so
+ * the grid never reflows.
+ */
+export function OptionGrid({
   label,
   values,
   onChange,
@@ -270,7 +278,7 @@ export function OptionStack({
       : onChange([...values, v]);
   return (
     <FieldShell label={label}>
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2.5">
         {options.map((o) => {
           const on = values.includes(o.value);
           return (
@@ -279,14 +287,36 @@ export function OptionStack({
               type="button"
               aria-pressed={on}
               onClick={() => toggle(o.value)}
-              className={`flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border text-[0.95rem] font-medium transition-colors focus-visible:focus-ring ${
+              className={`relative flex h-12 min-w-0 items-center gap-2 rounded-xl border pl-3 pr-8 text-sm font-medium transition-colors focus-visible:focus-ring ${
                 on
                   ? "border-accent bg-accent-soft text-accent-ink"
                   : "border-line bg-card text-ink-soft hover:border-ink/20"
               }`}
             >
-              {o.icon}
-              {o.label}
+              {o.icon && <span className="shrink-0">{o.icon}</span>}
+              <span className="min-w-0 truncate">{o.label}</span>
+              <span
+                aria-hidden="true"
+                className={`absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full border transition-colors ${
+                  on
+                    ? "border-accent bg-accent text-white"
+                    : "border-line bg-transparent text-transparent"
+                }`}
+                style={{ width: 18, height: 18 }}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="11"
+                  height="11"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+              </span>
             </button>
           );
         })}

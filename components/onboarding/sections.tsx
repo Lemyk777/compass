@@ -6,7 +6,7 @@ import {
   NumberField,
   SelectField,
   MultiSelectField,
-  OptionStack,
+  OptionGrid,
   FieldShell,
   Label,
 } from "./fields";
@@ -23,9 +23,19 @@ export function GeneralSection() {
   const t = useT();
   const { data, updateField, updateFields } = useOnboardingContext();
 
+  // Compact card labels: "United States" truncates in the 2-column grid, so the
+  // long names get a short form here (the full name still shows everywhere else).
+  const SHORT_DEST_LABEL: Partial<Record<(typeof AVAILABLE_DESTINATION_CODES)[number], string>> = {
+    US: "USA",
+    KR: "Korea",
+  };
   const destOptions = AVAILABLE_DESTINATION_CODES.map((code) => {
     const d = DESTINATIONS.find((x) => x.code === code)!;
-    return { value: code, label: t(d.labelKey), icon: <Flag code={code} size={16} /> };
+    return {
+      value: code,
+      label: SHORT_DEST_LABEL[code] ?? t(d.labelKey),
+      icon: <Flag code={code} size={16} />,
+    };
   });
 
   // Graduation-year choices: this year through +6 (covers roughly grades 7–12),
@@ -36,27 +46,16 @@ export function GeneralSection() {
     return { value: y, label: y };
   });
 
+  // School systems differ in length (11 grades in Kazakhstan/Russia, 12 in the
+  // US, 13 in Italy/Germany), so "grade 10" means a different distance from
+  // graduation depending on the system — this asks for the total.
+  const schoolYearsOptions = [10, 11, 12, 13].map((y) => ({
+    value: String(y),
+    label: `${y} grades`,
+  }));
+
   return (
     <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
-      {/* Left column */}
-      <TextField
-        id="full_name"
-        label="Full name"
-        value={data.full_name ?? ""}
-        onChange={(v) => updateField("full_name", v)}
-        placeholder="Enter your full name"
-        maxLength={80}
-      />
-      {/* Right column */}
-      <TextField
-        id="school_name"
-        label="School name"
-        value={data.school_name ?? ""}
-        onChange={(v) => updateField("school_name", v)}
-        placeholder="Enter your school name"
-        maxLength={120}
-      />
-
       <SelectField
         id="citizenship"
         label="Citizenship"
@@ -75,7 +74,17 @@ export function GeneralSection() {
         options={gradYearOptions}
         hint="When you'll finish school — we use it to time your SAT and deadlines."
       />
-      <OptionStack
+
+      <SelectField
+        id="school_years"
+        label="How many grades does your school system have?"
+        value={data.school_years ? String(data.school_years) : ""}
+        onChange={(v) => updateField("school_years", v ? Number(v) : undefined)}
+        placeholder="Select the total number of grades"
+        options={schoolYearsOptions}
+        hint="E.g. 11 grades in Kazakhstan, 12 in the US, 13 in Italy — so we read your current grade correctly."
+      />
+      <OptionGrid
         label="Where do you want to study?"
         values={data.destinations}
         onChange={(v) => updateField("destinations", v as typeof data.destinations)}

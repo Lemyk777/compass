@@ -8,6 +8,8 @@ import {
   orderFactors,
   italyFactors,
   hkFactors,
+  uaeFactors,
+  krFactors,
   type CountryCode,
   type LeaderboardRow,
 } from "@/lib/data/leaderboard";
@@ -73,6 +75,8 @@ export default async function RankingsPage() {
     if (an.schools.length > 0) countries.push("US");
     if (an.italy_programs?.length) countries.push("IT");
     if (an.hk_programs?.length) countries.push("HK");
+    if (an.uae_programs?.length) countries.push("AE");
+    if (an.kr_programs?.length) countries.push("KR");
     // Default (US) breakdown: the student's profile factors on the 0–10 rubric
     // scale, like the Your-standing scorecard.
     const profileFactors = orderFactors(
@@ -103,6 +107,14 @@ export default async function RankingsPage() {
     if (an.hk_programs?.length) {
       factorsByCountry.HK = orderFactors(hkFactors(profileFactors));
       overallByCountry.HK = countryOverall("HK", an.factors);
+    }
+    if (an.uae_programs?.length) {
+      factorsByCountry.AE = orderFactors(uaeFactors(profileFactors));
+      overallByCountry.AE = countryOverall("AE", an.factors);
+    }
+    if (an.kr_programs?.length) {
+      factorsByCountry.KR = orderFactors(krFactors(profileFactors, an.kr_programs));
+      overallByCountry.KR = countryOverall("KR", an.factors);
     }
     rows.push({
       userId,

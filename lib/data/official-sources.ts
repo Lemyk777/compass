@@ -161,3 +161,53 @@ export const UAE_UNIVERSITY_SOURCES: Record<string, UaeSources> = {
 export function uaeOfficialSources(university: string): UaeSources | undefined {
   return UAE_UNIVERSITY_SOURCES[university];
 }
+
+// ── South Korea ───────────────────────────────────────────────────────────────
+// Korean admission is per-university (each runs its own international
+// application; there is no central portal), so each card links straight to that
+// university's official international-admissions page. The government's Study in
+// Korea portal covers the separate GKS scholarship route. Official domains,
+// checked 2026-07-02; re-check yearly (deep links move between cycles).
+
+export type KoreaSources = {
+  admissions: string;
+  scholarship?: string;
+};
+
+// Keyed by the exact `university` string used in lib/data/korea-universities.ts.
+export const KOREA_UNIVERSITY_SOURCES: Record<string, KoreaSources> = {
+  "Seoul National University": {
+    admissions: "https://en.snu.ac.kr/admission",
+    scholarship:
+      "https://en.snu.ac.kr/admission/undergraduate/scholarships/before_admission",
+  },
+  KAIST: {
+    admissions: "https://admission.kaist.ac.kr/intl-undergraduate/",
+    scholarship: "https://admission.kaist.ac.kr/intl-undergraduate/scholarship/",
+  },
+  "Yonsei University (UIC)": {
+    admissions: "https://uic.yonsei.ac.kr/main/admission.php",
+  },
+  "Yonsei University": {
+    admissions: "https://oia.yonsei.ac.kr/intstd/appPro.asp",
+  },
+  "Korea University": {
+    admissions: "https://oia.korea.ac.kr/oia/under/admission.do",
+  },
+  "Sungkyunkwan University": {
+    admissions: "https://admission-global.skku.edu/eng/undergraduate.html",
+    scholarship: "https://admission-global.skku.edu/eng/grad/scholarship_undergrad.html",
+  },
+  "Hanyang University": {
+    admissions: "https://www.hanyang.ac.kr/web/eng/international-admissions",
+    scholarship: "https://www.hanyang.ac.kr/web/eng/scholarships",
+  },
+  "Kyung Hee University": {
+    admissions:
+      "https://iadmission.khu.ac.kr/gglobalcenter/user/contents/view.do?menuNo=8000031",
+  },
+};
+
+export function koreaOfficialSources(university: string): KoreaSources | undefined {
+  return KOREA_UNIVERSITY_SOURCES[university];
+}

@@ -6,6 +6,7 @@ import { UNIVERSITIES } from "@/lib/data/universities";
 import { ITALIAN_PROGRAMS } from "@/lib/data/italian-universities";
 import { HK_PROGRAMS } from "@/lib/data/hk-universities";
 import { UAE_PROGRAMS } from "@/lib/data/uae-universities";
+import { KOREA_PROGRAMS } from "@/lib/data/korea-universities";
 import { normalizeDestinations } from "@/lib/types";
 import { LIMITS } from "@/lib/limits";
 
@@ -15,7 +16,7 @@ export type SaveResult = { ok: true } | { ok: false; error: string };
 // them so the matching analysis pathway runs. Shared by every per-country list
 // save below. Returns the row id and the merged destination list, or an error.
 async function profileForCountryList(
-  code: "US" | "IT" | "HK" | "AE"
+  code: "US" | "IT" | "HK" | "AE" | "KR"
 ): Promise<
   | { ok: true; id: string; destinations: string[] }
   | { ok: false; error: string }
@@ -215,6 +216,65 @@ export async function saveUaeList(
       };
     }
     return { ok: false, error: "Could not save your UAE list." };
+  }
+
+  try {
+    revalidatePath("/dashboard");
+  } catch {
+    // ignore cache revalidation errors
+  }
+  return { ok: true };
+}
+
+// Persist the student's Korea program list (kr_programs) plus whether their
+// grades are predicted or achieved (drives the conditional-offer logic) and the
+// TOPIK level they hold (the decisive language gate for Korean-taught programs).
+// Validates ids, caps the count, and ensures "KR" is in the destinations so the
+// Korea pathway runs.
+export async function saveKoreaList(
+  programIds: string[],
+  gradeStatus: "predicted" | "achieved",
+  topikLevel?: number
+): Promise<SaveResult> {
+  const valid = new Set(KOREA_PROGRAMS.map((p) => p.id));
+  const cleaned = Array.from(
+    new Set((programIds ?? []).filter((id) => valid.has(id)))
+  ).slice(0, LIMITS.krPrograms);
+
+  if (cleaned.length === 0) {
+    return { ok: false, error: "Pick at least one program." };
+  }
+
+  const topik =
+    topikLevel != null && Number.isInteger(topikLevel) && topikLevel >= 1 && topikLevel <= 6
+      ? topikLevel
+      : null;
+
+  const prof = await profileForCountryList("KR");
+  if (!prof.ok) return prof;
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("student_profiles")
+    .update({
+      kr_programs: cleaned,
+      kr_grade_status: gradeStatus === "achieved" ? "achieved" : "predicted",
+      kr_topik_level: topik,
+      destinations: prof.destinations,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", prof.id);
+
+  if (error) {
+    // The Korea columns ship in migration 0017 — surface an actionable message
+    // instead of a generic failure if the DB hasn't been migrated.
+    if (error.code === "42703" || error.code === "PGRST204") {
+      return {
+        ok: false,
+        error: "South Korea isn't enabled on this database yet. Apply migration 0017_korea.sql.",
+      };
+    }
+    return { ok: false, error: "Could not save your Korea list." };
   }
 
   try {

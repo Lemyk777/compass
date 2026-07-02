@@ -19,7 +19,8 @@ export function CostsView() {
     analysis.schools.length > 0 ||
     (analysis.italy_programs?.length ?? 0) > 0 ||
     (analysis.hk_programs?.length ?? 0) > 0 ||
-    (analysis.uae_programs?.length ?? 0) > 0;
+    (analysis.uae_programs?.length ?? 0) > 0 ||
+    (analysis.kr_programs?.length ?? 0) > 0;
   if (!hasCollegeList) {
     return (
       <div className="space-y-5">

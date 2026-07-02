@@ -49,18 +49,34 @@ export const COUNTRY_SCORECARD_WEIGHTS: Record<DestinationCode, WeightMap> = {
   },
   // Grades-first + SAT-driven: the SAT index and academic record dominate, with
   // achievements standing in for the holistic/interview seats (NYUAD, Medicine).
-  // A little narrative weight for NYU Abu Dhabi's holistic, US-style review.
+  // narrative_fit is 0 for the same reason as HK: its old 0.04 sat below the
+  // 0.05 "matters" display threshold, so it was hidden from the scorecard while
+  // still moving the overall — display and score must agree. Its weight is
+  // folded into extracurricular_depth, which is what the UAE odds engine
+  // actually weighs for the holistic/interview seats.
   AE: {
     test_scores: 0.3,
     academics: 0.3,
     course_rigor: 0.14,
-    extracurricular_depth: 0.1,
+    extracurricular_depth: 0.14,
     leadership: 0.06,
     awards: 0.06,
-    narrative_fit: 0.04,
+    narrative_fit: 0,
+  },
+  // Document-based, GPA-first screen: the transcript dominates, with the
+  // personal statement / study plan (narrative) and awards carrying the rest of
+  // the file. Standardized tests are optional almost everywhere (SAT is
+  // supporting evidence at KAIST/UIC), so they weigh little.
+  KR: {
+    academics: 0.4,
+    course_rigor: 0.14,
+    test_scores: 0.06,
+    extracurricular_depth: 0.1,
+    leadership: 0.08,
+    awards: 0.12,
+    narrative_fit: 0.1,
   },
   // Not yet tuned — fall back to an even, holistic blend.
-  KR: {},
   CN: {},
   CA: {},
 };
@@ -153,5 +169,119 @@ export function hkScorecardFactors(factors: Factor[]): Factor[] {
     byKey.get("test_scores"),
     byKey.get("course_rigor"),
     achievements,
+  ].filter((f): f is Factor => f != null);
+}
+
+/**
+ * UAE scorecard factors: what UAE admission actually reads — the SAT index and
+ * the transcript as the spine (grades-first, SAT-driven), course rigor, and ONE
+ * combined Achievements axis standing in for the holistic/interview seats
+ * (NYUAD Candidate Weekend, Medicine MMIs) and merit scholarships, weighted the
+ * same way the deterministic UAE odds engine weighs the record. A quadrilateral
+ * like HK — not the US heptagon, because essays/narrative play no separate role.
+ */
+export function uaeScorecardFactors(factors: Factor[]): Factor[] {
+  const byKey = new Map(factors.map((f) => [f.key, f]));
+  const score = (key: string) => byKey.get(key)?.score ?? 0;
+  const achievementScore = Math.max(
+    0,
+    Math.min(
+      10,
+      0.5 * score("awards") +
+        0.3 * score("extracurricular_depth") +
+        0.2 * score("leadership")
+    )
+  );
+  const achievements: Factor = {
+    key: "ae_achievements",
+    label: "Achievements",
+    score: achievementScore,
+    rubric_tier: "",
+    reasoning: [
+      byKey.get("awards"),
+      byKey.get("extracurricular_depth"),
+      byKey.get("leadership"),
+    ]
+      .flatMap((f) => f?.reasoning ?? [])
+      .slice(0, 4),
+    note: "Your combined record. UAE admission is grades-first, but this is what carries the interview seats (NYUAD, Medicine) and lifts a borderline read.",
+  };
+  return [
+    byKey.get("test_scores"),
+    byKey.get("academics"),
+    byKey.get("course_rigor"),
+    achievements,
+  ].filter((f): f is Factor => f != null);
+}
+
+/**
+ * Korea's language gate as a 0–10 score, derived from the student's OWN
+ * analyzed programs (the engine's per-program language status): met = 10,
+ * shown-but-below = 2, not shown yet = 4. Null when the student hasn't built a
+ * Korea list yet — the axis is omitted rather than faked.
+ */
+export function krLanguageGateScore(
+  programs: { language: string }[] | undefined | null
+): number | null {
+  if (!programs || !programs.length) return null;
+  const pts: Record<string, number> = { meets: 10, below: 2, unknown: 4 };
+  const sum = programs.reduce((s, p) => s + (pts[p.language] ?? 4), 0);
+  return Math.max(0, Math.min(10, sum / programs.length));
+}
+
+/**
+ * Korea scorecard factors: what the Korean document screen actually reads — the
+ * transcript (GPA-first, no entrance exam) and course rigor as the spine, the
+ * language credential (TOPIK/English — a hard eligibility gate), and ONE
+ * combined Document-strength axis (awards + record + personal-statement fit,
+ * the file the screen is won on). SAT is optional almost everywhere in Korea,
+ * so there is no separate Tests axis. Language is only plotted once a Korea
+ * list exists (it is derived from real per-program requirements, not guessed).
+ */
+export function krScorecardFactors(
+  factors: Factor[],
+  languageScore: number | null
+): Factor[] {
+  const byKey = new Map(factors.map((f) => [f.key, f]));
+  const score = (key: string) => byKey.get(key)?.score ?? 0;
+  const documentScore = Math.max(
+    0,
+    Math.min(
+      10,
+      0.4 * score("awards") +
+        0.3 * score("extracurricular_depth") +
+        0.3 * score("narrative_fit")
+    )
+  );
+  const documents: Factor = {
+    key: "kr_achievements",
+    label: "Document strength",
+    score: documentScore,
+    rubric_tier: "",
+    reasoning: [
+      byKey.get("awards"),
+      byKey.get("extracurricular_depth"),
+      byKey.get("narrative_fit"),
+    ]
+      .flatMap((f) => f?.reasoning ?? [])
+      .slice(0, 4),
+    note: "Awards, your record and how coherently they back your study plan — Korean admission is a whole-file document screen, and this is the half that isn't the transcript.",
+  };
+  const language: Factor | null =
+    languageScore == null
+      ? null
+      : {
+          key: "kr_language",
+          label: "Language gate",
+          score: Math.round(languageScore * 10) / 10,
+          rubric_tier: "",
+          reasoning: [],
+          note: "TOPIK for Korean-taught programs, IELTS/TOEFL for English-taught ones — an eligibility document, not a nice-to-have. Scored against your own program picks.",
+        };
+  return [
+    byKey.get("academics"),
+    byKey.get("course_rigor"),
+    language,
+    documents,
   ].filter((f): f is Factor => f != null);
 }

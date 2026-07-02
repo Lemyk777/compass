@@ -104,6 +104,7 @@ export async function saveProfile(
     destinations: data.destinations,
     faculties: data.faculties,
     graduation_year: data.graduation_year ?? null,
+    school_years: data.school_years ?? null,
     target_schools: data.target_schools,
     intended_major: data.intended_major,
     citizenship: data.citizenship,
@@ -118,6 +119,9 @@ export async function saveProfile(
     hk_grade_status: data.hk_grade_status ?? null,
     uae_programs: data.uae_programs,
     uae_grade_status: data.uae_grade_status ?? null,
+    kr_programs: data.kr_programs,
+    kr_grade_status: data.kr_grade_status ?? null,
+    kr_topik_level: data.kr_topik_level ?? null,
     updated_at: new Date().toISOString(),
   };
 
@@ -147,14 +151,20 @@ export async function saveProfile(
     // UAE columns (migration 0016) may also be missing.
     delete safeRow.uae_programs;
     delete safeRow.uae_grade_status;
+    // Korea columns (migration 0017) may also be missing.
+    delete safeRow.kr_programs;
+    delete safeRow.kr_grade_status;
+    delete safeRow.kr_topik_level;
     // Redesigned-intake columns (migration 0009) may also be missing.
     delete safeRow.school_name;
     delete safeRow.budget_annual_usd;
     // graduation_year (migration 0010) may not be applied yet.
     delete safeRow.graduation_year;
+    // school_years (migration 0018) may not be applied yet.
+    delete safeRow.school_years;
     console.warn(
       "student_profiles is missing newer columns — saving without them. " +
-        "Run migrations 0005_hong_kong.sql, 0009_onboarding_extras.sql, 0010_graduation_year.sql, 0016_uae.sql.",
+        "Run migrations 0005_hong_kong.sql, 0009_onboarding_extras.sql, 0010_graduation_year.sql, 0016_uae.sql, 0017_korea.sql, 0018_school_years.sql.",
       writeErr.message
     );
     ({ error: writeErr } = await write(safeRow));

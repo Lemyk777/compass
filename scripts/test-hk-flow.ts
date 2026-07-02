@@ -38,6 +38,9 @@ const HK_TEST_PROFILE: StudentProfileInput = {
   hk_grade_status: "predicted",
   uae_programs: [],
   uae_grade_status: undefined,
+  kr_programs: [],
+  kr_grade_status: undefined,
+  kr_topik_level: undefined,
 };
 
 async function runHkFlowTest() {
