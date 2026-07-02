@@ -22,6 +22,11 @@ import {
   type Competition,
   type SatSitting,
 } from "@/lib/data/key-dates";
+import {
+  admissionRounds,
+  DEADLINE_CAVEAT,
+} from "@/lib/data/admissions-deadlines";
+import type { DestinationCode } from "@/lib/data/destinations";
 import type { PlanAction, PlanActionKind } from "@/lib/ai/schema";
 
 export type Regime =
@@ -58,12 +63,24 @@ export type RoadmapPhase = {
   actions: RoadmapAction[];
 };
 
+// A dated application deadline for one of the student's chosen countries.
+export type DeadlineMarker = {
+  code: DestinationCode;
+  round: string;
+  iso: string;
+  daysLeft: number;
+};
+
 export type Roadmap = {
   regime: Regime;
   hasGraduationYear: boolean;
   cycleLabel: string | null;
+  // The operative deadline = the EARLIEST future one across the chosen countries.
   operativeDeadlineISO: string | null;
-  operativeDeadlineLabel: string | null; // "Early Action" | "Regular Decision"
+  operativeDeadlineLabel: string | null; // e.g. "US Early Action / Decision"
+  // Every future deadline across the chosen countries, earliest first — so the
+  // header can show that the runway is anchored to the soonest of several.
+  deadlines: DeadlineMarker[];
   runwayDays: number | null;
   runwayMonths: number | null;
   headline: string;
@@ -79,6 +96,9 @@ export type RoadmapInputs = {
   graduationYear?: number;
   faculties: string[];
   satScore?: number;
+  // The countries the student is applying to — the runway is anchored to the
+  // EARLIEST deadline across these, not just the US cycle. Defaults to US.
+  destinations?: DestinationCode[];
   // The model's flat, kind-tagged action list (analysis.timeline).
   planActions?: PlanAction[];
   liveSatSittings?: SatSitting[];
@@ -126,29 +146,30 @@ type PhaseTpl = {
 };
 
 // ── Regime → phase skeleton ───────────────────────────────────────────────────
-// Each builder returns contiguous, date-anchored phases. `E`/`R` are the Early
-// and Regular deadlines; `op` is whichever is the operative (soonest future) one.
+// Each builder returns contiguous, date-anchored phases anchored to `op` (the
+// earliest deadline across the chosen countries) and `last` (the latest one). A
+// shared "Application season" tail spans [op, last] whenever later deadlines
+// remain, so a multi-country plan (e.g. US in November, Korea in May) sequences
+// naturally.
 function phasesFor(
   regime: Regime,
   todayISO: string,
-  E: string,
-  R: string,
-  op: string
+  op: string,
+  last: string
 ): PhaseTpl[] {
-  const opIsEarly = op === E;
-  const beforeE = (d: number) => shiftISO(E, -d);
-  // The Regular-round tail only makes sense while Early is still the operative
-  // deadline (so both rounds are ahead) and Regular is genuinely in the future.
-  const regularTail: PhaseTpl[] =
-    opIsEarly && daysBetween(todayISO, R) > 0
+  const beforeOp = (d: number) => shiftISO(op, -d);
+  // The season tail covers the stretch between the first and last deadline.
+  const seasonTail: PhaseTpl[] =
+    daysBetween(op, last) > 0
       ? [
           {
-            id: "regular",
-            name: "Regular round",
-            focus: "Submit any remaining Regular Decision applications and finish aid forms.",
-            startISO: E,
-            endISO: R,
-            kinds: ["decision", "logistics"],
+            id: "season",
+            name: "Application season",
+            focus:
+              "Submit to your earliest deadline first, then work through the later-closing countries and finish aid forms.",
+            startISO: op,
+            endISO: last,
+            kinds: ["decision", "logistics", "essay"],
           },
         ]
       : [];
@@ -171,7 +192,7 @@ function phasesFor(
           focus:
             "Go deep: a research project, an olympiad run, or a summer program is what turns a solid profile into a standout one.",
           startISO: shiftISO(todayISO, 120),
-          endISO: beforeE(90),
+          endISO: beforeOp(90),
           kinds: ["research", "activity", "test", "profile"],
         },
         {
@@ -179,18 +200,11 @@ function phasesFor(
           name: "Pre-application run-up",
           focus:
             "Lock your scores, shortlist schools, and start essays while your profile work lands.",
-          startISO: beforeE(90),
-          endISO: E,
+          startISO: beforeOp(90),
+          endISO: op,
           kinds: ["essay", "logistics", "decision", "test"],
         },
-        {
-          id: "season",
-          name: "Application season",
-          focus: "Submit Early where it helps you, then finish Regular.",
-          startISO: E,
-          endISO: R,
-          kinds: ["decision", "logistics", "essay"],
-        },
+        ...seasonTail,
       ];
 
     case "focusing":
@@ -210,25 +224,18 @@ function phasesFor(
           focus:
             "Lift your test score and deepen a single activity while you begin drafting essays.",
           startISO: shiftISO(todayISO, 45),
-          endISO: beforeE(60),
+          endISO: beforeOp(60),
           kinds: ["test", "activity", "research", "essay", "profile"],
         },
         {
           id: "run-up",
           name: "Pre-application",
           focus: "Finalize your list, your essays, and your recommenders.",
-          startISO: beforeE(60),
-          endISO: E,
+          startISO: beforeOp(60),
+          endISO: op,
           kinds: ["essay", "logistics", "decision"],
         },
-        {
-          id: "season",
-          name: "Application season",
-          focus: "Submit Early where it helps, then finish Regular.",
-          startISO: E,
-          endISO: R,
-          kinds: ["decision", "logistics"],
-        },
+        ...seasonTail,
       ];
 
     case "sprinting":
@@ -244,14 +251,14 @@ function phasesFor(
         },
         {
           id: "before-deadline",
-          name: "Before your deadline",
+          name: "Before your first deadline",
           focus:
-            "Polish essays, secure recommenders, and decide Early vs Regular.",
+            "Polish essays, secure recommenders, and decide which deadlines to hit first.",
           startISO: shiftISO(todayISO, 30),
           endISO: op,
           kinds: ["essay", "logistics", "decision", "test"],
         },
-        ...regularTail,
+        ...seasonTail,
       ];
 
     case "submitting":
@@ -265,7 +272,7 @@ function phasesFor(
           endISO: op,
           kinds: ["essay", "logistics", "decision", "test"],
         },
-        ...regularTail,
+        ...seasonTail,
       ];
 
     default:
@@ -309,6 +316,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
     graduationYear,
     faculties,
     satScore,
+    destinations,
     planActions = [],
     liveSatSittings,
     liveCompetitions,
@@ -331,7 +339,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
   // surface the upcoming dated assets so the page is never empty. ──────────────
   if (!graduationYear) {
     const actions: RoadmapAction[] = [
-      ...satActions(study.satSteps),
+      ...satActions(study.satSteps, null),
       ...competitionActions(study.competitions),
       ...planActions
         .slice()
@@ -359,6 +367,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
       cycleLabel: null,
       operativeDeadlineISO: null,
       operativeDeadlineLabel: null,
+      deadlines: [],
       runwayDays: null,
       runwayMonths: null,
       headline: "Add your graduation year to unlock your roadmap",
@@ -369,30 +378,46 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
     };
   }
 
-  const E = `${graduationYear - 1}-11-01`; // Early Action/Decision ≈ Nov 1
-  const R = `${graduationYear}-01-05`; // Regular Decision ≈ Jan 5
+  // All deadlines across the chosen countries (default to US when none given —
+  // keeps older profiles that predate the destinations field working). The
+  // runway is anchored to the EARLIEST one still ahead, so a Korea-only student
+  // (spring deadlines) isn't wrongly told to "sprint" on the US November date.
+  const destCodes: DestinationCode[] =
+    destinations && destinations.length > 0 ? destinations : ["US"];
+  const allDeadlines: DeadlineMarker[] = destCodes
+    .flatMap((code) =>
+      admissionRounds(code, graduationYear).map((r) => ({
+        code,
+        round: r.round,
+        iso: r.iso,
+        daysLeft: daysBetween(todayISO, r.iso),
+      }))
+    )
+    .sort((a, b) => (a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0));
 
-  // Operative deadline = the soonest one still ahead. If both have passed, the
-  // primary window has closed; treat it as a submitting/wrap-up state anchored
-  // just ahead of today so the plan still renders.
+  const futureDeadlines = allDeadlines.filter((d) => d.daysLeft >= 0);
+
+  // op = earliest future deadline; last = latest future deadline (for the season
+  // tail). If every deadline has passed, anchor just ahead of today so the plan
+  // still renders as a wrap-up.
   let op: string;
   let opLabel: string;
-  if (daysBetween(todayISO, E) >= 0) {
-    op = E;
-    opLabel = "Early Action / Decision";
-  } else if (daysBetween(todayISO, R) >= 0) {
-    op = R;
-    opLabel = "Regular Decision";
+  let last: string;
+  if (futureDeadlines.length > 0) {
+    op = futureDeadlines[0].iso;
+    opLabel = futureDeadlines[0].round;
+    last = futureDeadlines[futureDeadlines.length - 1].iso;
   } else {
     op = shiftISO(todayISO, 30);
-    opLabel = "Regular Decision";
+    opLabel = "your remaining deadlines";
+    last = op;
   }
 
   const runwayDays = daysBetween(todayISO, op);
   const runwayMonths = runwayDays / 30.44;
 
   const regime: Regime =
-    daysBetween(todayISO, E) < 0 && daysBetween(todayISO, R) < 0
+    futureDeadlines.length === 0
       ? "submitting"
       : runwayMonths >= 12
         ? "building"
@@ -402,7 +427,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
             ? "sprinting"
             : "submitting";
 
-  const tpls = normalizePhases(phasesFor(regime, todayISO, E, R, op), todayISO);
+  const tpls = normalizePhases(phasesFor(regime, todayISO, op, last), todayISO);
   // Guarantee at least one phase to schedule into.
   const skeleton: PhaseTpl[] = tpls.length
     ? tpls
@@ -426,12 +451,14 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
   const BUILD_KINDS: PlanActionKind[] = ["profile", "research", "activity"];
 
   // 1) SAT sittings. For short runways, only sittings whose scores can still
-  // land before the deadline are useful this cycle — the rest are dropped and
-  // replaced with an honest note.
-  const usableSat = canBuild
-    ? study.satSteps
-    : study.satSteps.filter((s) => daysBetween(s.test, op) >= 21);
-  for (const a of satActions(usableSat)) {
+  // land before the FIRST deadline are useful this cycle — the rest are dropped
+  // and replaced with an honest note. The last sitting whose scores arrive in
+  // time gets flagged (recomputed against `op`, not the US-early date).
+  const inTimeSat = study.satSteps.filter((s) => daysBetween(s.test, op) >= 21);
+  const lastBeforeTest =
+    inTimeSat.length > 0 ? inTimeSat[inTimeSat.length - 1].test : null;
+  const usableSat = canBuild ? study.satSteps : inTimeSat;
+  for (const a of satActions(usableSat, lastBeforeTest)) {
     buckets[phaseIndexForDate(skeleton, a.anchorDate ?? todayISO)].push(a);
   }
   if (!canBuild && usableSat.length === 0 && satScore != null) {
@@ -447,7 +474,21 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
     buckets[phaseIndexForDate(skeleton, a.anchorDate ?? todayISO)].push(a);
   }
 
-  // 3) The model's personalized actions, routed by kind into the first phase
+  // 3) The application deadlines themselves — one dated row per country, placed
+  // in the phase its date falls into, so the student sees each country's cutoff
+  // with a live countdown (not just the earliest one in the header).
+  for (const d of futureDeadlines) {
+    buckets[phaseIndexForDate(skeleton, d.iso)].push({
+      text: `${d.round} deadline`,
+      source: "note",
+      kind: "decision",
+      anchorDate: d.iso,
+      daysLeft: d.daysLeft,
+      why: DEADLINE_CAVEAT[d.code],
+    });
+  }
+
+  // 4) The model's personalized actions, routed by kind into the first phase
   // that hosts that kind. Long-build moves in a no-time regime are deferred.
   for (const pa of planActions.slice().sort((a, b) => a.priority - b.priority)) {
     const action = planToAction(pa);
@@ -471,14 +512,21 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
     actions: buckets[i],
   }));
 
-  const { headline, subhead } = framing(regime, runwayDays, runwayMonths, opLabel);
+  const { headline, subhead } = framing(
+    regime,
+    runwayDays,
+    runwayMonths,
+    opLabel,
+    futureDeadlines.length
+  );
 
   return {
     regime,
     hasGraduationYear: true,
     cycleLabel: study.cycleLabel,
-    operativeDeadlineISO: op,
-    operativeDeadlineLabel: opLabel,
+    operativeDeadlineISO: futureDeadlines.length > 0 ? op : null,
+    operativeDeadlineLabel: futureDeadlines.length > 0 ? opLabel : null,
+    deadlines: futureDeadlines,
     runwayDays,
     runwayMonths,
     headline,
@@ -489,7 +537,10 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
 }
 
 // ── Asset → action mappers ────────────────────────────────────────────────────
-function satActions(steps: ReturnType<typeof buildStudyPlan>["satSteps"]): RoadmapAction[] {
+function satActions(
+  steps: ReturnType<typeof buildStudyPlan>["satSteps"],
+  lastBeforeTest: string | null
+): RoadmapAction[] {
   return steps.map((s) => ({
     text: `SAT test day — ${formatDate(s.test)}`,
     source: "sat" as const,
@@ -498,7 +549,10 @@ function satActions(steps: ReturnType<typeof buildStudyPlan>["satSteps"]): Roadm
     url: SAT_REGISTER_URL,
     anchorDate: s.regDeadline,
     daysLeft: s.daysToDeadline,
-    tag: s.lastBeforeApps ? "Last sitting before your Early deadline" : undefined,
+    tag:
+      lastBeforeTest && s.test === lastBeforeTest
+        ? "Last sitting before your first deadline"
+        : undefined,
   }));
 }
 
@@ -523,38 +577,49 @@ function planToAction(pa: PlanAction): RoadmapAction {
 
 // ── Honest, runway-specific framing ───────────────────────────────────────────
 function runwayPhrase(days: number, months: number): string {
-  if (days <= 0) return "no time left before your deadline";
-  if (months < 2) return `about ${days} days before your deadline`;
-  return `about ${Math.round(months)} months before your deadline`;
+  if (days <= 0) return "no time left before your first deadline";
+  if (months < 2) return `about ${days} days before your first deadline`;
+  return `about ${Math.round(months)} months before your first deadline`;
+}
+
+// When several countries are chosen, name that the runway is anchored to the
+// soonest of them — so the framing doesn't read as if there's only one deadline.
+function anchorClause(opLabel: string, deadlineCount: number): string {
+  const soonest = `your soonest deadline (${opLabel})`;
+  return deadlineCount > 1
+    ? `${soonest} — the earliest across your chosen countries`
+    : soonest;
 }
 
 function framing(
   regime: Regime,
   runwayDays: number,
   runwayMonths: number,
-  opLabel: string
+  opLabel: string,
+  deadlineCount: number
 ): { headline: string; subhead: string } {
   const runway = runwayPhrase(runwayDays, runwayMonths);
+  const anchor = anchorClause(opLabel, deadlineCount);
   switch (regime) {
     case "building":
       return {
         headline: `You have ${runway} — time to build`,
-        subhead: `That's enough runway to genuinely raise your profile, not just polish it. This plan front-loads the profile-building work now and leaves the ${opLabel} logistics for last.`,
+        subhead: `That's enough runway to genuinely raise your profile, not just polish it. This plan front-loads the profile-building work now and leaves the logistics for ${anchor} until last.`,
       };
     case "focusing":
       return {
         headline: `You have ${runway} — time to focus`,
-        subhead: `Enough for one or two decisive moves, not a full rebuild. This plan picks the highest-leverage work and phases in essays and logistics toward your ${opLabel} deadline.`,
+        subhead: `Enough for one or two decisive moves, not a full rebuild. This plan picks the highest-leverage work and phases in essays and logistics toward ${anchor}.`,
       };
     case "sprinting":
       return {
         headline: `You have ${runway} — this is a sprint`,
-        subhead: `Not enough time to build a new spike before you apply, so this plan maximizes what you already have: lock the list, write, and submit. Longer-term profile moves are noted separately for next cycle.`,
+        subhead: `Not enough time to build a new spike before ${anchor}, so this plan maximizes what you already have: lock the list, write, and submit. Longer-term profile moves are noted separately for next cycle.`,
       };
     default:
       return {
         headline: `You have ${runway} — time to submit`,
-        subhead: `This is pure execution. Everything below is about finishing essays, securing recommenders, and getting applications in cleanly.`,
+        subhead: `This is pure execution. Everything below is about finishing essays, securing recommenders, and getting applications in cleanly before ${anchor}.`,
       };
   }
 }

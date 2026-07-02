@@ -20,7 +20,7 @@ import { useT } from "@/lib/i18n/client";
 // phased, date-anchored plan built from it.
 export function RoadmapView() {
   const t = useT();
-  const { analysis, profileMeta, basePath, liveDates } = useDashboard();
+  const { analysis, profileMeta, basePath, liveDates, tabs } = useDashboard();
 
   // "today" depends on the visitor's clock, so resolve it on the client to avoid
   // a hydration mismatch. Until then, render nothing date-dependent.
@@ -35,6 +35,7 @@ export function RoadmapView() {
         graduationYear: profileMeta.graduationYear,
         faculties: profileMeta.faculties,
         satScore: profileMeta.satScore,
+        destinations: tabs,
         planActions: analysis.timeline,
         liveSatSittings: liveDates.satSittings,
         liveCompetitions: liveDates.competitions,
@@ -112,10 +113,16 @@ function RoadmapHeader({
 
       {roadmap.operativeDeadlineISO ? (
         <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
-          <span className="text-sm font-medium text-ink">
+          <span className="min-w-0 text-sm font-medium text-ink">
             {roadmap.operativeDeadlineLabel} deadline
+            {roadmap.deadlines.length > 1 && (
+              <span className="mt-0.5 block text-xs font-normal text-ink-faint">
+                Your soonest of {roadmap.deadlines.length} — the rest are on the
+                plan below
+              </span>
+            )}
           </span>
-          <span className="flex items-center gap-3 text-sm">
+          <span className="flex shrink-0 items-center gap-3 text-sm">
             <span data-num className="tabular-nums text-ink-soft">
               {formatDate(roadmap.operativeDeadlineISO)}
             </span>
