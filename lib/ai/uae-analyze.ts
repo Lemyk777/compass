@@ -138,8 +138,16 @@ function analyzeOne(p: UaeProgram, inputs: UaeInputs, ach: AchievementSignal): U
   // while user_index keeps reporting the honest academic index.
   const effectiveIndex = Math.max(800, Math.min(1600, index + bonus));
 
-  const rawStatus = bandFor(p, index); // scores alone
-  let status = bandFor(p, effectiveIndex); // scores + record
+  // Ultra-selective holistic schools (NYUAD, single-digit admit rate): being in
+  // the SAT band is necessary but nowhere near sufficient, so demote one full
+  // band — at/above the typical score is at best a "target", everything else is
+  // a "reach". Anything rosier would contradict the calibrated US-methodology
+  // read of the same school (reach, likelihood capped in the low teens).
+  // Applied to BOTH reads so the achievements comparison stays apples-to-apples.
+  const gate = (s: "likely" | "target" | "reach") =>
+    p.ultra_selective ? (s === "likely" ? "target" : "reach") : s;
+  const rawStatus = gate(bandFor(p, index)); // scores alone
+  let status = gate(bandFor(p, effectiveIndex)); // scores + record
   // The interview is a real gate — strong scores alone never make it "likely",
   // UNLESS the student's record is strong enough to carry the interview.
   if (p.interview_required && status === "likely" && !interviewReady) status = "target";
@@ -208,10 +216,15 @@ function buildReasoning(p: UaeProgram, c: Computed): string {
         ? `${p.university} ${p.program_name} is a realistic target — competitive, but in range.`
         : `${p.university} ${p.program_name} is a reach at your current index.`;
 
+  // Ultra-selective (NYUAD): say plainly why no score can make this "likely".
+  const ultraLine = p.ultra_selective
+    ? ` ${p.university} admits only a single-digit percentage of applicants under a fully holistic review, so a competitive score is necessary but not sufficient — no score makes this "likely", and even an in-band score stays a reach until the whole application carries it.`
+    : "";
+
   const interviewLine = p.interview_required
     ? c.interviewReady && c.status === "likely"
       ? ` This programme interviews shortlisted applicants; your record positions you well, though the interview still finalises the outcome.`
-      : ` This programme interviews shortlisted applicants${p.need_blind ? " (a Candidate Weekend)" : p.field === "medicine" ? " (a Multiple Mini-Interview)" : ""}, so the interview — not scores alone — decides the outcome; that is why even strong scores sit no higher than "target" here.`
+      : ` This programme interviews shortlisted applicants${p.need_blind ? " (a Candidate Weekend)" : p.field === "medicine" ? " (a Multiple Mini-Interview)" : ""}, so the interview — not scores alone — decides the outcome.`
     : "";
 
   const achLine = achievementLine(p, c);
@@ -242,6 +255,7 @@ function buildReasoning(p: UaeProgram, c: Computed): string {
 
   return (
     `${bandLine} ${sourceNote} ${placement}.` +
+    ultraLine +
     achLine +
     interviewLine +
     offerLine +

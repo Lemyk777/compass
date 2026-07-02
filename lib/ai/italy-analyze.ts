@@ -159,15 +159,32 @@ function buildReasoning(
   status: ItalyAdmissionStatus,
   volatility: "stable" | "moderate" | "high"
 ): string {
+  // No SAT on file: this pathway ranks strictly by SAT, so there is nothing
+  // honest to compute — say that plainly instead of pretending "SAT 0" is a
+  // score and reporting a nonsense 1300-point gap.
+  if (userSAT <= 0) {
+    return (
+      `${p.university} admits Extra-UE applicants strictly by SAT score` +
+      (p.has_guaranteed_threshold && p.guaranteed_threshold != null
+        ? ` (with Early Admission at ${p.guaranteed_threshold}+)`
+        : ` (last recorded cutoff: ${p.historical_sat_cutoff})`) +
+      `, and you haven't added an SAT yet — so we can't score your real position. ` +
+      `This shows as a reach only because no score is on file, not because of a weak one. ` +
+      `Add your SAT to your profile (or register for the next sitting) and re-run the analysis for a real read.`
+    );
+  }
+
   if (branch === "guaranteed" && status === "guaranteed") {
     return (
       `${p.university} uses an Early Admission system (Early Enrollment). ` +
       `Your SAT ${userSAT} clears their guaranteed-admission threshold (${p.guaranteed_threshold}). ` +
-      `Under this system there is no ranking competition at this stage — the first ` +
-      `applicants to meet the threshold claim seats from the ${p.extra_ue_quota}-seat ` +
-      `Extra-UE quota before the main ranking phase even opens. ` +
+      `Under this system there is no ranking competition at this stage — applicants ` +
+      `who meet the threshold claim seats from the ${p.extra_ue_quota}-seat ` +
+      `Extra-UE quota in application order, before the main ranking phase even opens. ` +
       `Re-sitting the SAT for a higher score has zero mathematical value here — ` +
-      `you have already hit the ceiling. ` +
+      `you have already hit the ceiling. Two honest caveats: seats last only while ` +
+      `the quota does, so apply as early as the portal opens; and thresholds are set ` +
+      `per-year in the Bando, so confirm the current year's document before relying on this. ` +
       `Your next steps: prepare the document package and monitor the portal opening date.`
     );
   }

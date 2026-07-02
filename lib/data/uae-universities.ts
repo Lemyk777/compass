@@ -43,6 +43,13 @@ export type UaeProgram = {
   interview_required: boolean;
   /** True only for need-blind, full-need-met admission (NYU Abu Dhabi). */
   need_blind: boolean;
+  /**
+   * Single-digit-admit, fully holistic selection (NYU Abu Dhabi, ~4-5%). The
+   * engine never shows better than "target" for these: being in the SAT band is
+   * necessary but nowhere near sufficient, and pretending otherwise would
+   * contradict the honest US-methodology read of the same school.
+   */
+  ultra_selective?: boolean;
   /** Indicative international annual tuition, USD (before any scholarship). */
   annual_fee_usd: number;
   /** One line on the merit-aid picture — a major UAE selling point. */
@@ -67,6 +74,7 @@ export const UAE_PROGRAMS: UaeProgram[] = [
     english_ielts: 7,
     interview_required: true,
     need_blind: true,
+    ultra_selective: true,
     annual_fee_usd: 53000,
     merit_scholarship_note:
       "Need-blind admission — NYUAD meets 100% of demonstrated financial need, and admitted students are automatically considered for merit awards that can cover full tuition, housing and travel.",
@@ -85,6 +93,7 @@ export const UAE_PROGRAMS: UaeProgram[] = [
     english_ielts: 7,
     interview_required: true,
     need_blind: true,
+    ultra_selective: true,
     annual_fee_usd: 53000,
     merit_scholarship_note:
       "Need-blind; meets full demonstrated need. Admitted students are considered for full-ride merit scholarships.",
@@ -103,6 +112,7 @@ export const UAE_PROGRAMS: UaeProgram[] = [
     english_ielts: 7,
     interview_required: true,
     need_blind: true,
+    ultra_selective: true,
     annual_fee_usd: 53000,
     merit_scholarship_note:
       "Need-blind; meets full demonstrated need, with merit awards up to full cost of attendance.",
@@ -121,6 +131,7 @@ export const UAE_PROGRAMS: UaeProgram[] = [
     english_ielts: 7,
     interview_required: true,
     need_blind: true,
+    ultra_selective: true,
     annual_fee_usd: 53000,
     merit_scholarship_note:
       "Need-blind; full demonstrated need met, plus consideration for merit scholarships.",
@@ -139,6 +150,7 @@ export const UAE_PROGRAMS: UaeProgram[] = [
     english_ielts: 7,
     interview_required: true,
     need_blind: true,
+    ultra_selective: true,
     annual_fee_usd: 53000,
     merit_scholarship_note:
       "Need-blind; meets full demonstrated need, with merit awards up to full cost of attendance.",

@@ -50,7 +50,7 @@ export function ItalyBreakdown({ programs }: Props) {
             label="Early Admission Track"
             badge="Guaranteed Threshold"
             badgeColor="likely"
-            description="These programs run an Early Enrollment system. Clear the threshold before the deadline and you secure a seat — no ranking competition."
+            description="These programs run an Early Enrollment system: clear the threshold and there is no ranking competition — seats are claimed from the limited Extra-UE quota in application order. Apply as soon as the portal opens, and confirm the threshold in the current year's Bando."
           />
           <div className="grid gap-4 sm:grid-cols-2">
             {guaranteed.map((p) => (
@@ -189,6 +189,9 @@ function GuaranteedCard({ program: p }: { program: ItalyProgramAnalysis }) {
 function GraduatoriaCard({ program: p }: { program: ItalyProgramAnalysis }) {
   const [open, setOpen] = useState(false);
   const diff = p.user_sat - p.historical_cutoff;
+  // No SAT on file → don't render a fake "-1390 vs. cutoff"; the reasoning
+  // (and this placeholder) tell the student to add a score instead.
+  const noSat = p.user_sat <= 0;
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-line bg-card shadow-card transition-shadow hover:shadow-lift">
@@ -212,19 +215,31 @@ function GraduatoriaCard({ program: p }: { program: ItalyProgramAnalysis }) {
           <StatusPill status={p.status} />
           <div className="text-right">
             <p className="text-[10px] text-ink-faint">vs. cutoff</p>
-            <p
-              className={`text-base font-bold tabular-nums ${
-                diff >= 0 ? "text-likely" : "text-reach"
-              }`}
-            >
-              {diff >= 0 ? "+" : ""}
-              {diff}
-            </p>
+            {noSat ? (
+              <p className="text-base font-bold text-ink-faint">—</p>
+            ) : (
+              <p
+                className={`text-base font-bold tabular-nums ${
+                  diff >= 0 ? "text-likely" : "text-reach"
+                }`}
+              >
+                {diff >= 0 ? "+" : ""}
+                {diff}
+              </p>
+            )}
           </div>
         </div>
 
         {/* Score bar */}
-        <ScoreBar userSAT={p.user_sat} cutoff={p.historical_cutoff} />
+        {noSat ? (
+          <p className="rounded-lg bg-surface px-3 py-2 text-[11px] leading-relaxed text-ink-soft">
+            No SAT on file — this program ranks applicants strictly by SAT, so
+            add your score to see your real position against the cutoff (
+            {p.historical_cutoff}).
+          </p>
+        ) : (
+          <ScoreBar userSAT={p.user_sat} cutoff={p.historical_cutoff} />
+        )}
 
         {/* Stats row */}
         <div className="mt-3 flex items-center gap-4">
@@ -318,7 +333,7 @@ function StatusPill({ status }: { status: ItalyProgramAnalysis["status"] }) {
     { label: string; className: string }
   > = {
     guaranteed: {
-      label: "Guaranteed",
+      label: "Threshold cleared",
       className: "bg-likely-soft text-likely",
     },
     likely: { label: "Likely", className: "bg-likely-soft text-likely" },
@@ -383,8 +398,10 @@ function ThresholdBar({
       </div>
       <p className="mt-5 text-[10px] text-ink-faint">
         {cleared
-          ? `Your SAT ${userSAT} clears the threshold — guaranteed seat.`
-          : `${threshold - userSAT} points below the Early Admission threshold.`}
+          ? `Your SAT ${userSAT} clears the threshold — a seat is yours while the Extra-UE quota lasts, so apply early.`
+          : userSAT <= 0
+            ? `No SAT on file — add your score to see where you stand.`
+            : `${threshold - userSAT} points below the Early Admission threshold.`}
       </p>
     </div>
   );

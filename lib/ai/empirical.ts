@@ -217,5 +217,19 @@ export function estimateSchoolLikelihood(
     prob = sigmoid(logit(prob) + internationalLogitPenalty(uni.acceptance_rate));
   }
 
-  return toEstimate(prob, source, n);
+  // Honesty ceiling AT THE SOURCE, not just at display time. The heuristic
+  // branch can run far too optimistic for ultra-selective schools (a strong
+  // index showed ~50% at 4%-admit NYUAD before capping), and this estimate's
+  // TIER also feeds the recommendations prose ("right in your admitted range")
+  // — so cap the band and re-derive the tier here, exactly like the display
+  // path does, instead of trusting every caller to remember the cap.
+  const est = toEstimate(prob, source, n);
+  const cap = maxDisplayedHigh(uni.acceptance_rate);
+  if (est.likelihood_high > cap) {
+    const width = est.likelihood_high - est.likelihood_low;
+    est.likelihood_high = cap;
+    est.likelihood_low = Math.max(0, cap - width);
+    est.tier = tierForPct((est.likelihood_low + est.likelihood_high) / 2);
+  }
+  return est;
 }
