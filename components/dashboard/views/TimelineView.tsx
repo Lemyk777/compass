@@ -199,6 +199,11 @@ function DatedPlan({ plan, basePath }: { plan: StudyPlan; basePath: string }) {
                       </span>
                     </p>
                     <p className="mt-0.5 text-xs text-ink-soft">{c.blurb}</p>
+                    <p className="mt-1 text-xs text-ink-soft">
+                      <span className="font-medium text-ink">Eligibility:</span>{" "}
+                      {c.eligibility ??
+                        "varies — check the age/grade rules on the official page"}
+                    </p>
                     <p className="mt-1 text-xs text-ink-faint">
                       Deadline{" "}
                       <span data-num className="tabular-nums">{formatDate(c.deadline)}</span> ·{" "}

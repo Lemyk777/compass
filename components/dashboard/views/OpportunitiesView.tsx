@@ -252,6 +252,14 @@ function FitSection({
   );
 }
 
+const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
+  olympiad: "Olympiad",
+  competition: "Competition",
+  course: "Course",
+  research_program: "Research program",
+  summer_program: "Summer program",
+};
+
 function OpportunityRow({ o }: { o: Opportunity }) {
   const tier = TIER_BADGE[o.tierResolved];
   return (
@@ -266,10 +274,21 @@ function OpportunityRow({ o }: { o: Opportunity }) {
               {tier.label}
             </span>
             <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-faint">
-              {o.categoryResolved === "olympiad" ? "Olympiad" : "Competition"}
+              {CATEGORY_LABEL[o.categoryResolved]}
             </span>
           </p>
           <p className="mt-0.5 text-xs text-ink-soft">{o.blurb}</p>
+          {/* Who can enter — shown on EVERY card so a younger student never
+              wastes a cycle on an event they can't yet join. Live rows without
+              curated eligibility get an honest "check the page" fallback. */}
+          <p className="mt-1 flex items-start gap-1.5 text-xs text-ink-soft">
+            <PersonIcon />
+            <span>
+              <span className="font-medium text-ink">Eligibility:</span>{" "}
+              {o.eligibility ??
+                "varies — check the age/grade rules on the official page"}
+            </span>
+          </p>
           {o.dateConfirmed ? (
             <p className="mt-1 text-xs text-ink-faint">
               Deadline{" "}
@@ -300,6 +319,25 @@ function OpportunityRow({ o }: { o: Opportunity }) {
         </div>
       </div>
     </li>
+  );
+}
+
+/** Small person glyph for the eligibility line. */
+function PersonIcon() {
+  return (
+    <svg
+      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-faint"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" />
+    </svg>
   );
 }
 
