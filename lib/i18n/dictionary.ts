@@ -337,7 +337,7 @@ const en: Dict = {
   "nav.rankings": "Rankings",
   "nav.results": "Admission odds",
   "nav.costs": "Application costs",
-  "nav.plan": "Action plan",
+  "nav.plan": "Roadmap",
   "nav.opportunities": "Opportunities",
   "nav.timeline": "Timeline",
   "nav.summary": "Summary",
@@ -399,6 +399,8 @@ const en: Dict = {
   "report.recHint": "Strong fits that aren't on your list yet.",
   "report.timelineTitle": "What to do next",
   "report.timelineHint": "A plan across the coming months.",
+  "report.roadmapTitle": "Your roadmap",
+  "report.roadmapHint": "A plan built around how much time you have left before you apply.",
   "report.summaryTitle": "The bottom line",
   "report.destTitle": "View your results by country",
   "report.destHint":

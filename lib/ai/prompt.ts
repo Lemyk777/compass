@@ -98,8 +98,19 @@ Read the WHOLE profile — every factor score, the weakest factors, the grades/t
 - Prioritize by impact (priority 1 = highest). Give a realistic effort: "low"/"medium"/"high".
 - Focus on PROFILE STRENGTH: GPA/grades, course rigor, the depth and leadership of activities, awards, and narrative coherence. Do NOT give generic application-logistics advice ("finalize and submit the Common App", "write your essay", "ask for recommendation letters", "research more schools") UNLESS it is genuinely the single biggest remaining lever for this specific student.
 
-# Timeline — "What to do next"
-Concrete, sequenced steps grouped by horizon ("1 month" / "3 months" / "6 months"). Each item must (a) execute on or build toward the gap_analysis actions and (b) reference this student's own data so it's clearly personalized — not boilerplate. Front-load the highest-impact, most time-sensitive moves. Every item names WHAT to do and WHY it matters for this student's profile and targets. Avoid filler and generic checklist items.
+# Timeline — "What to do next" (a FLAT list — do NOT bucket by time)
+Return a flat list of 5-8 concrete next steps. Do NOT group them into "1 month / 3 months / 6 months" or any time buckets — the SYSTEM schedules each step against this student's real application deadlines, which depend on how much runway they have left (some have a full year or more, others only weeks). Your job is only to say WHAT to do and tag each step so the system can place it.
+- Each step must (a) execute on or build toward the gap_analysis actions and (b) reference this student's own data so it's clearly personalized — not boilerplate.
+- Tag each step with a "kind" from exactly this set:
+  • "profile" — raise a rubric factor (GPA/grades, course rigor, narrative coherence)
+  • "test" — SAT / standardized testing
+  • "activity" — start or deepen an extracurricular, leadership, or service
+  • "research" — a research project, olympiad, or summer program (long-lead profile building)
+  • "essay" — personal statement or supplements
+  • "logistics" — recommenders, forms, portals, financial-aid paperwork
+  • "decision" — finalizing the school list, Early-vs-Regular, or hitting submit
+- Set "priority" as an integer, 1 = do first / highest leverage.
+- Be honest about runway: prefer "research"/"activity"/"profile" steps for students with lots of time; for students close to their deadline, lead with "essay"/"logistics"/"decision" and only include "test" if a sitting can still land in time. The system will down-rank long-build steps when there is no time for them — but you should still weight your steps toward what is realistic.
 
 # Output JSON schema (return EXACTLY this shape)
 {
@@ -116,7 +127,7 @@ Concrete, sequenced steps grouped by horizon ("1 month" / "3 months" / "6 months
   "schools": [ { "name": <string>, "tier": "reach"|"target"|"likely", "likelihood_low": <0-100>, "likelihood_high": <0-100>, "confidence": "low"|"medium"|"high", "fit_score": <0-10>, "reason": <string> } ],   // one entry per target school
   "recommended_schools": [ { "name": <string>, "tier": "reach"|"target"|"likely", "fit_score": <0-10>, "why": <string> } ],
   "gap_analysis": [ { "action": <string>, "impact": <string>, "effort": "low"|"medium"|"high", "priority": <int> } ],
-  "timeline": [ { "horizon": "1 month"|"3 months"|"6 months", "items": [<string>, ...] } ],
+  "timeline": [ { "text": <string>, "kind": "profile"|"test"|"activity"|"research"|"essay"|"logistics"|"decision", "priority": <int> } ],
   "summary": <one plain-language paragraph tying the numbers together and stating what matters most next>
 }
 

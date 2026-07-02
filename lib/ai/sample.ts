@@ -130,9 +130,13 @@ export const SAMPLE_ANALYSIS: Analysis = {
     { action: "Add 1–2 aid-friendly target schools", impact: "De-risks a reach-heavy list given your aid need", effort: "low", priority: 4 },
   ],
   timeline: [
-    { horizon: "1 month", items: ["Register for the next SAT date", "Draft activity descriptions with concrete numbers", "Shortlist 2 aid-friendly targets"] },
-    { horizon: "3 months", items: ["Retake the SAT", "Enter one more competition in your field", "Draft your main essay around the startup story"] },
-    { horizon: "6 months", items: ["Finalize a balanced school list (reach/target/likely)", "Secure strong recommenders", "Complete aid paperwork (CSS Profile)"] },
+    { text: "Retake the SAT aiming 1550+ — your 1520 sits at the mid-50% of your reaches, not above it", kind: "test", priority: 1 },
+    { text: "Enter one more national competition in your field to convert Awards 6 → 8", kind: "research", priority: 2 },
+    { text: "Deepen your startup activity into a documented, measurable result to headline the profile", kind: "activity", priority: 3 },
+    { text: "Draft activity descriptions with concrete numbers (users, revenue, hours)", kind: "profile", priority: 4 },
+    { text: "Draft your main essay around the startup story", kind: "essay", priority: 5 },
+    { text: "Finalize a balanced school list (reach/target/likely) and add 1–2 aid-friendly targets", kind: "decision", priority: 6 },
+    { text: "Secure strong recommenders and complete aid paperwork (CSS Profile)", kind: "logistics", priority: 7 },
   ],
   summary:
     "You have a genuinely strong, coherent profile — top-decile test scores, real entrepreneurial leadership, and rigorous A-Levels. Your list is reach-heavy, and as an aid-seeking international that raises the stakes, so the highest-value moves are balancing the list with aid-friendly targets like Rochester and nudging your SAT and awards up. Penn and Princeton stay aspirational (single-digit odds for everyone); BU is where your profile competes hardest, and Michigan is a competitive reach in the tougher international pool. In Italy your SAT clears the Politecnico early-admission threshold outright — a far more predictable, score-based path worth securing alongside the US list.",

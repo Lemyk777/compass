@@ -1,0 +1,324 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Card } from "@/components/report/Section";
+import { GapAnalysis } from "@/components/report/GapAnalysis";
+import { useDashboard } from "@/components/dashboard/DashboardContext";
+import { NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
+import { formatDate } from "@/lib/data/key-dates";
+import {
+  buildRoadmap,
+  type Regime,
+  type Roadmap,
+  type RoadmapAction,
+  type RoadmapPhase,
+} from "@/lib/data/roadmap";
+import { useT } from "@/lib/i18n/client";
+
+// The Roadmap merges the old "Action plan" (gap analysis) and "Timeline" into a
+// single, runway-aware story: how much time you have → what that means → a
+// phased, date-anchored plan built from it.
+export function RoadmapView() {
+  const t = useT();
+  const { analysis, profileMeta, basePath, liveDates } = useDashboard();
+
+  // "today" depends on the visitor's clock, so resolve it on the client to avoid
+  // a hydration mismatch. Until then, render nothing date-dependent.
+  const [today, setToday] = useState<Date | null>(null);
+  useEffect(() => setToday(new Date()), []);
+
+  if (!analysis) return <NoAnalysisYet />;
+
+  const roadmap = today
+    ? buildRoadmap({
+        today,
+        graduationYear: profileMeta.graduationYear,
+        faculties: profileMeta.faculties,
+        satScore: profileMeta.satScore,
+        planActions: analysis.timeline,
+        liveSatSittings: liveDates.satSittings,
+        liveCompetitions: liveDates.competitions,
+      })
+    : null;
+
+  return (
+    <div className="space-y-5">
+      <PageHeader title={t("report.roadmapTitle")} hint={t("report.roadmapHint")} />
+
+      {roadmap ? (
+        <RoadmapHeader roadmap={roadmap} today={today!} basePath={basePath} />
+      ) : (
+        <div className="h-28 animate-pulse rounded-2xl border border-line bg-card" />
+      )}
+
+      {/* Highest-impact levers — the "what moves the needle" summary, kept from
+          the old Action-plan view. The phased roadmap below sequences these. */}
+      {analysis.gap_analysis.length > 0 && (
+        <Card>
+          <h2 className="mb-1 text-base font-semibold text-ink">
+            Your highest-impact levers
+          </h2>
+          <p className="mb-4 text-sm text-ink-soft">
+            Ranked by how much they lift your standing. The plan below schedules
+            them against your real deadlines.
+          </p>
+          <GapAnalysis items={analysis.gap_analysis} />
+        </Card>
+      )}
+
+      {roadmap ? (
+        <RoadmapPhases roadmap={roadmap} />
+      ) : (
+        <div className="h-40 animate-pulse rounded-2xl border border-line bg-card" />
+      )}
+
+      <p className="text-center text-xs text-ink-faint">
+        Dates are indicative — always confirm on the official site before you rely
+        on them.
+      </p>
+    </div>
+  );
+}
+
+const REGIME_ACCENT: Record<Regime, string> = {
+  building: "bg-likely-soft text-[#2C6B4D]",
+  focusing: "bg-accent-soft text-accent-ink",
+  sprinting: "bg-target-soft text-[#8A5410]",
+  submitting: "bg-reach-soft text-[#A93B2A]",
+  unknown: "bg-surface text-ink-soft",
+};
+
+function RoadmapHeader({
+  roadmap,
+  today,
+  basePath,
+}: {
+  roadmap: Roadmap;
+  today: Date;
+  basePath: string;
+}) {
+  const accent = REGIME_ACCENT[roadmap.regime];
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-semibold text-ink">{roadmap.headline}</h2>
+        {roadmap.cycleLabel && (
+          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${accent}`}>
+            {roadmap.cycleLabel}
+          </span>
+        )}
+      </div>
+      <p className="mt-2 text-sm leading-relaxed text-ink-soft">{roadmap.subhead}</p>
+
+      {roadmap.operativeDeadlineISO ? (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
+          <span className="text-sm font-medium text-ink">
+            {roadmap.operativeDeadlineLabel} deadline
+          </span>
+          <span className="flex items-center gap-3 text-sm">
+            <span data-num className="tabular-nums text-ink-soft">
+              {formatDate(roadmap.operativeDeadlineISO)}
+            </span>
+            {roadmap.runwayDays != null && <Countdown days={roadmap.runwayDays} />}
+          </span>
+        </div>
+      ) : (
+        <p className="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-ink-soft">
+          <span className="font-medium text-ink">Add your graduation year</span> to
+          anchor this plan to your deadlines.{" "}
+          <a
+            href={basePath === "/demo" ? "#" : "/onboarding"}
+            className="font-medium text-accent hover:underline"
+          >
+            Update profile
+          </a>
+        </p>
+      )}
+    </Card>
+  );
+}
+
+function RoadmapPhases({ roadmap }: { roadmap: Roadmap }) {
+  return (
+    <div className="space-y-4">
+      {roadmap.phases.map((p) => (
+        <PhaseCard key={p.id} phase={p} />
+      ))}
+
+      {roadmap.deferred.length > 0 && (
+        <Card>
+          <h3 className="flex items-center gap-2 text-base font-semibold text-ink">
+            <ClockIcon /> Beyond this cycle
+          </h3>
+          <p className="mt-1 text-sm text-ink-soft">
+            High-value profile moves that need more runway than you have before
+            this deadline — worth it for a next round or a gap year, not this one.
+          </p>
+          <ul className="mt-4 space-y-2.5">
+            {roadmap.deferred.map((a, i) => (
+              <ActionRow key={i} action={a} muted />
+            ))}
+          </ul>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+const URGENCY_DOT: Record<RoadmapPhase["urgency"], string> = {
+  now: "bg-reach",
+  soon: "bg-target",
+  later: "bg-likely",
+};
+
+function PhaseCard({ phase }: { phase: RoadmapPhase }) {
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-base font-semibold text-ink">
+          <span
+            className={`h-2.5 w-2.5 shrink-0 rounded-full ${URGENCY_DOT[phase.urgency]}`}
+            aria-hidden
+          />
+          {phase.name}
+        </h3>
+        <span
+          data-num
+          className="rounded-full bg-surface px-2.5 py-1 text-xs font-medium tabular-nums text-ink-soft"
+        >
+          {phase.rangeLabel}
+        </span>
+      </div>
+      <p className="mt-2 text-sm leading-relaxed text-ink-soft">{phase.focus}</p>
+
+      {phase.actions.length > 0 ? (
+        <ul className="mt-4 space-y-2.5">
+          {phase.actions.map((a, i) => (
+            <ActionRow key={i} action={a} />
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-4 text-sm text-ink-faint">
+          Nothing scheduled here yet — the levers above feed into the phases with
+          dated deadlines.
+        </p>
+      )}
+    </Card>
+  );
+}
+
+const SOURCE_ICON: Record<RoadmapAction["source"], React.ReactNode> = {
+  sat: <PencilIcon />,
+  competition: <TrophyIcon />,
+  profile: <SparkIcon />,
+  note: <InfoIcon />,
+};
+
+function ActionRow({ action, muted }: { action: RoadmapAction; muted?: boolean }) {
+  return (
+    <li
+      className={`flex flex-wrap items-start justify-between gap-x-4 gap-y-2 rounded-xl border border-line px-4 py-3 ${
+        muted ? "opacity-80" : ""
+      }`}
+    >
+      <div className="flex min-w-0 gap-3">
+        <span className="mt-0.5 shrink-0 text-ink-faint">
+          {SOURCE_ICON[action.source]}
+        </span>
+        <div className="min-w-0">
+          <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
+            {action.text}
+            {action.tag && (
+              <span className="rounded-full bg-target-soft px-2 py-0.5 text-[11px] font-semibold text-target">
+                {action.tag}
+              </span>
+            )}
+          </p>
+          {action.why && (
+            <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
+              {action.why}
+            </p>
+          )}
+        </div>
+      </div>
+      {(action.daysLeft != null || action.url) && (
+        <div className="flex shrink-0 items-center gap-3">
+          {action.daysLeft != null && <Countdown days={action.daysLeft} />}
+          {action.url && (
+            <a
+              href={action.url}
+              target="_blank"
+              rel="noreferrer"
+              className="whitespace-nowrap rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
+            >
+              Open ↗
+            </a>
+          )}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** Days-left pill, colored by urgency. */
+function Countdown({ days }: { days: number }) {
+  const tone =
+    days <= 14
+      ? "bg-reach-soft text-reach"
+      : days <= 30
+        ? "bg-target-soft text-target"
+        : "bg-likely-soft text-[#2C6B4D]";
+  const text =
+    days <= 0 ? "due today" : days === 1 ? "1 day left" : `${days} days left`;
+  return (
+    <span
+      data-num
+      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${tone}`}
+    >
+      {text}
+    </span>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function TrophyIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" />
+    </svg>
+  );
+}
+
+function SparkIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />
+    </svg>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 16v-4M12 8h.01" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg className="h-5 w-5 text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}

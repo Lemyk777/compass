@@ -14,9 +14,8 @@ const SECTIONS: { slug: string; labelKey: string; icon: keyof typeof ICONS }[] =
   { slug: "rankings", labelKey: "nav.rankings", icon: "trophy" },
   { slug: "odds", labelKey: "nav.results", icon: "bars" },
   { slug: "costs", labelKey: "nav.costs", icon: "dollar" },
-  { slug: "plan", labelKey: "nav.plan", icon: "check" },
+  { slug: "plan", labelKey: "nav.plan", icon: "calendar" },
   { slug: "opportunities", labelKey: "nav.opportunities", icon: "spark" },
-  { slug: "timeline", labelKey: "nav.timeline", icon: "calendar" },
   { slug: "summary", labelKey: "nav.summary", icon: "list" },
 ];
 
