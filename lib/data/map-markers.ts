@@ -4,7 +4,7 @@
 // point of the contour view is to show only the handful of top schools per
 // country and skip the empty space between them.
 
-export type CountryCode = "US" | "IT" | "HK";
+export type CountryCode = "US" | "IT" | "HK" | "KR";
 
 export type UniMarker = {
   name: string;
@@ -62,6 +62,18 @@ const HK_MARKERS: UniMarker[] = [
   { name: "PolyU", lat: 22.3045, lon: 114.18, logo: "/logos/polyu.svg" },
 ];
 
+// Official university emblems (Wikimedia/Wikipedia). Most are clustered in
+// Seoul; the map's declustering fans them out like it does for Hong Kong.
+const KR_MARKERS: UniMarker[] = [
+  { name: "Seoul National University", lat: 37.4599, lon: 126.952, logo: "/logos/snu.png" },
+  { name: "Yonsei University", lat: 37.5665, lon: 126.9388, logo: "/logos/yonsei.png" },
+  { name: "Korea University", lat: 37.5894, lon: 127.0328, logo: "/logos/korea-university.png" },
+  { name: "Sungkyunkwan University", lat: 37.5879, lon: 126.9938, logo: "/logos/skku.png" },
+  { name: "Hanyang University", lat: 37.5573, lon: 127.0456, logo: "/logos/hanyang.png" },
+  { name: "KAIST", lat: 36.3721, lon: 127.3604, logo: "/logos/kaist.png" },
+  { name: "POSTECH", lat: 36.014, lon: 129.322, logo: "/logos/postech.png" },
+];
+
 export const COUNTRIES: CountryView[] = [
   {
     code: "US",
@@ -80,5 +92,11 @@ export const COUNTRIES: CountryView[] = [
     label: "Hong Kong",
     blurb: `${HK_MARKERS.length} top universities`,
     markers: HK_MARKERS,
+  },
+  {
+    code: "KR",
+    label: "South Korea",
+    blurb: `${KR_MARKERS.length} top universities`,
+    markers: KR_MARKERS,
   },
 ];

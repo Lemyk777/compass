@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import statesGeo from "@/public/data/us-states.json";
 import italyGeo from "@/public/data/italy.json";
 import hkGeo from "@/public/data/hong-kong.json";
+import koreaGeo from "@/public/data/korea.json";
 import type { CountryView, UniMarker } from "@/lib/data/map-markers";
 
 // Boundary source per country (clip mask + bbox for the topo image).
@@ -11,6 +12,7 @@ const SHAPE: Record<string, { features: { properties?: { name?: string }; geomet
   US: statesGeo as never,
   IT: italyGeo as never,
   HK: hkGeo as never,
+  KR: koreaGeo as never,
 };
 
 // Fixed drawing surface; the SVG scales responsively to its container.
