@@ -20,7 +20,7 @@ import { useT } from "@/lib/i18n/client";
 // phased, date-anchored plan built from it.
 export function RoadmapView() {
   const t = useT();
-  const { analysis, profileMeta, basePath, liveDates, tabs } = useDashboard();
+  const { analysis, profileMeta, basePath, liveDates } = useDashboard();
 
   // "today" depends on the visitor's clock, so resolve it on the client to avoid
   // a hydration mismatch. Until then, render nothing date-dependent.
@@ -29,13 +29,25 @@ export function RoadmapView() {
 
   if (!analysis) return <NoAnalysisYet />;
 
+  // The student's actual target schools per country — the roadmap resolves each
+  // one's real, verified deadline (US via app-deadlines, others via the
+  // hand-verified intl-deadlines dataset).
+  const uniq = (a: string[]) => [...new Set(a.filter(Boolean))];
+  const targets = [
+    { code: "US" as const, universities: uniq(analysis.schools.map((s) => s.name)) },
+    { code: "IT" as const, universities: uniq((analysis.italy_programs ?? []).map((p) => p.university)) },
+    { code: "HK" as const, universities: uniq((analysis.hk_programs ?? []).map((p) => p.university)) },
+    { code: "AE" as const, universities: uniq((analysis.uae_programs ?? []).map((p) => p.university)) },
+    { code: "KR" as const, universities: uniq((analysis.kr_programs ?? []).map((p) => p.university)) },
+  ].filter((t) => t.universities.length > 0);
+
   const roadmap = today
     ? buildRoadmap({
         today,
         graduationYear: profileMeta.graduationYear,
         faculties: profileMeta.faculties,
         satScore: profileMeta.satScore,
-        destinations: tabs,
+        targets,
         planActions: analysis.timeline,
         liveSatSittings: liveDates.satSittings,
         liveCompetitions: liveDates.competitions,
@@ -129,6 +141,14 @@ function RoadmapHeader({
             {roadmap.runwayDays != null && <Countdown days={roadmap.runwayDays} />}
           </span>
         </div>
+      ) : roadmap.hasGraduationYear ? (
+        <p className="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-ink-soft">
+          We don&rsquo;t have a to-the-day deadline we can stand behind for your
+          current target schools — they admit on rolling or per-programme
+          timelines. See{" "}
+          <span className="font-medium text-ink">Confirm these dates</span> below
+          and check each official page.
+        </p>
       ) : (
         <p className="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-ink-soft">
           <span className="font-medium text-ink">Add your graduation year</span> to
@@ -151,6 +171,25 @@ function RoadmapPhases({ roadmap }: { roadmap: Roadmap }) {
       {roadmap.phases.map((p) => (
         <PhaseCard key={p.id} phase={p} />
       ))}
+
+      {roadmap.unconfirmedDeadlines.length > 0 && (
+        <Card>
+          <h3 className="flex items-center gap-2 text-base font-semibold text-ink">
+            <InfoIcon /> Confirm these dates yourself
+          </h3>
+          <p className="mt-1 text-sm text-ink-soft">
+            We only show a countdown for deadlines we verified against the
+            official page. For these schools the date is rolling, set per
+            programme, or not yet published — open each official page and confirm
+            before you rely on it.
+          </p>
+          <ul className="mt-4 space-y-2.5">
+            {roadmap.unconfirmedDeadlines.map((a, i) => (
+              <ActionRow key={i} action={a} />
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {roadmap.deferred.length > 0 && (
         <Card>

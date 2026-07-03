@@ -22,10 +22,8 @@ import {
   type Competition,
   type SatSitting,
 } from "@/lib/data/key-dates";
-import {
-  admissionRounds,
-  DEADLINE_CAVEAT,
-} from "@/lib/data/admissions-deadlines";
+import { resolveSchoolDeadlines } from "@/lib/data/app-deadlines";
+import { resolveUniversityDeadlines } from "@/lib/data/intl-deadlines";
 import type { DestinationCode } from "@/lib/data/destinations";
 import type { PlanAction, PlanActionKind } from "@/lib/ai/schema";
 
@@ -63,12 +61,19 @@ export type RoadmapPhase = {
   actions: RoadmapAction[];
 };
 
-// A dated application deadline for one of the student's chosen countries.
+// The student's target universities in one country (US = school names; others =
+// the `university` strings from that country's program picks).
+export type CountryTargets = { code: DestinationCode; universities: string[] };
+
+// A dated, VERIFIED application deadline for one of the student's target schools.
 export type DeadlineMarker = {
   code: DestinationCode;
+  university: string | null; // null for aggregated US markers
   round: string;
   iso: string;
   daysLeft: number;
+  source?: string;
+  note?: string;
 };
 
 export type Roadmap = {
@@ -89,6 +94,10 @@ export type Roadmap = {
   // Long-build moves that can't realistically land before the deadline. Shown
   // honestly as "beyond this cycle" rather than pretended into a phase.
   deferred: RoadmapAction[];
+  // Target schools whose deadline we could NOT verify to the day (rolling, or
+  // per-programme). Shown as "confirm these" with the official link and NO
+  // countdown — never a guessed date.
+  unconfirmedDeadlines: RoadmapAction[];
 };
 
 export type RoadmapInputs = {
@@ -96,9 +105,10 @@ export type RoadmapInputs = {
   graduationYear?: number;
   faculties: string[];
   satScore?: number;
-  // The countries the student is applying to — the runway is anchored to the
-  // EARLIEST deadline across these, not just the US cycle. Defaults to US.
-  destinations?: DestinationCode[];
+  // The student's target universities per country — the runway is anchored to
+  // the EARLIEST VERIFIED deadline across them (US via app-deadlines, others via
+  // the hand-verified intl-deadlines dataset).
+  targets?: CountryTargets[];
   // The model's flat, kind-tagged action list (analysis.timeline).
   planActions?: PlanAction[];
   liveSatSittings?: SatSitting[];
@@ -309,6 +319,107 @@ function phaseIndexForDate(phases: PhaseTpl[], iso: string): number {
   return phases.length - 1;
 }
 
+// Gather every target school's deadline. US schools resolve through the curated
+// per-school dataset (app-deadlines.ts); other countries through the verified
+// intl-deadlines dataset. Verified dates become dated markers (with a
+// countdown); anything we can't stand behind becomes an honest "confirm this"
+// note with the official link and NO date.
+function gatherDeadlines(
+  targets: CountryTargets[],
+  today: Date,
+  graduationYear: number
+): { confirmed: DeadlineMarker[]; unconfirmed: RoadmapAction[] } {
+  const confirmed: DeadlineMarker[] = [];
+  const unconfirmed: RoadmapAction[] = [];
+  const seen = new Set<string>();
+
+  const addUnconfirmed = (uni: string, why: string, url?: string) => {
+    if (seen.has(uni)) return;
+    seen.add(uni);
+    unconfirmed.push({
+      text: `${uni} — confirm the deadline`,
+      source: "note",
+      kind: "decision",
+      why,
+      ...(url ? { url } : {}),
+    });
+  };
+
+  for (const { code, universities } of targets) {
+    if (code === "US") {
+      // Aggregate the US list to the two runway-relevant dates — the earliest
+      // early-round and the earliest Regular Decision. Per-school detail lives on
+      // the odds page, so we don't repeat every school here.
+      const all = universities.flatMap((u) =>
+        resolveSchoolDeadlines(u, today, graduationYear)
+      );
+      const earlyStages = new Set(["ED", "ED2", "EA", "REA"]);
+      const futureEarly = all
+        .filter((d) => d.daysLeft >= 0 && earlyStages.has(d.stage))
+        .sort((a, b) => a.daysLeft - b.daysLeft);
+      const futureRD = all
+        .filter((d) => d.daysLeft >= 0 && d.stage === "RD")
+        .sort((a, b) => a.daysLeft - b.daysLeft);
+      if (futureEarly[0])
+        confirmed.push({
+          code,
+          university: null,
+          round: "US early rounds (earliest on your list)",
+          iso: futureEarly[0].date,
+          daysLeft: futureEarly[0].daysLeft,
+        });
+      if (futureRD[0])
+        confirmed.push({
+          code,
+          university: null,
+          round: "US Regular Decision (earliest on your list)",
+          iso: futureRD[0].date,
+          daysLeft: futureRD[0].daysLeft,
+        });
+      continue;
+    }
+
+    // Non-US: the hand-verified per-university dataset.
+    for (const uni of universities) {
+      const r = resolveUniversityDeadlines(uni, today, graduationYear);
+      if (!r) {
+        addUnconfirmed(
+          uni,
+          "We don't have a verified date for this school yet — check its official admissions page."
+        );
+        continue;
+      }
+      if (r.confirmed && r.rounds.length > 0) {
+        const upcoming = r.rounds.find((rd) => rd.daysLeft >= 0);
+        if (upcoming) {
+          confirmed.push({
+            code,
+            university: uni,
+            round: `${uni} · ${upcoming.label}`,
+            iso: upcoming.iso,
+            daysLeft: upcoming.daysLeft,
+            source: r.source,
+            note: r.rolling ? r.window ?? undefined : undefined,
+          });
+        } else {
+          addUnconfirmed(
+            uni,
+            "This cycle's rounds have closed — check the official page for the next intake.",
+            r.source
+          );
+        }
+      } else {
+        addUnconfirmed(
+          uni,
+          r.window ?? "Check the official admissions page for dates.",
+          r.source
+        );
+      }
+    }
+  }
+  return { confirmed, unconfirmed };
+}
+
 // ── The engine ────────────────────────────────────────────────────────────────
 export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
   const {
@@ -316,7 +427,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
     graduationYear,
     faculties,
     satScore,
-    destinations,
+    targets,
     planActions = [],
     liveSatSittings,
     liveCompetitions,
@@ -368,6 +479,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
       operativeDeadlineISO: null,
       operativeDeadlineLabel: null,
       deadlines: [],
+      unconfirmedDeadlines: [],
       runwayDays: null,
       runwayMonths: null,
       headline: "Add your graduation year to unlock your roadmap",
@@ -378,54 +490,43 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
     };
   }
 
-  // All deadlines across the chosen countries (default to US when none given —
-  // keeps older profiles that predate the destinations field working). The
-  // runway is anchored to the EARLIEST one still ahead, so a Korea-only student
-  // (spring deadlines) isn't wrongly told to "sprint" on the US November date.
-  const destCodes: DestinationCode[] =
-    destinations && destinations.length > 0 ? destinations : ["US"];
-  const allDeadlines: DeadlineMarker[] = destCodes
-    .flatMap((code) =>
-      admissionRounds(code, graduationYear).map((r) => ({
-        code,
-        round: r.round,
-        iso: r.iso,
-        daysLeft: daysBetween(todayISO, r.iso),
-      }))
-    )
+  // Verified deadlines across the student's actual target schools (US via the
+  // curated per-school dataset, others via the hand-verified intl-deadlines).
+  // The runway anchors to the EARLIEST VERIFIED one still ahead — so a Korea
+  // student (SNU's March window) isn't wrongly told to "sprint" on a US date,
+  // and we never anchor to a date we can't stand behind.
+  const targetList: CountryTargets[] =
+    targets && targets.length > 0 ? targets : [{ code: "US", universities: [] }];
+  const { confirmed: confirmedMarkers, unconfirmed: unconfirmedDeadlines } =
+    gatherDeadlines(targetList, today, graduationYear);
+
+  const futureConfirmed = confirmedMarkers
+    .filter((d) => d.daysLeft >= 0)
     .sort((a, b) => (a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0));
 
-  const futureDeadlines = allDeadlines.filter((d) => d.daysLeft >= 0);
-
-  // op = earliest future deadline; last = latest future deadline (for the season
-  // tail). If every deadline has passed, anchor just ahead of today so the plan
-  // still renders as a wrap-up.
-  let op: string;
-  let opLabel: string;
-  let last: string;
-  if (futureDeadlines.length > 0) {
-    op = futureDeadlines[0].iso;
-    opLabel = futureDeadlines[0].round;
-    last = futureDeadlines[futureDeadlines.length - 1].iso;
-  } else {
-    op = shiftISO(todayISO, 30);
-    opLabel = "your remaining deadlines";
-    last = op;
-  }
+  // op = earliest verified deadline still ahead; last = latest, for the season
+  // tail. When there is no verified upcoming deadline (only rolling/per-
+  // programme targets, or none picked yet), anchor the REGIME softly to the
+  // typical main-application season (Jan of the enrolment year) WITHOUT showing
+  // that date as a hard deadline.
+  const hasConfirmedAnchor = futureConfirmed.length > 0;
+  const op = hasConfirmedAnchor ? futureConfirmed[0].iso : `${graduationYear}-01-01`;
+  const opLabel = hasConfirmedAnchor ? futureConfirmed[0].round : null;
+  const last = hasConfirmedAnchor
+    ? futureConfirmed[futureConfirmed.length - 1].iso
+    : op;
 
   const runwayDays = daysBetween(todayISO, op);
   const runwayMonths = runwayDays / 30.44;
 
   const regime: Regime =
-    futureDeadlines.length === 0
-      ? "submitting"
-      : runwayMonths >= 12
-        ? "building"
-        : runwayMonths >= 6
-          ? "focusing"
-          : runwayMonths >= 2
-            ? "sprinting"
-            : "submitting";
+    runwayMonths >= 12
+      ? "building"
+      : runwayMonths >= 6
+        ? "focusing"
+        : runwayMonths >= 2
+          ? "sprinting"
+          : "submitting";
 
   const tpls = normalizePhases(phasesFor(regime, todayISO, op, last), todayISO);
   // Guarantee at least one phase to schedule into.
@@ -474,17 +575,19 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
     buckets[phaseIndexForDate(skeleton, a.anchorDate ?? todayISO)].push(a);
   }
 
-  // 3) The application deadlines themselves — one dated row per country, placed
-  // in the phase its date falls into, so the student sees each country's cutoff
-  // with a live countdown (not just the earliest one in the header).
-  for (const d of futureDeadlines) {
+  // 3) The verified application deadlines themselves — one dated row per school,
+  // placed in the phase its date falls into, so the student sees each cutoff with
+  // a live countdown (unverified ones are surfaced separately, never with a
+  // fake date).
+  for (const d of futureConfirmed) {
     buckets[phaseIndexForDate(skeleton, d.iso)].push({
       text: `${d.round} deadline`,
       source: "note",
       kind: "decision",
       anchorDate: d.iso,
       daysLeft: d.daysLeft,
-      why: DEADLINE_CAVEAT[d.code],
+      ...(d.source ? { url: d.source } : {}),
+      ...(d.note ? { why: d.note } : {}),
     });
   }
 
@@ -517,16 +620,17 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
     runwayDays,
     runwayMonths,
     opLabel,
-    futureDeadlines.length
+    futureConfirmed.length
   );
 
   return {
     regime,
     hasGraduationYear: true,
     cycleLabel: study.cycleLabel,
-    operativeDeadlineISO: futureDeadlines.length > 0 ? op : null,
-    operativeDeadlineLabel: futureDeadlines.length > 0 ? opLabel : null,
-    deadlines: futureDeadlines,
+    operativeDeadlineISO: hasConfirmedAnchor ? op : null,
+    operativeDeadlineLabel: opLabel,
+    deadlines: futureConfirmed,
+    unconfirmedDeadlines,
     runwayDays,
     runwayMonths,
     headline,
@@ -582,12 +686,14 @@ function runwayPhrase(days: number, months: number): string {
   return `about ${Math.round(months)} months before your first deadline`;
 }
 
-// When several countries are chosen, name that the runway is anchored to the
-// soonest of them — so the framing doesn't read as if there's only one deadline.
-function anchorClause(opLabel: string, deadlineCount: number): string {
-  const soonest = `your soonest deadline (${opLabel})`;
+// Name what the runway is anchored to. With a verified deadline we cite it (and
+// note it's the soonest of several); with none, we speak to the general
+// application season rather than a specific date we can't stand behind.
+function anchorClause(opLabel: string | null, deadlineCount: number): string {
+  if (!opLabel) return "your main application season";
+  const soonest = `your soonest verified deadline (${opLabel})`;
   return deadlineCount > 1
-    ? `${soonest} — the earliest across your chosen countries`
+    ? `${soonest} — the earliest across your target schools`
     : soonest;
 }
 
@@ -595,7 +701,7 @@ function framing(
   regime: Regime,
   runwayDays: number,
   runwayMonths: number,
-  opLabel: string,
+  opLabel: string | null,
   deadlineCount: number
 ): { headline: string; subhead: string } {
   const runway = runwayPhrase(runwayDays, runwayMonths);
