@@ -4,7 +4,7 @@
 // point of the contour view is to show only the handful of top schools per
 // country and skip the empty space between them.
 
-export type CountryCode = "US" | "IT" | "HK" | "KR";
+export type CountryCode = "US" | "IT" | "HK" | "KR" | "AE";
 
 export type UniMarker = {
   name: string;
@@ -74,6 +74,16 @@ const KR_MARKERS: UniMarker[] = [
   { name: "POSTECH", lat: 36.014, lon: 129.322, logo: "/logos/postech.png" },
 ];
 
+// Top UAE universities with official emblems. Abu Dhabi hosts a cluster (NYUAD,
+// Khalifa, Zayed) that the map fans out; AUS is in Sharjah, UAEU in Al Ain.
+const AE_MARKERS: UniMarker[] = [
+  { name: "NYU Abu Dhabi", lat: 24.5236, lon: 54.4353, logo: "/logos/nyu-abu-dhabi.png" },
+  { name: "Khalifa University", lat: 24.4374, lon: 54.6155, logo: "/logos/khalifa.jpg" },
+  { name: "Zayed University", lat: 24.4433, lon: 54.6006, logo: "/logos/zayed.png" },
+  { name: "American University of Sharjah", lat: 25.311, lon: 55.492, logo: "/logos/aus.png" },
+  { name: "UAE University", lat: 24.2069, lon: 55.6788, logo: "/logos/uaeu.png" },
+];
+
 export const COUNTRIES: CountryView[] = [
   {
     code: "US",
@@ -98,5 +108,11 @@ export const COUNTRIES: CountryView[] = [
     label: "South Korea",
     blurb: `${KR_MARKERS.length} top universities`,
     markers: KR_MARKERS,
+  },
+  {
+    code: "AE",
+    label: "United Arab Emirates",
+    blurb: `${AE_MARKERS.length} top universities`,
+    markers: AE_MARKERS,
   },
 ];
