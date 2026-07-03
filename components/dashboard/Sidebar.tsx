@@ -74,22 +74,27 @@ export function Sidebar() {
           on phones). Desktop: the vertical block pinned to the sidebar bottom. */}
       <div className="flex flex-wrap items-center gap-2 border-b border-line p-3 lg:flex-col lg:items-stretch lg:border-b-0 lg:border-t lg:p-4">
         {demo ? (
-          <ButtonLink href="/" variant="subtle" size="sm">
-            {t("common.home")}
+          <ButtonLink href="/" variant="tonal" size="sm" className="lg:w-full">
+            <HomeGlyph /> {t("common.home")}
           </ButtonLink>
         ) : (
           <>
             {isAdmin && (
-              <ButtonLink href="/admin" variant="ghost" size="sm">
-                Admin
+              <ButtonLink href="/admin" variant="tonal" size="sm" className="lg:w-full">
+                <ShieldGlyph /> Admin
               </ButtonLink>
             )}
-            <ButtonLink href="/onboarding" variant="subtle" size="sm">
-              {t("common.updateProfile")}
+            <ButtonLink href="/" variant="tonal" size="sm" className="lg:w-full">
+              <HomeGlyph /> {t("common.home")}
             </ButtonLink>
-            <form action="/auth/signout" method="post">
-              <Button type="submit" variant="ghost" size="sm" className="lg:w-full">
-                {t("common.signOut")}
+            <ButtonLink href="/onboarding" variant="tonal" size="sm" className="lg:w-full">
+              <EditGlyph /> {t("common.updateProfile")}
+            </ButtonLink>
+            {/* Separate the destructive action from normal nav (destructive-nav-separation). */}
+            <div className="my-1 hidden h-px w-full bg-line lg:block" aria-hidden />
+            <form action="/auth/signout" method="post" className="lg:w-full">
+              <Button type="submit" variant="danger" size="sm" className="lg:w-full">
+                <LogoutGlyph /> {t("common.signOut")}
               </Button>
             </form>
           </>
@@ -159,3 +164,44 @@ const ICONS = {
     </svg>
   ),
 } as const;
+
+// ── Account-action glyphs (16px, matched to the nav icon style) ──────────────
+const glyphCls = "h-4 w-4 shrink-0";
+
+function HomeGlyph() {
+  return (
+    <svg className={glyphCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9.5V21h14V9.5" />
+      <path d="M9.5 21v-6h5v6" />
+    </svg>
+  );
+}
+
+function EditGlyph() {
+  return (
+    <svg className={glyphCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function ShieldGlyph() {
+  return (
+    <svg className={glyphCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3 5 6v5c0 4 3 6.5 7 8 4-1.5 7-4 7-8V6l-7-3Z" />
+    </svg>
+  );
+}
+
+// Coral-tinted so the destructive action reads as distinct even before hover.
+function LogoutGlyph() {
+  return (
+    <svg className={`${glyphCls} text-reach`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3" />
+      <path d="M10 17 5 12l5-5" />
+      <path d="M5 12h11" />
+    </svg>
+  );
+}
