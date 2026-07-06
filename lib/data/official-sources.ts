@@ -53,6 +53,10 @@ export const ITALY_UNIVERSITY_SOURCES: Record<string, string> = {
     "https://en.unipv.it/en/education/bachelors-and-masters-degree-programs/how-apply",
   "LUISS Guido Carli":
     "https://www.luiss.edu/en/admissions/undergraduate-admissions/admissions-international-students",
+  "University of Siena": "https://admission.unisi.it/",
+  "University of Messina":
+    "https://international.unime.it/study-us/application-and-admission",
+  "University of Cassino": "https://www.unicas.it/",
 };
 
 export function italyOfficialUrl(university: string): string | undefined {

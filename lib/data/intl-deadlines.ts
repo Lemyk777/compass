@@ -143,6 +143,27 @@ export const INTL_DEADLINES: Record<string, UniversityDeadline> = {
     source:
       "https://www.unimi.it/en/international/coming-abroad/enrol-programme/international-enrolment-degree-programmes",
   },
+  "University of Siena": {
+    rounds: [],
+    confirmed: false,
+    window:
+      "International applications run through Siena's own portal (typically spring); decisions in ~1 month — check the official page.",
+    source: "https://admission.unisi.it/",
+  },
+  "University of Messina": {
+    rounds: [],
+    confirmed: false,
+    window:
+      "Extra-UE application windows are set per programme — check the official international-admissions page.",
+    source: "https://international.unime.it/study-us/application-and-admission",
+  },
+  "University of Cassino": {
+    rounds: [],
+    confirmed: false,
+    window:
+      "International application windows are set per programme — check the official page.",
+    source: "https://www.unicas.it/",
+  },
 
   // ── South Korea (SNU + KAIST verified; others run rolling/varying rounds) ────
   "Seoul National University": {

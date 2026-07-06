@@ -585,6 +585,84 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     notes:
       "Hybrid management + coding degree aimed at product/tech-business careers. Holistic review; not DSU-eligible. Separate LUISS scholarships available.",
   },
+
+  // ── Accessible public universities (safe-target options) ──────────────────
+  // Mid-to-lower selectivity state universities with genuine English-taught
+  // bachelor tracks for Extra-UE students. Lower historical cutoffs make these
+  // realistic "safety" choices alongside the Milan/Rome flagships. Figures are
+  // approximations (see file header) — verify each current Bando.
+  {
+    id: "unisi-econ",
+    university: "University of Siena",
+    city: "Siena",
+    program_name: "Economics and Management (BSc)",
+    field: "economics",
+    level: "bsc",
+    language: "EN",
+    extra_ue_quota: 15,
+    historical_sat_cutoff: 1050,
+    has_guaranteed_threshold: false,
+    guaranteed_threshold: null,
+    annual_fee_eur: 1500,
+    is_private: false,
+    dsu_eligible: true,
+    notes:
+      "Respected Tuscan public university, strong in economics, law and medicine. English-taught — no Italian needed — and a Foundation Year is offered for applicants who need a bridge year. A realistic safe target relative to the Milan/Rome flagships; income-based fees plus DSU support.",
+  },
+  {
+    id: "unime-business",
+    university: "University of Messina",
+    city: "Messina",
+    program_name: "Business Management (BSc)",
+    field: "economics",
+    level: "bsc",
+    language: "EN",
+    extra_ue_quota: 20,
+    historical_sat_cutoff: 950,
+    has_guaranteed_threshold: false,
+    guaranteed_threshold: null,
+    annual_fee_eur: 1500,
+    is_private: false,
+    dsu_eligible: true,
+    notes:
+      "Sicilian public university with ~13 English-taught programs. Admission for Extra-UE students is on the high-school diploma plus an English certificate — an accessible, lower-cost safe option. Approximate figures; confirm the current Bando.",
+  },
+  {
+    id: "unime-civil-eng",
+    university: "University of Messina",
+    city: "Messina",
+    program_name: "Civil Engineering (BSc)",
+    field: "engineering",
+    level: "bsc",
+    language: "EN",
+    extra_ue_quota: 15,
+    historical_sat_cutoff: 980,
+    has_guaranteed_threshold: false,
+    guaranteed_threshold: null,
+    annual_fee_eur: 1500,
+    is_private: false,
+    dsu_eligible: true,
+    notes:
+      "English-taught civil engineering track at Messina — design, construction and project-management foundations. Lower competition than the northern polytechnics makes it a solid safety choice for engineering applicants. Verify quota and dates on the Bando.",
+  },
+  {
+    id: "unicas-econ",
+    university: "University of Cassino",
+    city: "Cassino",
+    program_name: "Economics and Business (BSc)",
+    field: "economics",
+    level: "bsc",
+    language: "EN",
+    extra_ue_quota: 20,
+    historical_sat_cutoff: 900,
+    has_guaranteed_threshold: false,
+    guaranteed_threshold: null,
+    annual_fee_eur: 1500,
+    is_private: false,
+    dsu_eligible: true,
+    notes:
+      "Small public university in southern Lazio (Cassino & Southern Lazio) with 1,500+ international students and a low cost of living. One of the most accessible English-taught options (IELTS 6.0 / TOEFL 70) — a genuine safety target. Approximate figures; confirm the current Bando.",
+  },
 ];
 
 export const ITALIAN_PROGRAM_NAMES = ITALIAN_PROGRAMS.map(
