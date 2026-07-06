@@ -16,7 +16,6 @@ export const inputSchema = z
   .object({
     // Redesigned intake extras (optional so older clients still validate).
     full_name: z.string().trim().max(LIMITS.shortText).optional(),
-    school_name: z.string().trim().max(120).optional(),
     budget_annual_usd: z.number().min(0).max(10_000_000).optional(),
     country: z.string().trim().min(1, "Tell us your country.").max(LIMITS.shortText),
     citizenship: z

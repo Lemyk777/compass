@@ -135,7 +135,6 @@ export type Tests = {
 export type StudentProfileInput = {
   // ── Who you are (redesigned intake) ──
   full_name?: string; // shown name; mirrored onto the identity profile
-  school_name?: string; // current high school
   // ── Where you're from ──
   country: string; // origin country (where the student lives)
   citizenship: string;
@@ -187,7 +186,6 @@ export function emptyHonor(): Honor {
 export function emptyProfile(): StudentProfileInput {
   return {
     full_name: "",
-    school_name: "",
     country: "",
     citizenship: "",
     destinations: [],

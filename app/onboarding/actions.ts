@@ -108,7 +108,6 @@ export async function saveProfile(
     target_schools: data.target_schools,
     intended_major: data.intended_major,
     citizenship: data.citizenship,
-    school_name: data.school_name ?? null,
     budget_annual_usd: data.budget_annual_usd ?? null,
     needs_aid: data.needs_aid,
     // Keep the legacy include_italy column in sync for any old readers.
@@ -156,7 +155,6 @@ export async function saveProfile(
     delete safeRow.kr_grade_status;
     delete safeRow.kr_topik_level;
     // Redesigned-intake columns (migration 0009) may also be missing.
-    delete safeRow.school_name;
     delete safeRow.budget_annual_usd;
     // graduation_year (migration 0010) may not be applied yet.
     delete safeRow.graduation_year;
