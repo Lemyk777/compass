@@ -1,7 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { STATIC_SYSTEM_PROMPT } from "@/lib/ai/prompt";
-import { modelAnalysisSchema, type Analysis } from "@/lib/ai/schema";
+import { modelAnalysisSchema, type Analysis, type ModelAnalysis } from "@/lib/ai/schema";
 import { assembleAnalysis } from "@/lib/ai/assemble";
+import { changedGroups, mergeModelSections } from "@/lib/ai/section-reuse";
 import { LIMITS } from "@/lib/limits";
 import type { StudentProfileInput } from "@/lib/types";
 
@@ -17,12 +18,34 @@ const MAX_TOKENS = 16000;
 
 export type AnalyzeResult = {
   analysis: Analysis;
+  // The (merged) model output to persist for the NEXT run's section-level reuse.
+  model: ModelAnalysis;
+  // True when the AI call was skipped entirely because nothing model-relevant
+  // changed — the result is byte-identical to the previous run.
+  reused: boolean;
   usage: {
     input_tokens: number;
     output_tokens: number;
     cache_read_input_tokens?: number;
     cache_creation_input_tokens?: number;
   };
+};
+
+/**
+ * The previous run's profile snapshot + its raw model output, used to reuse
+ * unchanged sections (see lib/ai/section-reuse.ts). Omitted on a first run or
+ * when no prior model output is stored yet.
+ */
+export type PriorRun = {
+  profile: StudentProfileInput;
+  model: ModelAnalysis;
+};
+
+const ZERO_USAGE = {
+  input_tokens: 0,
+  output_tokens: 0,
+  cache_read_input_tokens: 0,
+  cache_creation_input_tokens: 0,
 };
 
 /**
@@ -42,8 +65,27 @@ export type AnalyzeResult = {
  *    truncation).
  */
 export async function analyzeProfile(
-  profile: StudentProfileInput
+  profile: StudentProfileInput,
+  prior?: PriorRun
 ): Promise<AnalyzeResult> {
+  // Section-level locality: figure out which model-relevant input groups actually
+  // changed since the last run.
+  const changed = prior ? changedGroups(prior.profile, profile) : null;
+
+  // Nothing the model reads changed → skip the AI call entirely and reuse the
+  // previous model output verbatim. The deterministic parts (benchmarks, blend,
+  // per-country programs) recompute from the profile — pure functions, so the
+  // result is byte-identical to last time. This is the fix for "I changed nothing
+  // but re-analysing made my scores and wording drift". No API key needed.
+  if (prior && changed && changed.size === 0) {
+    return {
+      analysis: assembleAnalysis(prior.model, profile),
+      model: prior.model,
+      reused: true,
+      usage: { ...ZERO_USAGE },
+    };
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new AnalyzeError(
@@ -117,8 +159,15 @@ export async function analyzeProfile(
 
     try {
       const parsed = modelAnalysisSchema.parse(extractJson(text));
+      // Keep the previous text for every section whose inputs didn't change; take
+      // the fresh text only for the sections whose inputs did. On a first run (no
+      // prior) everything is fresh.
+      const model =
+        prior && changed ? mergeModelSections(prior.model, parsed, changed) : parsed;
       return {
-        analysis: assembleAnalysis(parsed, profile),
+        analysis: assembleAnalysis(model, profile),
+        model,
+        reused: false,
         usage: {
           input_tokens: message.usage.input_tokens,
           output_tokens: message.usage.output_tokens,

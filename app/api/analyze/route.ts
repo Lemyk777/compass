@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { analyzeProfile, AnalyzeError } from "@/lib/ai/analyze";
+import { analyzeProfile, AnalyzeError, type PriorRun } from "@/lib/ai/analyze";
+import type { ModelAnalysis } from "@/lib/ai/schema";
 import {
   emptyProfile,
   normalizeActivities,
@@ -107,8 +108,28 @@ export async function POST(_req: NextRequest) {
     kr_topik_level: (sp.kr_topik_level as number | null) ?? undefined,
   };
 
+  // Load the previous run for section-level reuse: its profile snapshot + raw
+  // model output. When the profile is unchanged we reuse that output verbatim
+  // (no AI call, no drift); when only part changed we keep the unchanged
+  // sections. `model_output` is additive (migration 0019) — if it isn't stored
+  // yet the select simply yields nothing and we fall back to a full fresh run.
+  let prior: PriorRun | undefined;
+  const { data: last } = await admin
+    .from("analyses")
+    .select("input_snapshot, model_output")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (last?.input_snapshot && last?.model_output) {
+    prior = {
+      profile: last.input_snapshot as StudentProfileInput,
+      model: last.model_output as ModelAnalysis,
+    };
+  }
+
   try {
-    const { analysis, usage } = await analyzeProfile(profile);
+    const { analysis, model, usage } = await analyzeProfile(profile, prior);
 
     // Persist the run (service role: reliable insert + event log).
     const { data: inserted, error: insErr } = await admin
@@ -133,6 +154,15 @@ export async function POST(_req: NextRequest) {
         .update({ usage })
         .eq("id", inserted.id);
       if (usageErr) console.error("Failed to store analysis usage", usageErr);
+
+      // Best-effort, isolated from the usage update: store the raw model output
+      // so the NEXT run can reuse its unchanged sections. A missing `model_output`
+      // column (migration 0019 not yet applied) never blocks the analysis.
+      const { error: moErr } = await admin
+        .from("analyses")
+        .update({ model_output: model })
+        .eq("id", inserted.id);
+      if (moErr) console.error("Failed to store analysis model_output", moErr);
     }
 
     await admin.from("events").insert({
