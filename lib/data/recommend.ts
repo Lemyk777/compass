@@ -9,7 +9,7 @@
 // at zero model tokens. The model now always returns recommended_schools: [].
 
 import type { StudentProfileInput } from "@/lib/types";
-import type { FacultyValue } from "@/lib/data/faculties";
+import { FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import {
   UNIVERSITIES,
   FIELD_STRENGTHS,
@@ -24,19 +24,6 @@ import {
 import type { RecommendedSchool, Tier } from "@/lib/ai/schema";
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
-
-// Plain-English faculty labels for the recommendation prose. The `why` text is
-// stored as-is (like model output) and intentionally not translated.
-const FACULTY_LABEL: Record<FacultyValue, string> = {
-  engineering: "Engineering",
-  computer_science: "Computer Science",
-  business_economics: "Business & Economics",
-  natural_sciences: "Natural Sciences",
-  humanities_social: "Humanities & Social Sciences",
-  medicine_health: "Medicine & Health",
-  law: "Law",
-  arts_design: "Arts & Design",
-};
 
 // Field strength for a school in a field we haven't explicitly rated: more
 // selective schools are broadly stronger, so scale gently with selectivity

@@ -36,6 +36,48 @@ export const FACULTIES: Faculty[] = [
 
 export const FACULTY_VALUES: FacultyValue[] = FACULTIES.map((f) => f.value);
 
+// Plain-English faculty labels (the site is English-only). Used by the
+// recommendations prose and the college-list field filter.
+export const FACULTY_LABEL: Record<FacultyValue, string> = {
+  engineering: "Engineering",
+  computer_science: "Computer Science",
+  business_economics: "Business & Economics",
+  natural_sciences: "Natural Sciences",
+  humanities_social: "Humanities & Social Sciences",
+  medicine_health: "Medicine & Health",
+  law: "Law",
+  arts_design: "Arts & Design",
+};
+
+/** Plain-English label for a faculty value (falls back to the raw value). */
+export function facultyLabel(value: string): string {
+  return FACULTY_LABEL[value as FacultyValue] ?? value;
+}
+
+// The program-dataset `field` values (the shared Hong Kong / UAE / Korea
+// vocabulary) implied by each chosen faculty. Lets the program pickers default to
+// the student's own fields instead of dumping every program on them.
+const FACULTY_TO_PROGRAM_FIELDS: Record<FacultyValue, string[]> = {
+  engineering: ["engineering"],
+  computer_science: ["computer_science"],
+  business_economics: ["business"],
+  natural_sciences: ["science"],
+  humanities_social: ["humanities", "social_science"],
+  medicine_health: ["medicine"],
+  law: ["law"],
+  arts_design: ["design"],
+};
+
+/** The program-dataset fields implied by the chosen faculties (deduped). */
+export function programFieldsForFaculties(faculties: string[]): string[] {
+  const set = new Set<string>();
+  for (const v of faculties) {
+    const fields = FACULTY_TO_PROGRAM_FIELDS[v as FacultyValue];
+    if (fields) for (const f of fields) set.add(f);
+  }
+  return [...set];
+}
+
 /** The Italian dataset fields implied by the chosen faculties (deduped). */
 export function italianFieldsForFaculties(
   faculties: string[]
