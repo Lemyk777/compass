@@ -23,6 +23,7 @@ import { findUaeProgram, type UaeProgram } from "@/lib/data/uae-universities";
 import type { UaeProgramAnalysis } from "@/lib/ai/schema";
 import {
   computeAchievementSignal,
+  describeTopAchievement,
   type AchievementSignal,
 } from "@/lib/ai/achievements";
 import type { Activity, Honor } from "@/lib/types";
@@ -270,13 +271,7 @@ function buildReasoning(p: UaeProgram, c: Computed): string {
  * scores-only band, reinforce an interview case, or — when thin — flag the gap.
  */
 function achievementLine(p: UaeProgram, c: Computed): string {
-  const what = c.ach.topAwardLevel
-    ? `${/^[aeiou]/i.test(c.ach.topAwardLevel) ? "an" : "a"} ${c.ach.topAwardLevel.toLowerCase()}-level award`
-    : c.ach.hasSpike
-      ? "a sustained, led extracurricular"
-      : c.ach.hasLeadership
-        ? "a genuine leadership role"
-        : "your record";
+  const what = describeTopAchievement(c.ach);
 
   if (c.ach.score >= 5) {
     if (c.status !== c.rawStatus) {

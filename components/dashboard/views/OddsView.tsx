@@ -20,10 +20,9 @@ const SchoolComparison = dynamic(
 );
 import { Benchmarks } from "@/components/report/Benchmarks";
 import { Recommendations } from "@/components/report/Recommendations";
-import { ItalyBreakdown } from "@/components/report/ItalyBreakdown";
-import { HkBreakdown } from "@/components/report/HkBreakdown";
-import { UaeBreakdown } from "@/components/report/UaeBreakdown";
-import { KoreaBreakdown } from "@/components/report/KoreaBreakdown";
+import { COUNTRY_VIEWS } from "@/components/report/country-views";
+import { analysisHasCountry, hasAnyCollegeList } from "@/lib/data/country-content";
+import type { DestinationCode } from "@/lib/data/destinations";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { CountryTabs, EmptyCountryList, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
 import { LockedSection } from "@/components/dashboard/LockedSection";
@@ -39,13 +38,7 @@ export function OddsView() {
   // Country tabs now reflect the student's chosen destinations (so the standing
   // shows every selected country), so gate this on actual school/program
   // content rather than the tab count.
-  const hasCollegeList =
-    analysis.schools.length > 0 ||
-    (analysis.italy_programs?.length ?? 0) > 0 ||
-    (analysis.hk_programs?.length ?? 0) > 0 ||
-    (analysis.uae_programs?.length ?? 0) > 0 ||
-    (analysis.kr_programs?.length ?? 0) > 0;
-  if (!hasCollegeList) {
+  if (!hasAnyCollegeList(analysis)) {
     return (
       <div className="space-y-6">
         <PageHeader title={t("nav.results")} hint={t("report.schoolsHint")} />
@@ -76,11 +69,11 @@ export function OddsView() {
         </div>
       </div>
 
-      {country === "US" && <UsOdds analysis={analysis} />}
-      {country === "IT" && <ItalyOdds analysis={analysis} />}
-      {country === "HK" && <HkOdds analysis={analysis} />}
-      {country === "AE" && <UaeOdds analysis={analysis} />}
-      {country === "KR" && <KoreaOdds analysis={analysis} />}
+      {country === "US" ? (
+        <UsOdds analysis={analysis} />
+      ) : (
+        <CountryOdds analysis={analysis} code={country} />
+      )}
     </div>
   );
 }
@@ -142,42 +135,23 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
   );
 }
 
-function ItalyOdds({ analysis }: { analysis: Analysis }) {
+// Every deterministic (non-US) country renders the same way: an empty-state when
+// its list isn't built, otherwise its breakdown inside a titled Section. The copy
+// and the breakdown component come from the country-view registry.
+function CountryOdds({
+  analysis,
+  code,
+}: {
+  analysis: Analysis;
+  code: DestinationCode;
+}) {
   const t = useT();
-  if (!analysis.italy_programs?.length) return <EmptyCountryList code="IT" />;
+  const odds = COUNTRY_VIEWS[code]?.odds;
+  if (!odds) return null;
+  if (!analysisHasCountry(analysis, code)) return <EmptyCountryList code={code} />;
   return (
-    <Section title={t("report.italyTitle")} hint={t("report.italyHint")}>
-      <ItalyBreakdown programs={analysis.italy_programs} />
-    </Section>
-  );
-}
-
-function HkOdds({ analysis }: { analysis: Analysis }) {
-  const t = useT();
-  if (!analysis.hk_programs?.length) return <EmptyCountryList code="HK" />;
-  return (
-    <Section title={t("report.hkTitle")} hint={t("report.hkHint")}>
-      <HkBreakdown programs={analysis.hk_programs} />
-    </Section>
-  );
-}
-
-function UaeOdds({ analysis }: { analysis: Analysis }) {
-  const t = useT();
-  if (!analysis.uae_programs?.length) return <EmptyCountryList code="AE" />;
-  return (
-    <Section title={t("report.uaeTitle")} hint={t("report.uaeHint")}>
-      <UaeBreakdown programs={analysis.uae_programs} />
-    </Section>
-  );
-}
-
-function KoreaOdds({ analysis }: { analysis: Analysis }) {
-  const t = useT();
-  if (!analysis.kr_programs?.length) return <EmptyCountryList code="KR" />;
-  return (
-    <Section title={t("report.krTitle")} hint={t("report.krHint")}>
-      <KoreaBreakdown programs={analysis.kr_programs} />
+    <Section title={t(odds.titleKey)} hint={t(odds.hintKey)}>
+      {odds.render(analysis)}
     </Section>
   );
 }

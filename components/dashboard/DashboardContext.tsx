@@ -11,6 +11,7 @@ import {
 import { useTransitionRouter } from "@/components/ui/ViewTransitions";
 import type { Analysis } from "@/lib/ai/schema";
 import { AVAILABLE_DESTINATION_CODES, type DestinationCode } from "@/lib/data/destinations";
+import { analysisHasCountry } from "@/lib/data/country-content";
 import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import { useT } from "@/lib/i18n/client";
 
@@ -58,17 +59,6 @@ export function useDashboard(): DashboardCtx {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useDashboard must be used within DashboardProvider");
   return ctx;
-}
-
-// Whether the analysis already carries content for a country (its college list /
-// program picks have been analyzed).
-export function analysisHasCountry(analysis: Analysis, code: DestinationCode): boolean {
-  if (code === "US") return analysis.schools.length > 0;
-  if (code === "IT") return (analysis.italy_programs?.length ?? 0) > 0;
-  if (code === "HK") return (analysis.hk_programs?.length ?? 0) > 0;
-  if (code === "AE") return (analysis.uae_programs?.length ?? 0) > 0;
-  if (code === "KR") return (analysis.kr_programs?.length ?? 0) > 0;
-  return false;
 }
 
 // Which country tabs to show. A country gets a tab if the student CHOSE it as a

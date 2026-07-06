@@ -6,6 +6,7 @@ import { GapAnalysis } from "@/components/report/GapAnalysis";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
 import { formatDate } from "@/lib/data/key-dates";
+import { COUNTRY_CONTENT } from "@/lib/data/country-content";
 import {
   buildRoadmap,
   type Regime,
@@ -31,15 +32,13 @@ export function RoadmapView() {
 
   // The student's actual target schools per country — the roadmap resolves each
   // one's real, verified deadline (US via app-deadlines, others via the
-  // hand-verified intl-deadlines dataset).
+  // hand-verified intl-deadlines dataset). Per-country reads come from the
+  // content registry (lib/data/country-content.ts).
   const uniq = (a: string[]) => [...new Set(a.filter(Boolean))];
-  const targets = [
-    { code: "US" as const, universities: uniq(analysis.schools.map((s) => s.name)) },
-    { code: "IT" as const, universities: uniq((analysis.italy_programs ?? []).map((p) => p.university)) },
-    { code: "HK" as const, universities: uniq((analysis.hk_programs ?? []).map((p) => p.university)) },
-    { code: "AE" as const, universities: uniq((analysis.uae_programs ?? []).map((p) => p.university)) },
-    { code: "KR" as const, universities: uniq((analysis.kr_programs ?? []).map((p) => p.university)) },
-  ].filter((t) => t.universities.length > 0);
+  const targets = COUNTRY_CONTENT.map((c) => ({
+    code: c.code,
+    universities: uniq(c.universities(analysis)),
+  })).filter((t) => t.universities.length > 0);
 
   const roadmap = today
     ? buildRoadmap({

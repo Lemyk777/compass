@@ -36,6 +36,21 @@ export type AchievementSignal = {
 };
 
 /**
+ * A short noun phrase naming the student's strongest achievement, for the
+ * per-country reasoning prose ("Your achievements (a national-level award) …").
+ * Shared verbatim by every deterministic country engine.
+ */
+export function describeTopAchievement(a: AchievementSignal): string {
+  if (a.topAwardLevel) {
+    const article = /^[aeiou]/i.test(a.topAwardLevel) ? "an" : "a";
+    return `${article} ${a.topAwardLevel.toLowerCase()}-level award`;
+  }
+  if (a.hasSpike) return "a sustained, led extracurricular";
+  if (a.hasLeadership) return "a genuine leadership role";
+  return "your record";
+}
+
+/**
  * The student's achievement signal: the better of (a) their top award level and
  * (b) their strongest single extracurricular (commitment + sustain + leadership).
  * Volume is intentionally ignored — one real distinction outweighs a long list.

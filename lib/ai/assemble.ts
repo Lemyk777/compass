@@ -1,6 +1,6 @@
 import { RUBRIC } from "@/lib/rubric";
 import { findUniversity } from "@/lib/data/universities";
-import { gpaToPercent, type StudentProfileInput } from "@/lib/types";
+import { type StudentProfileInput } from "@/lib/types";
 import {
   analysisSchema,
   sanitizeAnalysis,
@@ -8,13 +8,7 @@ import {
   type Benchmark,
   type ModelAnalysis,
 } from "@/lib/ai/schema";
-import {
-  analyzeItalianPrograms,
-  computeFinancialFitScore,
-} from "@/lib/ai/italy-analyze";
-import { analyzeHkPrograms } from "@/lib/ai/hk-analyze";
-import { analyzeUaePrograms } from "@/lib/ai/uae-analyze";
-import { analyzeKoreaPrograms } from "@/lib/ai/korea-analyze";
+import { assembleDeterministicCountries } from "@/lib/ai/deterministic-countries";
 import {
   academicIndexFromProfile,
   estimateSchoolLikelihood,
@@ -219,76 +213,6 @@ export function assembleAnalysis(
   model: ModelAnalysis,
   profile: StudentProfileInput
 ): Analysis {
-  const hasItaly =
-    (profile.destinations ?? []).includes("IT") &&
-    (profile.italy_programs ?? []).length > 0;
-
-  const italyPrograms = hasItaly
-    ? analyzeItalianPrograms(
-        profile.italy_programs ?? [],
-        profile.tests?.SAT,
-        profile.italy_family_income
-      )
-    : undefined;
-
-  const hasHk =
-    (profile.destinations ?? []).includes("HK") &&
-    (profile.hk_programs ?? []).length > 0;
-
-  const hkPrograms = hasHk
-    ? analyzeHkPrograms(profile.hk_programs ?? [], {
-        ibTotal: profile.grades?.ib_total,
-        sat: profile.tests?.SAT,
-        ielts: profile.tests?.IELTS,
-        toefl: profile.tests?.TOEFL,
-        gradeStatus: profile.hk_grade_status ?? "predicted",
-        activities: profile.activities,
-        honors: profile.honors,
-      })
-    : undefined;
-
-  const hasUae =
-    (profile.destinations ?? []).includes("AE") &&
-    (profile.uae_programs ?? []).length > 0;
-
-  const uaePrograms = hasUae
-    ? analyzeUaePrograms(profile.uae_programs ?? [], {
-        sat: profile.tests?.SAT,
-        gpaPercent:
-          profile.grades?.gpa != null
-            ? gpaToPercent(profile.grades.gpa, profile.grades.gpa_scale)
-            : undefined,
-        ielts: profile.tests?.IELTS,
-        toefl: profile.tests?.TOEFL,
-        gradeStatus: profile.uae_grade_status ?? "predicted",
-        activities: profile.activities,
-        honors: profile.honors,
-      })
-    : undefined;
-
-  const hasKorea =
-    (profile.destinations ?? []).includes("KR") &&
-    (profile.kr_programs ?? []).length > 0;
-
-  const krPrograms = hasKorea
-    ? analyzeKoreaPrograms(profile.kr_programs ?? [], {
-        gpaPercent:
-          profile.grades?.gpa != null
-            ? gpaToPercent(profile.grades.gpa, profile.grades.gpa_scale)
-            : profile.grades?.national_percent != null
-              ? profile.grades.national_percent
-              : undefined,
-        ibTotal: profile.grades?.ib_total,
-        sat: profile.tests?.SAT,
-        topik: profile.kr_topik_level,
-        ielts: profile.tests?.IELTS,
-        toefl: profile.tests?.TOEFL,
-        gradeStatus: profile.kr_grade_status ?? "predicted",
-        activities: profile.activities,
-        honors: profile.honors,
-      })
-    : undefined;
-
   const factors = applyDeterministicFactors(model.factors, profile);
 
   const full: Analysis = {
@@ -303,13 +227,10 @@ export function assembleAnalysis(
     gap_analysis: model.gap_analysis,
     timeline: model.timeline,
     summary: model.summary,
-    italy_programs: italyPrograms,
-    italy_financial_fit_score: hasItaly
-      ? computeFinancialFitScore(profile.italy_family_income, true)
-      : undefined,
-    hk_programs: hkPrograms,
-    uae_programs: uaePrograms,
-    kr_programs: krPrograms,
+    // Each non-US destination the student chose contributes its deterministic
+    // program analyses (and Italy its financial-fit score); unchosen countries
+    // add nothing. See lib/ai/deterministic-countries.ts.
+    ...assembleDeterministicCountries(profile),
   };
   return sanitizeAnalysis(analysisSchema.parse(full));
 }

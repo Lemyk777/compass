@@ -27,6 +27,7 @@ import { findKoreaProgram, type KoreaProgram } from "@/lib/data/korea-universiti
 import type { KoreaProgramAnalysis } from "@/lib/ai/schema";
 import {
   computeAchievementSignal,
+  describeTopAchievement,
   type AchievementSignal,
 } from "@/lib/ai/achievements";
 import type { Activity, Honor } from "@/lib/types";
@@ -325,13 +326,7 @@ function buildLanguageLine(p: KoreaProgram, c: Computed): string {
  * grades-only band, reinforce the document screen, or — when thin — flag the gap.
  */
 function achievementLine(p: KoreaProgram, c: Computed): string {
-  const what = c.ach.topAwardLevel
-    ? `${/^[aeiou]/i.test(c.ach.topAwardLevel) ? "an" : "a"} ${c.ach.topAwardLevel.toLowerCase()}-level award`
-    : c.ach.hasSpike
-      ? "a sustained, led extracurricular"
-      : c.ach.hasLeadership
-        ? "a genuine leadership role"
-        : "your record";
+  const what = describeTopAchievement(c.ach);
 
   if (c.ach.score >= 5) {
     if (c.status !== c.rawStatus && c.status !== "target") {

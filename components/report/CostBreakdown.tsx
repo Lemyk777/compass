@@ -2,11 +2,7 @@
 
 import type { Analysis } from "@/lib/ai/schema";
 import { Section, Card } from "@/components/report/Section";
-import {
-  usApplicationFee,
-  uaeApplicationFee,
-  koreaApplicationFee,
-} from "@/lib/data/application-fees";
+import { COUNTRY_VIEWS, formatFee } from "@/components/report/country-views";
 import type { DestinationCode } from "@/lib/data/destinations";
 import { useT } from "@/lib/i18n/client";
 
@@ -21,61 +17,17 @@ export function CostBreakdown({
 }) {
   const t = useT();
 
-  const rows: { name: string; fee: number }[] =
-    country === "US"
-      ? analysis.schools.map((s) => ({
-          name: s.name,
-          fee: usApplicationFee(s.name),
-        }))
-      : country === "IT"
-        ? (analysis.italy_programs ?? []).map((p) => ({
-            name: `${p.university} — ${p.program_name}`,
-            fee: p.application_fee_eur ?? 0,
-          }))
-        : country === "HK"
-          ? (analysis.hk_programs ?? []).map((p) => ({
-              name: `${p.university} — ${p.program_name}`,
-              fee: 450,
-            }))
-          : country === "AE"
-            ? (analysis.uae_programs ?? []).map((p) => ({
-                name: `${p.university} — ${p.program_name}`,
-                fee: uaeApplicationFee(),
-              }))
-            : country === "KR"
-              ? (analysis.kr_programs ?? []).map((p) => ({
-                  name: `${p.university} — ${p.program_name}`,
-                  fee: koreaApplicationFee(),
-                }))
-              : [];
+  const view = COUNTRY_VIEWS[country]?.cost;
+  const rows = view ? view.rows(analysis) : [];
 
-  if (rows.length === 0) return null;
+  if (!view || rows.length === 0) return null;
 
   const total = rows.reduce((sum, r) => sum + r.fee, 0);
   const fmt = (n: number) =>
-    n === 0
-      ? t("report.costFree")
-      : country === "US" || country === "AE" || country === "KR"
-        ? `$${n.toLocaleString()}`
-        : country === "IT"
-          ? `€${n.toLocaleString()}`
-          : `${n.toLocaleString()} HKD`;
+    n === 0 ? t("report.costFree") : formatFee(view.currency, n);
 
   return (
-    <Section
-      title={t("report.costTitle")}
-      hint={
-        country === "US"
-          ? t("report.costHintUS")
-          : country === "IT"
-            ? t("report.costHintIT")
-            : country === "AE"
-              ? t("report.costHintAE")
-              : country === "KR"
-                ? t("report.costHintKR")
-                : t("report.costHintHK")
-      }
-    >
+    <Section title={t("report.costTitle")} hint={t(view.hintKey)}>
       <Card>
         <ul className="divide-y divide-line">
           {rows.map((r) => (
@@ -95,11 +47,7 @@ export function CostBreakdown({
             {t("report.costTotal")}
           </span>
           <span data-num className="text-base font-semibold text-ink">
-            {country === "US" || country === "AE" || country === "KR"
-              ? `$${total.toLocaleString()}`
-              : country === "IT"
-                ? `€${total.toLocaleString()}`
-                : `${total.toLocaleString()} HKD`}
+            {formatFee(view.currency, total)}
           </span>
         </div>
         <p className="mt-3 text-xs text-ink-faint">{t("report.costApprox")}</p>

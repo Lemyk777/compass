@@ -1,7 +1,8 @@
 "use client";
 
 import { CostBreakdown } from "@/components/report/CostBreakdown";
-import { analysisHasCountry, useDashboard } from "@/components/dashboard/DashboardContext";
+import { useDashboard } from "@/components/dashboard/DashboardContext";
+import { analysisHasCountry, hasAnyCollegeList } from "@/lib/data/country-content";
 import { CountryTabs, EmptyCountryList, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
 import { LockedSection } from "@/components/dashboard/LockedSection";
 import { CostsTeaser, CostsArt } from "@/components/dashboard/LockedTeasers";
@@ -15,13 +16,7 @@ export function CostsView() {
   // No college list yet → tease the section behind a lock + promo pop-up.
   // Country tabs now reflect the student's chosen destinations, so gate this on
   // actual school/program content rather than the tab count.
-  const hasCollegeList =
-    analysis.schools.length > 0 ||
-    (analysis.italy_programs?.length ?? 0) > 0 ||
-    (analysis.hk_programs?.length ?? 0) > 0 ||
-    (analysis.uae_programs?.length ?? 0) > 0 ||
-    (analysis.kr_programs?.length ?? 0) > 0;
-  if (!hasCollegeList) {
+  if (!hasAnyCollegeList(analysis)) {
     return (
       <div className="space-y-5">
         <PageHeader title={t("nav.costs")} hint={t("report.costApprox")} />
