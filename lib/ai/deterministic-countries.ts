@@ -24,6 +24,35 @@ type CountryOutput = Partial<
   Pick<Analysis, ProgramsKey | "italy_financial_fit_score">
 >;
 
+// Rough USD→EUR so the onboarding annual budget (USD) can stand in for the
+// family-finances input Italy's DSU / scholarship read expects (EUR). A student's
+// budget is what the family can pay per year, which is the same signal DSU
+// need-assessment keys off — lower budget ⇒ stronger DSU fit.
+const USD_TO_EUR = 0.92;
+
+// Most students skip the budget question, so we never want the Italy read to
+// break or come back blank. This is a deliberately NEUTRAL fallback: it lands the
+// financial-fit score at the mid value (5/10) and DSU at a modest "partial" —
+// high enough that we never over-promise need-based aid the student hasn't
+// actually shown. A real budget or income always overrides it.
+const DEFAULT_ITALY_INCOME_EUR = 45000;
+
+/**
+ * The EUR family-finances figure that drives Italy's DSU + financial-fit read.
+ * Priority: the precise Italy income → the onboarding budget (converted) → a
+ * neutral default. ALWAYS returns a usable, non-negative number, so an empty
+ * budget degrades gracefully instead of breaking or leaving the read blank —
+ * this is what lets the budget question stay optional.
+ */
+function italyIncomeEUR(p: StudentProfileInput): number {
+  const raw =
+    p.italy_family_income ??
+    (p.budget_annual_usd != null
+      ? p.budget_annual_usd * USD_TO_EUR
+      : DEFAULT_ITALY_INCOME_EUR);
+  return Math.max(0, Math.round(raw));
+}
+
 type DeterministicCountry = {
   code: DestinationCode;
   programsKey: ProgramsKey;
@@ -38,17 +67,13 @@ export const DETERMINISTIC_COUNTRIES: DeterministicCountry[] = [
     code: "IT",
     programsKey: "italy_programs",
     programIds: (p) => p.italy_programs ?? [],
-    build: (p) => ({
-      italy_programs: analyzeItalianPrograms(
-        p.italy_programs ?? [],
-        p.tests?.SAT,
-        p.italy_family_income
-      ),
-      italy_financial_fit_score: computeFinancialFitScore(
-        p.italy_family_income,
-        true
-      ),
-    }),
+    build: (p) => {
+      const income = italyIncomeEUR(p);
+      return {
+        italy_programs: analyzeItalianPrograms(p.italy_programs ?? [], p.tests?.SAT, income),
+        italy_financial_fit_score: computeFinancialFitScore(income, true),
+      };
+    },
   },
   {
     code: "HK",

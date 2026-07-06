@@ -30,7 +30,8 @@ export type InputGroup =
   | "activities"
   | "honors"
   | "narrative"
-  | "schoolList";
+  | "schoolList"
+  | "aid";
 
 const ALL_AI_GROUPS: InputGroup[] = [
   "academics",
@@ -38,6 +39,7 @@ const ALL_AI_GROUPS: InputGroup[] = [
   "honors",
   "narrative",
   "schoolList",
+  "aid",
 ];
 
 // The raw value behind each group — compared canonically to detect real changes.
@@ -64,6 +66,10 @@ function groupValue(p: StudentProfileInput, g: InputGroup): unknown {
       };
     case "schoolList":
       return p.target_schools;
+    case "aid":
+      // Financial capacity: drives need-aware school-fit reasoning, and (via the
+      // deterministic Italy engine) the DSU / affordability read.
+      return { needs_aid: p.needs_aid, budget_annual_usd: p.budget_annual_usd };
   }
 }
 
@@ -105,13 +111,14 @@ const FACTOR_DEPS: Record<string, InputGroup[]> = {
   narrative_fit: ["narrative", "activities", "honors"],
 };
 
-// A per-school odds+reason depends on the whole academic/record/context picture —
-// but NOT on which other schools are in the list.
-const SCHOOL_DEPS: InputGroup[] = ["academics", "activities", "honors", "narrative"];
+// A per-school odds+reason depends on the whole academic/record/context picture
+// (aid included — the model weighs need-aware vs need-blind policies) — but NOT
+// on which other schools are in the list.
+const SCHOOL_DEPS: InputGroup[] = ["academics", "activities", "honors", "narrative", "aid"];
 
 // Whole-profile prose. Excludes schoolList on purpose: adding or removing a target
 // school shouldn't rewrite your summary, gaps, or timeline.
-const PROFILE_DEPS: InputGroup[] = ["academics", "activities", "honors", "narrative"];
+const PROFILE_DEPS: InputGroup[] = ["academics", "activities", "honors", "narrative", "aid"];
 
 /**
  * Merge the freshly generated model output with the previous one, keeping prior

@@ -386,6 +386,12 @@ export function AwardsSection() {
 // ── 5. Budget ─────────────────────────────────────────────────────────────────
 export function BudgetSection() {
   const { data, updateFields } = useOnboardingContext();
+  // The budget drives real results: US aid-awareness and, for Italy, the DSU
+  // tuition-reduction / scholarship read — so tell the student what it's for.
+  const forItaly = data.destinations.includes("IT");
+  const hint = forItaly
+    ? "Optional. We use it for aid and affordability — and to estimate your DSU tuition-reduction fit in Italy (lower budget → stronger DSU). Skip it and we assume a typical budget."
+    : "Optional — a rough yearly figure helps us factor in affordability and aid.";
   return (
     <div className="max-w-md space-y-6">
       <NumberField
@@ -403,7 +409,7 @@ export function BudgetSection() {
         min={0}
         max={1000000}
         step={1000}
-        hint="A rough yearly figure is fine — it helps us factor in affordability and aid."
+        hint={hint}
       />
     </div>
   );

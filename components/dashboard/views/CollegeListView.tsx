@@ -182,7 +182,8 @@ function ItalyBuilder() {
             Family income (annual, EUR)
           </label>
           <p className="mb-2 text-xs text-ink-soft">
-            Optional — used to estimate DSU tuition reduction and scholarship fit.
+            Optional — refines your DSU tuition-reduction estimate. Leave blank
+            and we use your profile budget, or a typical default if you skipped that.
           </p>
           <div className="relative">
             <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-soft">
