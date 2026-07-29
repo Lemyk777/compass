@@ -54,6 +54,115 @@ export function cleanHtml(html: string): string {
   return cleaned.slice(0, 15_000);
 }
 
+// ---------------------------------------------------------------------------
+// Finding the page that actually holds the dates
+// ---------------------------------------------------------------------------
+
+// A competition's landing page is marketing; the real deadline almost always
+// lives one click away ("Key dates", "Apply", "Calendar"). Scraping only the
+// landing page is why every extraction returned null in production — e.g.
+// nmun.org has no deadline text at all, but links to
+// /register-and-key-dates.html. These weights rank the candidate links.
+// Order matters: "events" is deliberately the weakest real signal. Ranking it
+// with the others let a generic "alumni events" page outrank an "apply" page
+// carrying the actual deadline — dates on the page, wrong dates entirely.
+const LINK_SIGNALS: { re: RegExp; score: number }[] = [
+  { re: /key[-\s_]?dates|dates[-\s_]?(and|&)?[-\s_]?deadlines?|important[-\s_]?dates/i, score: 10 },
+  { re: /deadlines?/i, score: 8 },
+  { re: /how[-\s_]?to[-\s_]?(participate|enter|apply)/i, score: 7 },
+  { re: /apply|application/i, score: 7 },
+  { re: /calendar|schedule/i, score: 6 },
+  { re: /register|registration/i, score: 6 },
+  { re: /events?/i, score: 4 }, // last resort — often unrelated to the entry deadline
+  { re: /rules|guidelines|eligibility/i, score: 3 },
+];
+
+// Never follow these — they burn a fetch without carrying dates.
+const LINK_REJECT =
+  /\.(pdf|jpg|jpeg|png|gif|svg|zip|docx?|xlsx?)($|\?)|^(mailto|tel|javascript):|facebook\.com|instagram\.com|twitter\.com|x\.com|youtube\.com|linkedin\.com|tiktok\.com/i;
+
+// With the off-site penalty below, this admits an off-site "apply" portal
+// (6 − 2) — those are real application sites (embark.com, my.site.com) — while
+// still rejecting vaguer off-site wording like a bare "rules" link.
+const MIN_LINK_SCORE = 4;
+const OFFSITE_PENALTY = 2;
+
+/** First path segment ("/programs/apply-rsi" → "programs"), "" at the root. */
+function sectionOf(pathname: string): string {
+  return pathname.split("/").filter(Boolean)[0] ?? "";
+}
+
+/**
+ * Rank in-page links by how likely they are to carry the real deadline, best
+ * first. Returns absolute URLs (max `limit`), deduped and self-excluded.
+ *
+ * Cross-origin links are allowed but penalised: application portals genuinely
+ * live on other hosts (embark.com, my.site.com), yet most off-site links are
+ * noise, so they only survive when the wording is strong.
+ */
+export function findDatePages(html: string, baseUrl: string, limit = 2): string[] {
+  let base: URL;
+  try {
+    base = new URL(baseUrl);
+  } catch {
+    return [];
+  }
+
+  const baseSection = sectionOf(base.pathname);
+  const scored = new Map<string, number>();
+  const anchors = html.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]{0,120}?)<\/a>/gi);
+
+  for (const m of anchors) {
+    const href = m[1].trim();
+    const label = m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (!href || LINK_REJECT.test(href)) continue;
+
+    let abs: URL;
+    try {
+      abs = new URL(href, base);
+    } catch {
+      continue;
+    }
+    if (!/^https?:$/.test(abs.protocol)) continue;
+    abs.hash = "";
+    const url = abs.toString();
+    if (url.replace(/\/$/, "") === baseUrl.replace(/\/$/, "")) continue;
+
+    const haystack = `${abs.pathname} ${label}`;
+    let score = 0;
+    for (const s of LINK_SIGNALS) if (s.re.test(haystack)) score = Math.max(score, s.score);
+    if (score === 0) continue;
+    if (abs.host !== base.host) score -= OFFSITE_PENALTY; // only strong wording survives off-site
+    // Stay in the same section of the site as the landing page. On cee.org the
+    // landing page is /programs/research-science-institute, so /programs/apply-rsi
+    // is about THIS program while /about-us/alumni-events is a different one.
+    if (baseSection && abs.host === base.host && sectionOf(abs.pathname) === baseSection) {
+      score += 2;
+    }
+    if (score < MIN_LINK_SCORE) continue;
+
+    scored.set(url, Math.max(scored.get(url) ?? 0, score));
+  }
+
+  return [...scored.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([url]) => url);
+}
+
+/** Fetch + clean one page, or null on any failure. Never throws. */
+async function fetchClean(url: string, budget: number): Promise<string | null> {
+  try {
+    const res = await fetch(url, fetchInit());
+    if (!res.ok) return null;
+    const type = res.headers.get("content-type") ?? "";
+    if (type && !/html|text/i.test(type)) return null;
+    return cleanHtml(await res.text()).slice(0, budget);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Validate that a string is a well-formed ISO date (YYYY-MM-DD) pointing to a
  * real calendar day (e.g. rejects 2025-02-30).
@@ -189,7 +298,7 @@ export async function scrapeCompetitionDeadline(
   name: string,
 ): Promise<{ deadline: string; window: string } | null> {
   try {
-    // 1. Fetch the competition page
+    // 1. Fetch the landing page
     const res = await fetch(url, fetchInit());
     if (!res.ok) {
       console.error(
@@ -199,8 +308,18 @@ export async function scrapeCompetitionDeadline(
     }
     const rawHtml = await res.text();
 
-    // 2. Clean the HTML
-    const text = cleanHtml(rawHtml);
+    // 2. Follow to the page that actually carries the dates. Landing pages are
+    //    marketing — the deadline lives on "Key dates" / "Apply" / "Calendar".
+    //    Reading only the landing page is what made every extraction return
+    //    null in production. Still ONE model call: the pages are concatenated.
+    const sections = [`--- Landing page (${url}) ---`, cleanHtml(rawHtml).slice(0, 9_000)];
+    for (const sub of findDatePages(rawHtml, url)) {
+      const subText = await fetchClean(sub, 9_000);
+      if (subText && subText.length > 120) {
+        sections.push(`--- Linked page (${sub}) ---`, subText);
+      }
+    }
+    const text = sections.join("\n").slice(0, 24_000);
 
     // 3. Ask Claude to extract the deadline
     const today = new Date().toISOString().slice(0, 10);
@@ -210,12 +329,13 @@ export async function scrapeCompetitionDeadline(
       max_tokens: 2000,
       system: [
         `You are a careful data-extraction assistant. Today's date is ${today}.`,
-        `From the provided HTML of the "${name}" competition website, extract the NEXT registration or submission deadline that is in the FUTURE relative to today, for the upcoming cycle.`,
+        `You are given the text of one or more pages from the "${name}" competition website (its landing page, plus any linked dates/apply pages). Extract the NEXT registration or submission deadline that is in the FUTURE relative to today, for the upcoming cycle.`,
         ``,
         `Be conservative — a wrong date causes students to miss real deadlines:`,
         `- Only return a date you can clearly tie to "${name}"'s next cycle.`,
-        `- IGNORE dates from past/previous cycles still shown on the page.`,
-        `- If the page only shows past dates, no clear date, or you are at all unsure which date is the real upcoming deadline, return null.`,
+        `- IGNORE dates from past/previous cycles still shown on the pages.`,
+        `- If a year is not stated next to a date, infer it only when the page makes the cycle unambiguous; otherwise return null.`,
+        `- If the pages only show past dates, no clear date, or you are at all unsure which date is the real upcoming deadline, return null.`,
         ``,
         `Return ONLY one of:`,
         `- a JSON object {"deadline": "YYYY-MM-DD", "window": "<short timing, e.g. 'Contest in November'>"}, or`,

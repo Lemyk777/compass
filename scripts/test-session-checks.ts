@@ -14,6 +14,7 @@ import {
 } from "../lib/data/key-dates";
 import { buildRoadmap } from "../lib/data/roadmap";
 import { slugify } from "../lib/discovery/discover";
+import { findDatePages } from "../lib/scraper/scrape-dates";
 
 let passed = 0;
 function ok(name: string, fn: () => void) {
@@ -136,6 +137,71 @@ ok("slugify: stable, safe ids incl. Cyrillic transliteration", () => {
   assert.equal(slugify("  Олимпиада «Мёбиус» 2026  "), "olimpiada-mebius-2026");
   assert.equal(slugify("Республикалық олимпиада"), "respublikalyk-olimpiada"); // Kazakh letters
   assert.equal(slugify("---"), "");
+});
+
+// ── two-hop date-page discovery (pure, no network) ───────────────────────────
+console.log("scrape-dates.ts / findDatePages");
+const html = (...links: string[]) => `<html><body>${links.join("")}</body></html>`;
+const a = (href: string, text = "link") => `<a href="${href}">${text}</a>`;
+
+ok("picks an explicit key-dates page above everything else", () => {
+  const out = findDatePages(
+    html(a("/about"), a("/register-and-key-dates.html", "Register & Key Dates"), a("/events/")),
+    "https://www.nmun.org/",
+  );
+  assert.equal(out[0], "https://www.nmun.org/register-and-key-dates.html");
+});
+
+ok("apply page outranks a generic events page (the alumni-events trap)", () => {
+  const out = findDatePages(
+    html(a("/about-us/alumni-events", "Alumni events"), a("/programs/apply-rsi", "Apply")),
+    "https://www.cee.org/programs/research-science-institute",
+  );
+  assert.equal(out[0], "https://www.cee.org/programs/apply-rsi");
+});
+
+ok("same-section links are preferred over other sections", () => {
+  const out = findDatePages(
+    html(a("/other/deadlines", "Deadlines"), a("/programs/deadlines", "Deadlines")),
+    "https://x.org/programs/thing",
+  );
+  assert.equal(out[0], "https://x.org/programs/deadlines");
+});
+
+ok("off-site application portals survive; weak off-site links do not", () => {
+  const out = findDatePages(
+    html(a("https://portal.embark.com/apply/x", "Apply now"), a("https://other.com/events", "Events")),
+    "https://summerscience.org/",
+  );
+  assert.deepEqual(out, ["https://portal.embark.com/apply/x"]);
+});
+
+ok("ignores assets, socials, mailto and self-links", () => {
+  const out = findDatePages(
+    html(
+      a("/rules.pdf", "Deadlines PDF"),
+      a("https://facebook.com/x", "Deadlines"),
+      a("mailto:a@b.c", "Apply"),
+      a("https://x.org/", "Key dates"),
+    ),
+    "https://x.org/",
+  );
+  assert.deepEqual(out, []);
+});
+
+ok("returns at most `limit`, deduped, absolute", () => {
+  const out = findDatePages(
+    html(a("/apply"), a("/apply"), a("/calendar"), a("/deadlines"), a("/register")),
+    "https://x.org/",
+  );
+  assert.equal(out.length, 2);
+  assert.ok(out.every((u) => u.startsWith("https://x.org/")));
+  assert.equal(new Set(out).size, out.length);
+});
+
+ok("malformed base URL or link-free HTML yields nothing (never throws)", () => {
+  assert.deepEqual(findDatePages(html(a("/apply")), "not-a-url"), []);
+  assert.deepEqual(findDatePages("<html></html>", "https://x.org/"), []);
 });
 
 // ── cron rotation math ───────────────────────────────────────────────────────
