@@ -508,6 +508,9 @@ const en: Dict = {
   "admin.oppsHealthConfirmed": "Confirmed",
   "admin.oppsHealthEstimate": "Curated estimate",
   "admin.oppsHealthPast": "Past — re-verify",
+  "admin.oppsHealthLink": "Link",
+  "admin.oppsHealthLinkOk": "OK",
+  "admin.oppsHealthLinkBroken": "BROKEN — fix the URL",
 
   // Admin view switcher (admins only)
   "adminNav.landing": "Landing",

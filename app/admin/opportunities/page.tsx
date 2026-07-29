@@ -60,7 +60,14 @@ export default async function AdminOpportunitiesPage() {
   const approvedCount = candidates.filter((c) => c.status === "approved").length;
   const rejectedCount = candidates.filter((c) => c.status === "rejected").length;
 
-  // ── Date health: the same merge the student dashboard performs ────────────
+  // ── Date + link health: the same merge the student dashboard performs ─────
+  const linkById = new Map<string, { ok: boolean | null; detail: string | null }>();
+  for (const r of (liveRows ?? []) as Record<string, unknown>[]) {
+    linkById.set(r.id as string, {
+      ok: (r.link_ok as boolean | null) ?? null,
+      detail: (r.link_detail as string | null) ?? null,
+    });
+  }
   const updatedAtById = new Map<string, string | null>();
   const liveComps: Competition[] = (liveRows ?? []).map((r: Record<string, unknown>) => {
     updatedAtById.set(r.id as string, (r.updated_at as string | null) ?? null);
@@ -80,14 +87,22 @@ export default async function AdminOpportunitiesPage() {
     .map((c) => ({
       id: c.id,
       name: c.name,
+      url: c.url,
       deadline: c.deadline,
       confirmed: c.dateConfirmed === true,
       days: daysFromToday(c.deadline),
       updatedAt: updatedAtById.get(c.id) ?? null,
+      link: linkById.get(c.id) ?? { ok: null, detail: null },
     }))
-    .sort((a, b) => a.days - b.days);
+    // Broken links first — they are the most visible failure to a student.
+    .sort((a, b) => {
+      const ab = a.link.ok === false ? 0 : 1;
+      const bb = b.link.ok === false ? 0 : 1;
+      return ab - bb || a.days - b.days;
+    });
   const pastCount = health.filter((h) => h.days < 0).length;
   const confirmedCount = health.filter((h) => h.confirmed).length;
+  const brokenLinks = health.filter((h) => h.link.ok === false).length;
 
   return (
     <main className="min-h-dvh bg-surface">
@@ -189,7 +204,8 @@ export default async function AdminOpportunitiesPage() {
             {t("admin.oppsHealthTitle")}{" "}
             <span className="text-sm font-normal text-ink-soft">
               ({confirmedCount}/{health.length} confirmed
-              {pastCount > 0 ? `, ${pastCount} past deadline` : ""})
+              {pastCount > 0 ? `, ${pastCount} past deadline` : ""}
+              {brokenLinks > 0 ? `, ${brokenLinks} broken link` : ""})
             </span>
           </h2>
           <p className="mb-3 text-sm text-ink-soft">{t("admin.oppsHealthSub")}</p>
@@ -200,7 +216,8 @@ export default async function AdminOpportunitiesPage() {
                   <tr className="border-b border-line text-xs text-ink-faint">
                     <th className="py-2 pr-3 font-medium">{t("admin.oppsHealthName")}</th>
                     <th className="py-2 pr-3 font-medium">{t("admin.oppsHealthDeadline")}</th>
-                    <th className="py-2 font-medium">{t("admin.oppsHealthStatus")}</th>
+                    <th className="py-2 pr-3 font-medium">{t("admin.oppsHealthStatus")}</th>
+                    <th className="py-2 font-medium">{t("admin.oppsHealthLink")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -213,7 +230,7 @@ export default async function AdminOpportunitiesPage() {
                           <span className="ml-1 text-xs text-ink-faint">in {h.days}d</span>
                         )}
                       </td>
-                      <td className="py-2 text-xs">
+                      <td className="py-2 pr-3 text-xs">
                         {h.days < 0 ? (
                           <span className="font-semibold text-red-700">
                             {t("admin.oppsHealthPast")}
@@ -224,6 +241,23 @@ export default async function AdminOpportunitiesPage() {
                           </span>
                         ) : (
                           <span className="text-amber-700">{t("admin.oppsHealthEstimate")}</span>
+                        )}
+                      </td>
+                      <td className="py-2 text-xs">
+                        {h.link.ok === false ? (
+                          <a
+                            href={h.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-semibold text-red-700 underline"
+                            title={h.link.detail ?? undefined}
+                          >
+                            {t("admin.oppsHealthLinkBroken")}
+                          </a>
+                        ) : h.link.ok === true ? (
+                          <span className="text-ink-faint">{t("admin.oppsHealthLinkOk")}</span>
+                        ) : (
+                          <span className="text-ink-faint">—</span>
                         )}
                       </td>
                     </tr>

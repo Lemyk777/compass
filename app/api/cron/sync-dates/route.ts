@@ -97,6 +97,21 @@ export async function GET(req: NextRequest) {
   for (const comp of batch) {
     try {
       const result = await scrapeCompetitionDeadline(comp.url, comp.name);
+
+      // Record link health on every pass. The scrape already loaded the page,
+      // so this is free — and a dead link is what a student actually hits
+      // when they click "Details". Columns arrive in migration 0021; before
+      // it is applied the update simply errors and is ignored.
+      const linkOk = !(result.ok === false && result.reason === "fetch_failed");
+      await supabase
+        .from("competition_deadlines")
+        .update({
+          link_ok: linkOk,
+          link_checked_at: new Date().toISOString(),
+          link_detail: linkOk ? null : result.detail.slice(0, 200),
+        })
+        .eq("id", comp.id);
+
       if (!result.ok) {
         // Typed reason instead of a blanket "returned null", so a broken
         // pipeline is distinguishable from a page that has no dates.

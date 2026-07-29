@@ -258,7 +258,9 @@ export const COMPETITIONS: Competition[] = [
     category: "competition",
     tier: "selective",
     eligibility: "Ages 13–18",
-    url: "https://www.conradchallenge.org/",
+    // Moved to Space Center Houston; the old conradchallenge.org now fails TLS
+    // outright (ERR_SSL_PROTOCOL_ERROR). Verified live 2026-07-29.
+    url: "https://conrad.spacecenter.org/",
     blurb: "Team innovation contest — build a real product solving a global problem.",
   },
   {
@@ -312,7 +314,7 @@ export const COMPETITIONS: Competition[] = [
     category: "olympiad",
     tier: "elite",
     eligibility: "High-school students · under 20 at the finals (via national selection)",
-    url: "https://ecolymp.org/",
+    url: "https://ieo-official.org/",
     blurb: "The global economics olympiad — the top international econ credential.",
   },
   {
@@ -458,7 +460,7 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "elite",
     eligibility: "Ages 15–18 during the program · current juniors (some sophomores)",
-    url: "https://summerscience.org/",
+    url: "https://ssp.org/",
     blurb: "Intensive 39-day residential research program in astrophysics, biochemistry, or genomics [Financial aid available].",
   },
   {
@@ -497,7 +499,8 @@ export const COMPETITIONS: Competition[] = [
     category: "summer_program",
     tier: "accessible",
     eligibility: "High-school students — confirm age rules on the program page",
-    url: "https://shanghai.nyu.edu/academics/summer",
+    // /academics/summer 404s; the pre-college offering is the Summer Academy.
+    url: "https://shanghai.nyu.edu/academics/summer-academy",
     blurb: "Pre-college immersion in China's financial hub, great for business and international relations [Financial aid available].",
   },
   {
