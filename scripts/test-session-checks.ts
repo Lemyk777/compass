@@ -4,6 +4,7 @@
 // discovery slug/dedup helpers, and the cron batch rotation math.
 
 import assert from "node:assert";
+import { FACULTY_VALUES } from "../lib/data/faculties";
 import { normalizeCountry, LOCAL_TARGETS, regionLabel } from "../lib/data/geo";
 import {
   buildExtracurriculars,
@@ -202,6 +203,49 @@ ok("returns at most `limit`, deduped, absolute", () => {
 ok("malformed base URL or link-free HTML yields nothing (never throws)", () => {
   assert.deepEqual(findDatePages(html(a("/apply")), "not-a-url"), []);
   assert.deepEqual(findDatePages("<html></html>", "https://x.org/"), []);
+});
+
+// ── registry integrity ───────────────────────────────────────────────────────
+console.log("key-dates.ts / registry");
+ok("competition ids are unique", () => {
+  const seen = new Map<string, number>();
+  for (const c of COMPETITIONS) seen.set(c.id, (seen.get(c.id) ?? 0) + 1);
+  const dupes = [...seen.entries()].filter(([, n]) => n > 1).map(([id]) => id);
+  assert.deepEqual(dupes, [], `duplicate ids: ${dupes.join(", ")}`);
+});
+ok("every entry has a valid https URL and non-empty copy", () => {
+  for (const c of COMPETITIONS) {
+    assert.ok(/^https:\/\//.test(c.url), `${c.id}: url must be https — ${c.url}`);
+    assert.doesNotThrow(() => new URL(c.url), `${c.id}: unparseable url`);
+    assert.ok(c.name.trim().length > 0, `${c.id}: empty name`);
+    assert.ok(c.blurb.trim().length > 0, `${c.id}: empty blurb`);
+    assert.ok(c.window.trim().length > 0, `${c.id}: empty window`);
+  }
+});
+ok("dates are valid ISO and fields/level/tier are in range", () => {
+  const levels = ["international", "national", "regional"];
+  const tiers = ["accessible", "selective", "elite"];
+  const cats = ["competition", "olympiad", "course", "research_program", "summer_program"];
+  for (const c of COMPETITIONS) {
+    assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(c.deadline), `${c.id}: bad deadline ${c.deadline}`);
+    assert.ok(levels.includes(c.level), `${c.id}: bad level`);
+    if (c.tier) assert.ok(tiers.includes(c.tier), `${c.id}: bad tier`);
+    if (c.category) assert.ok(cats.includes(c.category), `${c.id}: bad category`);
+    if (c.fields !== "all") {
+      assert.ok(c.fields.length > 0, `${c.id}: empty fields`);
+      for (const f of c.fields) {
+        assert.ok(FACULTY_VALUES.includes(f), `${c.id}: unknown faculty ${f}`);
+      }
+    }
+  }
+});
+ok("a confirmed date is never already in the past", () => {
+  const todayISO = new Date().toISOString().slice(0, 10);
+  for (const c of COMPETITIONS) {
+    if (c.dateConfirmed) {
+      assert.ok(c.deadline >= todayISO, `${c.id}: confirmed but past (${c.deadline})`);
+    }
+  }
 });
 
 // ── model-reply parsing ──────────────────────────────────────────────────────
