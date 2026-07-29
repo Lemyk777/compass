@@ -131,6 +131,7 @@ export default async function AdminPage() {
       <AppHeader
         admin
         links={[
+          { href: "/admin/opportunities", label: t("admin.opps") },
           { href: "/admin/ambassadors", label: t("admin.ambassadors") },
           { href: "/dashboard", label: t("common.dashboard") },
         ]}

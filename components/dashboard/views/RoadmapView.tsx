@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/report/Section";
 import { GapAnalysis } from "@/components/report/GapAnalysis";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
-import { NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
+import { PageHeader } from "@/components/dashboard/states";
 import { formatDate } from "@/lib/data/key-dates";
 import { COUNTRY_CONTENT } from "@/lib/data/country-content";
 import {
@@ -28,17 +28,23 @@ export function RoadmapView() {
   const [today, setToday] = useState<Date | null>(null);
   useEffect(() => setToday(new Date()), []);
 
-  if (!analysis) return <NoAnalysisYet />;
-
+  // The roadmap is deterministic (dates + profile facts), so it renders BEFORE
+  // any analysis exists — the "grow with us" mode for younger students. Without
+  // an analysis there are no target schools or AI actions yet: the plan anchors
+  // to the graduation-year cycle and carries SAT sittings + confirmed
+  // competitions; the personalized layers join in once the analysis runs.
+  //
   // The student's actual target schools per country — the roadmap resolves each
   // one's real, verified deadline (US via app-deadlines, others via the
   // hand-verified intl-deadlines dataset). Per-country reads come from the
   // content registry (lib/data/country-content.ts).
   const uniq = (a: string[]) => [...new Set(a.filter(Boolean))];
-  const targets = COUNTRY_CONTENT.map((c) => ({
-    code: c.code,
-    universities: uniq(c.universities(analysis)),
-  })).filter((t) => t.universities.length > 0);
+  const targets = analysis
+    ? COUNTRY_CONTENT.map((c) => ({
+        code: c.code,
+        universities: uniq(c.universities(analysis)),
+      })).filter((t) => t.universities.length > 0)
+    : [];
 
   const roadmap = today
     ? buildRoadmap({
@@ -46,8 +52,9 @@ export function RoadmapView() {
         graduationYear: profileMeta.graduationYear,
         faculties: profileMeta.faculties,
         satScore: profileMeta.satScore,
+        homeCountry: profileMeta.homeCountry,
         targets,
-        planActions: analysis.timeline,
+        planActions: analysis?.timeline ?? [],
         liveSatSittings: liveDates.satSittings,
         liveCompetitions: liveDates.competitions,
       })
@@ -63,9 +70,26 @@ export function RoadmapView() {
         <div className="h-28 animate-pulse rounded-2xl border border-line bg-card" />
       )}
 
+      {/* Pre-analysis nudge: the dated skeleton is here, the personalized
+          layers (target-school deadlines, AI actions, levers) need the run. */}
+      {!analysis && (
+        <Card>
+          <p className="text-sm leading-relaxed text-ink-soft">
+            <span className="font-medium text-ink">
+              This is your date-anchored skeleton plan.
+            </span>{" "}
+            <a href={basePath} className="font-medium text-accent hover:underline">
+              Run the analysis
+            </a>{" "}
+            to fold in your target schools&rsquo; real deadlines and a
+            personalized action list.
+          </p>
+        </Card>
+      )}
+
       {/* Highest-impact levers — the "what moves the needle" summary, kept from
           the old Action-plan view. The phased roadmap below sequences these. */}
-      {analysis.gap_analysis.length > 0 && (
+      {analysis && analysis.gap_analysis.length > 0 && (
         <Card>
           <h2 className="mb-1 text-base font-semibold text-ink">
             Your highest-impact levers

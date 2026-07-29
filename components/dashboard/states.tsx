@@ -49,7 +49,31 @@ export function EmptyState({
       <Button size="lg" className="mt-6" onClick={onRun}>
         {t("dash.seeStanding")}
       </Button>
+      {/* Growth mode: these two sections are deterministic and already open —
+          a thin-portfolio student gets value before (or instead of) analyzing. */}
+      <EmptyStatePreLinks />
     </div>
+  );
+}
+
+function EmptyStatePreLinks() {
+  const t = useT();
+  const { basePath } = useDashboard();
+  return (
+    <p className="mt-4 max-w-sm text-sm text-ink-soft">
+      {t("dash.emptyPreLinksLead")}{" "}
+      <a
+        href={`${basePath}/opportunities`}
+        className="font-medium text-accent hover:underline"
+      >
+        {t("nav.opportunities")}
+      </a>{" "}
+      {t("dash.emptyPreLinksAnd")}{" "}
+      <a href={`${basePath}/plan`} className="font-medium text-accent hover:underline">
+        {t("nav.plan")}
+      </a>{" "}
+      {t("dash.emptyPreLinksTail")}
+    </p>
   );
 }
 

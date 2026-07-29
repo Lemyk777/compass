@@ -5,6 +5,7 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { analysisSchema, sanitizeAnalysis, type Analysis } from "@/lib/ai/schema";
 import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import type { DestinationCode } from "@/lib/data/destinations";
+import { normalizeCountry } from "@/lib/data/geo";
 
 export const dynamic = "force-dynamic";
 
@@ -86,6 +87,13 @@ export default async function DashboardLayout({
     url: r.url as string,
     blurb: r.blurb as string,
     dateConfirmed: r.date_confirmed === true,
+    // Discovery columns (migration 0020). Absent on older DBs → undefined,
+    // and competitionTier()/competitionCategory() supply the defaults.
+    category: (r.category as Competition["category"]) ?? undefined,
+    tier: (r.tier as Competition["tier"]) ?? undefined,
+    eligibility: (r.eligibility as string | null) ?? undefined,
+    region: (r.region as string | null) ?? null,
+    city: (r.city as string | null) ?? null,
   }));
 
   return (
@@ -103,6 +111,7 @@ export default async function DashboardLayout({
         graduationYear: (sp?.graduation_year as number | null) ?? undefined,
         faculties: Array.isArray(sp?.faculties) ? (sp!.faculties as string[]) : [],
         satScore: (sp?.tests as { SAT?: number } | null)?.SAT,
+        homeCountry: normalizeCountry(session.country),
       }}
       liveDates={{
         satSittings: liveSatSittings,

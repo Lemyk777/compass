@@ -481,6 +481,34 @@ const en: Dict = {
   "admin.ambEmpty": "No ambassadors yet.",
   "admin.unnamed": "Unnamed",
 
+  // Growth mode: sections open before the analysis
+  "dash.emptyPreLinksLead": "No rush, though —",
+  "dash.emptyPreLinksAnd": "and your",
+  "dash.emptyPreLinksTail": "are already open, no analysis needed.",
+
+  // Opportunity discovery review (admin)
+  "admin.opps": "Opportunities",
+  "admin.oppsTitle": "Opportunity discovery",
+  "admin.oppsSub":
+    "Auto-discovered competitions waiting for review, plus the date health of everything already live. Nothing reaches students until you approve it.",
+  "admin.oppsPending": "Pending review",
+  "admin.oppsApproved": "Approved",
+  "admin.oppsRejected": "Rejected",
+  "admin.oppsNoPending": "No candidates waiting — the weekly discovery run will queue new ones here.",
+  "admin.oppsApprove": "Approve",
+  "admin.oppsReject": "Reject",
+  "admin.oppsDateConfirmed": "Date confirmed on official page",
+  "admin.oppsDateUnconfirmed": "Date NOT confirmed — will show as “not yet announced”",
+  "admin.oppsHealthTitle": "Date health",
+  "admin.oppsHealthSub":
+    "Every live competition date and whether we can stand behind it. Unconfirmed rows render without a countdown; past-deadline rows need the annual re-verify pass.",
+  "admin.oppsHealthName": "Competition",
+  "admin.oppsHealthDeadline": "Deadline",
+  "admin.oppsHealthStatus": "Status",
+  "admin.oppsHealthConfirmed": "Confirmed",
+  "admin.oppsHealthEstimate": "Curated estimate",
+  "admin.oppsHealthPast": "Past — re-verify",
+
   // Admin view switcher (admins only)
   "adminNav.landing": "Landing",
   "adminNav.results": "Results",

@@ -83,6 +83,12 @@ export type Competition = {
   // we could not verify say so and point to the official page. Checked against
   // official eligibility pages 2026-07-02 — re-verify with the annual date pass.
   eligibility?: string;
+  // Geographic scope. Absent/null = global (the whole curated registry).
+  // An ISO-2 code ("KZ") marks a LOCAL opportunity — shown only to students
+  // whose own country matches, so a Tashkent hackathon never lands on an
+  // Almaty student's list and vice versa. `city` narrows the badge further.
+  region?: string | null;
+  city?: string | null;
   url: string;
   blurb: string;
 };
@@ -764,6 +770,8 @@ export type StudyPlanInputs = {
   graduationYear?: number;
   faculties: string[];
   satScore?: number;
+  // Student's ISO-2 country — gates LOCAL (region-tagged) competitions.
+  homeCountry?: string | null;
   // Live data from Supabase (injected by the dashboard layout). When provided,
   // these override the hardcoded SAT_SITTINGS / COMPETITIONS arrays.
   liveSatSittings?: SatSitting[];
@@ -798,6 +806,7 @@ export function buildStudyPlan({
   graduationYear,
   faculties,
   satScore,
+  homeCountry,
   liveSatSittings,
   liveCompetitions,
 }: StudyPlanInputs): StudyPlan {
@@ -849,9 +858,9 @@ export function buildStudyPlan({
   // whose date is confirmed — never a "typically November" estimate. The full
   // catalog (incl. not-yet-announced ones) lives in the Opportunities section.
   const fac = new Set(faculties);
-  const competitions: CompetitionStep[] = comps.filter(
-    (c) => c.fields === "all" || c.fields.some((f) => fac.has(f))
-  )
+  const competitions: CompetitionStep[] = comps
+    .filter((c) => !c.region || c.region === homeCountry)
+    .filter((c) => c.fields === "all" || c.fields.some((f) => fac.has(f)))
     .filter((c) => c.dateConfirmed && daysBetween(today, c.deadline) >= 0)
     .map((c) => ({ ...c, daysToDeadline: daysBetween(today, c.deadline) }))
     .sort((a, b) => a.daysToDeadline - b.daysToDeadline)
@@ -952,11 +961,15 @@ export function buildExtracurriculars({
   faculties,
   factors,
   liveCompetitions,
+  homeCountry,
 }: {
   today: Date;
   faculties: string[];
   factors: { key: string; score: number }[];
   liveCompetitions?: Competition[];
+  // Student's ISO-2 country (normalized). Local (region-tagged) opportunities
+  // only surface when they match it; global ones always do.
+  homeCountry?: string | null;
 }): ExtracurricularsPlan {
   const comps = resolveCompetitions(liveCompetitions);
   const strength = extracurricularStrength(factors);
@@ -966,6 +979,7 @@ export function buildExtracurriculars({
   const fac = new Set(faculties);
 
   const items: Opportunity[] = comps
+    .filter((c) => !c.region || c.region === homeCountry)
     .filter((c) => c.fields === "all" || c.fields.some((f) => fac.has(f)))
     // Drop a CONFIRMED competition once its date has passed. Keep
     // not-yet-announced ones (the catalog shows them as "Dates not yet

@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 // framer-backed MotionCard (position animation) instead of the plain Card.
 import { MotionCard as Card } from "@/components/report/MotionCard";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
-import { NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
+import { PageHeader } from "@/components/dashboard/states";
+import { regionLabel } from "@/lib/data/geo";
 import {
   buildExtracurriculars,
   formatDate,
@@ -75,7 +76,7 @@ const TIER_BADGE: Record<CompetitionTier, { label: string; cls: string }> = {
 type CategoryFilter = "all" | CompetitionCategory;
 
 export function OpportunitiesView() {
-  const { analysis, profileMeta, liveDates } = useDashboard();
+  const { analysis, profileMeta, liveDates, basePath } = useDashboard();
 
   // "today" depends on the visitor's clock — resolve on the client to avoid a
   // hydration mismatch (same pattern as the Timeline view).
@@ -84,17 +85,20 @@ export function OpportunitiesView() {
 
   const [category, setCategory] = useState<CategoryFilter>("all");
 
+  // The catalog is deterministic, so it works BEFORE any analysis exists —
+  // that's the "grow with us" mode for younger students with thin portfolios.
+  // Without factors the strength is 0 → "emerging" → accessible events first,
+  // exactly the right starting point for someone building a record.
   const plan = useMemo(() => {
-    if (!today || !analysis) return null;
+    if (!today) return null;
     return buildExtracurriculars({
       today,
       faculties: profileMeta.faculties,
-      factors: analysis.factors,
+      factors: analysis?.factors ?? [],
       liveCompetitions: liveDates.competitions,
+      homeCountry: profileMeta.homeCountry,
     });
-  }, [today, analysis, profileMeta.faculties, liveDates.competitions]);
-
-  if (!analysis) return <NoAnalysisYet />;
+  }, [today, analysis, profileMeta.faculties, profileMeta.homeCountry, liveDates.competitions]);
 
   const visible =
     plan?.items.filter(
@@ -110,7 +114,11 @@ export function OpportunitiesView() {
 
       {plan ? (
         <>
-          <StrengthBanner band={plan.band} strength={plan.strength} />
+          {analysis ? (
+            <StrengthBanner band={plan.band} strength={plan.strength} />
+          ) : (
+            <StarterBanner basePath={basePath} />
+          )}
 
           {plan.items.length > 0 ? (
             <>
@@ -148,6 +156,33 @@ export function OpportunitiesView() {
         <div className="h-40 animate-pulse rounded-2xl border border-line bg-card" />
       )}
     </div>
+  );
+}
+
+// Pre-analysis ("grow with us") banner: the student sees the full catalog with
+// beginner-friendly events first, and a nudge that the analysis will match it
+// to their actual strength. The overview owns the run-analysis flow.
+function StarterBanner({ basePath }: { basePath: string }) {
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center gap-3">
+        <SparkIcon />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ink">
+            Start building your record
+          </p>
+          <p className="mt-1 text-pretty text-sm leading-relaxed text-ink-soft">
+            These are real competitions, olympiads and programs you can enter —
+            beginner-friendly ones first. It&rsquo;s completely fine to have
+            nothing on your list yet: pick one accessible event and start there.{" "}
+            <a href={basePath} className="font-medium text-accent hover:underline">
+              Run the analysis
+            </a>{" "}
+            when you&rsquo;re ready and we&rsquo;ll match these to your strength.
+          </p>
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -276,6 +311,13 @@ function OpportunityRow({ o }: { o: Opportunity }) {
             <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-faint">
               {CATEGORY_LABEL[o.categoryResolved]}
             </span>
+            {o.region && (
+              // Local opportunity — only shown to students from this country,
+              // so the badge is a "near you" marker, not a restriction warning.
+              <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-ink">
+                Local · {o.city ?? regionLabel(o.region)}
+              </span>
+            )}
           </p>
           <p className="mt-0.5 text-xs text-ink-soft">{o.blurb}</p>
           {/* Who can enter — shown on EVERY card so a younger student never

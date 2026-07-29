@@ -46,6 +46,9 @@ export type ProfileMeta = {
   graduationYear?: number;
   faculties: string[];
   satScore?: number;
+  // Normalized ISO-2 home country ("KZ") — gates LOCAL opportunities. Null /
+  // absent (demo, unrecognized free-text country) → only global ones show.
+  homeCountry?: string | null;
 };
 
 export type LiveDates = {

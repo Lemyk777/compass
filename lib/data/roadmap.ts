@@ -105,6 +105,8 @@ export type RoadmapInputs = {
   graduationYear?: number;
   faculties: string[];
   satScore?: number;
+  // Student's ISO-2 country — gates LOCAL (region-tagged) competitions.
+  homeCountry?: string | null;
   // The student's target universities per country — the runway is anchored to
   // the EARLIEST VERIFIED deadline across them (US via app-deadlines, others via
   // the hand-verified intl-deadlines dataset).
@@ -427,6 +429,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
     graduationYear,
     faculties,
     satScore,
+    homeCountry,
     targets,
     planActions = [],
     liveSatSittings,
@@ -442,6 +445,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
     graduationYear,
     faculties,
     satScore,
+    homeCountry,
     liveSatSittings,
     liveCompetitions,
   });
