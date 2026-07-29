@@ -14,7 +14,7 @@ import {
 } from "../lib/data/key-dates";
 import { buildRoadmap } from "../lib/data/roadmap";
 import { slugify } from "../lib/discovery/discover";
-import { findDatePages } from "../lib/scraper/scrape-dates";
+import { findDatePages, parseJsonLoose } from "../lib/scraper/scrape-dates";
 
 let passed = 0;
 function ok(name: string, fn: () => void) {
@@ -202,6 +202,34 @@ ok("returns at most `limit`, deduped, absolute", () => {
 ok("malformed base URL or link-free HTML yields nothing (never throws)", () => {
   assert.deepEqual(findDatePages(html(a("/apply")), "not-a-url"), []);
   assert.deepEqual(findDatePages("<html></html>", "https://x.org/"), []);
+});
+
+// ── model-reply parsing ──────────────────────────────────────────────────────
+console.log("scrape-dates.ts / parseJsonLoose");
+ok("plain JSON array and object", () => {
+  assert.deepEqual(parseJsonLoose('[{"test":"2026-08-22"}]'), [{ test: "2026-08-22" }]);
+  assert.deepEqual(parseJsonLoose('{"deadline":"2026-10-28"}'), { deadline: "2026-10-28" });
+});
+ok("survives markdown fences (the SAT failure mode)", () => {
+  assert.deepEqual(
+    parseJsonLoose('```json\n[{"test":"2026-08-22","regDeadline":"2026-08-07"}]\n```'),
+    [{ test: "2026-08-22", regDeadline: "2026-08-07" }],
+  );
+});
+ok("survives prose around the JSON", () => {
+  assert.deepEqual(
+    parseJsonLoose('Here are the dates I found:\n[{"a":1}]\nLet me know if you need more.'),
+    [{ a: 1 }],
+  );
+});
+ok("literal null and unparseable replies", () => {
+  assert.equal(parseJsonLoose("null"), null);
+  assert.equal(parseJsonLoose("  null  "), null);
+  assert.equal(parseJsonLoose("I could not find a deadline."), null);
+  assert.equal(parseJsonLoose(""), null);
+});
+ok("prefers the outer shape, not a brace inside prose", () => {
+  assert.deepEqual(parseJsonLoose('The set {a} aside, here: [{"x":2}]'), [{ x: 2 }]);
 });
 
 // ── cron rotation math ───────────────────────────────────────────────────────

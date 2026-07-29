@@ -164,6 +164,38 @@ async function fetchClean(url: string, budget: number): Promise<string | null> {
 }
 
 /**
+ * Parse JSON out of a model reply that may carry markdown fences or a
+ * sentence of preamble ("Here is the JSON: ```json [...]```").
+ *
+ * The previous code called JSON.parse on the raw reply, so a single stray
+ * character threw and the whole scrape silently returned "nothing found" —
+ * indistinguishable from a page that genuinely has no dates. Returns null
+ * when there is no parseable JSON value of the expected shape.
+ */
+export function parseJsonLoose(reply: string): unknown {
+  const text = reply.replace(/```(?:json)?/gi, "").trim();
+  if (text === "null") return null;
+
+  const candidates: [number, number][] = [];
+  const arr: [number, number] = [text.indexOf("["), text.lastIndexOf("]")];
+  const obj: [number, number] = [text.indexOf("{"), text.lastIndexOf("}")];
+  // Prefer whichever bracket opens first, so an object inside an array (or a
+  // sentence containing a brace) can't hijack the parse.
+  if (arr[0] !== -1 && arr[1] > arr[0]) candidates.push(arr);
+  if (obj[0] !== -1 && obj[1] > obj[0]) candidates.push(obj);
+  candidates.sort((a, b) => a[0] - b[0]);
+
+  for (const [start, end] of candidates) {
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      // try the next shape
+    }
+  }
+  return null;
+}
+
+/**
  * Validate that a string is a well-formed ISO date (YYYY-MM-DD) pointing to a
  * real calendar day (e.g. rejects 2025-02-30).
  */
@@ -247,9 +279,12 @@ export async function scrapeSatDates(): Promise<
       return [];
     }
 
-    const parsed: unknown = JSON.parse(content.text);
+    const parsed = parseJsonLoose(content.text);
     if (!Array.isArray(parsed)) {
-      console.error("[scrapeSatDates] response is not an array");
+      console.error(
+        "[scrapeSatDates] no JSON array in reply:",
+        content.text.slice(0, 200),
+      );
       return [];
     }
 
@@ -359,15 +394,18 @@ export async function scrapeCompetitionDeadline(
     // Claude may respond with the literal string "null"
     if (trimmed === "null") return null;
 
-    const parsed: unknown = JSON.parse(trimmed);
+    const parsed = parseJsonLoose(trimmed);
     if (
       typeof parsed !== "object" ||
       parsed === null ||
       !("deadline" in parsed) ||
       !("window" in parsed)
     ) {
-      console.error(
-        `[scrapeCompetitionDeadline] malformed response for ${name}`,
+      // A model that declines ("no upcoming date found") is a normal outcome,
+      // not an error — log the reply so a real malformation is still visible.
+      console.warn(
+        `[scrapeCompetitionDeadline] no usable date for ${name}:`,
+        trimmed.slice(0, 160),
       );
       return null;
     }

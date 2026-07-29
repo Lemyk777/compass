@@ -27,7 +27,11 @@ import {
   type CompetitionLevel,
   type CompetitionTier,
 } from "@/lib/data/key-dates";
-import { isValidISODate, scrapeCompetitionDeadline } from "@/lib/scraper/scrape-dates";
+import {
+  isValidISODate,
+  parseJsonLoose,
+  scrapeCompetitionDeadline,
+} from "@/lib/scraper/scrape-dates";
 
 export type CandidateRow = {
   id: string;
@@ -171,21 +175,11 @@ async function runSearch(
     .join("")
     .trim();
 
-  const jsonStart = text.indexOf("[");
-  const jsonEnd = text.lastIndexOf("]");
-  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) {
-    console.error(`[discover] no JSON array in response for ${tag}`);
+  const parsed = parseJsonLoose(text);
+  if (!Array.isArray(parsed)) {
+    console.error(`[discover] no JSON array in response for ${tag}:`, text.slice(0, 200));
     return [];
   }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
-  } catch {
-    console.error(`[discover] JSON parse failed for ${tag}`);
-    return [];
-  }
-  if (!Array.isArray(parsed)) return [];
 
   const candidates: RawCandidate[] = [];
   for (const item of parsed) {
