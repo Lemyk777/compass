@@ -243,9 +243,11 @@ function getClient(): Anthropic {
  * Returns an array sorted by test date ascending. On any failure the function
  * returns an empty array so callers can fall back gracefully.
  */
-export async function scrapeSatDates(): Promise<
-  { test: string; regDeadline: string }[]
-> {
+export async function scrapeSatDates(): Promise<{
+  sittings: { test: string; regDeadline: string }[];
+  note: string;
+}> {
+  const fail = (note: string) => ({ sittings: [], note });
   try {
     // 1. Fetch the official SAT dates page
     const res = await fetch(
@@ -253,15 +255,13 @@ export async function scrapeSatDates(): Promise<
       fetchInit(),
     );
     if (!res.ok) {
-      console.error(
-        `[scrapeSatDates] fetch failed: ${res.status} ${res.statusText}`,
-      );
-      return [];
+      return fail(`fetch_failed: ${res.status} ${res.statusText}`);
     }
     const rawHtml = await res.text();
 
     // 2. Clean the HTML to reduce token usage
     const text = cleanHtml(rawHtml);
+    if (text.length < 200) return fail("no_content: page has no readable text");
 
     // 3. Ask Claude to extract structured data
     const anthropic = getClient();
@@ -275,17 +275,12 @@ export async function scrapeSatDates(): Promise<
     // 4. Parse the JSON response
     const content = message.content[0];
     if (content.type !== "text") {
-      console.error("[scrapeSatDates] unexpected content type:", content.type);
-      return [];
+      return fail(`model_error: content type ${content.type}`);
     }
 
     const parsed = parseJsonLoose(content.text);
     if (!Array.isArray(parsed)) {
-      console.error(
-        "[scrapeSatDates] no JSON array in reply:",
-        content.text.slice(0, 200),
-      );
-      return [];
+      return fail(`declined: reply was ${content.text.trim().slice(0, 80)}`);
     }
 
     // 5. Validate every entry
@@ -307,10 +302,19 @@ export async function scrapeSatDates(): Promise<
 
     // 6. Return sorted by test date ascending
     results.sort((a, b) => a.test.localeCompare(b.test));
-    return results;
+    return {
+      sittings: results,
+      note:
+        results.length > 0
+          ? `parsed ${results.length} of ${parsed.length} entries`
+          : `declined: model returned ${parsed.length} entries, none valid`,
+    };
   } catch (err) {
-    console.error("[scrapeSatDates] error:", err);
-    return [];
+    // Auth / rate-limit / network against the model — previously indistinguishable
+    // from "the page has no dates".
+    const detail = err instanceof Error ? `${err.name}: ${err.message}` : "unknown";
+    console.error("[scrapeSatDates] model call failed:", detail);
+    return fail(`model_error: ${detail.slice(0, 160)}`);
   }
 }
 
@@ -318,44 +322,70 @@ export async function scrapeSatDates(): Promise<
 // Competition deadlines
 // ---------------------------------------------------------------------------
 
+// Why a scrape produced no date. "Nothing found" and "the model call blew up"
+// used to be the same silent null in the cron report, which made a broken
+// pipeline indistinguishable from a page that genuinely has no dates.
+export type ScrapeFailure =
+  | { ok: false; reason: "fetch_failed"; detail: string }
+  | { ok: false; reason: "no_content"; detail: string }
+  | { ok: false; reason: "model_error"; detail: string }
+  | { ok: false; reason: "declined"; detail: string }
+  | { ok: false; reason: "invalid_date"; detail: string };
+
+export type ScrapeResult =
+  | { ok: true; deadline: string; window: string; pagesRead: number }
+  | ScrapeFailure;
+
 /**
  * Scrape the next registration/submission deadline for a given academic
- * competition from its website.
+ * competition from its website (landing page + any linked dates page).
  *
- * @param url  – Direct URL to the competition's dates / registration page.
+ * @param url  – The competition's official URL.
  * @param name – Human-readable competition name (used in the Claude prompt).
  *
- * Returns `{ deadline, window }` on success, or `null` when the data cannot
- * be extracted. Never throws.
+ * Never throws: every failure comes back as a typed reason.
  */
 export async function scrapeCompetitionDeadline(
   url: string,
   name: string,
-): Promise<{ deadline: string; window: string } | null> {
+): Promise<ScrapeResult> {
+  let rawHtml: string;
   try {
     // 1. Fetch the landing page
     const res = await fetch(url, fetchInit());
     if (!res.ok) {
-      console.error(
-        `[scrapeCompetitionDeadline] fetch failed for ${name}: ${res.status} ${res.statusText}`,
-      );
-      return null;
+      return { ok: false, reason: "fetch_failed", detail: `${res.status} ${res.statusText}` };
     }
-    const rawHtml = await res.text();
+    rawHtml = await res.text();
+  } catch (err) {
+    return {
+      ok: false,
+      reason: "fetch_failed",
+      detail: err instanceof Error ? err.message : "unknown",
+    };
+  }
 
-    // 2. Follow to the page that actually carries the dates. Landing pages are
-    //    marketing — the deadline lives on "Key dates" / "Apply" / "Calendar".
-    //    Reading only the landing page is what made every extraction return
-    //    null in production. Still ONE model call: the pages are concatenated.
-    const sections = [`--- Landing page (${url}) ---`, cleanHtml(rawHtml).slice(0, 9_000)];
-    for (const sub of findDatePages(rawHtml, url)) {
-      const subText = await fetchClean(sub, 9_000);
-      if (subText && subText.length > 120) {
-        sections.push(`--- Linked page (${sub}) ---`, subText);
-      }
+  // 2. Follow to the page that actually carries the dates. Landing pages are
+  //    marketing — the deadline lives on "Key dates" / "Apply" / "Calendar".
+  //    Reading only the landing page is what made every extraction return
+  //    null in production. Still ONE model call: the pages are concatenated.
+  const landing = cleanHtml(rawHtml).slice(0, 9_000);
+  const sections = [`--- Landing page (${url}) ---`, landing];
+  let pagesRead = 1;
+  for (const sub of findDatePages(rawHtml, url)) {
+    const subText = await fetchClean(sub, 9_000);
+    if (subText && subText.length > 120) {
+      sections.push(`--- Linked page (${sub}) ---`, subText);
+      pagesRead++;
     }
-    const text = sections.join("\n").slice(0, 24_000);
+  }
+  const text = sections.join("\n").slice(0, 24_000);
+  if (text.replace(/---[^\n]*---/g, "").trim().length < 200) {
+    // Nothing readable — almost always a fully JS-rendered site.
+    return { ok: false, reason: "no_content", detail: `${pagesRead} page(s), no readable text` };
+  }
 
+  try {
     // 3. Ask Claude to extract the deadline
     const today = new Date().toISOString().slice(0, 10);
     const anthropic = getClient();
@@ -382,18 +412,10 @@ export async function scrapeCompetitionDeadline(
     // 4. Parse the JSON response
     const content = message.content[0];
     if (content.type !== "text") {
-      console.error(
-        `[scrapeCompetitionDeadline] unexpected content type for ${name}:`,
-        content.type,
-      );
-      return null;
+      return { ok: false, reason: "model_error", detail: `content type ${content.type}` };
     }
 
     const trimmed = content.text.trim();
-
-    // Claude may respond with the literal string "null"
-    if (trimmed === "null") return null;
-
     const parsed = parseJsonLoose(trimmed);
     if (
       typeof parsed !== "object" ||
@@ -401,13 +423,13 @@ export async function scrapeCompetitionDeadline(
       !("deadline" in parsed) ||
       !("window" in parsed)
     ) {
-      // A model that declines ("no upcoming date found") is a normal outcome,
-      // not an error — log the reply so a real malformation is still visible.
-      console.warn(
-        `[scrapeCompetitionDeadline] no usable date for ${name}:`,
-        trimmed.slice(0, 160),
-      );
-      return null;
+      // A model that declines ("no upcoming date found") is a normal, honest
+      // outcome — surface the reply so it stays diagnosable.
+      return {
+        ok: false,
+        reason: "declined",
+        detail: `${pagesRead} page(s) read; reply: ${trimmed.slice(0, 80)}`,
+      };
     }
 
     const obj = parsed as { deadline: string; window: string };
@@ -418,16 +440,15 @@ export async function scrapeCompetitionDeadline(
       typeof obj.window !== "string" ||
       !isValidISODate(obj.deadline)
     ) {
-      console.error(
-        `[scrapeCompetitionDeadline] invalid date for ${name}:`,
-        obj.deadline,
-      );
-      return null;
+      return { ok: false, reason: "invalid_date", detail: String(obj.deadline) };
     }
 
-    return { deadline: obj.deadline, window: obj.window };
+    return { ok: true, deadline: obj.deadline, window: obj.window, pagesRead };
   } catch (err) {
-    console.error(`[scrapeCompetitionDeadline] error for ${name}:`, err);
-    return null;
+    // Auth, rate-limit or network failure against the model — this is the case
+    // that used to masquerade as "no dates on the page".
+    const detail = err instanceof Error ? `${err.name}: ${err.message}` : "unknown";
+    console.error(`[scrapeCompetitionDeadline] model call failed for ${name}:`, detail);
+    return { ok: false, reason: "model_error", detail: detail.slice(0, 160) };
   }
 }

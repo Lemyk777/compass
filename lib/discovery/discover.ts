@@ -378,16 +378,18 @@ export async function verifyCandidates(
     let evidence = "";
 
     const scraped = await scrapeCompetitionDeadline(c.url, c.name);
-    if (scraped && isValidISODate(scraped.deadline)) {
+    if (scraped.ok && isValidISODate(scraped.deadline)) {
       const d = daysFromToday(scraped.deadline);
       if (d >= 0 && d <= 430) {
         deadline = scraped.deadline;
         window = scraped.window || window;
         confirmed = true;
-        evidence = `Deadline ${scraped.deadline} extracted from the official page (${d} days out).`;
+        evidence = `Deadline ${scraped.deadline} extracted from the official page (${d} days out, ${scraped.pagesRead} page(s) read).`;
       } else {
         evidence = `Official page yielded ${scraped.deadline}, rejected (${d} days from today — out of range).`;
       }
+    } else if (!scraped.ok) {
+      evidence = `Could not confirm on the official page (${scraped.reason}: ${scraped.detail}).`;
     }
     if (!confirmed) {
       // Fall back to the search-claimed date as an UNCONFIRMED estimate.

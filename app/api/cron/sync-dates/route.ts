@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
   // ── 1. Sync SAT dates ────────────────────────────────────────────────────
   try {
-    const sittings = await scrapeSatDates();
+    const { sittings, note } = await scrapeSatDates();
     if (sittings.length > 0) {
       // Clear old data for this cycle and insert fresh
       const cycle = getCurrentCycle();
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
         results.sat = `synced ${sittings.length} sittings`;
       }
     } else {
-      results.sat = "skipped: scraper returned 0 sittings (kept existing)";
+      results.sat = `no dates (${note}) — kept existing`;
     }
   } catch (e) {
     console.error("SAT sync failed:", e);
@@ -92,8 +92,15 @@ export async function GET(req: NextRequest) {
 
   for (const comp of batch) {
     try {
-      const scraped = await scrapeCompetitionDeadline(comp.url, comp.name);
-      if (scraped) {
+      const result = await scrapeCompetitionDeadline(comp.url, comp.name);
+      if (!result.ok) {
+        // Typed reason instead of a blanket "returned null", so a broken
+        // pipeline is distinguishable from a page that has no dates.
+        results[comp.id] = `no date (${result.reason}): ${result.detail}`;
+        continue;
+      }
+      {
+        const scraped = result;
         // Never trust a scrape blindly — it must clear the guardrail before it
         // can overwrite the curated date and drive a countdown.
         const verdict = acceptScrapedDate(scraped.deadline, comp);
@@ -126,10 +133,9 @@ export async function GET(req: NextRequest) {
           console.error(`Failed to upsert ${comp.id}:`, error);
           results[comp.id] = `error: ${error.message}`;
         } else {
-          results[comp.id] = `synced: deadline ${scraped.deadline} (confirmed)`;
+          results[comp.id] =
+            `synced: deadline ${scraped.deadline} (confirmed, ${scraped.pagesRead} page(s) read)`;
         }
-      } else {
-        results[comp.id] = "skipped: scraper returned null (kept existing)";
       }
     } catch (e) {
       console.error(`Competition sync failed for ${comp.id}:`, e);
@@ -138,6 +144,9 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({
+    // Identifies which build answered — a run that silently predates a fix is
+    // otherwise indistinguishable from one where the fix didn't work.
+    scraper: "two-hop-v2",
     ok: true,
     syncedAt: new Date().toISOString(),
     batch: batch.map((c) => c.id),
