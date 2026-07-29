@@ -5,6 +5,11 @@ import Anthropic from "@anthropic-ai/sdk";
 const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
+// Hard per-site timeout. Without it a single hanging site stalls the whole
+// cron run until Vercel kills the function (FUNCTION_INVOCATION_TIMEOUT) and
+// NOTHING gets synced — which is exactly what happened before batching.
+const FETCH_TIMEOUT_MS = 10_000;
+
 const FETCH_INIT: RequestInit = {
   headers: {
     "User-Agent": BROWSER_UA,
@@ -12,6 +17,11 @@ const FETCH_INIT: RequestInit = {
     "Accept-Language": "en-US,en;q=0.9",
   },
 };
+
+/** FETCH_INIT with a fresh timeout signal (signals are single-use). */
+function fetchInit(): RequestInit {
+  return { ...FETCH_INIT, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) };
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -99,7 +109,7 @@ export async function scrapeSatDates(): Promise<
     // 1. Fetch the official SAT dates page
     const res = await fetch(
       "https://satsuite.collegeboard.org/sat/dates-deadlines",
-      FETCH_INIT,
+      fetchInit(),
     );
     if (!res.ok) {
       console.error(
@@ -180,7 +190,7 @@ export async function scrapeCompetitionDeadline(
 ): Promise<{ deadline: string; window: string } | null> {
   try {
     // 1. Fetch the competition page
-    const res = await fetch(url, FETCH_INIT);
+    const res = await fetch(url, fetchInit());
     if (!res.ok) {
       console.error(
         `[scrapeCompetitionDeadline] fetch failed for ${name}: ${res.status} ${res.statusText}`,

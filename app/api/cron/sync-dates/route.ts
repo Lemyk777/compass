@@ -10,7 +10,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { scrapeSatDates, scrapeCompetitionDeadline } from "@/lib/scraper/scrape-dates";
 import { COMPETITIONS, daysBetween, type Competition } from "@/lib/data/key-dates";
 
-export const maxDuration = 120; // scraping multiple sites can be slow
+export const maxDuration = 300; // scraping multiple sites can be slow
+
+// How many competitions to refresh per run. The registry has ~46 entries and
+// one entry costs up to ~15s (10s fetch timeout + one Haiku extraction) — a
+// single run over everything blew straight through the function timeout and
+// synced NOTHING (the pre-batching failure mode). With a daily schedule and a
+// rotating window, every competition is re-checked roughly every 6 days while
+// a run stays comfortably under maxDuration.
+const COMPS_PER_RUN = 8;
 
 // Guardrail before trusting a scraped competition date. A wrong auto-date can
 // push a student past a real deadline, so we only accept a scrape that is in the
@@ -72,10 +80,17 @@ export async function GET(req: NextRequest) {
     results.sat = `error: ${e instanceof Error ? e.message : "unknown"}`;
   }
 
-  // ── 2. Sync competition deadlines ────────────────────────────────────────
+  // ── 2. Sync competition deadlines (rotating batch) ───────────────────────
   // Use the hardcoded COMPETITIONS as the "registry" of which competitions to
-  // track, then try to scrape fresh deadlines from each site.
-  for (const comp of COMPETITIONS) {
+  // track, but only refresh a day-rotated window per run — see COMPS_PER_RUN.
+  const day = Math.floor(Date.now() / 86_400_000);
+  const start = (day * COMPS_PER_RUN) % COMPETITIONS.length;
+  const batch = Array.from(
+    { length: Math.min(COMPS_PER_RUN, COMPETITIONS.length) },
+    (_, i) => COMPETITIONS[(start + i) % COMPETITIONS.length],
+  );
+
+  for (const comp of batch) {
     try {
       const scraped = await scrapeCompetitionDeadline(comp.url, comp.name);
       if (scraped) {
@@ -125,6 +140,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     syncedAt: new Date().toISOString(),
+    batch: batch.map((c) => c.id),
     results,
   });
 }
