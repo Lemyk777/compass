@@ -56,18 +56,22 @@ export async function GET(req: NextRequest) {
   try {
     const { sittings, note } = await scrapeSatDates();
     if (sittings.length > 0) {
-      // Clear old data for this cycle and insert fresh
-      const cycle = getCurrentCycle();
-      await supabase.from("sat_sittings").delete().eq("cycle", cycle);
-      const { error } = await supabase.from("sat_sittings").insert(
+      // Upsert on test_date — that is the table's unique key. The old
+      // delete-by-cycle-then-insert broke as soon as extraction started
+      // working: a sitting already stored under a different cycle label hit
+      // "duplicate key ... sat_sittings_test_date_key" and the whole batch
+      // was lost. Each row's cycle is derived from its own test date, not
+      // from today's date, so a run in July doesn't mislabel autumn sittings.
+      const { error } = await supabase.from("sat_sittings").upsert(
         sittings.map((s) => ({
           test_date: s.test,
           reg_deadline: s.regDeadline,
-          cycle,
-        }))
+          cycle: cycleForDate(s.test),
+        })),
+        { onConflict: "test_date" }
       );
       if (error) {
-        console.error("Failed to insert SAT sittings:", error);
+        console.error("Failed to upsert SAT sittings:", error);
         results.sat = `error: ${error.message}`;
       } else {
         results.sat = `synced ${sittings.length} sittings`;
@@ -156,8 +160,16 @@ export async function GET(req: NextRequest) {
 
 /** Academic cycle label, e.g. "2026-27" for dates from Aug 2026 to Jun 2027. */
 function getCurrentCycle(): string {
-  const now = new Date();
-  // Academic year starts in August
-  const year = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  return cycleForDate(new Date().toISOString().slice(0, 10));
+}
+
+/**
+ * The academic cycle a given ISO date belongs to. Derived from the date
+ * itself, so an August sitting is labelled with the cycle it actually falls
+ * in even when the sync runs in July.
+ */
+function cycleForDate(iso: string): string {
+  const [y, m] = iso.split("-").map(Number);
+  const year = m >= 8 ? y : y - 1; // academic year starts in August
   return `${year}-${String(year + 1).slice(2)}`;
 }
