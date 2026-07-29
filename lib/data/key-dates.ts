@@ -360,7 +360,10 @@ export const COMPETITIONS: Competition[] = [
   {
     id: "nhd",
     name: "National History Day",
-    fields: ["humanities_social"],
+    // Entries can be a paper, documentary, exhibit or performance, and
+    // constitutional/legal topics are common — so this counts for arts and law
+    // applicants too, not only historians.
+    fields: ["humanities_social", "law", "arts_design"],
     deadline: "2027-02-01",
     window: "Regional contests spring, nationals June",
     level: "national",
@@ -1100,6 +1103,196 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "High-school students worldwide",
     url: "https://www.lumiere-education.com/",
     blurb: "Guided research with a PhD mentor, producing an independent paper [need-based aid].",
+  },
+
+  // ── Filling the thin fields ──────────────────────────────────────────────
+  // A coverage audit showed law, arts & design and medicine were far behind
+  // STEM — and medicine had a single accessible entry, so a beginner pre-med
+  // saw almost nothing to start with. These target those gaps specifically.
+  // URLs verified 2026-07-29.
+
+  // Medicine & health  (Brain Bee already lives in the science section above.)
+  {
+    id: "future-problem-solving",
+    name: "Future Problem Solving Program International",
+    fields: ["medicine_health", "humanities_social", "natural_sciences", "business_economics"],
+    deadline: "2026-10-15",
+    window: "Qualifying problems through the school year, finals in June",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Ages 9–18 — individual or team, via affiliate programs worldwide",
+    url: "https://www.futureproblemsolving.org/",
+    blurb: "Research-and-solve future scenarios, often health and society — a gentle first entry.",
+  },
+
+  // Law, politics & debate
+  {
+    id: "idea-debate",
+    name: "IDEA — international debate competitions & academies",
+    fields: ["law", "humanities_social", "business_economics"],
+    deadline: "2027-03-01",
+    window: "Tournaments and academies year-round",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Secondary-school debaters worldwide — entry level to world championships",
+    url: "https://idebate.net/",
+    blurb: "Structured debate at every level — the most reliable way to build a law-facing record.",
+  },
+  {
+    id: "eyp",
+    name: "European Youth Parliament",
+    fields: ["law", "humanities_social", "business_economics"],
+    deadline: "2027-01-15",
+    window: "National selection sessions through the year, internationals each term",
+    level: "international",
+    category: "competition",
+    tier: "selective",
+    eligibility: "Ages 16–22 in EYP member countries — check whether your country has a national committee",
+    url: "https://eyp.org/",
+    blurb: "Draft and defend resolutions in committee — policy and legal reasoning under scrutiny.",
+  },
+  // (National History Day already lives in the humanities section above.)
+
+  // Arts & design
+  {
+    id: "sony-photo-youth",
+    name: "Sony World Photography Awards — Youth",
+    fields: ["arts_design"],
+    deadline: "2027-01-05",
+    window: "Youth entries close in early January",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Under 20 — free to enter, open worldwide",
+    url: "https://www.worldphoto.org/sony-world-photography-awards",
+    blurb: "Free global photography award with a dedicated youth category — a real published credit.",
+  },
+  {
+    id: "toyota-dream-car",
+    name: "Toyota Dream Car Art Contest",
+    fields: ["arts_design", "engineering"],
+    deadline: "2027-01-31",
+    window: "National rounds winter, world contest later in the year",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Under 16, in three age groups — entered via your country's national round",
+    url: "https://www.toyota-dreamcarart.com/",
+    blurb: "Design the car of the future — one of the few global art contests for younger students.",
+  },
+  {
+    id: "evolo-skyscraper",
+    name: "eVolo Skyscraper Competition",
+    fields: ["arts_design", "engineering"],
+    deadline: "2026-11-24",
+    window: "Registration autumn, submissions due in winter",
+    level: "international",
+    category: "competition",
+    tier: "elite",
+    eligibility: "Open worldwide to students and professionals, individually or in teams",
+    url: "https://www.evolo.us/",
+    blurb: "The best-known conceptual architecture prize — a standout for design and architecture.",
+  },
+  {
+    id: "destination-imagination",
+    name: "Destination Imagination",
+    fields: ["arts_design", "engineering", "computer_science"],
+    deadline: "2026-11-30",
+    window: "Team season autumn–spring, Global Finals in May",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "School teams of up to 7 — affiliate programs in many countries",
+    url: "https://www.destinationimagination.org/",
+    blurb: "Open-ended creative and engineering challenges solved as a team over a season.",
+  },
+
+  // Business & economics
+  {
+    id: "ja-worldwide",
+    name: "JA Company Programme (Junior Achievement)",
+    fields: ["business_economics"],
+    deadline: "2026-10-01",
+    window: "Company year runs autumn–spring, national and European finals follow",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Secondary-school students — via your country's JA organisation",
+    url: "https://www.jaworldwide.org/",
+    blurb: "Run a real student company for a year — the most hands-on business credential available.",
+  },
+
+  // ── Student publishing ───────────────────────────────────────────────────
+  // Rolling, worldwide and mostly free, so a student with nothing on their
+  // record yet can produce something verifiable without waiting for a contest
+  // season. This is also what finally gives pre-med applicants an accessible
+  // starting point instead of only olympiad-level entries.
+  {
+    id: "jei",
+    name: "Journal of Emerging Investigators",
+    fields: ["medicine_health", "natural_sciences", "engineering"],
+    deadline: "2027-06-01",
+    window: "Rolling submissions all year; peer review takes a few months",
+    level: "international",
+    category: "research_program",
+    tier: "accessible",
+    eligibility: "Middle- and high-school authors worldwide — free to submit",
+    url: "https://emerginginvestigators.org/",
+    blurb: "Peer-reviewed journal for school students — turn a class or side project into a citation.",
+  },
+  {
+    id: "young-scientist-journal",
+    name: "Young Scientist Journal",
+    fields: ["natural_sciences", "medicine_health", "engineering", "computer_science"],
+    deadline: "2027-06-01",
+    window: "Rolling submissions all year",
+    level: "international",
+    category: "research_program",
+    tier: "accessible",
+    eligibility: "Students aged 12–20 worldwide",
+    url: "https://www.youngscientistjournal.org/",
+    blurb: "Student-run science journal — publish articles or reviews without needing a lab.",
+  },
+  {
+    id: "concord-review",
+    name: "The Concord Review",
+    fields: ["humanities_social", "law"],
+    deadline: "2027-02-01",
+    window: "Quarterly submission deadlines through the year",
+    level: "international",
+    category: "research_program",
+    tier: "selective",
+    eligibility: "Secondary-school students worldwide — submission fee applies",
+    url: "https://tcr.org/",
+    blurb: "The only journal publishing serious high-school history essays — a rare humanities credential.",
+  },
+  {
+    id: "stem-fellowship",
+    name: "STEM Fellowship data science challenges",
+    fields: ["computer_science", "natural_sciences", "medicine_health"],
+    deadline: "2027-01-31",
+    window: "Big Data Challenge runs winter–spring",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "High-school and undergraduate teams — open internationally",
+    url: "https://www.stemfellowship.org/",
+    blurb: "Analyse a real dataset and write it up — data skills plus a publication route.",
+  },
+  {
+    id: "curieux",
+    name: "Curieux Academic Journal",
+    fields: "all",
+    deadline: "2027-03-01",
+    window: "Rolling monthly submission rounds",
+    level: "international",
+    category: "research_program",
+    tier: "accessible",
+    eligibility: "Middle- and high-school authors worldwide, any subject",
+    url: "https://curieuxacademicjournal.com/",
+    blurb: "Publishes student research and essays across every field — a low-barrier first byline.",
   }
 ];
 
