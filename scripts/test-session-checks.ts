@@ -14,6 +14,11 @@ import {
   type Competition,
 } from "../lib/data/key-dates";
 import { buildRoadmap } from "../lib/data/roadmap";
+import {
+  checkEligibility,
+  gradeFromGraduationYear,
+  parseEligibility,
+} from "../lib/data/eligibility";
 import { slugify } from "../lib/discovery/discover";
 import { findDatePages, parseJsonLoose } from "../lib/scraper/scrape-dates";
 
@@ -203,6 +208,90 @@ ok("returns at most `limit`, deduped, absolute", () => {
 ok("malformed base URL or link-free HTML yields nothing (never throws)", () => {
   assert.deepEqual(findDatePages(html(a("/apply")), "not-a-url"), []);
   assert.deepEqual(findDatePages("<html></html>", "https://x.org/"), []);
+});
+
+// ── eligibility parsing & gating ─────────────────────────────────────────────
+console.log("eligibility.ts");
+ok("reads country, grade and age rules we actually write", () => {
+  const us = parseEligibility("Grades 9–12 at a US school — no minimum age");
+  assert.deepEqual(us.countries, ["US"]);
+  assert.equal(us.gradeMin, 9);
+  assert.equal(us.gradeMax, 12);
+  assert.equal(parseEligibility("Ages 13–18 — open worldwide").ageMax, 18);
+  assert.equal(parseEligibility("High-school students aged 13–18").ageMin, 13);
+  assert.equal(parseEligibility("Under 20 — free to enter").ageMax, 19);
+  assert.equal(parseEligibility("Age 15 or under on 31 December").ageMax, 15);
+  assert.equal(parseEligibility("Students aged 16+ who have completed grade 10").ageMin, 16);
+  assert.equal(parseEligibility("Final-year (grade 12) students only").gradeMin, 12);
+});
+ok("does not invent constraints from negations or non-age numbers", () => {
+  // "no national selection needed" previously parsed as REQUIRING one.
+  assert.equal(
+    parseEligibility("Students under 25 worldwide — no national selection needed").viaNationalSelection,
+    undefined,
+  );
+  // "under 4 years of secondary school remaining" is not an age.
+  assert.equal(
+    parseEligibility("Female students with under 4 years of secondary school remaining").ageMax,
+    undefined,
+  );
+  assert.deepEqual(parseEligibility(undefined), {});
+  assert.deepEqual(parseEligibility("Open to everyone"), {});
+});
+ok("gate excludes wrong country and past-ceiling, keeps too-young", () => {
+  const usOnly = { countries: ["US"] };
+  assert.equal(checkEligibility(usOnly, { country: "KZ" }).ok, false);
+  assert.equal(checkEligibility(usOnly, { country: "US" }).ok, true);
+  // Unknown country must never exclude.
+  assert.equal(checkEligibility(usOnly, { country: null }).ok, true);
+
+  const seniorOnly = { gradeMin: 12, gradeMax: 12 };
+  const young = checkEligibility(seniorOnly, { grade: 9 });
+  assert.equal(young.ok, false);
+  assert.equal(young.ok === false && young.reason, "too_young");
+  const old = checkEligibility({ ageMax: 15 }, { age: 17 });
+  assert.equal(old.ok === false && old.reason, "too_old");
+  // Unknown grade/age must never exclude.
+  assert.equal(checkEligibility(seniorOnly, { grade: null }).ok, true);
+});
+ok("grade is derived from graduation year, nonsense rejected", () => {
+  const jul2026 = new Date("2026-07-29T00:00:00Z");
+  assert.equal(gradeFromGraduationYear(2027, jul2026), 12);
+  assert.equal(gradeFromGraduationYear(2030, jul2026), 9);
+  assert.equal(gradeFromGraduationYear(undefined, jul2026), null);
+  assert.equal(gradeFromGraduationYear(2099, jul2026), null);
+});
+
+// ── matching behaviour ───────────────────────────────────────────────────────
+console.log("matching");
+const midFactors = [
+  { key: "awards", score: 5 },
+  { key: "extracurricular_depth", score: 5 },
+  { key: "academics", score: 7 },
+];
+ok("no faculties selected shows the whole catalog, not almost nothing", () => {
+  const plan = buildExtracurriculars({ today, faculties: [], factors: [] });
+  assert.ok(
+    plan.items.length > COMPETITIONS.length * 0.9,
+    `expected nearly the whole catalog, got ${plan.items.length}/${COMPETITIONS.length}`,
+  );
+});
+ok("US-only entries are hidden from a non-US student and kept for a US one", () => {
+  const args = { today, faculties: ["medicine_health", "natural_sciences"], factors: midFactors };
+  const kz = buildExtracurriculars({ ...args, homeCountry: "KZ" });
+  const us = buildExtracurriculars({ ...args, homeCountry: "US" });
+  for (const id of ["usabo", "usapho", "usnco", "congressional-app"]) {
+    assert.ok(!kz.items.some((i) => i.id === id), `${id} leaked to a KZ student`);
+  }
+  assert.ok(us.items.some((i) => i.id === "usabo"), "over-filtered a US student");
+});
+ok("too-young entries stay visible but are never 'recommended'", () => {
+  const g9 = buildExtracurriculars({
+    today, faculties: ["natural_sciences"], factors: midFactors, graduationYear: today.getFullYear() + 4,
+  });
+  const notYet = g9.items.filter((i) => i.notYetEligible);
+  assert.ok(notYet.length > 0, "expected some not-yet-eligible entries for a 9th grader");
+  for (const i of notYet) assert.notEqual(i.fit, "recommended");
 });
 
 // ── registry integrity ───────────────────────────────────────────────────────

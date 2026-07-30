@@ -15,6 +15,12 @@
 // stable annual pattern (noted in the window text) — re-check before relying.
 
 import type { FacultyValue } from "@/lib/data/faculties";
+import {
+  checkEligibility,
+  gradeFromGraduationYear,
+  parseEligibility,
+  type EligibilityGate,
+} from "@/lib/data/eligibility";
 
 // ── SAT sittings (digital SAT, international) ─────────────────────────────────
 // test = test day; regDeadline = standard registration deadline.
@@ -89,6 +95,12 @@ export type Competition = {
   // Almaty student's list and vice versa. `city` narrows the badge further.
   region?: string | null;
   city?: string | null;
+  /**
+   * Structured entry rules. Normally derived from `eligibility` by
+   * parseEligibility(); set explicitly only when that sentence cannot express
+   * the rule. An explicit gate always wins over the parsed one.
+   */
+  gate?: EligibilityGate;
   url: string;
   blurb: string;
 };
@@ -162,7 +174,9 @@ export const COMPETITIONS: Competition[] = [
     category: "olympiad",
     tier: "selective",
     eligibility: "High school & younger — no minimum age",
-    url: "https://www.nacloweb.org/",
+    // nacloweb.org resolves only intermittently; naclo.org is the same
+    // competition and answers reliably. Verified 2026-07-29.
+    url: "https://www.naclo.org/",
     blurb: "Logic-puzzle olympiad bridging languages and CS — no prior knowledge needed.",
   },
   // ── Science olympiads ──────────────────────────────────────────────────────
@@ -1513,6 +1527,14 @@ export type Opportunity = Competition & {
   tierResolved: CompetitionTier;
   categoryResolved: CompetitionCategory;
   fit: OpportunityFit;
+  /**
+   * Set when the student is not old enough / far enough through school YET.
+   * We keep these visible on purpose — knowing what to aim for is the point
+   * for a younger student — but they can never be "recommended".
+   */
+  notYetEligible?: string;
+  /** Entry runs through a national team rather than a direct application. */
+  viaNationalSelection?: boolean;
 };
 
 export type ExtracurricularsPlan = {
@@ -1539,14 +1561,19 @@ export function buildExtracurriculars({
   factors,
   liveCompetitions,
   homeCountry,
+  graduationYear,
 }: {
   today: Date;
   faculties: string[];
   factors: { key: string; score: number }[];
   liveCompetitions?: Competition[];
   // Student's ISO-2 country (normalized). Local (region-tagged) opportunities
-  // only surface when they match it; global ones always do.
+  // only surface when they match it; global ones always do — and it also gates
+  // country-restricted entries (US-only competitions etc.).
   homeCountry?: string | null;
+  // Drives the school-grade gate (a 9th grader shouldn't be "recommended" a
+  // final-year-only programme).
+  graduationYear?: number;
 }): ExtracurricularsPlan {
   const comps = resolveCompetitions(liveCompetitions);
   const strength = extracurricularStrength(factors);
@@ -1554,28 +1581,48 @@ export function buildExtracurriculars({
   const targetTiers = BAND_TIERS[band];
   const targetMax = Math.max(...targetTiers.map((t) => TIER_RANK[t]));
   const fac = new Set(faculties);
+  const grade = gradeFromGraduationYear(graduationYear, today);
 
   const items: Opportunity[] = comps
     .filter((c) => !c.region || c.region === homeCountry)
-    .filter((c) => c.fields === "all" || c.fields.some((f) => fac.has(f)))
+    // An empty field selection means "we don't know yet", not "show almost
+    // nothing". Filtering on it left a profile-less student with 9 of 86
+    // opportunities — the exact dead end that makes people leave.
+    .filter((c) => fac.size === 0 || c.fields === "all" || c.fields.some((f) => fac.has(f)))
     // Drop a CONFIRMED competition once its date has passed. Keep
     // not-yet-announced ones (the catalog shows them as "Dates not yet
     // announced") — their stored date is only an estimate, so we don't filter on
     // it and we never present it as a hard deadline.
     .filter((c) => !c.dateConfirmed || daysBetween(today, c.deadline) >= 0)
+    // Eligibility gate. A student in Kazakhstan was being recommended
+    // "Grades 9–12 at a US school" competitions, and a 9th grader was being
+    // recommended final-year-only programmes. Unknown facts never exclude.
     .map((c) => {
+      const gate = c.gate ?? parseEligibility(c.eligibility);
+      const verdict = checkEligibility(gate, { country: homeCountry, grade });
+      return { c, gate, verdict };
+    })
+    // Can never enter: wrong country, or already past the age/grade ceiling.
+    .filter(({ verdict }) => verdict.ok || verdict.reason === "too_young")
+    .map(({ c, gate, verdict }) => {
       const tierResolved = competitionTier(c);
-      const fit: OpportunityFit = targetTiers.includes(tierResolved)
-        ? "recommended"
-        : TIER_RANK[tierResolved] > targetMax
-          ? "stretch"
-          : "foundational";
+      const notYetEligible = verdict.ok ? undefined : verdict.detail;
+      // Not yet eligible is always aspirational, never "do this now".
+      const fit: OpportunityFit = notYetEligible
+        ? "stretch"
+        : targetTiers.includes(tierResolved)
+          ? "recommended"
+          : TIER_RANK[tierResolved] > targetMax
+            ? "stretch"
+            : "foundational";
       return {
         ...c,
         daysToDeadline: daysBetween(today, c.deadline),
         tierResolved,
         categoryResolved: competitionCategory(c),
         fit,
+        notYetEligible,
+        viaNationalSelection: gate.viaNationalSelection,
       };
     })
     .sort((a, b) => {

@@ -97,8 +97,16 @@ export function OpportunitiesView() {
       factors: analysis?.factors ?? [],
       liveCompetitions: liveDates.competitions,
       homeCountry: profileMeta.homeCountry,
+      graduationYear: profileMeta.graduationYear,
     });
-  }, [today, analysis, profileMeta.faculties, profileMeta.homeCountry, liveDates.competitions]);
+  }, [
+    today,
+    analysis,
+    profileMeta.faculties,
+    profileMeta.homeCountry,
+    profileMeta.graduationYear,
+    liveDates.competitions,
+  ]);
 
   const visible =
     plan?.items.filter(
@@ -316,6 +324,18 @@ function OpportunityRow({ o }: { o: Opportunity }) {
               // so the badge is a "near you" marker, not a restriction warning.
               <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-ink">
                 Local · {o.city ?? regionLabel(o.region)}
+              </span>
+            )}
+            {o.notYetEligible && (
+              // Kept deliberately: a younger student should see what to aim
+              // for. It just can never be presented as "do this now".
+              <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-soft">
+                Eligible {o.notYetEligible}
+              </span>
+            )}
+            {o.viaNationalSelection && (
+              <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-faint">
+                Via national selection
               </span>
             )}
           </p>
