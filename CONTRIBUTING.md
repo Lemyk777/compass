@@ -5,21 +5,58 @@ says where code goes; this says how a change gets in.
 
 ## Branches
 
-`main` is the trunk and **deploys to production**. Nothing lands there without
-passing the gate below.
+Two long-lived branches, and short-lived work branches off `develop`.
 
-Work on a branch named `<type>/<short-subject>`:
+| Branch | |
+| --- | --- |
+| `main` | **Production.** Vercel deploys it. Protected: CI must pass, and it is only ever updated by merging `develop` or a hotfix |
+| `develop` | Integration. Everything lands here first, and gets its own Vercel preview URL |
+| `feat/…` `fix/…` `docs/…` `chore/…` | One line of work each. Branch from `develop`, PR back into `develop`, delete after merge |
 
 ```
-feat/opportunities-eligibility-first
-fix/onboarding-country-grant
-docs/architecture-map
-chore/upgrade-next
+develop ──┬── feat/public-checker ──┐
+          │                         ├──> develop ──> main  (release)
+          └── fix/amc-grade-gate ───┘
 ```
 
-Merge with a fast-forward when the branch is a clean line of work, and delete
-the branch afterwards. Long-lived side branches rot — the repo has already
-carried two.
+Why two and not one: `main` deploys the moment it changes, so making it the
+working trunk means every intermediate state is production. This repository
+pushed 1,350 lines straight to a deploying branch once already. `develop` is
+what stops that being normal.
+
+### Starting work
+
+```bash
+git checkout develop
+```
+
+```bash
+git pull
+```
+
+```bash
+git checkout -b feat/short-subject
+```
+
+On Windows PowerShell `&&` is not a statement separator — run these one at a
+time, or chain with `;` and `if ($?) { … }`.
+
+### Releasing
+
+A release is a pull request from `develop` into `main`. Nothing else touches
+`main`.
+
+```bash
+gh pr create --base main --head develop --title "release: what is going out"
+```
+
+The body lists what a user will notice and anything that must be done by hand —
+a migration to apply, an environment variable to set.
+
+### Hotfixes
+
+A production bug that cannot wait branches from `main`, PRs into `main`, and is
+then merged back into `develop` so the fix is not lost at the next release.
 
 ## Commits
 

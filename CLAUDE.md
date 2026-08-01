@@ -69,6 +69,14 @@ SQL files in [supabase/migrations/](supabase/migrations/). They are applied **ma
 
 The only real financial risk is an uncapped API bill. The code rate-limits per user and caps `max_tokens`, but the **hard spend cap must be set in the Anthropic console** (it cannot be set from code). Keep prompt caching working and input bounded.
 
+## Branching
+
+`main` is **production** (Vercel deploys it) and is protected. `develop` is the
+integration branch — branch from it, PR back into it. A release is a PR from
+`develop` to `main`; a hotfix branches from `main` and is merged back into
+`develop` afterwards. Never commit straight to `main`. Full model in
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Working agreement: committing
 
 Do **not** create the final `git commit` unless the user's prompt explicitly tells you to (e.g. "commit it yourself", "сделай и закоммить сам"). Otherwise, do all the work — including building and verifying — then stop before the commit and present the result for approval. Everything else may proceed without asking. Never commit secrets; `.env.local` is git-ignored.

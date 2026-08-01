@@ -1,0 +1,32 @@
+version: 2
+
+# Dependencies rot quietly. Monthly rather than weekly, and grouped, because on
+# a solo project a flood of one-line PRs gets ignored — and an ignored bot is
+# worse than no bot.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    target-branch: develop
+    labels: [dependencies]
+    groups:
+      # Everything non-breaking in one PR that CI can verify in one run.
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Next majors are a deliberate migration, not a dependency bump.
+      - dependency-name: next
+        update-types: [version-update:semver-major]
+      - dependency-name: react
+        update-types: [version-update:semver-major]
+      - dependency-name: react-dom
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    target-branch: develop
+    labels: [dependencies]

@@ -67,9 +67,11 @@ folder you are about to change.
 
 ## Contributing
 
-Branch naming, commit style, the verification gate and the migration policy are
-in [CONTRIBUTING.md](CONTRIBUTING.md). [CLAUDE.md](CLAUDE.md) holds the same
-rules in the form Claude Code reads.
+`main` is production and is protected. `develop` is where work lands; branch
+from it, open a pull request back into it, and release by merging `develop`
+into `main`. The full model — commit style, the verification gate, the
+migration policy — is in [CONTRIBUTING.md](CONTRIBUTING.md).
+[CLAUDE.md](CLAUDE.md) holds the same rules in the form Claude Code reads.
 
 ## Stack
 
