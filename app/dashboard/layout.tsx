@@ -56,9 +56,13 @@ export default async function DashboardLayout({
     // What the student said they'd enter, and when they'd start (migration
     // 0022). Missing table → null → an empty list, and the UI simply behaves as
     // if nothing has been committed to yet.
+    // select("*") on purpose, not an explicit column list: why_matters arrives
+    // in migration 0023, and naming a not-yet-created column would fail the
+    // whole select and blank out every committed intent until it is applied.
+    // With "*" the column is simply absent until then.
     supabase
       .from("opportunity_intents")
-      .select("opportunity_id, status, start_when, start_detail")
+      .select("*")
       .eq("user_id", session.id),
   ]);
 
@@ -88,6 +92,8 @@ export default async function DashboardLayout({
       status: r.status as OpportunityIntent["status"],
       startWhen: (r.start_when as string | null) ?? null,
       startDetail: (r.start_detail as string | null) ?? null,
+      // Absent until migration 0023 (select is "*"), so coalesce to null.
+      whyMatters: (r.why_matters as string | null | undefined) ?? null,
     }));
 
   // Build live dates from Supabase rows (empty arrays if table missing/empty).

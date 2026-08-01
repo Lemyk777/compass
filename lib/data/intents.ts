@@ -18,6 +18,14 @@ export type OpportunityIntent = {
   startWhen?: string | null;
   /** Optional second half of the intention — where, or how they'll start. */
   startDetail?: string | null;
+  /**
+   * The student's own one-line answer to "why does this matter to you?".
+   * Self-generated relevance (Hulleman & Harackiewicz) — the effect comes from
+   * the student writing the reason, not from us telling them in the blurb.
+   * Nullable and additive; backed by migration 0023 and degrades cleanly when
+   * that migration has not been applied yet.
+   */
+  whyMatters?: string | null;
 };
 
 /**
@@ -37,19 +45,30 @@ export type StartOption = (typeof START_OPTIONS)[number];
 /** Longest free-text we store for either half of the intention. */
 export const INTENT_TEXT_MAX = 120;
 
+/**
+ * "Why does this matter to you?" gets a little more room than "this weekend" —
+ * it is a reason, not a timing — but stays a single line: the mechanic is a
+ * quick self-generated sentence, not an essay.
+ */
+export const WHY_MATTERS_MAX = 200;
+
 export function isIntentStatus(v: unknown): v is IntentStatus {
   return v === "planning" || v === "applied" || v === "dropped";
 }
 
 /**
  * Trim and bound a free-text answer. Empty (or whitespace-only) becomes null so
- * "no answer" is one value in the database rather than three.
+ * "no answer" is one value in the database rather than three. `max` defaults to
+ * INTENT_TEXT_MAX so every existing caller is unchanged.
  */
-export function cleanIntentText(v: string | null | undefined): string | null {
+export function cleanIntentText(
+  v: string | null | undefined,
+  max: number = INTENT_TEXT_MAX
+): string | null {
   if (v == null) return null;
   const trimmed = v.trim().replace(/\s+/g, " ");
   if (trimmed.length === 0) return null;
-  return trimmed.slice(0, INTENT_TEXT_MAX);
+  return trimmed.slice(0, max);
 }
 
 /**
