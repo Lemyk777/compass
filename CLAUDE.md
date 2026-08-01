@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Compass — an AI guidance tool that scores an international student's profile for **US and Italian university** admissions and returns a structured, data-driven report (factor scores, per-school likelihood ranges, benchmarks, gap analysis, ranked recommendations). Three roles share one backend: **student** (core product), **ambassador** (referral growth), **admin/founder** (metrics). Full product spec lives in [compass-project-blueprint.md](compass-project-blueprint.md); setup in [SETUP.md](SETUP.md).
+Compass — an AI guidance tool that scores an international student's profile for **US and Italian university** admissions and returns a structured, data-driven report (factor scores, per-school likelihood ranges, benchmarks, gap analysis, ranked recommendations). Three roles share one backend: **student** (core product), **ambassador** (referral growth), **admin/founder** (metrics). Full product spec lives in [docs/compass-project-blueprint.md](docs/compass-project-blueprint.md); setup in [docs/SETUP.md](docs/SETUP.md); a map of the codebase in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Stack: Next.js 14 (App Router, RSC, server actions) · TypeScript (strict) · Tailwind · Supabase (Postgres + Auth + RLS) · Anthropic `claude-haiku-4-5` · Recharts · Zod · custom EN/RU i18n.
 
@@ -55,7 +55,7 @@ RLS gives every table "own rows only"; ambassador signup counts come from the `s
 
 ## Auth & roles
 
-[lib/auth/session.ts](lib/auth/session.ts): `getSession` / `requireSession` / `requireRole` and `landingPathForRole`. [lib/auth/provision.ts](lib/auth/provision.ts): idempotent post-signup provisioning (profile row + referral attribution + signup event), run with the service role from [app/auth/callback/route.ts](app/auth/callback/route.ts). Roles (`student`/`ambassador`/`admin`) are set **manually in the DB** — there is no UI for promotion (see SETUP.md §7).
+[lib/auth/session.ts](lib/auth/session.ts): `getSession` / `requireSession` / `requireRole` and `landingPathForRole`. [lib/auth/provision.ts](lib/auth/provision.ts): idempotent post-signup provisioning (profile row + referral attribution + signup event), run with the service role from [app/auth/callback/route.ts](app/auth/callback/route.ts). Roles (`student`/`ambassador`/`admin`) are set **manually in the DB** — there is no UI for promotion (see [docs/SETUP.md](docs/SETUP.md) §7).
 
 ## Database migrations
 

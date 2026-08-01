@@ -13,7 +13,7 @@ import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/facultie
 // The public eligibility checker.
 //
 // This is deliberately NOT a browsable catalog, and the reason is in
-// OPPORTUNITIES_RESEARCH.md: every large trial of "show students their options"
+// docs/OPPORTUNITIES_RESEARCH.md: every large trial of "show students' options"
 // measured zero, including one across 800,000 students. What moved behaviour was
 // removing ambiguity about eligibility and removing the work. So:
 //
