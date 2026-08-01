@@ -16,14 +16,15 @@ updates:
       minor-and-patch:
         update-types: [minor, patch]
     ignore:
-      # Next majors are a deliberate migration, not a dependency bump.
-      - dependency-name: next
-        update-types: [version-update:semver-major]
-      - dependency-name: react
-        update-types: [version-update:semver-major]
-      - dependency-name: react-dom
+      # Every major here is a migration, not a bump. The first run proved it:
+      # TypeScript 7 and eslint-config-next 16 both failed CI within minutes,
+      # and a bot that regularly opens PRs which cannot be merged trains you to
+      # ignore the ones that can. Majors get done deliberately, by hand.
+      - dependency-name: "*"
         update-types: [version-update:semver-major]
 
+  # Action majors stay allowed: CI verifies them on the very PR that proposes
+  # them, and a stale action is how the Node 20 deprecation warning appeared.
   - package-ecosystem: github-actions
     directory: /
     schedule:
