@@ -44,20 +44,9 @@ jobs:
       - name: Logic checks
         run: node --import tsx scripts/test-session-checks.ts
 
-  links:
-    name: Catalog link health
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    # Hits ~100 third-party sites, so it does not gate a pull request — it runs
-    # on main and on a schedule, where a genuinely dead link is what we want to
-    # hear about. Bot walls and one-off 5xx are reported without failing.
-    if: github.event_name != 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Check every catalog URL
-        run: npm run test:links
+# Link health is deliberately NOT here. It hits ~100 third-party sites, and
+# from shared CI runners the answers differ from what a student gets: the very
+# first run reported NYU Shanghai as broken while it returned 200 from a normal
+# connection, and flagged seven more as bot-walled that pass locally. Datacenter
+# IPs are blocked far more aggressively. A weekly job in link-health.yml carries
+# it instead, and its failures are a "go and look", not a verdict.

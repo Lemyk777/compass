@@ -4,6 +4,14 @@ name: Link health
 # clicks "Details" and gets a browser error, which makes the whole catalog look
 # fake. A student found one before we did. Links rot on their own schedule, so
 # this checks weekly rather than waiting for someone to push.
+#
+# READ A FAILURE HERE AS "GO AND LOOK", NOT AS A VERDICT. These runners come
+# from datacenter IP ranges that many sites block outright: the first run
+# reported NYU Shanghai broken and seven others bot-walled, all of which answer
+# normally from an ordinary connection. Always reproduce with `npm run
+# test:links` locally before touching a catalog entry — and never delete a URL
+# on the strength of one bad day, since two "dead" links recovered by
+# themselves within the hour.
 
 on:
   schedule:

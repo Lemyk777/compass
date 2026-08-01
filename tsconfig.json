@@ -17,5 +17,11 @@
     "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  // `data-pipeline/` is a SEPARATE sub-project: its own package.json, its own
+  // tsconfig, its own dependencies (playwright and friends), and it does not
+  // ship in the app. Type-checking its ~1000 files as part of `next build`
+  // meant the product's build failed on a dependency the product does not have
+  // — invisible locally, where those packages happen to sit in node_modules,
+  // and fatal on a clean checkout. Build it from its own directory.
+  "exclude": ["node_modules", "data-pipeline", "reasoning-traces", "agents"]
 }
