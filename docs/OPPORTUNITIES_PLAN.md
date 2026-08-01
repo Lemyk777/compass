@@ -75,7 +75,7 @@ npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
 npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog
 npm run build           # lint + type-check gate
-node --import tsx scripts/test-session-checks.ts   # 52 logic checks
+node --import tsx scripts/test-session-checks.ts   # 56 logic checks
 ```
 
 `test:links` separates *dead* from *blocked*: a 403/429 from a bot wall is
@@ -207,6 +207,19 @@ ordinary connection). Reproduce locally before touching a catalog entry.
    Not done: the remaining four intake screens still ask and give nothing back.
    FirstWin is the first payout, not the whole rework.
 
+   **Endowed-progress readiness added (research rule 8), 2026-08-02.** The
+   dashboard empty state now shows a checklist of the seven profile facts,
+   pre-credited for what we already know (country from signup, often the school
+   year), so it opens **part-filled** rather than at zero — the documented
+   counter-move to the 44%. `lib/data/readiness.ts` is a pure module (`buildReadiness`,
+   covered by the logic checks); the layout derives the booleans server-side and
+   passes them through `DashboardContext`; `ReadinessCard` in
+   `components/dashboard/states.tsx` renders it and self-hides in demo, when the
+   profile is complete, or before a summary exists. Placed on the DASHBOARD, not
+   onboarding, and worded non-coercively on purpose — FirstWin deliberately
+   avoids a completion bar in the intake itself, so this addresses the returning,
+   already-bounced student instead.
+
 5. ~~Public eligibility checker.~~ **First version built** — `/opportunities`,
    no login (`app/opportunities/page.tsx` +
    `components/opportunities/EligibilityChecker.tsx`). One question (school
@@ -285,8 +298,11 @@ ordinary connection). Reproduce locally before touching a catalog entry.
    certainty** — at least one online replication found nothing — so judge it on
    `status = 'applied'`, not on how many notes get written.
 
-10. **A parent-facing view for grades 5–9.** For that age the parent is the
-   decision-maker, and we have never addressed them.
+10. **A parent-facing view for grades 5–9.** ~~Planned.~~ **Deprioritised for
+   now (owner call, 2026-08-02).** The evidence still holds — for that age the
+   parent is the decision-maker (see OPPORTUNITIES_RESEARCH.md) — but it is not
+   on the near-term build list. Left here so the rationale isn't lost if we
+   return to it.
 
 ---
 

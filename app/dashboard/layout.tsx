@@ -7,6 +7,7 @@ import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import type { DestinationCode } from "@/lib/data/destinations";
 import { normalizeCountry } from "@/lib/data/geo";
 import { isIntentStatus, type OpportunityIntent } from "@/lib/data/intents";
+import { buildReadiness } from "@/lib/data/readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +86,34 @@ export default async function DashboardLayout({
         (sp.hk_programs && sp.hk_programs.length > 0))
   );
 
+  // Endowed-progress checklist (research rule 8): pre-credited for what we
+  // already know, so a returning student sees a head start rather than a blank
+  // form. Country comes from the session (often known at signup), the rest from
+  // the profile row. See lib/data/readiness.ts.
+  const hasAnyDestination = Boolean(
+    (Array.isArray(sp?.destinations) && sp!.destinations.length > 0) ||
+      sp?.include_italy ||
+      (sp?.italy_programs && sp.italy_programs.length > 0) ||
+      (sp?.hk_programs && sp.hk_programs.length > 0) ||
+      (sp?.target_schools && sp.target_schools.length > 0)
+  );
+  const readiness = buildReadiness({
+    country: Boolean(normalizeCountry(session.country)),
+    year: sp?.graduation_year != null,
+    faculties: Array.isArray(sp?.faculties) && sp!.faculties.length > 0,
+    curriculum: Boolean(sp?.curriculum),
+    destinations: hasAnyDestination,
+    activities: Boolean(
+      (Array.isArray(sp?.activities) && sp!.activities.length > 0) ||
+        (Array.isArray(sp?.honors) && sp!.honors.length > 0)
+    ),
+    tests: Boolean(
+      sp?.tests &&
+        typeof sp.tests === "object" &&
+        Object.keys(sp.tests as Record<string, unknown>).length > 0
+    ),
+  });
+
   const intents: OpportunityIntent[] = (intentRows ?? [])
     .filter((r: Record<string, unknown>) => isIntentStatus(r.status))
     .map((r: Record<string, unknown>) => ({
@@ -142,6 +171,7 @@ export default async function DashboardLayout({
         satScore: (sp?.tests as { SAT?: number } | null)?.SAT,
         homeCountry: normalizeCountry(session.country),
       }}
+      readiness={readiness}
       liveDates={{
         satSittings: liveSatSittings,
         competitions: liveCompetitions,
