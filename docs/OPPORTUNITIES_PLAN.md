@@ -1,11 +1,15 @@
 # Opportunities — status & next steps
 
 Working notes for the Opportunities feature (catalog, discovery, matching).
-Last updated: 2026-07-31.
+Last updated: 2026-08-02.
 
-The long-term intent is that this becomes a product in its own right, not just
-a dashboard section — a student should get value from it before, or instead of,
-running an admission analysis.
+**Direction of the whole project is changing.** We are moving the centre of
+Compass off *scoring a portfolio* and onto *giving a student opportunities*. The
+admission analysis stops being the product and becomes one input; Opportunities
+becomes the product a student comes for. A student should get real value here
+before, or entirely instead of, running an admission analysis — the scoring
+engine keeps working, but it is no longer the thing we build the front door
+around. This is the plan of record for now.
 
 **Read [OPPORTUNITIES_RESEARCH.md](OPPORTUNITIES_RESEARCH.md) before designing
 any of it.** Short version: every large trial of "tell students about their
@@ -53,8 +57,9 @@ students without approval at `/admin/opportunities`.
 
 **Dates** — `/api/cron/sync-dates` runs daily over a rotating batch of 8. It
 reads the landing page *and* the linked "key dates"/"apply" page, because
-landing pages carry no deadlines. 6 competitions now have confirmed dates and
-8 SAT sittings are synced. Failures report a typed reason
+landing pages carry no deadlines. **8 of 100 entries have a confirmed date** and
+8 SAT sittings are synced — see step (3), this is the constraint on everything
+in the "remove the work" direction. Failures report a typed reason
 (`fetch_failed` / `no_content` / `model_error` / `declined` / `invalid_date`)
 rather than a silent null.
 
@@ -68,8 +73,9 @@ competition; the admin page lists broken links first.
 ```bash
 npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
+npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog
 npm run build           # lint + type-check gate
-node --import tsx scripts/test-session-checks.ts   # 46 logic checks
+node --import tsx scripts/test-session-checks.ts   # 52 logic checks
 ```
 
 `test:links` separates *dead* from *blocked*: a 403/429 from a bot wall is
@@ -82,6 +88,17 @@ reported as "(twice, 4s apart)".
 
 `npm run test:discover -- KZ` exercises live discovery but needs a valid
 `ANTHROPIC_API_KEY` in `.env.local`.
+
+**CI runs the build and the logic checks on every push and pull request** —
+[.github/workflows/ci.yml](../.github/workflows/ci.yml), no secrets needed.
+Link health is a separate weekly job, deliberately outside the gate: from
+GitHub's runners the answers differ from what a student gets (the first run
+called NYU Shanghai broken and seven others bot-walled, all fine from an
+ordinary connection). Reproduce locally before touching a catalog entry.
+
+**Never run `npm run build` while `npm run dev` is running** — they share
+`.next/` and the build removes chunks the dev server still holds. The resulting
+`Cannot find module './NNNN.js'` is not a code bug. Recover with `rm -rf .next`.
 
 ---
 
@@ -117,13 +134,78 @@ reported as "(twice, 4s apart)".
    patterns. Note the side effect: students whose country now resolves see a
    SHORTER list, because US-only entries are finally hidden from them.
 
-3. **Run discovery for real and review what it finds.** The whole local
-   (Kazakhstan) path is untested against reality. Costs a few cents per run.
+3. **Confirmed dates — the binding constraint, and the most valuable thing
+   left.** Only **8 of 100** entries have a sourced date for the current cycle.
+   Everything else renders as "dates not yet announced", so the calendar file —
+   the highest-effect feature available to us — covers three cards out of five.
+   No amount of design fixes that. `/api/cron/sync-dates` rotates 8 entries a
+   day and has never been confirmed to work end to end in production.
 
-4. **Lightweight intake.** 80 of 180 profiles (44%) signed up and filled
-   nothing at all — the overlap with "never analyzed" is exactly 100%. Asking
-   only for fields + graduation year would personalise Opportunities without
-   the full seven-step onboarding they abandoned.
+   **`npm run diag:dates` now measures the ceiling** (whole catalog, no API key
+   — it runs the production fetch + two-hop link discovery and asks only whether
+   a STRONG deadline signal, a deadline word next to a real date, survives).
+   Measured 2026-08-02:
+
+   | bucket | count | meaning |
+   |---|---|---|
+   | STRONG (word + date) | **48 / 100** | ceiling on what scraping can ever auto-confirm |
+   | weak (date only) | 18 | model would have to guess which date — rejected by design |
+   | weak (word only) | 9 | deadline word, no parseable date on the page |
+   | none | 25 | JS-rendered or bot-walled — scraper sees nothing |
+   | landing fetch failed | 0 | every landing page is reachable |
+
+   This **splits the problem the plan had been treating as one**:
+
+   - **42 entries are addressable in principle** — they reach a STRONG page but
+     `dateConfirmed` is still false. The scraper logic is not the blocker. `~49`
+     is the theoretical ceiling; see the empirical check below for why the real
+     August yield is far lower. The addressable ids are printed by `diag:dates`.
+   - **52 entries are structurally stuck** — no STRONG signal exists anywhere
+     the scraper can read, so no amount of cron runs will ever confirm them.
+     These need a *different* mechanism: hand-curated dates (the honest fallback
+     we already use for the 8) or a headless-browser render for the 25 JS-only
+     sites. Do **not** keep pointing the scraper at them and calling the null a
+     bug — it is the correct answer for that page.
+
+   **Empirical check — the cron was triggered by hand in prod, 2026-08-01, and
+   this corrected the diagnosis.** `GET https://applycompass.app/api/cron/sync-dates`
+   returned 200 in 40s, build marker `two-hop-v2`. It is NOT true that the cron
+   never runs: it fired, the model answered, and the writes landed —
+   **SAT synced 16 sittings** (was 8) and **launchx confirmed 2026-08-12** live.
+   So the pipeline works end to end. But of the day's 8-entry batch, only launchx
+   confirmed; the other seven **honestly declined**, and the reasons are the real
+   constraint, not a bug:
+   - *Next cycle not published yet.* telluride-tasp, clark-scholars, promys,
+     garcia-center all show only past (2026) dates in early August; the model
+     correctly refuses to guess the 2027 date. Most programmes publish their next
+     deadline in the **autumn**, so the diagnostic's STRONG count is inflated by
+     expired dates and the real yield rises as the term starts.
+   - *No fixed deadline exists.* nyu-shanghai-summer, cuhk-shenzhen-summer,
+     pioneer-academics are rolling/branch-campus summer programmes — a general
+     admissions page with no single competition deadline to find.
+
+   So the corrected ranked work under (3) is: **(a)** the cron already works and
+   is already scheduled — **let it run through the autumn publishing season** and
+   re-measure monthly rather than treating it as broken; **(b)** re-run
+   `diag:dates` in Sept/Oct/Nov and hand-curate only what is *published but still
+   declined*; **(c)** move the rolling/no-deadline entries (branch-campus summer
+   programmes) off the "confirmable date" expectation entirely — they should read
+   "rolling admissions", not "date TBA"; **(d)** decide separately whether the 25
+   JS-rendered sites are worth a headless renderer or should just be curated.
+
+4. ~~Lightweight intake.~~ **Done, in two places.** The dashboard asks for the
+   school year inline when `graduation_year` is missing — eight taps, saved by
+   `saveGraduationYear`, without opening the intake. Until that answer exists
+   not one age or grade rule can fire, so those students were being shown the
+   unfiltered catalog. And onboarding now **pays before it asks again**:
+   `components/onboarding/FirstWin.tsx` appears under the first screen the
+   moment a graduation year is picked — how many opportunities are already
+   open, the nearest deadline, three to start with, and the line that they keep
+   it whether or not they finish. Step pills mark a section done when it holds
+   an answer, not when you have walked past it.
+
+   Not done: the remaining four intake screens still ask and give nothing back.
+   FirstWin is the first payout, not the whole rework.
 
 5. ~~Public eligibility checker.~~ **First version built** — `/opportunities`,
    no login (`app/opportunities/page.tsx` +
@@ -163,11 +245,14 @@ reported as "(twice, 4s apart)".
    materials checklist, scheduled reminder. This is the largest effect size in
    the college-access literature (information alone ≈ 0; information plus
    someone doing the form with you ≈ +25–30% enrollment). The calendar file
-   ships already — but it is **blocked on date coverage**: with ~6 confirmed
-   dates in 96 entries it covers three cards out of five. Getting `sync-dates`
-   to actually confirm dates is now a product-critical task, not housekeeping.
+   ships already — but it is **blocked on date coverage**: 8 confirmed dates in
+   100 entries covers three cards out of five. See (3).
 
-8. ~~One field after "I'm doing this".~~ **Built.** Every card on the shortlist
+8. **Run discovery for real and review what it finds.** The whole local
+   (Kazakhstan) path is untested against reality. A few cents per run, and it
+   needs a working `ANTHROPIC_API_KEY` locally or a production trigger.
+
+9. ~~One field after "I'm doing this".~~ **Built.** Every card on the shortlist
    (and only there — sixty of them would make it a checklist, not a decision)
    offers "I'm doing this", then asks *when will you start?* with four
    near-term options plus an optional where/how. Stored in
@@ -186,21 +271,53 @@ reported as "(twice, 4s apart)".
    save that did not happen. The commit row is hidden in `/demo`, which has no
    session and therefore could never persist one.
 
-9. **A parent-facing view for grades 5–9.** For that age the parent is the
+   **Now paired with self-generated relevance** (research rule 5). Once a student
+   has committed, one optional line appears: *why does this matter to you?* — in
+   their own words, framed for autonomy ("why you're in", not "why this helps
+   admissions"). The utility-value literature finds the interest gain comes from
+   the student writing the reason, not from our blurb telling them, and is
+   largest for exactly the weak-profile students we serve. Stored in
+   `opportunity_intents.why_matters` (migration **0023 — PENDING manual apply**).
+   Deliberately degradation-safe: the read selects `*` and the write only touches
+   the column when a student fills it in (falling back on `undefined_column`), so
+   a deploy that lands before 0023 keeps the whole "I'm doing this" flow working.
+   The research doc flags this one as a **hypothesis to measure, not a
+   certainty** — at least one online replication found nothing — so judge it on
+   `status = 'applied'`, not on how many notes get written.
+
+10. **A parent-facing view for grades 5–9.** For that age the parent is the
    decision-maker, and we have never addressed them.
 
 ---
 
 ## Owner actions outstanding
 
-- **`CRON_SECRET` in Vercel** — both cron endpoints are currently callable by
-  anyone. The code enforces the secret as soon as the variable exists.
+- ~~Confirm the `sync-dates` cron actually fires.~~ **Done, 2026-08-01 — it
+  fires and works end to end.** Manual `GET /api/cron/sync-dates` returned 200 in
+  40s (build marker `two-hop-v2`), synced **16 SAT sittings** and confirmed
+  **launchx 2026-08-12** live. The "7 → ~49, just run the cron" model was wrong:
+  the limiter is not a broken cron but the **autumn publishing calendar** (most
+  next-cycle deadlines aren't posted in August, so the model honestly declines)
+  plus a few rolling/no-deadline entries. The action is now patience + a monthly
+  re-measure, not a fix — see step (3).
+- **`CRON_SECRET` in Vercel** — both cron endpoints are STILL callable by anyone
+  (that is how the manual trigger above worked without auth). Now that the cron
+  is confirmed healthy, set the secret to close the endpoint; the code enforces
+  it the moment the variable exists, and Vercel's scheduled run sends the header
+  automatically.
 - **`ANTHROPIC_API_KEY` in `.env.local`** — the local key is invalid, so local
-  discovery/analysis scripts fail. Production's key is healthy and unaffected.
-- **Nothing pending.** Verified against the live database on 2026-08-02, not
-  taken from these notes: 0015, 0020, 0021 and 0022 are all applied. Check it
-  the same way rather than trusting this line — one query against
-  `information_schema` beats a stale sentence in a plan file:
+  discovery/analysis scripts (and any local `sync-dates` run) fail. Production's
+  key is healthy and unaffected — which is why the prod cron confirmed dates
+  live (above) while `test:discover` still fails locally.
+- **Apply migration `0023_intent_why_matters.sql`** — adds the nullable
+  `why_matters` column behind the self-generated-relevance line (step 9). The app
+  ships without it and degrades cleanly (the note simply doesn't persist across
+  reloads until the column exists), but the feature is dark until it is applied.
+- **Migrations otherwise current.** Verified against the live database on
+  2026-08-02, not taken from these notes: 0015, 0020, 0021 and 0022 are all
+  applied (0023 is the one addition above). Check it the same way rather than
+  trusting this line — one query against `information_schema` beats a stale
+  sentence in a plan file:
 
   ```sql
   select 'link_ok (0021)' as m, count(*) from information_schema.columns

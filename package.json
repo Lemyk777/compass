@@ -10,6 +10,7 @@
     "test:analyze": "node --env-file=.env.local --import tsx scripts/test-analyze.ts",
     "test:discover": "node --env-file=.env.local --import tsx scripts/test-discover.ts",
     "test:scrape": "node --import tsx scripts/test-scrape-pages.ts",
+    "diag:dates": "node --import tsx scripts/diag-date-ceiling.ts",
     "test:links": "node --import tsx scripts/test-links.ts",
     "trace:reasoning": "node --env-file=.env.local --import tsx scripts/trace-reasoning.ts",
     "test:onboarding": "node --experimental-test-module-mocks --import tsx --test scripts/test-onboarding.ts",
