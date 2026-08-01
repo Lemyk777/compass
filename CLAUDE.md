@@ -20,6 +20,8 @@ npm run test:analyze   # run the §12 sample profile through the LIVE analysis e
 
 `test:analyze` needs `.env.local` with a real `ANTHROPIC_API_KEY` (it loads env via `node --env-file`). There is no unit-test runner; `npm run build` + `test:analyze` are the verification path.
 
+**Never run `npm run build` while `npm run dev` is running.** They share `.next/`, and the production build replaces chunks the dev server still references — the dev server then dies with `Error: Cannot find module './NNNN.js'` from `.next/server/webpack-runtime.js`, which looks like a code bug and is not one. Stop the dev server first, or recover with `rm -rf .next` and restart it.
+
 ## Environment
 
 Five vars (see [.env.example](.env.example)) in `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SITE_URL`. Without them the app still builds and `/demo` renders the full report from a sample; auth and analysis require them.
