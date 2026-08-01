@@ -102,6 +102,41 @@ ordinary connection). Reproduce locally before touching a catalog entry.
 
 ---
 
+## Reality check before more features (2026-08-02)
+
+The steps below are mostly conversion mechanics, and they are well-evidenced.
+But an honest read of where the product actually is says the next move is **not
+another mechanic** — it is a feedback loop. Recording this so the momentum of
+"ship the next research rule" doesn't bury it:
+
+1. **We build faster than we can learn.** `opportunity_intents` is called the
+   only behavioural metric this product has — yet nothing reads it. Rule 4
+   (implementation intention), rule 5 (why-matters) and rule 8 (endowed
+   progress) are all shipped and all justified by "converts better", and none
+   can be confirmed, because there is no admin view of intents / profile
+   completion and no traffic to measure. The research doc's own lesson is
+   "measure behaviour, not clicks" — and we measure neither.
+2. **~180 signups is a demand question, not a conversion question.** At that
+   scale, endowed progress and implementation intentions are rearranging deck
+   chairs. Ten to twenty real user conversations outweigh the next five rules.
+3. **Unresolved audience split.** The research pivot aims younger (grades 5–9,
+   parent decides); the rest of the product — analysis, college lists, odds, 5
+   country engines — serves 17-year-olds applying now. Serving both dilutes both.
+4. **The date layer, the foundation of "remove the work", is ~15% ready.** The
+   cron works but coverage is seasonal; 52 entries will never confirm by scrape.
+   This needs a decision (curate the top ~30 by hand, or a headless renderer),
+   not just "wait for autumn".
+5. **No distribution anywhere in the plan.** It is entirely product. The best
+   funnel with no top is zero. How the target student/parent in the CIS finds
+   this is unaddressed and may be the real bottleneck behind "44% filled nothing".
+
+**So the true next priority is instrumentation** — an admin view of the intents
+funnel (planning → applied) and profile completion — which is the one build that
+makes every mechanic above verifiable. Then user conversations, then the
+audience and date-layer decisions. Only then more rules.
+
+---
+
 ## Next steps, in order
 
 1. **Keep expanding the catalog.** Now **100 entries**. Per-field coverage for
