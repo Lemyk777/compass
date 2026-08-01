@@ -9,6 +9,7 @@ import type { StudentProfileInput } from "@/lib/types";
 import { logOnboardingStep } from "@/app/onboarding/actions";
 
 import { OnboardingContextProvider, useOnboardingContext } from "./context/OnboardingContext";
+import { FirstWin } from "./FirstWin";
 import {
   GeneralSection,
   AcademicsSection,
@@ -88,6 +89,14 @@ function Wizard({
   const isFirst = index === 0;
   const isLast = index === SECTIONS.length - 1;
 
+  // Which sections actually hold an answer. A step used to be marked "done"
+  // purely because you had walked past it, so a returning student with half a
+  // profile saw no credit for it and a student who skipped everything saw the
+  // same ticks as one who filled it in. Crediting real content is the honest
+  // form of the head-start effect — a progress bar that starts part-filled
+  // raises completion, but only if what it claims is true.
+  const filled = useSectionsFilled();
+
   // Funnel instrumentation: record each section the user reaches, once per
   // session, so /admin can see where the drop-off is. Fire-and-forget; never
   // blocks navigation. Skipped in the auth-free preview.
@@ -133,7 +142,7 @@ function Wizard({
         <div className="mt-6 flex flex-wrap gap-3 border-b border-line pb-6">
           {SECTIONS.map((s, i) => {
             const active = i === index;
-            const done = i < index;
+            const done = filled[s.key] === true;
             return (
               <button
                 key={s.key}
@@ -175,6 +184,10 @@ function Wizard({
             >
               <section.Component />
             </motion.div>
+            {/* Pay before asking again. Only on the first screen: this is the
+                point where the student has given us enough to say something
+                specific, and the point where 44% of them used to leave. */}
+            {isFirst && <FirstWin />}
           </div>
 
           <aside className="hidden lg:block lg:border-l lg:border-line lg:pl-8">
@@ -215,6 +228,32 @@ function Wizard({
       </div>
     </main>
   );
+}
+
+/**
+ * Does each section hold a real answer yet? Deliberately generous — one filled
+ * field counts — because this drives an encouragement, not a validation. The
+ * Zod schema in app/onboarding/actions.ts remains the only thing that decides
+ * whether a profile is actually complete.
+ */
+function useSectionsFilled(): Record<string, boolean> {
+  const { data } = useOnboardingContext();
+  const grades = data.grades as Record<string, unknown> | undefined;
+  return {
+    general: Boolean(
+      data.graduation_year ||
+        (Array.isArray(data.faculties) && data.faculties.length > 0) ||
+        (Array.isArray(data.destinations) && data.destinations.length > 0)
+    ),
+    academics: Boolean(
+      data.curriculum ||
+        (grades && Object.values(grades).some((v) => v !== "" && v != null)) ||
+        (data.tests && Object.values(data.tests).some((v) => v !== "" && v != null))
+    ),
+    activities: Array.isArray(data.activities) && data.activities.length > 0,
+    awards: Array.isArray(data.honors) && data.honors.length > 0,
+    budget: data.budget_annual_usd != null,
+  };
 }
 
 function WhyIllustration() {
