@@ -19,6 +19,7 @@ import {
   checkEligibility,
   gradeFromGraduationYear,
   parseEligibility,
+  plausibleAgeForGrade,
   type EligibilityGate,
 } from "@/lib/data/eligibility";
 
@@ -133,6 +134,12 @@ export const COMPETITIONS: Competition[] = [
     tier: "selective",
     dateConfirmed: true,
     eligibility: "No minimum age — AMC 10: grade ≤10 & under 17.5; AMC 12: grade ≤12 & under 19.5",
+    // One card, two contests with different ceilings. The parser reads only the
+    // FIRST rule it finds, so it capped this at grade 10 and hid the AMC from
+    // every 11th and 12th grader — the standard US maths contest, invisible to
+    // exactly the students who need it. The gate states the outer bound (AMC 12);
+    // the sentence above still tells the student which contest they sit.
+    gate: { gradeMax: 12 },
     url: "https://maa.org/maa-invitational-competitions/",
     blurb: "Gateway to AIME/USAMO — the standard math-talent signal for STEM.",
   },
@@ -422,7 +429,10 @@ export const COMPETITIONS: Competition[] = [
     level: "international",
     category: "competition",
     tier: "accessible",
-    eligibility: "No minimum age — Junior (under 15) and Senior (15+) divisions",
+    // "under 15" here is a DIVISION boundary, not a ceiling — the Senior
+    // division is 15 and over. Phrased as a range so the parser can't read the
+    // junior bracket as an age limit and hide it from every older student.
+    eligibility: "No age limit — Junior and Senior divisions split at age 15",
     url: "https://www.scholarscup.org/",
     blurb: "Team academic tournament across subjects — a welcoming first competition.",
   },
@@ -548,19 +558,6 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Respected, college-credit bearing online research program with university faculty [Financial aid available].",
   },
   {
-    id: "lumiere-research",
-    name: "Lumiere Research Scholar Program",
-    fields: "all",
-    deadline: "2027-02-10",
-    window: "Multiple cohorts year-round",
-    level: "international",
-    category: "research_program",
-    tier: "accessible",
-    eligibility: "High-school students, ages ~13–18",
-    url: "https://www.lumiere-education.com/",
-    blurb: "Mentored research program pairing high school students with PhD researchers [Financial aid available].",
-  },
-  {
     // TASP was discontinued in 2021; the Telluride Association's current
     // high-school program is TASS. Id kept stable for the live-date overlay.
     id: "telluride-tasp",
@@ -683,19 +680,9 @@ export const COMPETITIONS: Competition[] = [
   // (Math Kangaroo used to be duplicated here with the same id — it lives in
   // the olympiad section above; a duplicate id breaks the by-id merge and
   // showed the same event twice.)
-  {
-    id: "nytimes-stem-writing",
-    name: "NYT STEM Writing Contest",
-    fields: ["natural_sciences", "humanities_social", "medicine_health"],
-    deadline: "2027-02-15",
-    window: "Submissions due mid-February",
-    level: "national",
-    category: "competition",
-    tier: "accessible",
-    eligibility: "Ages 13–19 (middle/high school)",
-    url: "https://www.nytimes.com/spotlight/learning-contests",
-    blurb: "Accessible essay contest to explain complex STEM topics to a general audience.",
-  },
+  // (The NYT STEM Writing Contest used to sit here as its own row, pointing at
+  // the same contests hub as nyt-contests below — one programme, two cards.
+  // It is one of the contests that hub lists; its fields moved there.)
   {
     id: "cyberpatriot",
     name: "CyberPatriot",
@@ -1027,7 +1014,13 @@ export const COMPETITIONS: Competition[] = [
   {
     id: "nyt-contests",
     name: "New York Times Student Contests",
-    fields: ["humanities_social", "arts_design", "natural_sciences", "business_economics"],
+    fields: [
+      "humanities_social",
+      "arts_design",
+      "natural_sciences",
+      "business_economics",
+      "medicine_health",
+    ],
     deadline: "2026-10-01",
     window: "A different contest runs almost every month of the school year",
     level: "international",
@@ -1114,7 +1107,9 @@ export const COMPETITIONS: Competition[] = [
     level: "international",
     category: "research_program",
     tier: "selective",
-    eligibility: "High-school students worldwide",
+    // Was listed twice, under two ids, with two different tiers — so the same
+    // program appeared in two fit groups at once. See RETIRED_IDS below.
+    eligibility: "High-school students worldwide, ages ~13–18",
     url: "https://www.lumiere-education.com/",
     blurb: "Guided research with a PhD mentor, producing an independent paper [need-based aid].",
   },
@@ -1307,10 +1302,265 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Middle- and high-school authors worldwide, any subject",
     url: "https://curieuxacademicjournal.com/",
     blurb: "Publishes student research and essays across every field — a low-barrier first byline.",
+  },
+
+  // ── The younger cohort (roughly grades 5–9) ───────────────────────────────
+  // Everything above was built for applicants — the earliest entry point in the
+  // catalog was effectively grade 9. A student who finds us at 12 has the most
+  // to gain and the least to show, and was being handed a page of "eligible
+  // from grade 9" stretch goals. These are open NOW to a middle-schooler,
+  // international (no US-school gate), and mostly free or team-based.
+  // URLs verified 2026-07-31.
+  {
+    id: "fll",
+    name: "FIRST LEGO League Challenge",
+    fields: ["engineering", "computer_science"],
+    deadline: "2026-09-30",
+    window: "Season opens in August, regional events from November",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Ages 9–16 — school or community teams, age bands vary by country",
+    url: "https://www.firstlegoleague.org/",
+    blurb: "Build, program and present a robot with a team — the standard first robotics entry.",
+  },
+  {
+    id: "coolest-projects",
+    name: "Coolest Projects",
+    fields: ["computer_science", "engineering", "arts_design"],
+    deadline: "2027-03-31",
+    window: "Submissions open January–March each year",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Up to age 18 — no minimum age, free to enter",
+    url: "https://online.coolestprojects.org/",
+    blurb: "Show any tech project you made — code, hardware or art. No winners' pedigree needed.",
+  },
+  {
+    id: "astro-pi",
+    name: "European Astro Pi Challenge",
+    fields: ["computer_science", "natural_sciences"],
+    deadline: "2027-03-24",
+    window: "Mission Zero open September–March",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Age 19 or under — Mission Zero needs no experience and no hardware",
+    url: "https://astro-pi.org/",
+    blurb: "Write code that actually runs on the ISS — a real, verifiable first CS credential.",
+  },
+  {
+    id: "robocup-junior",
+    name: "RoboCupJunior",
+    fields: ["engineering", "computer_science"],
+    deadline: "2027-02-28",
+    window: "Regional qualifiers in spring, international final in July",
+    level: "international",
+    category: "competition",
+    tier: "selective",
+    eligibility: "Ages 10–19 by league — enter through your regional or national event",
+    url: "https://junior.robocup.org/",
+    blurb: "Soccer, rescue and on-stage robot leagues with a genuine route to a world final.",
+  },
+  {
+    id: "odyssey-of-the-mind",
+    name: "Odyssey of the Mind",
+    fields: ["engineering", "arts_design", "computer_science", "humanities_social"],
+    deadline: "2026-11-15",
+    window: "Teams register in autumn, tournaments February–May",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "School teams from primary upwards — via affiliate programs worldwide",
+    url: "https://www.odysseyofthemind.com/",
+    blurb: "Long-term creative engineering problems solved as a team — starts as young as primary school.",
+  },
+  {
+    id: "globe-ivss",
+    name: "GLOBE International Virtual Science Symposium",
+    fields: ["natural_sciences"],
+    deadline: "2027-03-13",
+    window: "Submissions in March, reviews and badges in spring",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "School students of any age — via a GLOBE-registered school or club",
+    url: "https://www.globe.gov/",
+    blurb: "Collect real environmental data and present it — a first taste of research with no age floor.",
+  },
+  {
+    id: "tournament-of-towns",
+    name: "Tournament of Towns (Турнир городов)",
+    fields: ["computer_science", "engineering", "natural_sciences"],
+    deadline: "2026-10-11",
+    window: "Autumn round in October, spring round in February",
+    level: "international",
+    category: "olympiad",
+    tier: "selective",
+    eligibility: "School students, junior and senior papers — roughly ages 12–18",
+    url: "https://www.turgor.ru/",
+    blurb: "The classic problem-solving olympiad across the CIS — a junior paper exists from year one.",
+  },
+  {
+    id: "izho",
+    name: "IZhO — International Zhautykov Olympiad",
+    fields: ["natural_sciences", "computer_science", "engineering"],
+    deadline: "2026-11-30",
+    window: "Held in Almaty each January",
+    level: "international",
+    category: "olympiad",
+    tier: "elite",
+    eligibility: "Secondary-school students — via your country's national team selection",
+    url: "https://izho.kz/",
+    blurb: "Maths, physics and informatics olympiad hosted in Almaty — the nearest elite stage there is.",
+  },
+  {
+    id: "nhsmun",
+    name: "NHSMUN — National High School Model UN",
+    fields: ["law", "humanities_social", "business_economics"],
+    deadline: "2026-10-31",
+    window: "Conference in New York each March",
+    level: "international",
+    category: "competition",
+    tier: "selective",
+    eligibility: "School delegations worldwide — no minimum age set by the conference",
+    url: "https://imuna.org/nhsmun/nyc/",
+    blurb: "The largest MUN conference, at the UN itself — a serious first law-and-policy credential.",
+  },
+  // (The John Locke Institute's Junior Prize — its own under-15 category — is
+  // part of the john-locke entry above, not a separate listing: it shares one
+  // page and one deadline, and two rows for one link is how the same programme
+  // ends up recommended twice.)
+  {
+    id: "wpy-young",
+    name: "Wildlife Photographer of the Year — Young",
+    fields: ["arts_design", "natural_sciences"],
+    deadline: "2026-12-03",
+    window: "Entries open in October, close in early December",
+    level: "international",
+    category: "competition",
+    tier: "selective",
+    eligibility: "Age 17 or under — separate categories for 10 and under, 11–14, 15–17",
+    url: "https://www.nhm.ac.uk/wpy/competition",
+    blurb: "A world-famous photography award with a category for ten-year-olds. One image is the entry.",
+  },
+  {
+    id: "icaf-arts-olympiad",
+    name: "ICAF Arts Olympiad",
+    fields: ["arts_design"],
+    deadline: "2027-03-31",
+    window: "Runs through the school year, festival in Washington DC",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Ages 8–12 — the school art program runs it, no portfolio needed",
+    url: "https://icaf.org/",
+    blurb: "The world's largest art program for children — the rare entry aimed below secondary school.",
+  },
+  // ── Law and arts: the two thinnest fields ─────────────────────────────────
+  // A coverage pass by persona found a year-8 student choosing LAW saw 18
+  // opportunities against 22 for medicine and arts. Part of that is structural
+  // — law is not a school subject in most systems, so the honest school-level
+  // proxies are debate, Model UN and policy writing — and part was simply gaps.
+  // Content verified, not just the link: the Goi Peace essay contest was
+  // dropped from this batch after its own page announced the programme ended
+  // with the 2024 edition while still answering HTTP 200.
+  // Verified 2026-08-01.
+  {
+    id: "harvard-model-congress",
+    name: "Harvard Model Congress",
+    fields: ["law", "humanities_social", "business_economics"],
+    deadline: "2026-11-20",
+    window: "Five conferences a year — Boston, San Francisco, Asia, Middle East, Europe",
+    level: "international",
+    category: "competition",
+    tier: "selective",
+    eligibility: "High-school students, entered as a school delegation",
+    url: "https://www.harvardmodelcongress.org/",
+    blurb: "Simulate a government under Harvard-run committees — legislation, debate and negotiation.",
+  },
+  {
+    id: "wimun",
+    name: "WIMUN — WFUNA Global Model UN",
+    fields: ["law", "humanities_social", "business_economics"],
+    deadline: "2026-12-15",
+    window: "Singapore in August, Geneva and Rome in November, New York in February",
+    level: "international",
+    category: "competition",
+    tier: "selective",
+    // WFUNA runs secondary and university editions from the same page and does
+    // not state one age rule for all of them — so we say that rather than
+    // inventing a bound the parser would then enforce.
+    eligibility: "Secondary and university students — check the level of the conference you pick",
+    url: "https://wfuna.org/wimun/",
+    blurb: "Model UN run by the UN's own association, using real UN rules of procedure.",
+  },
+  {
+    id: "petchenik",
+    name: "Barbara Petchenik Children's World Map Competition",
+    fields: ["arts_design", "humanities_social"],
+    deadline: "2027-02-28",
+    window: "Biennial — national rounds, then the International Cartographic Conference",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    // The youngest entry in the catalog by some distance: the first age band
+    // starts below school age.
+    //
+    // The sentence names two numbers, and the parser grabbed the first one it
+    // could read — "under 6" — capping this at age 5 and hiding it from every
+    // student alive. Exactly the AMC failure again, caught by the reachability
+    // check. The gate states the real ceiling.
+    gate: { ageMax: 15 },
+    eligibility: "Age 15 or under — four age bands from under 6, via your country's national round",
+    url: "https://icaci.org/petchenik/",
+    blurb: "Draw the world as you see it. Age bands start under 6 — the earliest entry point we know of.",
+  },
+  {
+    id: "plural-plus",
+    name: "PLURAL+ Youth Video Festival (UN)",
+    fields: ["arts_design", "humanities_social"],
+    deadline: "2027-06-01",
+    window: "Submissions open through the spring, awards ceremony in the autumn",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility:
+      "Young people worldwide — confirm the age range in the rules before you enter",
+    url: "https://pluralplus.unaoc.org/",
+    blurb: "Make a short film on migration, diversity or inclusion for a UN festival. Free to enter.",
+  },
+  {
+    id: "simply-neuroscience",
+    name: "Simply Neuroscience programs",
+    fields: ["medicine_health", "natural_sciences"],
+    deadline: "2027-03-01",
+    window: "Programs, competitions and journals run year-round",
+    level: "international",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Ages 13+ worldwide — free to join",
+    url: "https://www.simplyneuroscience.org/",
+    blurb: "Student-run neuroscience clubs, contests and publishing — the softest landing into medicine.",
   }
 ];
 
 const COMPETITION_BY_ID = new Map(COMPETITIONS.map((c) => [c.id, c]));
+
+/**
+ * Ids removed from the registry that must never come back.
+ *
+ * A live row whose id is not in the registry is treated as a genuine addition
+ * and appended (that's how discovery ships new opportunities). So deleting a
+ * curated entry is not enough: if the scraper has ever written that id to the
+ * DB, dropping it here would resurrect it as a live-only row. Retiring the id
+ * closes that door.
+ */
+const RETIRED_IDS = new Set([
+  "lumiere-research", // duplicate of "lumiere" — same program, same URL
+  "nytimes-stem-writing", // one of the contests listed by "nyt-contests"
+]);
 
 /**
  * The full competition list to plan from. The curated registry is the
@@ -1331,7 +1581,9 @@ export function resolveCompetitions(live?: Competition[]): Competition[] {
       ? { ...c, deadline: l.deadline, window: l.window, dateConfirmed: true }
       : c;
   });
-  for (const l of live) if (!COMPETITION_BY_ID.has(l.id)) merged.push(l);
+  for (const l of live) {
+    if (!COMPETITION_BY_ID.has(l.id) && !RETIRED_IDS.has(l.id)) merged.push(l);
+  }
   return merged;
 }
 
@@ -1599,7 +1851,16 @@ export function buildExtracurriculars({
     // recommended final-year-only programmes. Unknown facts never exclude.
     .map((c) => {
       const gate = c.gate ?? parseEligibility(c.eligibility);
-      const verdict = checkEligibility(gate, { country: homeCountry, grade });
+      // Age rules were being ignored entirely — we only ever passed the school
+      // year, so every "Ages 13–18" entry counted as open to a 12-year-old and
+      // the count we showed them was wrong. We still never ask for a birth
+      // date, so age comes from the year group as a RANGE and only excludes
+      // when the whole group is outside the rule.
+      const verdict = checkEligibility(gate, {
+        country: homeCountry,
+        grade,
+        ageRange: grade == null ? null : plausibleAgeForGrade(grade),
+      });
       return { c, gate, verdict };
     })
     // Can never enter: wrong country, or already past the age/grade ceiling.

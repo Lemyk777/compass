@@ -40,6 +40,14 @@ const NOT_VIA_NATIONAL =
 /**
  * Read a curated eligibility sentence into a structured gate.
  * Conservative by design — an unreadable sentence returns an empty gate.
+ *
+ * Known limit: every rule below takes the FIRST match in the sentence. When one
+ * card covers two contests or two divisions ("AMC 10: grade ≤10 … AMC 12: grade
+ * ≤12", "Junior (under 15) and Senior (15+)"), the first bracket wins and the
+ * wider one is lost — which silently HIDES the entry from the older half of the
+ * audience. Write such entries with an explicit `gate` (or phrase the sentence
+ * as a single range); `scripts/test-session-checks.ts` asserts that every entry
+ * stays reachable by at least one real student.
  */
 export function parseEligibility(text: string | undefined): EligibilityGate {
   const gate: EligibilityGate = {};
@@ -95,13 +103,40 @@ export type EligibilityVerdict =
   | { ok: false; reason: "too_young"; detail: string };
 
 /**
+ * The age a student in a given school year plausibly is, as a range.
+ *
+ * We never ask for a birth date, so age has to come from the school year — but
+ * a single guessed number would be wrong for half of any year group, and an
+ * age rule is the difference between "you can enter this" and "you cannot".
+ * A range lets the gate stay honest: it only fires when EVERY student in that
+ * year is outside the rule.
+ *
+ * Year 7 → 12–13, year 12 → 17–18. Close enough across the school systems we
+ * serve, and deliberately wide rather than precise.
+ */
+export function plausibleAgeForGrade(grade: number): { min: number; max: number } {
+  return { min: grade + 5, max: grade + 6 };
+}
+
+/**
  * Can this student enter, given what we know about them? Unknown facts never
  * exclude: a student with no country or no graduation year sees everything,
  * exactly as before.
  */
 export function checkEligibility(
   gate: EligibilityGate,
-  student: { country?: string | null; grade?: number | null; age?: number | null },
+  student: {
+    country?: string | null;
+    grade?: number | null;
+    age?: number | null;
+    /**
+     * When the age was not given by the student but inferred from their school
+     * year, pass the plausible range instead of a point value. The gate then
+     * only fires where the whole year group falls outside the rule, so no one
+     * is excluded by our arithmetic rather than by the organizer's rule.
+     */
+    ageRange?: { min: number; max: number } | null;
+  },
 ): EligibilityVerdict {
   // Country: only excludes when we know BOTH sides. A restricted opportunity
   // stays visible to a student whose country we don't know — we'd rather show
@@ -132,6 +167,17 @@ export function checkEligibility(
     if (gate.ageMin != null && student.age < gate.ageMin) {
       return { ok: false, reason: "too_young", detail: `from age ${gate.ageMin}` };
     }
+  } else if (student.ageRange) {
+    // Inferred age: only decide when the ENTIRE year group is outside the rule.
+    // A year 7 (12–13) meeting an "ages 13+" rule is left alone — some of them
+    // are already 13, and we would rather show one they must check than hide
+    // one they could have entered.
+    if (gate.ageMax != null && student.ageRange.min > gate.ageMax) {
+      return { ok: false, reason: "too_old", detail: `up to age ${gate.ageMax}` };
+    }
+    if (gate.ageMin != null && student.ageRange.max < gate.ageMin) {
+      return { ok: false, reason: "too_young", detail: `from age ${gate.ageMin}` };
+    }
   }
 
   return { ok: true };
@@ -152,10 +198,23 @@ export function gradeFromGraduationYear(
   today: Date,
 ): number | null {
   if (!graduationYear) return null;
-  const JUNE = 5; // month index
-  const academicYearEnd =
-    today.getMonth() >= JUNE ? today.getFullYear() + 1 : today.getFullYear();
-  const grade = 12 - (graduationYear - academicYearEnd);
+  const grade = 12 - (graduationYear - academicYearEnd(today));
   if (grade < 1 || grade > 13) return null;
   return grade;
+}
+
+/** The academic year the opportunities on offer belong to (rolls over in June). */
+function academicYearEnd(today: Date): number {
+  const JUNE = 5; // month index
+  return today.getMonth() >= JUNE ? today.getFullYear() + 1 : today.getFullYear();
+}
+
+/**
+ * Inverse of `gradeFromGraduationYear`. The public checker asks for a school
+ * year, because a 12-year-old has no idea what year they will graduate — but
+ * everything downstream is keyed on graduation year, so convert once, here,
+ * and let both surfaces share one matching engine.
+ */
+export function graduationYearFromGrade(grade: number, today: Date): number {
+  return academicYearEnd(today) + (12 - grade);
 }

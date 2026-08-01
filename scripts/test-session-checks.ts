@@ -15,9 +15,18 @@ import {
 } from "../lib/data/key-dates";
 import { buildRoadmap } from "../lib/data/roadmap";
 import {
+  INTENT_TEXT_MAX,
+  START_OPTIONS,
+  cleanIntentText,
+  indexIntents,
+  intentSentence,
+  isIntentStatus,
+} from "../lib/data/intents";
+import {
   checkEligibility,
   gradeFromGraduationYear,
   parseEligibility,
+  plausibleAgeForGrade,
 } from "../lib/data/eligibility";
 import { slugify } from "../lib/discovery/discover";
 import { findDatePages, parseJsonLoose } from "../lib/scraper/scrape-dates";
@@ -43,6 +52,42 @@ ok("normalizeCountry: EN/RU/code/casing/whitespace", () => {
   assert.equal(normalizeCountry("Atlantis"), null);
   assert.equal(normalizeCountry(""), null);
   assert.equal(normalizeCountry(null), null);
+});
+ok("normalizeCountry: city+country strings from real profiles", () => {
+  // Every one of these appeared in the profile base and used to return null,
+  // which quietly cost the student their local opportunities.
+  assert.equal(normalizeCountry("Shymkent/Kazakhstan"), "KZ");
+  assert.equal(normalizeCountry("Almaty, Kazakhstan"), "KZ");
+  assert.equal(normalizeCountry("Astana - KZ"), "KZ");
+  assert.equal(normalizeCountry("Kazakhstan, Almaty"), "KZ");
+  assert.equal(normalizeCountry("Ташкент, Узбекистан"), "UZ");
+});
+ok("normalizeCountry: a bare city resolves to its country", () => {
+  assert.equal(normalizeCountry("taraz"), "KZ");
+  assert.equal(normalizeCountry("Алматы"), "KZ");
+  assert.equal(normalizeCountry("Saint Petersburg"), "RU");
+  assert.equal(normalizeCountry("Bishkek"), "KG");
+});
+ok("normalizeCountry: tolerates misspellings", () => {
+  assert.equal(normalizeCountry("Kazahstan"), "KZ");
+  assert.equal(normalizeCountry("Kazakstan"), "KZ");
+  assert.equal(normalizeCountry("Qazaqstan"), "KZ");
+  assert.equal(normalizeCountry("Kirgizstan"), "KG");
+  assert.equal(normalizeCountry("Uzbekstan"), "UZ");
+  assert.equal(normalizeCountry("Ukrain"), "UA");
+});
+ok("normalizeCountry: near-misses that must NOT collide", () => {
+  // "Belarus" ends in -rus and used to be the obvious substring-matching trap;
+  // "Turkmenistan" starts with "turk".
+  assert.equal(normalizeCountry("Belarus"), "BY");
+  assert.equal(normalizeCountry("Белоруссия"), "BY");
+  assert.equal(normalizeCountry("Turkmenistan"), "TM");
+  assert.equal(normalizeCountry("Türkiye"), "TR");
+  assert.equal(normalizeCountry("Georgia"), "GE");
+  // Still nothing for genuinely unknown input.
+  assert.equal(normalizeCountry("Atlantis"), null);
+  assert.equal(normalizeCountry("   "), null);
+  assert.equal(normalizeCountry("12345"), null);
 });
 ok("LOCAL_TARGETS sane; regionLabel falls back", () => {
   assert.ok(LOCAL_TARGETS.KZ.cities.length >= 3);
@@ -254,6 +299,20 @@ ok("gate excludes wrong country and past-ceiling, keeps too-young", () => {
   // Unknown grade/age must never exclude.
   assert.equal(checkEligibility(seniorOnly, { grade: null }).ok, true);
 });
+ok("an age rule inferred from the school year only fires for the whole group", () => {
+  const teens = { ageMin: 13, ageMax: 18 }; // the single commonest rule we carry
+  // Year 7 is 12–13: some of them are already 13, so nobody is excluded.
+  assert.equal(checkEligibility(teens, { ageRange: plausibleAgeForGrade(7) }).ok, true);
+  // Year 5 is 10–11: no one in that year can be 13 yet.
+  const y5 = checkEligibility(teens, { ageRange: plausibleAgeForGrade(5) });
+  assert.equal(y5.ok === false && y5.reason, "too_young");
+  // A children's contest (8–12) against year 12 (17–18): genuinely outgrown.
+  const y12 = checkEligibility({ ageMin: 8, ageMax: 12 }, { ageRange: plausibleAgeForGrade(12) });
+  assert.equal(y12.ok === false && y12.reason, "too_old");
+  // No range and no age still never excludes.
+  assert.equal(checkEligibility(teens, {}).ok, true);
+});
+
 ok("grade is derived from graduation year, nonsense rejected", () => {
   const jul2026 = new Date("2026-07-29T00:00:00Z");
   assert.equal(gradeFromGraduationYear(2027, jul2026), 12);
@@ -294,6 +353,142 @@ ok("too-young entries stay visible but are never 'recommended'", () => {
   for (const i of notYet) assert.notEqual(i.fit, "recommended");
 });
 
+// A catalog entry that no plausible student can reach is dead weight, and the
+// cause is always the same: a gate parsed out of a sentence that meant
+// something else. These personas span the audience — if an entry is invisible
+// to all of them, it is invisible in practice.
+const PERSONAS = [
+  { grade: 7, country: "KZ", faculties: [] as string[] },
+  { grade: 9, country: "KZ", faculties: [...FACULTY_VALUES] as string[] },
+  { grade: 12, country: "KZ", faculties: [...FACULTY_VALUES] as string[] },
+  { grade: 12, country: "US", faculties: [...FACULTY_VALUES] as string[] },
+];
+const yearFor = (grade: number) => today.getFullYear() + (12 - grade) + (today.getMonth() >= 5 ? 1 : 0);
+
+ok("every catalog entry is reachable by at least one real student", () => {
+  const seen = new Set<string>();
+  for (const p of PERSONAS) {
+    for (const band of [[], midFactors]) {
+      const plan = buildExtracurriculars({
+        today,
+        faculties: p.faculties,
+        factors: band,
+        homeCountry: p.country,
+        graduationYear: yearFor(p.grade),
+      });
+      for (const i of plan.items) seen.add(i.id);
+    }
+  }
+  const unreachable = COMPETITIONS.filter((c) => !seen.has(c.id)).map((c) => c.id);
+  assert.deepEqual(unreachable, []);
+});
+
+ok("the public checker's headline count is true for a 12-year-old", () => {
+  // The first prototype told a year 7 "you can enter 79 of these right now",
+  // because age rules were not applied at all. Everything counted as open must
+  // actually admit that year group — this page's whole value is that claim.
+  const g7 = buildExtracurriculars({
+    today,
+    faculties: [],
+    factors: [],
+    graduationYear: yearFor(7),
+  });
+  const openNow = g7.items.filter((i) => !i.notYetEligible);
+  const range = plausibleAgeForGrade(7);
+  for (const o of openNow) {
+    const gate = o.gate ?? parseEligibility(o.eligibility);
+    if (gate.ageMin != null) {
+      assert.ok(
+        gate.ageMin <= range.max,
+        `${o.id}: needs age ${gate.ageMin}, year 7 is ${range.min}–${range.max}`,
+      );
+    }
+    if (gate.gradeMin != null) {
+      assert.ok(gate.gradeMin <= 7, `${o.id}: needs grade ${gate.gradeMin}`);
+    }
+  }
+  assert.ok(openNow.length > 0, "over-filtered — a 12-year-old must still have real options");
+});
+
+ok("a two-contest card is not capped at the junior contest's ceiling", () => {
+  // "AMC 10: grade ≤10 … AMC 12: grade ≤12" parsed to gradeMax=10, so the AMC
+  // disappeared for every 11th and 12th grader.
+  const g12 = buildExtracurriculars({
+    today,
+    faculties: ["computer_science"],
+    factors: midFactors,
+    homeCountry: "KZ",
+    graduationYear: yearFor(12),
+  });
+  assert.ok(g12.items.some((i) => i.id === "amc"), "AMC hidden from a final-year student");
+});
+
+ok("a division boundary is never read as an age ceiling", () => {
+  // World Scholar's Cup splits Junior/Senior at 15; it has no upper limit.
+  const wsc = COMPETITIONS.find((c) => c.id === "world-scholars-cup")!;
+  assert.equal(parseEligibility(wsc.eligibility).ageMax, undefined);
+});
+
+ok("no parsed gate contradicts itself", () => {
+  for (const c of COMPETITIONS) {
+    const g = c.gate ?? parseEligibility(c.eligibility);
+    if (g.gradeMin != null && g.gradeMax != null) {
+      assert.ok(g.gradeMin <= g.gradeMax, `${c.id}: grades ${g.gradeMin}–${g.gradeMax}`);
+    }
+    if (g.ageMin != null && g.ageMax != null) {
+      assert.ok(g.ageMin <= g.ageMax, `${c.id}: ages ${g.ageMin}–${g.ageMax}`);
+    }
+  }
+});
+
+// ── commitment + implementation intentions ───────────────────────────────────
+console.log("intents.ts");
+ok("free text is trimmed, collapsed, bounded, and empty becomes null", () => {
+  assert.equal(cleanIntentText("  after   school "), "after school");
+  assert.equal(cleanIntentText(""), null);
+  assert.equal(cleanIntentText("   "), null);
+  assert.equal(cleanIntentText(null), null);
+  assert.equal(cleanIntentText(undefined), null);
+  assert.equal(cleanIntentText("x".repeat(500))!.length, INTENT_TEXT_MAX);
+});
+ok("every offered start moment is concrete and near-term", () => {
+  // "Soon" or "this year" is not an implementation intention — the effect
+  // depends on naming a moment the student can actually picture.
+  assert.ok(START_OPTIONS.length >= 3);
+  for (const o of START_OPTIONS) {
+    assert.ok(o.trim().length > 0);
+    assert.ok(!/soon|sometime|later|eventually/i.test(o), `vague option: ${o}`);
+  }
+});
+ok("the intention is reflected back as a first-person plan", () => {
+  const base = { opportunityId: "amc", status: "planning" as const };
+  assert.equal(
+    intentSentence({ ...base, startWhen: "this weekend" }),
+    "You're starting this weekend.",
+  );
+  assert.equal(
+    intentSentence({ ...base, startWhen: "tonight", startDetail: "  at the  library " }),
+    "You're starting tonight — at the library.",
+  );
+  assert.equal(intentSentence(base), "You're doing this.");
+  assert.equal(intentSentence({ ...base, status: "applied" }), "You entered this.");
+  assert.equal(
+    intentSentence({ ...base, status: "dropped" }),
+    "You decided against this one.",
+  );
+});
+ok("statuses are validated and intents index by opportunity id", () => {
+  assert.ok(isIntentStatus("planning") && isIntentStatus("applied") && isIntentStatus("dropped"));
+  assert.ok(!isIntentStatus("entered") && !isIntentStatus("") && !isIntentStatus(undefined));
+  const byId = indexIntents([
+    { opportunityId: "amc", status: "planning" },
+    { opportunityId: "fll", status: "applied" },
+  ]);
+  assert.equal(byId.amc.status, "planning");
+  assert.equal(byId.fll.status, "applied");
+  assert.equal(byId.missing, undefined);
+});
+
 // ── registry integrity ───────────────────────────────────────────────────────
 console.log("key-dates.ts / registry");
 ok("competition ids are unique", () => {
@@ -301,6 +496,37 @@ ok("competition ids are unique", () => {
   for (const c of COMPETITIONS) seen.set(c.id, (seen.get(c.id) ?? 0) + 1);
   const dupes = [...seen.entries()].filter(([, n]) => n > 1).map(([id]) => id);
   assert.deepEqual(dupes, [], `duplicate ids: ${dupes.join(", ")}`);
+});
+ok("no two entries point at the same URL", () => {
+  // The id check can't catch this: "lumiere" and "lumiere-research" were the
+  // same program under two ids, in two different tiers, so a student saw it in
+  // two fit groups at once.
+  const seen = new Map<string, string[]>();
+  for (const c of COMPETITIONS) {
+    const key = c.url.replace(/\/+$/, "").toLowerCase();
+    seen.set(key, [...(seen.get(key) ?? []), c.id]);
+  }
+  const dupes = [...seen.entries()].filter(([, ids]) => ids.length > 1);
+  assert.deepEqual(
+    dupes.map(([url, ids]) => `${url} → ${ids.join(" + ")}`),
+    [],
+  );
+});
+ok("a retired id can never come back as a live-only row", () => {
+  const zombie: Competition = {
+    id: "lumiere-research",
+    name: "Lumiere Research Scholar Program",
+    fields: "all",
+    deadline: in30,
+    window: "x",
+    level: "international",
+    url: "https://www.lumiere-education.com/",
+    blurb: "x",
+    dateConfirmed: true,
+  };
+  const merged = resolveCompetitions([zombie]);
+  assert.equal(merged.filter((c) => c.id === "lumiere-research").length, 0);
+  assert.equal(merged.filter((c) => c.id === "lumiere").length, 1);
 });
 ok("every entry has a valid https URL and non-empty copy", () => {
   for (const c of COMPETITIONS) {

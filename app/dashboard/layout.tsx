@@ -6,6 +6,7 @@ import { analysisSchema, sanitizeAnalysis, type Analysis } from "@/lib/ai/schema
 import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import type { DestinationCode } from "@/lib/data/destinations";
 import { normalizeCountry } from "@/lib/data/geo";
+import { isIntentStatus, type OpportunityIntent } from "@/lib/data/intents";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,13 @@ export default async function DashboardLayout({
   const session = await requireSession("/dashboard");
   const supabase = createClient();
 
-  const [{ data: latest }, { data: sp }, { data: satRows }, { data: compRows }] = await Promise.all([
+  const [
+    { data: latest },
+    { data: sp },
+    { data: satRows },
+    { data: compRows },
+    { data: intentRows },
+  ] = await Promise.all([
     supabase
       .from("analyses")
       .select("output")
@@ -46,6 +53,13 @@ export default async function DashboardLayout({
       .from("competition_deadlines")
       .select("*")
       .order("deadline", { ascending: true }),
+    // What the student said they'd enter, and when they'd start (migration
+    // 0022). Missing table → null → an empty list, and the UI simply behaves as
+    // if nothing has been committed to yet.
+    supabase
+      .from("opportunity_intents")
+      .select("opportunity_id, status, start_when, start_detail")
+      .eq("user_id", session.id),
   ]);
 
   let analysis: Analysis | null = null;
@@ -66,6 +80,15 @@ export default async function DashboardLayout({
         (sp.italy_programs && sp.italy_programs.length > 0) ||
         (sp.hk_programs && sp.hk_programs.length > 0))
   );
+
+  const intents: OpportunityIntent[] = (intentRows ?? [])
+    .filter((r: Record<string, unknown>) => isIntentStatus(r.status))
+    .map((r: Record<string, unknown>) => ({
+      opportunityId: r.opportunity_id as string,
+      status: r.status as OpportunityIntent["status"],
+      startWhen: (r.start_when as string | null) ?? null,
+      startDetail: (r.start_detail as string | null) ?? null,
+    }));
 
   // Build live dates from Supabase rows (empty arrays if table missing/empty).
   const liveSatSittings: SatSitting[] = (satRows ?? []).map((r: { test_date: string; reg_deadline: string }) => ({
@@ -117,6 +140,7 @@ export default async function DashboardLayout({
         satSittings: liveSatSittings,
         competitions: liveCompetitions,
       }}
+      intents={intents}
     >
       <DashboardShell>{children}</DashboardShell>
     </DashboardProvider>

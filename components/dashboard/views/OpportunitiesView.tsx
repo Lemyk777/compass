@@ -1,12 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 // Opportunities is the one view whose cards reflow on tab switch, so it uses the
 // framer-backed MotionCard (position animation) instead of the plain Card.
 import { MotionCard as Card } from "@/components/report/MotionCard";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { PageHeader } from "@/components/dashboard/states";
 import { regionLabel } from "@/lib/data/geo";
+import {
+  clearOpportunityIntent,
+  saveGraduationYear,
+  saveOpportunityIntent,
+} from "@/app/dashboard/actions";
+import { graduationYearFromGrade } from "@/lib/data/eligibility";
+import {
+  INTENT_TEXT_MAX,
+  START_OPTIONS,
+  intentSentence,
+  type OpportunityIntent,
+} from "@/lib/data/intents";
 import {
   buildExtracurriculars,
   formatDate,
@@ -75,6 +87,19 @@ const TIER_BADGE: Record<CompetitionTier, { label: string; cls: string }> = {
 
 type CategoryFilter = "all" | CompetitionCategory;
 
+// How many to put in front of the student by default.
+//
+// This view used to open with the whole matched catalog split into three fit
+// groups — for a profile with nothing filled in, that is ~35 cards under
+// "Recommended for you" alone. Meanwhile the public page at /opportunities,
+// which knows nothing about the visitor, shows five. The person who told us
+// more was getting the worse screen.
+//
+// Choice overload is moderated by preference uncertainty and task difficulty,
+// and both peak for exactly the students who have no record yet. So: five, and
+// the rest one deliberate tap away.
+const SHOWN = 5;
+
 export function OpportunitiesView() {
   const { analysis, profileMeta, liveDates, basePath } = useDashboard();
 
@@ -84,6 +109,11 @@ export function OpportunitiesView() {
   useEffect(() => setToday(new Date()), []);
 
   const [category, setCategory] = useState<CategoryFilter>("all");
+  // The full grouped catalog is now opt-in. See SHOWN below for why.
+  const [showAll, setShowAll] = useState(false);
+  // A year answered inline this session, before the server round-trip lands.
+  const [yearOverride, setYearOverride] = useState<number | null>(null);
+  const graduationYear = yearOverride ?? profileMeta.graduationYear;
 
   // The catalog is deterministic, so it works BEFORE any analysis exists —
   // that's the "grow with us" mode for younger students with thin portfolios.
@@ -97,14 +127,14 @@ export function OpportunitiesView() {
       factors: analysis?.factors ?? [],
       liveCompetitions: liveDates.competitions,
       homeCountry: profileMeta.homeCountry,
-      graduationYear: profileMeta.graduationYear,
+      graduationYear,
     });
   }, [
     today,
     analysis,
     profileMeta.faculties,
     profileMeta.homeCountry,
-    profileMeta.graduationYear,
+    graduationYear,
     liveDates.competitions,
   ]);
 
@@ -112,6 +142,17 @@ export function OpportunitiesView() {
     plan?.items.filter(
       (o) => category === "all" || o.categoryResolved === category
     ) ?? [];
+
+  // What to act on now: eligible today, in the order buildExtracurriculars
+  // already put them (matched to strength first, then datable, then soonest).
+  const openNow = plan?.items.filter((o) => !o.notYetEligible) ?? [];
+  const shortlist = openNow.slice(0, SHOWN);
+  const nearest = shortlist
+    .filter((o) => o.dateConfirmed)
+    .reduce<Opportunity | null>(
+      (best, o) => (best == null || o.daysToDeadline < best.daysToDeadline ? o : best),
+      null
+    );
 
   return (
     <div className="space-y-5">
@@ -128,22 +169,50 @@ export function OpportunitiesView() {
             <StarterBanner basePath={basePath} />
           )}
 
+          {graduationYear == null && (
+            <YearPrompt
+              onPick={(year) => setYearOverride(year)}
+            />
+          )}
+
           {plan.items.length > 0 ? (
             <>
-              <CategoryTabs active={category} onChange={setCategory} />
-              {FIT_GROUPS.map((g) => {
-                const rows = visible.filter((o) => o.fit === g.fit);
-                if (rows.length === 0) return null;
-                return (
-                  <FitSection
-                    key={g.fit}
-                    title={g.title}
-                    hint={g.hint}
-                    count={rows.length}
-                    rows={rows}
-                  />
-                );
-              })}
+              <Shortlist
+                rows={shortlist}
+                total={openNow.length}
+                nearestDays={nearest?.daysToDeadline}
+              />
+
+              {!showAll ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAll(true)}
+                  className="w-full rounded-2xl border border-dashed border-line bg-card py-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-ink/25 hover:text-ink focus-visible:focus-ring"
+                >
+                  Show everything we track for you{" "}
+                  <span data-num className="text-ink-faint">
+                    ({plan.items.length})
+                  </span>
+                </button>
+              ) : (
+                <>
+                  <CategoryTabs active={category} onChange={setCategory} />
+                  {FIT_GROUPS.map((g) => {
+                    const rows = visible.filter((o) => o.fit === g.fit);
+                    if (rows.length === 0) return null;
+                    return (
+                      <FitSection
+                        key={g.fit}
+                        title={g.title}
+                        hint={g.hint}
+                        count={rows.length}
+                        rows={rows}
+                      />
+                    );
+                  })}
+                </>
+              )}
+
               <p className="text-center text-xs text-ink-faint">
                 Dates are indicative — always confirm on the official site before
                 you rely on them.
@@ -228,6 +297,115 @@ function StrengthBanner({
   );
 }
 
+/**
+ * The five to act on, stated as a verdict rather than offered as a list. The
+ * count is of what is on screen; the size of the matched set stays visible
+ * underneath so nothing is being hidden, just de-emphasised.
+ */
+function Shortlist({
+  rows,
+  total,
+  nearestDays,
+}: {
+  rows: Opportunity[];
+  total: number;
+  nearestDays?: number;
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <Card>
+      <div className="border-l-2 border-ivy pl-4">
+        <h2 className="text-xl font-semibold leading-tight tracking-tight text-ink">
+          <span data-num className="text-ivy-ink">
+            {rows.length}
+          </span>{" "}
+          to enter next.
+        </h2>
+        <p className="mt-1 text-sm text-ink-soft">
+          Matched to where you are now
+          {nearestDays != null && (
+            <>
+              {" · "}the nearest closes in{" "}
+              <span data-num className="font-semibold text-ink">
+                {nearestDays} days
+              </span>
+            </>
+          )}
+          .
+        </p>
+        {total > rows.length && (
+          <p className="mt-1 text-xs text-ink-faint">
+            You can enter <span data-num>{total}</span> in total — these are the
+            ones to start with.
+          </p>
+        )}
+      </div>
+      <ul className="mt-4 space-y-2.5">
+        {rows.map((o) => (
+          <OpportunityRow key={o.id} o={o} commit />
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+/**
+ * The one question that unlocks every age and grade rule we have.
+ *
+ * Without a graduation year nothing can be filtered, so a student who skipped
+ * the intake sees the unfiltered catalog — including things they are years too
+ * young for. Asking here, in a tap, is the whole intervention: no form, no
+ * navigation away, and the answer persists so it is never asked twice.
+ */
+function YearPrompt({ onPick }: { onPick: (year: number) => void }) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function pick(grade: number) {
+    const year = graduationYearFromGrade(grade, new Date());
+    onPick(year); // optimistic — the list re-filters immediately
+    setError(null);
+    startTransition(async () => {
+      const res = await saveGraduationYear(year);
+      if (!res.ok) setError(res.error);
+    });
+  }
+
+  return (
+    <Card>
+      <p className="text-sm font-semibold text-ink">
+        What year are you in at school?
+      </p>
+      <p className="mt-1 text-sm text-ink-soft">
+        Everything below is unfiltered until we know — some of it has age limits
+        you may not have reached yet.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {[5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
+          <button
+            key={g}
+            type="button"
+            disabled={pending}
+            onClick={() => pick(g)}
+            aria-label={`Year ${g}`}
+            className="h-11 min-w-[2.75rem] rounded-xl border border-line bg-card px-3.5 text-sm font-semibold text-ink transition-colors hover:border-ink/30 focus-visible:focus-ring disabled:opacity-50"
+          >
+            <span data-num>{g}</span>
+          </button>
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-ink-faint">
+        Your last year of school counts as 12, even if your school ends at 11.
+      </p>
+      {error && (
+        <p role="alert" className="mt-2 text-xs text-reach">
+          {error} Your list is filtered for this visit either way.
+        </p>
+      )}
+    </Card>
+  );
+}
+
 function CategoryTabs({
   active,
   onChange,
@@ -303,7 +481,7 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
   summer_program: "Summer program",
 };
 
-function OpportunityRow({ o }: { o: Opportunity }) {
+function OpportunityRow({ o, commit }: { o: Opportunity; commit?: boolean }) {
   const tier = TIER_BADGE[o.tierResolved];
   return (
     <li className="rounded-xl border border-line px-4 py-3">
@@ -380,7 +558,141 @@ function OpportunityRow({ o }: { o: Opportunity }) {
           </a>
         </div>
       </div>
+      {/* The commitment step lives only on the shortlist. Offering it against
+          sixty cards would turn a decision into a checklist — and the effect
+          being harnessed here comes from deciding, not from ticking. */}
+      {commit && <CommitRow o={o} />}
     </li>
+  );
+}
+
+/**
+ * "I'm doing this" → "when will you start?".
+ *
+ * Two things at once. It is an implementation intention: naming a concrete
+ * moment is what carries the d = 0.65 effect, and the options are all near-term
+ * because an intention set for "sometime" is not one. And it is the only
+ * behavioural signal we can collect — without it we can measure that a student
+ * looked, never that they acted, which is precisely the illusion that made a
+ * generation of nudge trials look successful before they were scaled.
+ */
+function CommitRow({ o }: { o: Opportunity }) {
+  const { intents, setIntent, demo } = useDashboard();
+  const intent = intents[o.id];
+  const [asking, setAsking] = useState(false);
+  const [detail, setDetail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function persist(next: OpportunityIntent | null) {
+    const previous = intent ?? null;
+    setIntent(o.id, next); // optimistic
+    setError(null);
+    startTransition(async () => {
+      const res = next
+        ? await saveOpportunityIntent({
+            opportunityId: o.id,
+            status: next.status,
+            startWhen: next.startWhen,
+            startDetail: next.startDetail,
+          })
+        : await clearOpportunityIntent(o.id);
+      if (!res.ok) {
+        setIntent(o.id, previous); // roll back — never claim a save that failed
+        setError(res.error);
+      }
+    });
+  }
+
+  // Demo has no session, so a commitment could never persist. Rather than
+  // offering a button that always fails, say nothing at all.
+  if (demo) return null;
+
+  if (intent && intent.status !== "dropped") {
+    return (
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-3">
+        <p className="text-xs font-medium text-ivy-ink">{intentSentence(intent)}</p>
+        {intent.status === "planning" && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => persist({ ...intent, status: "applied" })}
+            className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring disabled:opacity-50"
+          >
+            I entered it
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => persist(null)}
+          className="text-xs text-ink-faint underline-offset-2 hover:underline focus-visible:focus-ring disabled:opacity-50"
+        >
+          Undo
+        </button>
+        {error && (
+          <p role="alert" className="w-full text-xs text-reach">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (!asking) {
+    return (
+      <div className="mt-3 border-t border-line pt-3">
+        <button
+          type="button"
+          onClick={() => setAsking(true)}
+          className="rounded-lg bg-ink px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+        >
+          I&rsquo;m doing this
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 border-t border-line pt-3">
+      <p className="text-xs font-medium text-ink">When will you start?</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {START_OPTIONS.map((when) => (
+          <button
+            key={when}
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              persist({
+                opportunityId: o.id,
+                status: "planning",
+                startWhen: when,
+                startDetail: detail,
+              })
+            }
+            className="h-9 rounded-lg border border-line px-3 text-xs font-medium capitalize text-ink transition-colors hover:border-ink/30 focus-visible:focus-ring disabled:opacity-50"
+          >
+            {when}
+          </button>
+        ))}
+      </div>
+      <label className="mt-2 block">
+        <span className="sr-only">Where or how you&rsquo;ll start (optional)</span>
+        <input
+          type="text"
+          value={detail}
+          maxLength={INTENT_TEXT_MAX}
+          onChange={(e) => setDetail(e.target.value)}
+          placeholder="where, or how you'll start (optional)"
+          className="w-full max-w-sm rounded-lg border border-line bg-card px-3 py-1.5 text-xs text-ink placeholder:text-ink-faint focus-visible:focus-ring"
+        />
+      </label>
+      {error && (
+        <p role="alert" className="mt-2 text-xs text-reach">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

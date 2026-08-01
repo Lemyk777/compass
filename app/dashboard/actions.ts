@@ -9,6 +9,11 @@ import { UAE_PROGRAMS } from "@/lib/data/uae-universities";
 import { KOREA_PROGRAMS } from "@/lib/data/korea-universities";
 import { normalizeDestinations } from "@/lib/types";
 import { LIMITS } from "@/lib/limits";
+import {
+  cleanIntentText,
+  isIntentStatus,
+  type IntentStatus,
+} from "@/lib/data/intents";
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
@@ -279,6 +284,164 @@ export async function saveKoreaList(
 
   try {
     revalidatePath("/dashboard");
+  } catch {
+    // ignore cache revalidation errors
+  }
+  return { ok: true };
+}
+
+/**
+ * Save just the student's graduation year.
+ *
+ * 44% of signups completed no part of the intake, and every one of them also
+ * never ran an analysis — they hit the seven-screen form and left. Without a
+ * graduation year we cannot apply a single age or grade rule, so those users
+ * were being shown the whole catalog with no filtering at all: the worst
+ * possible screen given to the people who trusted us least.
+ *
+ * This is the one-question version. Asked inline, answered in a tap, saved
+ * without ever opening the intake — the evidence on hassle costs is consistent
+ * that the form itself is the thing standing between them and any value.
+ */
+export async function saveGraduationYear(year: number): Promise<SaveResult> {
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+    return { ok: false, error: "That doesn't look like a graduation year." };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Please log in again." };
+
+  // student_profiles has no unique constraint on user_id, so upsert() can't be
+  // used — look the row up and insert or update explicitly.
+  const { data: existing } = await supabase
+    .from("student_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const { error } = existing
+    ? await supabase
+        .from("student_profiles")
+        .update({ graduation_year: year })
+        .eq("id", existing.id)
+    : await supabase
+        .from("student_profiles")
+        .insert({ user_id: user.id, graduation_year: year });
+
+  if (error) {
+    if (error.code === "42703" || error.code === "PGRST204") {
+      return {
+        ok: false,
+        error: "Graduation year isn't enabled on this database yet. Apply migration 0010_graduation_year.sql.",
+      };
+    }
+    return { ok: false, error: "Could not save your year." };
+  }
+
+  try {
+    revalidatePath("/dashboard");
+  } catch {
+    // ignore cache revalidation errors
+  }
+  return { ok: true };
+}
+
+// ── Opportunity intents ──────────────────────────────────────────────────────
+// "I'm doing this" plus the moment they'll start. See migration 0022 for why
+// this exists: it is both the implementation-intention mechanic (d = 0.65) and
+// the only behavioural signal this product can collect. Everything else we
+// measure is a click, and clicks are what convinced an entire research
+// literature that nudges worked when they did not.
+
+function intentTableMissing(code?: string): boolean {
+  // 42P01 = undefined_table, PGRST205 = PostgREST can't find it in the schema
+  // cache. Both mean migration 0022 has not been applied yet.
+  return code === "42P01" || code === "PGRST205";
+}
+
+const INTENT_MIGRATION_HINT =
+  "Saving your plans isn't enabled on this database yet. Apply migration 0022_opportunity_intents.sql.";
+
+/**
+ * Record (or update) that the student intends to enter an opportunity, with the
+ * concrete moment they said they'd start. Upserts on (user, opportunity), so
+ * changing your mind about the timing is the same call.
+ */
+export async function saveOpportunityIntent(input: {
+  opportunityId: string;
+  status?: IntentStatus;
+  startWhen?: string | null;
+  startDetail?: string | null;
+}): Promise<SaveResult> {
+  const opportunityId = input.opportunityId?.trim();
+  if (!opportunityId || opportunityId.length > 120) {
+    return { ok: false, error: "Unknown opportunity." };
+  }
+  const status: IntentStatus = isIntentStatus(input.status)
+    ? input.status
+    : "planning";
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Please log in again." };
+
+  const { error } = await supabase.from("opportunity_intents").upsert(
+    {
+      user_id: user.id,
+      opportunity_id: opportunityId,
+      status,
+      start_when: cleanIntentText(input.startWhen),
+      start_detail: cleanIntentText(input.startDetail),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,opportunity_id" }
+  );
+
+  if (error) {
+    if (intentTableMissing(error.code)) {
+      return { ok: false, error: INTENT_MIGRATION_HINT };
+    }
+    return { ok: false, error: "Could not save that. Try again." };
+  }
+
+  try {
+    revalidatePath("/dashboard/opportunities");
+  } catch {
+    // ignore cache revalidation errors
+  }
+  return { ok: true };
+}
+
+/** Remove an intent entirely (the student never meant to commit). */
+export async function clearOpportunityIntent(
+  opportunityId: string
+): Promise<SaveResult> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Please log in again." };
+
+  const { error } = await supabase
+    .from("opportunity_intents")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("opportunity_id", opportunityId);
+
+  if (error) {
+    if (intentTableMissing(error.code)) {
+      return { ok: false, error: INTENT_MIGRATION_HINT };
+    }
+    return { ok: false, error: "Could not update that. Try again." };
+  }
+
+  try {
+    revalidatePath("/dashboard/opportunities");
   } catch {
     // ignore cache revalidation errors
   }

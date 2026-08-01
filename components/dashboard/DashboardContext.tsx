@@ -13,6 +13,7 @@ import type { Analysis } from "@/lib/ai/schema";
 import { AVAILABLE_DESTINATION_CODES, type DestinationCode } from "@/lib/data/destinations";
 import { analysisHasCountry } from "@/lib/data/country-content";
 import type { SatSitting, Competition } from "@/lib/data/key-dates";
+import { indexIntents, type OpportunityIntent } from "@/lib/data/intents";
 import { useT } from "@/lib/i18n/client";
 
 
@@ -40,6 +41,10 @@ type DashboardCtx = {
   profileMeta: ProfileMeta;
   // Live dates from Supabase — when present, override hardcoded SAT/competition data.
   liveDates: LiveDates;
+  // Opportunities the student has committed to, by id, plus the setter the
+  // Opportunities view uses to reflect a commitment immediately.
+  intents: IntentMap;
+  setIntent: (id: string, intent: OpportunityIntent | null) => void;
 };
 
 export type ProfileMeta = {
@@ -55,6 +60,13 @@ export type LiveDates = {
   satSittings: SatSitting[];
   competitions: Competition[];
 };
+
+/**
+ * What the student has committed to entering, keyed by opportunity id. Loaded
+ * once in the dashboard layout; the Opportunities view mutates it optimistically
+ * so a commitment reads back instantly rather than after a round-trip.
+ */
+export type IntentMap = Record<string, OpportunityIntent>;
 
 const Ctx = createContext<DashboardCtx | null>(null);
 
@@ -93,6 +105,7 @@ export function DashboardProvider({
   destinations = [],
   profileMeta = { faculties: [] },
   liveDates = { satSittings: [], competitions: [] },
+  intents: initialIntents = [],
   children,
 }: {
   initialAnalysis: Analysis | null;
@@ -107,12 +120,26 @@ export function DashboardProvider({
   destinations?: DestinationCode[];
   profileMeta?: ProfileMeta;
   liveDates?: LiveDates;
+  /** Existing commitments, loaded server-side. Absent in demo/preview. */
+  intents?: OpportunityIntent[];
   children: React.ReactNode;
 }) {
   const t = useT();
   const router = useTransitionRouter();
 
   const [analysis, setAnalysis] = useState<Analysis | null>(initialAnalysis);
+
+  const [intents, setIntents] = useState<IntentMap>(() =>
+    indexIntents(initialIntents)
+  );
+  const setIntent = useCallback((id: string, intent: OpportunityIntent | null) => {
+    setIntents((prev) => {
+      const next = { ...prev };
+      if (intent) next[id] = intent;
+      else delete next[id];
+      return next;
+    });
+  }, []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const running = useRef(false);
@@ -174,6 +201,8 @@ export function DashboardProvider({
       setCountry,
       profileMeta,
       liveDates,
+      intents,
+      setIntent,
     }),
     [
       analysis,
@@ -190,6 +219,8 @@ export function DashboardProvider({
       activeCountry,
       profileMeta,
       liveDates,
+      intents,
+      setIntent,
     ]
   );
 

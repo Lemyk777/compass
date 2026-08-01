@@ -1,0 +1,442 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  buildExtracurriculars,
+  type Competition,
+  type CompetitionTier,
+  type Opportunity,
+} from "@/lib/data/key-dates";
+import { graduationYearFromGrade } from "@/lib/data/eligibility";
+import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
+
+// The public eligibility checker.
+//
+// This is deliberately NOT a browsable catalog, and the reason is in
+// OPPORTUNITIES_RESEARCH.md: every large trial of "show students their options"
+// measured zero, including one across 800,000 students. What moved behaviour was
+// removing ambiguity about eligibility and removing the work. So:
+//
+//   • one question, answered in one tap, before anything is asked of them;
+//   • the answer is a VERDICT ("you can enter 5 of these now"), not a list;
+//   • five results, never ninety-six — choice overload is worst exactly where
+//     preference uncertainty is highest, which is a 12-year-old;
+//   • the primary action is "put the dates in my calendar", not "sign up".
+//
+// Matching runs through the same buildExtracurriculars the dashboard uses, so
+// the public answer and the logged-in answer can never disagree.
+
+const SHOWN = 5;
+
+/** School years we ask about. 5 is the youngest entry the catalog can serve. */
+const GRADES = [5, 6, 7, 8, 9, 10, 11, 12];
+
+type Step = "grade" | "results";
+
+export function EligibilityChecker() {
+  // `today` resolves on the client — the countdown depends on the visitor's
+  // clock, and a server-rendered one would hydrate wrong.
+  const [today, setToday] = useState<Date | null>(null);
+  useEffect(() => setToday(new Date()), []);
+
+  const [grade, setGrade] = useState<number | null>(null);
+  const [fields, setFields] = useState<FacultyValue[]>([]);
+  const step: Step = grade == null ? "grade" : "results";
+
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  const plan = useMemo(() => {
+    if (!today || grade == null) return null;
+    return buildExtracurriculars({
+      today,
+      faculties: fields,
+      factors: [], // no analysis here — everyone starts at "emerging", which is
+      // exactly right for a beginner: accessible events first.
+      graduationYear: graduationYearFromGrade(grade, today),
+    });
+  }, [today, grade, fields]);
+
+  // Open now vs later. The "later" ones stay knowable — a younger student
+  // should be able to see what they are aiming at — but they never compete for
+  // attention with what is actionable today.
+  const openNow = plan?.items.filter((o) => !o.notYetEligible) ?? [];
+  const later = plan?.items.filter((o) => o.notYetEligible) ?? [];
+  // Datable first. The promise on this page is "and when they close", so an
+  // entry we can put a real date on earns its place ahead of one we can't —
+  // otherwise the top of the list is five cards reading "Dates TBA".
+  const shown = [...openNow]
+    .sort((a, b) => Number(!!b.dateConfirmed) - Number(!!a.dateConfirmed))
+    .slice(0, SHOWN);
+  // The soonest real deadline on screen — the minimum, not the first one we
+  // happen to render.
+  const nearest = shown
+    .filter((o) => o.dateConfirmed)
+    .reduce<Opportunity | null>(
+      (best, o) => (best == null || o.daysToDeadline < best.daysToDeadline ? o : best),
+      null,
+    );
+
+  function pickGrade(g: number) {
+    setGrade(g);
+    // Let the results paint, then bring them into view.
+    requestAnimationFrame(() =>
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-6">
+      {/* ── The question ───────────────────────────────────────────────────
+          One question, eight taps, no account, no email. Everything the
+          research says about hassle points at making the first answer free. */}
+      <section className="pt-14 sm:pt-20">
+        <p className="text-sm font-medium uppercase tracking-[0.14em] text-ink-faint">
+          Free · no account
+        </p>
+        <h1 className="mt-3 text-balance text-[2rem] font-semibold leading-[1.1] tracking-tight text-ink sm:text-[2.75rem]">
+          What can you actually enter this year?
+        </h1>
+        <p className="mt-4 max-w-xl text-pretty text-base leading-relaxed text-ink-soft sm:text-lg">
+          Real competitions with real judges — some of them have been won by
+          twelve-year-olds. Tell us one thing and we&rsquo;ll tell you which ones
+          are open to you, and when they close.
+        </p>
+
+        <fieldset className="mt-9">
+          <legend className="text-base font-semibold text-ink">
+            What year are you in?
+          </legend>
+          <div className="mt-4 flex flex-wrap gap-2.5">
+            {GRADES.map((g) => {
+              const on = g === grade;
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => pickGrade(g)}
+                  aria-pressed={on}
+                  aria-label={`Year ${g}`}
+                  className={`h-12 min-w-[3.25rem] rounded-xl border px-4 text-base font-semibold transition-[background-color,border-color,color,transform] duration-200 focus-visible:focus-ring active:scale-[0.97] ${
+                    on
+                      ? "border-ink bg-ink text-white"
+                      : "border-line bg-card text-ink hover:border-ink/30"
+                  }`}
+                >
+                  <span data-num>{g}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-sm text-ink-faint">
+            Your last year of school counts as 12 here, even if your school ends
+            at 11.
+          </p>
+        </fieldset>
+      </section>
+
+      {/* ── The verdict ─────────────────────────────────────────────────── */}
+      <div ref={resultsRef} className="scroll-mt-6">
+        {step === "results" && plan && (
+          <section aria-live="polite" className="mt-14">
+            <Verdict
+              shown={shown.length}
+              eligible={openNow.length}
+              grade={grade!}
+              nearestDays={nearest?.daysToDeadline}
+            />
+
+            {/* Refinement comes AFTER the answer, never before it. They already
+                got something; this only sharpens it. */}
+            <FieldFilter value={fields} onChange={setFields} />
+
+            <ul className="mt-6 space-y-3">
+              {shown.map((o, i) => (
+                <li
+                  key={o.id}
+                  className="animate-fade-up"
+                  // Stagger by 45ms — enough to read as a sequence, short
+                  // enough that the fifth card is not late.
+                  style={{ animationDelay: `${i * 45}ms`, animationFillMode: "backwards" }}
+                >
+                  <OpportunityCard o={o} />
+                </li>
+              ))}
+            </ul>
+
+            {shown.length === 0 && (
+              <p className="rounded-2xl border border-line bg-card p-6 text-base text-ink-soft shadow-card">
+                Nothing in those subjects is open to year {grade} right now. Try
+                turning the subjects off, or come back in September — that&rsquo;s
+                when most of them open for the year.
+              </p>
+            )}
+
+            {/* Everything not yet open, stated as a fact rather than offered as
+                a second list to wade through. */}
+            {later.length > 0 && (
+              <p className="mt-6 text-sm text-ink-faint">
+                <span data-num className="font-semibold text-ink-soft">
+                  {later.length}
+                </span>{" "}
+                more open up as you get older — we&rsquo;ll show them when they
+                do.
+              </p>
+            )}
+
+            <CalendarCta items={shown} />
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The one line that is the whole product: you, specifically, can enter these.
+ *
+ * The headline counts what is ON SCREEN, not everything that matched. An
+ * earlier draft said "you can enter 79 of these" — technically the size of the
+ * eligible set, but it is the choice-overload number, and it puts the work back
+ * on a twelve-year-old. The full figure stays visible underneath, quietly, so
+ * nothing is hidden.
+ */
+function Verdict({
+  shown,
+  eligible,
+  grade,
+  nearestDays,
+}: {
+  shown: number;
+  eligible: number;
+  grade: number;
+  nearestDays?: number;
+}) {
+  return (
+    <div className="border-l-2 border-ivy pl-5">
+      <h2 className="text-balance text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-3xl">
+        <span data-num className="text-ivy-ink">
+          {shown}
+        </span>{" "}
+        you can enter right now.
+      </h2>
+      <p className="mt-2 text-base text-ink-soft">
+        Open to year <span data-num>{grade}</span>, worldwide
+        {nearestDays != null && (
+          <>
+            {" · "}the nearest closes in{" "}
+            <span data-num className="font-semibold text-ink">
+              {nearestDays} days
+            </span>
+          </>
+        )}
+        .
+      </p>
+      {eligible > shown && (
+        <p className="mt-1.5 text-sm text-ink-faint">
+          There are <span data-num>{eligible}</span> you can enter in total.
+          These are the ones to start with.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function FieldFilter({
+  value,
+  onChange,
+}: {
+  value: FacultyValue[];
+  onChange: (v: FacultyValue[]) => void;
+}) {
+  const toggle = (f: FacultyValue) =>
+    onChange(value.includes(f) ? value.filter((x) => x !== f) : [...value, f]);
+
+  return (
+    <div className="mt-7">
+      <p className="text-sm font-medium text-ink-soft">
+        Into something in particular? {value.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="font-semibold text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+          >
+            clear
+          </button>
+        )}
+      </p>
+      <div className="mt-2.5 flex flex-wrap gap-2">
+        {FACULTIES.map((f) => {
+          const on = value.includes(f.value);
+          return (
+            <button
+              key={f.value}
+              type="button"
+              onClick={() => toggle(f.value)}
+              aria-pressed={on}
+              className={`h-11 rounded-full border px-4 text-sm font-medium transition-colors duration-200 focus-visible:focus-ring active:scale-[0.97] ${
+                on
+                  ? "border-accent bg-accent-soft text-accent-ink"
+                  : "border-line bg-card text-ink-soft hover:border-ink/25 hover:text-ink"
+              }`}
+            >
+              {FACULTY_LABEL[f.value]}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const TIER_LABEL: Record<CompetitionTier, string> = {
+  accessible: "Good first one",
+  selective: "Step up",
+  elite: "The big one",
+};
+
+function OpportunityCard({ o }: { o: Opportunity }) {
+  return (
+    <article className="rounded-2xl border border-line bg-card p-5 shadow-card transition-shadow duration-200 hover:shadow-lift">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg font-semibold leading-snug text-ink">{o.name}</h3>
+          <p className="mt-1 text-[0.95rem] leading-relaxed text-ink-soft">
+            {o.blurb}
+          </p>
+        </div>
+        {o.dateConfirmed ? (
+          <Countdown days={o.daysToDeadline} />
+        ) : (
+          <span className="whitespace-nowrap rounded-full bg-surface px-3 py-1.5 text-sm font-semibold text-ink-faint">
+            Dates TBA
+          </span>
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-faint">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 font-medium text-ink-soft">
+          {TIER_LABEL[o.tierResolved]}
+        </span>
+        <span>{o.eligibility ?? "Check the age rules on the official page"}</span>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2.5 border-t border-line pt-4">
+        <a
+          href={o.url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex h-11 items-center rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+        >
+          Open the official page
+        </a>
+        {o.dateConfirmed && (
+          <button
+            type="button"
+            onClick={() => downloadIcs([o])}
+            className="inline-flex h-11 items-center rounded-xl border border-line bg-card px-4 text-sm font-medium text-ink-soft transition-colors hover:border-ink/25 hover:text-ink focus-visible:focus-ring"
+          >
+            Add the deadline to my calendar
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/**
+ * Days-left pill. Colour follows the product's semantic tier scale, and the
+ * text says the same thing the colour does — colour alone never carries meaning.
+ */
+function Countdown({ days }: { days: number }) {
+  const tone =
+    days <= 14
+      ? "bg-reach-soft text-reach"
+      : days <= 30
+        ? "bg-target-soft text-target"
+        : "bg-likely-soft text-[#2C6B4D]";
+  return (
+    <span
+      className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold ${tone}`}
+    >
+      <span data-num>{days <= 0 ? "closes today" : `${days} days left`}</span>
+    </span>
+  );
+}
+
+// ── Removing the work ────────────────────────────────────────────────────────
+// The single largest effect in the college-access literature is the difference
+// between telling someone about a deadline and doing something about it for
+// them. This is the cheapest honest version of that: a real calendar file with
+// a reminder a week out. Only ever built from CONFIRMED dates.
+
+function CalendarCta({ items }: { items: Opportunity[] }) {
+  const datable = items.filter((o) => o.dateConfirmed);
+  if (datable.length === 0) return null;
+  return (
+    <div className="mt-8 rounded-2xl border border-ivy/25 bg-ivy-soft/60 p-5">
+      <p className="text-base font-semibold text-ink">
+        {datable.length === 1
+          ? "Put that deadline in your calendar"
+          : `Put all ${datable.length} deadlines in your calendar`}
+      </p>
+      <p className="mt-1 text-[0.95rem] leading-relaxed text-ink-soft">
+        {datable.length === 1
+          ? "A calendar file with a reminder a week before it closes. Nothing to sign up for."
+          : "One file, every date above, with a reminder a week before each. Nothing to sign up for."}
+      </p>
+      <button
+        type="button"
+        onClick={() => downloadIcs(datable)}
+        className="mt-4 inline-flex h-12 items-center rounded-xl bg-ivy px-5 text-[0.95rem] font-medium text-white transition-colors hover:bg-ivy-ink focus-visible:focus-ring"
+      >
+        Download the calendar file
+      </button>
+    </div>
+  );
+}
+
+function icsDate(iso: string): string {
+  return iso.replace(/-/g, "");
+}
+
+/** Escape the characters iCalendar treats as structure. */
+function icsText(s: string): string {
+  return s.replace(/[\\;,]/g, (m) => `\\${m}`).replace(/\r?\n/g, "\\n");
+}
+
+function downloadIcs(items: Competition[]) {
+  const events = items
+    .filter((c) => c.dateConfirmed)
+    .map((c) =>
+      [
+        "BEGIN:VEVENT",
+        `UID:${c.id}@compass`,
+        `DTSTART;VALUE=DATE:${icsDate(c.deadline)}`,
+        `SUMMARY:${icsText(`Deadline — ${c.name}`)}`,
+        `DESCRIPTION:${icsText(`${c.blurb}\n${c.url}`)}`,
+        `URL:${c.url}`,
+        "BEGIN:VALARM",
+        "TRIGGER:-P7D",
+        "ACTION:DISPLAY",
+        `DESCRIPTION:${icsText(`One week until ${c.name} closes`)}`,
+        "END:VALARM",
+        "END:VEVENT",
+      ].join("\r\n"),
+    );
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Compass//Opportunities//EN",
+    "CALSCALE:GREGORIAN",
+    ...events,
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = items.length === 1 ? `${items[0].id}-deadline.ics` : "deadlines.ics";
+  a.click();
+  URL.revokeObjectURL(url);
+}
