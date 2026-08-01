@@ -1,0 +1,63 @@
+name: CI
+
+# The repository had no automated verification at all: the only thing standing
+# between a broken change and production was remembering to run three commands
+# by hand. Since main deploys to production, that gap was the single biggest
+# structural risk in the project.
+#
+# Everything here runs WITHOUT secrets. The app builds without environment
+# variables (auth and analysis degrade, the build does not), and the logic
+# checks are pure — no API key, no database, no network.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A new push supersedes an in-flight run on the same ref.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Build, types and logic checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # `next build` is the lint + type-check gate, not just a bundler.
+      - name: Build
+        run: npm run build
+
+      # Pure logic: geography, eligibility gates, registry integrity, the
+      # commitment vocabulary, cron rotation maths.
+      - name: Logic checks
+        run: node --import tsx scripts/test-session-checks.ts
+
+  links:
+    name: Catalog link health
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Hits ~100 third-party sites, so it does not gate a pull request — it runs
+    # on main and on a schedule, where a genuinely dead link is what we want to
+    # hear about. Bot walls and one-off 5xx are reported without failing.
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check every catalog URL
+        run: npm run test:links

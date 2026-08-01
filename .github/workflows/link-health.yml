@@ -1,0 +1,26 @@
+name: Link health
+
+# A dead link is the most visible quality failure in the product — the student
+# clicks "Details" and gets a browser error, which makes the whole catalog look
+# fake. A student found one before we did. Links rot on their own schedule, so
+# this checks weekly rather than waiting for someone to push.
+
+on:
+  schedule:
+    # Mondays, 06:00 UTC.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  links:
+    name: Every catalog URL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:links

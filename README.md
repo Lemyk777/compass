@@ -39,6 +39,8 @@ project and role assignment, is in [docs/SETUP.md](docs/SETUP.md).
 
 There is no unit-test runner. The verification path is `npm run build`, the
 logic checks in `scripts/test-session-checks.ts`, and `npm run test:links`.
+[CI](.github/workflows/ci.yml) runs the first two on every push and pull
+request, and the link check weekly — none of it needs secrets.
 
 > **Never run `npm run build` while `npm run dev` is running.** They share
 > `.next/` and the build removes chunks the dev server still holds, producing a
@@ -58,6 +60,10 @@ which file to open for a given change. The short version:
 | `supabase/migrations/` | SQL, **applied by hand** — there is no migration runner |
 | `scripts/` | Verification and one-off tooling |
 | `docs/` | Product spec, setup, research, working plans |
+
+`lib/data/`, `lib/ai/`, `scripts/` and `supabase/migrations/` each carry their
+own README covering the rules that apply inside them — read the one for the
+folder you are about to change.
 
 ## Contributing
 

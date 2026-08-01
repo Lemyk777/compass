@@ -35,7 +35,11 @@ The subject line says what changed. **The body says why, and what it cost** —
 what broke, what was ruled out, what is still not verified. A future reader
 needs the reasoning far more than a restatement of the diff.
 
-## The gate — run all three before merging
+Pull requests are the way in. `main` deploys to production, so pushing straight
+to it means shipping unreviewed — the [CI workflow](.github/workflows/ci.yml)
+runs the gate on every pull request, and that signal is the point.
+
+## The gate — CI runs the first two, run all three before merging
 
 ```bash
 npm run build
