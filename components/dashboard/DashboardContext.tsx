@@ -14,6 +14,7 @@ import { AVAILABLE_DESTINATION_CODES, type DestinationCode } from "@/lib/data/de
 import { analysisHasCountry } from "@/lib/data/country-content";
 import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import { indexIntents, type OpportunityIntent } from "@/lib/data/intents";
+import type { Readiness } from "@/lib/data/readiness";
 import { useT } from "@/lib/i18n/client";
 
 
@@ -39,6 +40,9 @@ type DashboardCtx = {
   // Lightweight profile facts the date-anchored Timeline needs (not the full
   // profile). Empty defaults keep older callers working.
   profileMeta: ProfileMeta;
+  // Endowed-progress checklist of how complete the profile is (research rule 8).
+  // Null in demo/preview, where there is no real profile to be part-way through.
+  readiness: Readiness | null;
   // Live dates from Supabase — when present, override hardcoded SAT/competition data.
   liveDates: LiveDates;
   // Opportunities the student has committed to, by id, plus the setter the
@@ -104,6 +108,7 @@ export function DashboardProvider({
   demo = false,
   destinations = [],
   profileMeta = { faculties: [] },
+  readiness = null,
   liveDates = { satSittings: [], competitions: [] },
   intents: initialIntents = [],
   children,
@@ -119,6 +124,7 @@ export function DashboardProvider({
   // every selected country shows. Optional: demo/legacy fall back to content.
   destinations?: DestinationCode[];
   profileMeta?: ProfileMeta;
+  readiness?: Readiness | null;
   liveDates?: LiveDates;
   /** Existing commitments, loaded server-side. Absent in demo/preview. */
   intents?: OpportunityIntent[];
@@ -200,6 +206,7 @@ export function DashboardProvider({
       country: activeCountry,
       setCountry,
       profileMeta,
+      readiness,
       liveDates,
       intents,
       setIntent,
@@ -218,6 +225,7 @@ export function DashboardProvider({
       tabs,
       activeCountry,
       profileMeta,
+      readiness,
       liveDates,
       intents,
       setIntent,

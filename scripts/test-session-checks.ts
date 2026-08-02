@@ -30,6 +30,7 @@ import {
 } from "../lib/data/eligibility";
 import { slugify } from "../lib/discovery/discover";
 import { findDatePages, parseJsonLoose } from "../lib/scraper/scrape-dates";
+import { buildReadiness, type ReadinessFacts } from "../lib/data/readiness";
 
 let passed = 0;
 function ok(name: string, fn: () => void) {
@@ -611,6 +612,45 @@ ok("discover: faculty rotation covers all 8 faculties", () => {
     for (let i = 0; i < PER; i++) covered.add((start + i) % N);
   }
   assert.equal(covered.size, N);
+});
+
+// ── readiness (endowed progress, rule 8) ─────────────────────────────────────
+console.log("readiness");
+const NONE: ReadinessFacts = {
+  country: false,
+  year: false,
+  faculties: false,
+  curriculum: false,
+  destinations: false,
+  activities: false,
+  tests: false,
+};
+ok("empty facts → 0 of 7, not allDone", () => {
+  const r = buildReadiness(NONE);
+  assert.equal(r.done, 0);
+  assert.equal(r.total, 7);
+  assert.equal(r.allDone, false);
+});
+ok("all facts → allDone (card self-hides)", () => {
+  const filled = Object.fromEntries(
+    Object.keys(NONE).map((k) => [k, true])
+  ) as ReadinessFacts;
+  const r = buildReadiness(filled);
+  assert.equal(r.done, 7);
+  assert.equal(r.allDone, true);
+});
+ok("done count tracks the facts, and each item's done matches", () => {
+  const r = buildReadiness({ ...NONE, country: true, year: true });
+  assert.equal(r.done, 2);
+  assert.equal(r.allDone, false);
+  assert.equal(r.items.find((i) => i.key === "country")!.done, true);
+  assert.equal(r.items.find((i) => i.key === "tests")!.done, false);
+});
+ok("country and year lead the list, so the head start shows at the top", () => {
+  const r = buildReadiness(NONE);
+  assert.equal(r.items[0].key, "country");
+  assert.equal(r.items[1].key, "year");
+  assert.equal(r.items.length, 7);
 });
 
 console.log(`\nAll ${passed} checks passed.`);

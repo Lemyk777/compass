@@ -7,6 +7,7 @@ import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import type { DestinationCode } from "@/lib/data/destinations";
 import { normalizeCountry } from "@/lib/data/geo";
 import { isIntentStatus, type OpportunityIntent } from "@/lib/data/intents";
+import { buildReadiness } from "@/lib/data/readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -56,9 +57,13 @@ export default async function DashboardLayout({
     // What the student said they'd enter, and when they'd start (migration
     // 0022). Missing table → null → an empty list, and the UI simply behaves as
     // if nothing has been committed to yet.
+    // select("*") on purpose, not an explicit column list: why_matters arrives
+    // in migration 0023, and naming a not-yet-created column would fail the
+    // whole select and blank out every committed intent until it is applied.
+    // With "*" the column is simply absent until then.
     supabase
       .from("opportunity_intents")
-      .select("opportunity_id, status, start_when, start_detail")
+      .select("*")
       .eq("user_id", session.id),
   ]);
 
@@ -81,6 +86,34 @@ export default async function DashboardLayout({
         (sp.hk_programs && sp.hk_programs.length > 0))
   );
 
+  // Endowed-progress checklist (research rule 8): pre-credited for what we
+  // already know, so a returning student sees a head start rather than a blank
+  // form. Country comes from the session (often known at signup), the rest from
+  // the profile row. See lib/data/readiness.ts.
+  const hasAnyDestination = Boolean(
+    (Array.isArray(sp?.destinations) && sp!.destinations.length > 0) ||
+      sp?.include_italy ||
+      (sp?.italy_programs && sp.italy_programs.length > 0) ||
+      (sp?.hk_programs && sp.hk_programs.length > 0) ||
+      (sp?.target_schools && sp.target_schools.length > 0)
+  );
+  const readiness = buildReadiness({
+    country: Boolean(normalizeCountry(session.country)),
+    year: sp?.graduation_year != null,
+    faculties: Array.isArray(sp?.faculties) && sp!.faculties.length > 0,
+    curriculum: Boolean(sp?.curriculum),
+    destinations: hasAnyDestination,
+    activities: Boolean(
+      (Array.isArray(sp?.activities) && sp!.activities.length > 0) ||
+        (Array.isArray(sp?.honors) && sp!.honors.length > 0)
+    ),
+    tests: Boolean(
+      sp?.tests &&
+        typeof sp.tests === "object" &&
+        Object.keys(sp.tests as Record<string, unknown>).length > 0
+    ),
+  });
+
   const intents: OpportunityIntent[] = (intentRows ?? [])
     .filter((r: Record<string, unknown>) => isIntentStatus(r.status))
     .map((r: Record<string, unknown>) => ({
@@ -88,6 +121,8 @@ export default async function DashboardLayout({
       status: r.status as OpportunityIntent["status"],
       startWhen: (r.start_when as string | null) ?? null,
       startDetail: (r.start_detail as string | null) ?? null,
+      // Absent until migration 0023 (select is "*"), so coalesce to null.
+      whyMatters: (r.why_matters as string | null | undefined) ?? null,
     }));
 
   // Build live dates from Supabase rows (empty arrays if table missing/empty).
@@ -136,6 +171,7 @@ export default async function DashboardLayout({
         satScore: (sp?.tests as { SAT?: number } | null)?.SAT,
         homeCountry: normalizeCountry(session.country),
       }}
+      readiness={readiness}
       liveDates={{
         satSittings: liveSatSittings,
         competitions: liveCompetitions,

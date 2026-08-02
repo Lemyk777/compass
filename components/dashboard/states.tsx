@@ -37,6 +37,7 @@ export function EmptyState({
         <ButtonLink href="/onboarding" size="lg" className="mt-6">
           {t("dash.startProfile")}
         </ButtonLink>
+        <ReadinessCard />
       </div>
     );
   }
@@ -52,7 +53,118 @@ export function EmptyState({
       {/* Growth mode: these two sections are deterministic and already open —
           a thin-portfolio student gets value before (or instead of) analyzing. */}
       <EmptyStatePreLinks />
+      <ReadinessCard />
     </div>
+  );
+}
+
+/**
+ * Endowed-progress readiness (research rule 8). Shows how far along the profile
+ * already is, pre-credited for what we know — so the bar opens part-filled, the
+ * documented counter-move to the 44% who signed up and filled in nothing.
+ *
+ * Self-hides when there is nothing to nudge: in demo (no real profile), when the
+ * profile is already complete, or before the layout has supplied a readiness
+ * summary. Copy is deliberately non-coercive — completion is invited, never
+ * required — to stay consistent with FirstWin's stance in onboarding.
+ */
+function ReadinessCard() {
+  const { readiness, demo } = useDashboard();
+  if (demo || !readiness || readiness.allDone) return null;
+
+  const { items, done, total } = readiness;
+  const pct = Math.round((done / total) * 100);
+
+  return (
+    <section
+      aria-label="Profile readiness"
+      className="mt-8 w-full max-w-md rounded-2xl border border-line bg-card p-5 text-left"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-semibold text-ink">
+          {done > 0
+            ? `You're already ${done} of ${total} of the way there`
+            : "A few things sharpen what Compass shows you"}
+        </h2>
+        <span data-num className="shrink-0 text-xs font-medium text-ink-faint">
+          {done}/{total}
+        </span>
+      </div>
+
+      <div
+        role="progressbar"
+        aria-valuenow={done}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-line"
+      >
+        <div
+          className="h-full rounded-full bg-accent transition-[width] duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      <ul className="mt-4 space-y-2.5">
+        {items.map((it) =>
+          it.done ? (
+            <li key={it.key} className="flex items-start gap-2.5 text-sm">
+              <CheckDot done />
+              <span className="text-ink-faint line-through decoration-line">
+                {it.label}
+              </span>
+            </li>
+          ) : (
+            <li key={it.key}>
+              <a
+                href="/onboarding"
+                className="group flex items-start gap-2.5 rounded-lg text-sm focus-visible:focus-ring"
+              >
+                <CheckDot done={false} />
+                <span>
+                  <span className="font-medium text-ink group-hover:underline">
+                    {it.label}
+                  </span>
+                  <span className="block text-xs text-ink-soft">{it.hint}</span>
+                </span>
+              </a>
+            </li>
+          )
+        )}
+      </ul>
+
+      {/* Anti-coercion line — true, and load-bearing: Opportunities works with
+          none of this filled in, so nothing here is being held hostage. */}
+      <p className="mt-4 text-xs leading-relaxed text-ink-soft">
+        Add these whenever you like — each one sharpens what we show you, and
+        none of it is required to use your opportunities.
+      </p>
+    </section>
+  );
+}
+
+/** Filled check for a done item, hollow ring for one still to do. */
+function CheckDot({ done }: { done: boolean }) {
+  if (done) {
+    return (
+      <svg
+        viewBox="0 0 20 20"
+        aria-hidden
+        className="mt-0.5 h-4 w-4 shrink-0 text-accent"
+        fill="currentColor"
+      >
+        <path
+          fillRule="evenodd"
+          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.7-9.3a1 1 0 00-1.4-1.4L9 10.6 7.7 9.3a1 1 0 00-1.4 1.4l2 2a1 1 0 001.4 0l4-4z"
+          clipRule="evenodd"
+        />
+      </svg>
+    );
+  }
+  return (
+    <span
+      aria-hidden
+      className="mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 border-line"
+    />
   );
 }
 

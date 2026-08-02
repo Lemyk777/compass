@@ -16,6 +16,7 @@ import { graduationYearFromGrade } from "@/lib/data/eligibility";
 import {
   INTENT_TEXT_MAX,
   START_OPTIONS,
+  WHY_MATTERS_MAX,
   intentSentence,
   type OpportunityIntent,
 } from "@/lib/data/intents";
@@ -595,6 +596,7 @@ function CommitRow({ o }: { o: Opportunity }) {
             status: next.status,
             startWhen: next.startWhen,
             startDetail: next.startDetail,
+            whyMatters: next.whyMatters,
           })
         : await clearOpportunityIntent(o.id);
       if (!res.ok) {
@@ -635,6 +637,11 @@ function CommitRow({ o }: { o: Opportunity }) {
             {error}
           </p>
         )}
+        <WhyMattersField
+          intent={intent}
+          pending={pending}
+          onSave={(why) => persist({ ...intent, whyMatters: why })}
+        />
       </div>
     );
   }
@@ -693,6 +700,89 @@ function CommitRow({ o }: { o: Opportunity }) {
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * "Why does this matter to you?" — one line, in the student's own words.
+ *
+ * Self-generated relevance (Hulleman & Harackiewicz): the interest gain comes
+ * from the student writing the reason, not from our blurb telling them. Framed
+ * for autonomy, not for a CV ("why you're in", not "why this helps admissions"),
+ * because the cohort this is aimed at responds to being treated as an agent, not
+ * improved at. Deliberately optional and low-friction — it appears only after a
+ * commitment already exists, and saving is a blur or Enter away.
+ */
+function WhyMattersField({
+  intent,
+  onSave,
+  pending,
+}: {
+  intent: OpportunityIntent;
+  onSave: (why: string | null) => void;
+  pending: boolean;
+}) {
+  const existing = intent.whyMatters ?? null;
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(existing ?? "");
+
+  // Reflect an externally-changed value (e.g. optimistic rollback) back in.
+  useEffect(() => {
+    setValue(existing ?? "");
+  }, [existing]);
+
+  function commit() {
+    setEditing(false);
+    const cleaned = value.trim().replace(/\s+/g, " ").slice(0, WHY_MATTERS_MAX) || null;
+    if (cleaned !== existing) onSave(cleaned); // only write a real change
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => setEditing(true)}
+        className="w-full text-left text-xs focus-visible:focus-ring disabled:opacity-50"
+      >
+        {existing ? (
+          <span className="text-ink-soft">
+            <span className="text-ink-faint">Why you&rsquo;re in: </span>
+            <span className="italic text-ivy-ink">&ldquo;{existing}&rdquo;</span>
+          </span>
+        ) : (
+          <span className="text-ink-faint underline-offset-2 hover:underline">
+            + say why this matters to you
+          </span>
+        )}
+      </button>
+    );
+  }
+
+  return (
+    <label className="block w-full">
+      <span className="sr-only">Why this matters to you</span>
+      <input
+        type="text"
+        autoFocus
+        value={value}
+        maxLength={WHY_MATTERS_MAX}
+        disabled={pending}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          } else if (e.key === "Escape") {
+            setValue(existing ?? "");
+            setEditing(false);
+          }
+        }}
+        placeholder="why this matters to you (in your words)"
+        className="w-full max-w-sm rounded-lg border border-line bg-card px-3 py-1.5 text-xs text-ink placeholder:text-ink-faint focus-visible:focus-ring"
+      />
+    </label>
   );
 }
 
