@@ -20,15 +20,18 @@ const en: Dict = {
 
   // landing
   "landing.badge": "For international students applying to universities abroad",
-  "landing.title1": "See where you stand.",
-  "landing.title2": "Then close the gap.",
-  "landing.title2b": "Then beat the odds.",
-  "landing.title2c": "Then make your move.",
+  "landing.title1": "See what you can enter.",
+  "landing.title2": "Then make your move.",
+  "landing.title2b": "Then go and win it.",
+  "landing.title2c": "Then close the gap.",
   "landing.subtitle":
-    "Enter your academic profile and get a clear, honest read on your competitiveness — scored factors, per-school likelihood ranges, and a concrete plan for what to improve next.",
+    "Competitions, olympiads and programmes you can actually enter at your age — with the deadlines, every link and date checked by us. Free, and no account needed to see them.",
+  "landing.ctaOpportunities": "See what you can enter",
+  "landing.ctaAssess": "Assess your full profile",
+  "landing.navOpps": "Opportunities",
   "landing.ctaBuild": "Build your scorecard",
   "landing.ctaHave": "I already have an account",
-  "landing.free": "Free to start. No credit card.",
+  "landing.free": "Free, all of it. No account needed to start.",
   "landing.problemKicker": "The problem",
   "landing.problemTitle": "Applying blind is the expensive part.",
   "landing.problemBody":

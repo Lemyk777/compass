@@ -39,13 +39,16 @@ export default async function LandingPage() {
             >
               {t("common.logIn")}
             </ButtonLink>
+            {/* The main button is now Opportunities — the front door of the
+                product. Signup (the profile assessment) stays reachable from the
+                hero's secondary choice and from /opportunities itself. */}
             <ButtonLink
-              href="/auth/signup"
+              href="/opportunities"
               variant="primary"
               size="sm"
               className="whitespace-nowrap rounded-full px-4 sm:px-5"
             >
-              {t("common.getStarted")}
+              {t("landing.navOpps")}
             </ButtonLink>
           </nav>
         </div>
@@ -79,24 +82,28 @@ export default async function LandingPage() {
               {t("landing.subtitle")}
             </p>
 
+            {/* The primary action is now Opportunities — "what can you enter",
+                free and with no account. Profile assessment (the old primary)
+                stays right beside it as a neat, separate secondary choice, so
+                the visual weight sits on opportunities without hiding scoring. */}
             <div
               className="rise-in mt-8 flex flex-wrap items-center gap-3"
               style={{ animationDelay: "0.16s" }}
             >
               <ButtonLink
-                href="/auth/signup"
+                href="/opportunities"
                 size="lg"
                 className="rounded-full bg-ink px-7 py-4 text-base font-medium text-white transition-all hover:bg-ink/90 hover:shadow-[0_0_30px_rgba(14,123,87,0.35)]"
               >
-                {t("landing.ctaBuild")}
+                {t("landing.ctaOpportunities")}
               </ButtonLink>
               <ButtonLink
-                href="/demo"
+                href="/auth/signup"
                 variant="subtle"
                 size="lg"
                 className="rounded-full border border-ink/10 bg-white px-7 py-4 text-base font-medium text-ink transition-all hover:shadow-md"
               >
-                {t("landing.seeSample") || "See a sample report"}
+                {t("landing.ctaAssess")}
               </ButtonLink>
             </div>
 
@@ -104,7 +111,13 @@ export default async function LandingPage() {
               className="rise-in mt-5 text-sm text-ink/45"
               style={{ animationDelay: "0.24s" }}
             >
-              {t("landing.free")}
+              {t("landing.free")}{" "}
+              <a
+                href="/demo"
+                className="font-medium text-ink/60 underline-offset-2 transition hover:text-ink hover:underline"
+              >
+                {t("landing.seeSample") || "See a sample report"}
+              </a>
             </p>
           </div>
 

@@ -20,17 +20,17 @@ const body = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL(CANONICAL_URL),
-  title: "Compass — See your standing for top universities",
+  title: "Compass — See what you can enter this year",
   description:
-    "Compass helps internationally-based students assess and improve their applications to leading universities — in the US, Italy, and Hong Kong — with honest, data-driven guidance.",
+    "Competitions, olympiads and programmes school students can actually enter at their age, with the deadlines — every link and date checked. Free, no account needed. Plus an honest, data-driven read on your university applications.",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     url: CANONICAL_URL,
     siteName: "Compass",
-    title: "Compass — See your standing for top universities",
+    title: "Compass — See what you can enter this year",
     description:
-      "Honest, data-driven guidance on your competitiveness for top universities in the US, Italy, and Hong Kong.",
+      "Competitions, olympiads and programmes you can actually enter, with the deadlines — free, no account needed. Plus honest guidance on your university applications.",
   },
 };
 
