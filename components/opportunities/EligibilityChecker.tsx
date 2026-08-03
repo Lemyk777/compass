@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildExtracurriculars,
-  type Competition,
   type CompetitionTier,
   type Opportunity,
 } from "@/lib/data/key-dates";
 import { graduationYearFromGrade } from "@/lib/data/eligibility";
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
+import { downloadIcs } from "@/lib/calendar/ics";
 
 // The public eligibility checker.
 //
@@ -395,48 +395,3 @@ function CalendarCta({ items }: { items: Opportunity[] }) {
   );
 }
 
-function icsDate(iso: string): string {
-  return iso.replace(/-/g, "");
-}
-
-/** Escape the characters iCalendar treats as structure. */
-function icsText(s: string): string {
-  return s.replace(/[\\;,]/g, (m) => `\\${m}`).replace(/\r?\n/g, "\\n");
-}
-
-function downloadIcs(items: Competition[]) {
-  const events = items
-    .filter((c) => c.dateConfirmed)
-    .map((c) =>
-      [
-        "BEGIN:VEVENT",
-        `UID:${c.id}@compass`,
-        `DTSTART;VALUE=DATE:${icsDate(c.deadline)}`,
-        `SUMMARY:${icsText(`Deadline — ${c.name}`)}`,
-        `DESCRIPTION:${icsText(`${c.blurb}\n${c.url}`)}`,
-        `URL:${c.url}`,
-        "BEGIN:VALARM",
-        "TRIGGER:-P7D",
-        "ACTION:DISPLAY",
-        `DESCRIPTION:${icsText(`One week until ${c.name} closes`)}`,
-        "END:VALARM",
-        "END:VEVENT",
-      ].join("\r\n"),
-    );
-
-  const ics = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Compass//Opportunities//EN",
-    "CALSCALE:GREGORIAN",
-    ...events,
-    "END:VCALENDAR",
-  ].join("\r\n");
-
-  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = items.length === 1 ? `${items[0].id}-deadline.ics` : "deadlines.ics";
-  a.click();
-  URL.revokeObjectURL(url);
-}

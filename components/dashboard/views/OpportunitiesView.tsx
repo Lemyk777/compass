@@ -13,6 +13,7 @@ import {
   saveOpportunityIntent,
 } from "@/app/dashboard/actions";
 import { graduationYearFromGrade } from "@/lib/data/eligibility";
+import { downloadIcs } from "@/lib/calendar/ics";
 import {
   INTENT_TEXT_MAX,
   START_OPTIONS,
@@ -418,6 +419,7 @@ function CategoryTabs({
     { key: "all", label: "All" },
     { key: "olympiad", label: "Olympiads" },
     { key: "competition", label: "Competitions" },
+    { key: "course", label: "Courses" },
     { key: "summer_program", label: "Summer Programs" },
     { key: "research_program", label: "Research" },
   ];
@@ -622,6 +624,19 @@ function CommitRow({ o }: { o: Opportunity }) {
             className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring disabled:opacity-50"
           >
             I entered it
+          </button>
+        )}
+        {/* The return loop: a real calendar event with a reminder a week before
+            the deadline closes — an external trigger that brings the student
+            back on its own, with no email/push infrastructure. Only offered for
+            a CONFIRMED date; a reminder on a guessed one would misfire. */}
+        {o.dateConfirmed && intent.status === "planning" && (
+          <button
+            type="button"
+            onClick={() => downloadIcs([o])}
+            className="rounded-lg border border-ivy/30 bg-ivy-soft/40 px-2.5 py-1 text-xs font-medium text-ivy-ink transition-colors hover:bg-ivy-soft focus-visible:focus-ring"
+          >
+            Remind me before it closes
           </button>
         )}
         <button
