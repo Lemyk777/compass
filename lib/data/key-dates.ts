@@ -83,6 +83,7 @@ export type CompetitionTier = "accessible" | "selective" | "elite";
 //
 //   free            nothing to pay, end to end (any certificate included)
 //   free_cert_paid  the course is free; the CERTIFICATE costs money
+//   free_then_paid  free to enter; you pay only if you get through a round
 //   freemium        a real free tier, with an optional paid plan on top
 //   subscription    you pay per month/year to use it at all
 //   one_time        a single up-front fee
@@ -97,6 +98,7 @@ export type CompetitionTier = "accessible" | "selective" | "elite";
 export type CostModel =
   | "free"
   | "free_cert_paid"
+  | "free_then_paid"
   | "freemium"
   | "subscription"
   | "one_time"
@@ -210,6 +212,13 @@ const COST_COPY: Record<
     fallback:
       "Free to learn, but the certificate is a paid extra. You can do the whole course without paying — you just won't get the certificate at the end.",
   },
+  free_then_paid: {
+    label: "Free to enter · you pay only if you get through",
+    short: "Free to enter",
+    tone: "partial",
+    fallback:
+      "The first round costs nothing. A fee appears only if you progress — so you can find out how far you get before any money is involved.",
+  },
   freemium: {
     label: "Free tier · paid plan optional",
     short: "Free tier",
@@ -295,7 +304,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Gateway to AIME/USAMO — the standard math-talent signal for STEM.",
     cost: "varies",
     costDetail:
-      "You sit it through a school, which pays the MAA a registration fee plus a few dollars per student. Some schools pass that on, many absorb it — ask your teacher what it costs you.",
+      "You sit it through a school, which buys student licences from the MAA. What reaches the student is usually $5-20 per sitting, and plenty of schools absorb it entirely — ask your teacher what it costs you before assuming either way.",
   },
   {
     id: "math-kangaroo",
@@ -581,7 +590,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Flagship essay prize for humanities, law, philosophy and econ.",
     cost: "free",
     costDetail:
-      "Free to enter if you submit by the standard deadline; a late submission carries a fee (around $20). Registration itself costs nothing.",
+      "Free to enter on time — no registration or submission fee. Miss the deadline and it costs: about GBP 25 for a 7-day extension, GBP 75 for 21 days. Submit on time and you pay nothing at all.",
   },
   {
     id: "nhd",
@@ -651,7 +660,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Team academic tournament across subjects — a welcoming first competition.",
     cost: "one_time",
     costDetail:
-      "Paid, and it compounds: roughly $100+ per student for a regional round, then more for the Global Round and Tournament of Champions, plus travel and accommodation. Budget for the whole pathway, not just the first round.",
+      "Paid, and it compounds: a regional round runs about $50-150 per student, then the Global Round and Tournament of Champions cost more again and come as accommodation packages, plus travel. Budget for the whole pathway, not just the first round.",
   },
   // ── Arts & design ──────────────────────────────────────────────────────────
   {
@@ -701,7 +710,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "The most prestigious and selective STEM summer research program in the world [Fully Funded].",
     cost: "free",
     costDetail:
-      "Free: RSI charges no tuition and covers room and board for the six weeks. You cover only your travel to the US.",
+      "Free once you are in: RSI charges no tuition and covers room and board for the six weeks. Two things are still on you — a $65 application fee, and travel to the US.",
   },
   {
     id: "ssp",
@@ -717,7 +726,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Intensive 39-day residential research program in astrophysics, biochemistry, or genomics [Financial aid available].",
     cost: "paid_aid",
     costDetail:
-      "Tuition is roughly $9,000 and SSP is need-blind with significant need-based aid — many participants pay much less. Apply for aid alongside admission.",
+      "The 2026 programme fee is $11,800, and it is scaled to what your family can afford — nobody pays more than that, many pay much less. The fee is subsidised by donations; ask what your number is rather than reading the headline.",
   },
   {
     id: "mostec",
@@ -733,7 +742,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Online science and engineering program for rising seniors from underrepresented backgrounds [Fully Funded].",
     cost: "free",
     costDetail:
-      "Free: MIT covers the full cost of MITES programs, including materials. There is no application fee and no tuition.",
+      "Free to attend: MIT covers tuition, room, board and materials, and travel scholarships are available. Check the application page for an application fee — several programmes of this kind charge a small one even when attendance is free.",
   },
   {
     id: "yygs",
@@ -749,7 +758,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Highly diverse international summer program covering global challenges, politics, and STEM [Financial aid available].",
     cost: "paid_aid",
     costDetail:
-      "Tuition is roughly $6,000-7,000 plus travel, with need-based financial aid up to a full scholarship. You apply for aid at the same time as admission.",
+      "$7,000 for the two-week residential session (up from $6,500), covering instruction, housing, meals and materials — travel is on top. Yale puts over $3m into need-based aid and says international students are eligible too, so apply for aid alongside admission rather than ruling yourself out.",
   },
   {
     id: "nyu-shanghai-summer",
@@ -827,7 +836,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Legendary mathematics summer program for exceptionally talented high schoolers [Financial aid available].",
     cost: "paid_aid",
     costDetail:
-      "Tuition is around $6,000, but PROMYS is need-blind and awards substantial need-based aid — many students pay far less or nothing. You request aid inside the same application, not afterwards.",
+      "Up to $8,000 for the six weeks, less whatever aid you are awarded. Read the aid rule carefully: PROMYS is free for US families earning under $80,000, but for INTERNATIONAL students aid is decided case by case — do not assume the free tier applies to you. Ask before you build a summer around it.",
   },
   {
     id: "launchx",
@@ -843,7 +852,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Premier high school entrepreneurship program — build a real startup [Financial aid available].",
     cost: "paid_aid",
     costDetail:
-      "A paid program running into several thousand dollars (the in-person track is the expensive one; online costs less), with a limited number of need-based scholarships. Confirm the current price on the site.",
+      "Priced by format: about $1,995 for the online bootcamp up to $11,495 for the residential San Diego flagship, with most programmes landing between $4,495 and $6,495. On-site tuition covers housing and food but not your travel there. A limited number of need-based scholarships exist.",
   },
   {
     id: "garcia-center",
@@ -891,7 +900,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Intensive mathematics camp at Stanford for advanced high school students [Financial aid available].",
     cost: "paid_aid",
     costDetail:
-      "Stanford charges tuition — roughly $3,000 online and around $8,000 residential — with need-based financial aid available. Confirm the current figures before applying.",
+      "Stanford charges $3,750 for the online programme and $8,950 residential (housing, meals and field trips included). Financial aid runs up to 100% of the cost on demonstrated need, and roughly a third of participants get some — ask, do not assume.",
   },
   {
     id: "cmu-sams",
@@ -907,7 +916,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Fully-funded STEM program focused on diversity and rigorous academic preparation [Fully Funded].",
     cost: "free",
     costDetail:
-      "Free: Carnegie Mellon funds SAMS in full for admitted students — no tuition, housing or meal costs. Budget for travel.",
+      "Free once you are in: Carnegie Mellon covers tuition, housing and meals, and scholars get a small stipend for incidentals. Still on you — a $50 application fee, and travel to Pittsburgh.",
   },
   {
     id: "horizon-academic",
@@ -962,7 +971,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Team-based cybersecurity competition perfect for beginners and high schools.",
     cost: "varies",
     costDetail:
-      "Teams pay a registration fee (around $200), with free or discounted places for Title I and JROTC teams. The cost sits with the team, not usually the student.",
+      "Teams pay a registration fee — around $165 for the middle-school division and $205 for the open division in recent seasons, so confirm the current figure. Free and discounted places exist for Title I and JROTC teams, and the cost sits with the team rather than the student.",
   },
   {
     id: "caribou-math",
@@ -1195,9 +1204,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "High-school students aged 13–18 — open worldwide",
     url: "https://www.geniusolympiad.org/",
     blurb: "Environment-focused across science, art, writing and business — unusually broad entry point.",
-    cost: "one_time",
+    cost: "free_then_paid",
     costDetail:
-      "Not free: there are fees at the finalist stage — event registration plus travel and stay in New York. Check the current figures before you invest in a project for it.",
+      "Submitting a project costs nothing. The money appears only if you are selected: finalists pay event registration plus travel and stay in New York. Check those figures before you build a project around it.",
   },
   {
     id: "earth-prize",
@@ -1275,9 +1284,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Students under 25 worldwide — no national selection needed",
     url: "https://www.iymc.info/",
     blurb: "Enter directly from any country — a good first international maths credential.",
-    cost: "one_time",
+    cost: "free_then_paid",
     costDetail:
-      "The qualification round is free; the later rounds carry a small participation fee (about EUR 25), and the organisers waive it for students who cannot pay — you have to ask.",
+      "The qualification round is free. A small participation fee (about EUR 25) applies only in the later rounds, and the organisers waive it for students who cannot pay — you have to ask.",
   },
   {
     id: "purple-comet",
@@ -1419,7 +1428,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Earn real college credit on campus or online — a credible academic-rigour signal.",
     cost: "paid_aid",
     costDetail:
-      "One of the expensive ones: roughly $5,000 for a two-week program and $15,000+ for the seven-week credit program, plus travel. Some need-based aid exists but it is limited — check what you would actually pay before you invest in the application.",
+      "One of the expensive ones: the Pre-College programme is $6,100 and the Secondary School Programme runs $4,180-15,735 depending on format — plus a $75 application fee and your travel. Some need-based aid exists but it is limited, so work out what you would actually pay before investing in the application.",
   },
   {
     id: "rise-schmidt",
@@ -1666,7 +1675,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "The only journal publishing serious high-school history essays — a rare humanities credential.",
     cost: "one_time",
     costDetail:
-      "Reading it is free, but submitting an essay costs around $70, which includes a subscription. Publication itself is not paid for separately.",
+      "Submitting an essay is not free: $70 with the electronic journal, $110 with the print edition in the US, and $150 with print internationally — take the electronic tier. Reading the journal costs nothing, and publication itself carries no extra charge.",
   },
   {
     id: "stem-fellowship",
@@ -1786,7 +1795,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Long-term creative engineering problems solved as a team — starts as young as primary school.",
     cost: "varies",
     costDetail:
-      "Team-based: a school or group buys a membership (around $135) and pays regional tournament fees on top.",
+      "Team-based: a school or group buys a membership and pays regional tournament fees on top. We could not confirm the current membership price — ask your coach what the season costs before you sign up.",
   },
   {
     id: "globe-ivss",
@@ -2072,7 +2081,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "A Nobel laureate's tour of risk, insurance and markets — the serious econ course to name before university.",
     cost: "free_cert_paid",
     costDetail:
-      "Free to audit: lectures and readings cost nothing. Graded assignments and the shareable certificate are paid (Coursera charges roughly $49-79 for this course, or it is included in a Coursera Plus subscription). Coursera financial aid can cover the certificate in full — apply on the course page and expect to wait about two weeks.",
+      "Free to audit: lectures and readings cost nothing. Graded assignments and the shareable certificate are paid (Coursera charges roughly $49-79 for this course, or it is included in a Coursera Plus subscription). Coursera financial aid covers most of that if granted — recent reports say it now caps at around 90%, so expect a small remainder rather than nothing. Apply on the course page and allow about two weeks.",
   },
 
   // ── Internships / open-source (real, paid, remote, global) ─────────────────
@@ -2091,7 +2100,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Get paid to write open-source software with a real project and mentor — remote, from anywhere.",
     cost: "funded",
     costDetail:
-      "Free to take part, and Google pays a stipend (roughly $1,500-6,600 depending on project size and your country). You are never asked for money — anyone charging you for GSoC is a scam.",
+      "Free to take part, and Google pays a stipend: roughly $1,500-3,300 for a medium project and $3,000-6,600 for a large one, adjusted to your country's purchasing power — so the figure for Kazakhstan or Uzbekistan sits below the US headline. You are never asked for money; anyone charging you for GSoC is a scam.",
   },
   {
     id: "outreachy",
@@ -2240,9 +2249,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Pre-university students worldwide, under 20 — online; qualification is free",
     url: "https://iaac.space/",
     blurb: "Solve astrophysics problems online, at your own desk — no telescope, no travel, open to everyone.",
-    cost: "one_time",
+    cost: "free_then_paid",
     costDetail:
-      "The qualification and pre-final rounds are free; the final round carries a small fee (about EUR 20), waived on request for students who cannot pay.",
+      "The qualification and pre-final rounds are free. A small fee (about EUR 20) applies only at the final round, and it is waived on request for students who cannot pay.",
   },
   {
     id: "cubes-in-space",
@@ -2293,7 +2302,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Five weeks of mathematics you choose yourself, with real mathematicians — need-blind aid for internationals.",
     cost: "paid_aid",
     costDetail:
-      "Tuition is roughly $5,000-6,000 and Mathcamp awards large need-based scholarships, so a substantial share of campers pay a reduced fee or nothing. Aid is requested in the application.",
+      "$7,500 for 2026, and the final fee lands anywhere between $0 and $7,500 after need-based aid. The automatic free tier covers US and Canadian families under $100,000 — from elsewhere it is case by case, so ask what you would actually pay.",
   },
 
   // ── More free university courses (highest-accessibility type) ──────────────
@@ -2343,7 +2352,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "The web-dev course companies actually rate — React, Node, GraphQL, testing — free from a real university.",
     cost: "free",
     costDetail:
-      "Genuinely free end to end: the course, the certificate and even the University of Helsinki credits cost nothing. This is the rare one with no catch at the finish line.",
+      "Genuinely free end to end: the course and the certificate cost nothing, and neither do the University of Helsinki ECTS credits — those just need a free Open University enrolment. The rare one with no catch at the finish line.",
   },
   {
     id: "elements-of-ai",
@@ -2375,7 +2384,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "The machine-learning course that taught a generation — rebuilt and still free to audit.",
     cost: "free_cert_paid",
     costDetail:
-      "Each of the three courses is free to audit. The certificate runs on a Coursera subscription — about $49 a month after a 7-day free trial — so the total depends on how fast you finish. Financial aid is available and covers it in full if granted.",
+      "Each of the three courses is free to audit. The certificate runs on a Coursera subscription — about $49 a month after a 7-day free trial — so the total depends on how fast you finish. Financial aid is available and covers most of it if granted — recently capped at around 90%, so expect a small remainder.",
   },
   {
     id: "missing-semester",
@@ -2527,7 +2536,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "A respected literary prize that reads student work seriously — poetry or prose, judged by real writers.",
     cost: "one_time",
     costDetail:
-      "There is a small submission fee (around $15), and the journal waives it for students for whom it is a barrier — you have to write and ask.",
+      "Submitting carries a fee — check the current amount on the prize page, we could not confirm it. The journal waives it for students for whom it is a barrier, but you have to write and ask.",
   },
   {
     id: "foyle-young-poets",
@@ -2594,7 +2603,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "Yale's introduction to psychology — perception, memory, emotion, happiness — free to audit from anywhere.",
     cost: "free_cert_paid",
     costDetail:
-      "Free to audit: lectures and readings cost nothing. Graded assignments and the shareable certificate are paid (roughly $49-79, or included in a Coursera Plus subscription). Coursera financial aid can cover the certificate in full — apply on the course page.",
+      "Free to audit: lectures and readings cost nothing. Graded assignments and the shareable certificate are paid (roughly $49-79, or included in a Coursera Plus subscription). Coursera financial aid covers most of that if granted (recently capped at around 90%, so budget for a small remainder). Apply on the course page.",
   },
   {
     id: "learning-how-to-learn",
@@ -2610,7 +2619,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "The most-taken online course in the world — how your brain learns, and how to study far less painfully.",
     cost: "free_cert_paid",
     costDetail:
-      "Free to audit: the videos and readings cost nothing. The certificate is paid (roughly $49-79, or included in a Coursera Plus subscription), and Coursera financial aid can cover it in full if you apply on the course page.",
+      "Free to audit: the videos and readings cost nothing. The certificate is paid (roughly $49-79, or included in a Coursera Plus subscription), and Coursera financial aid covers most of it if granted — recently capped at around 90%, so expect a small remainder.",
   },
   {
     id: "model-thinking",
@@ -2626,7 +2635,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "A toolbox of models for thinking clearly about the world — economics, networks, decisions — free.",
     cost: "free_cert_paid",
     costDetail:
-      "Free to audit: lectures and readings cost nothing. The certificate is paid (roughly $49-79, or included in a Coursera Plus subscription), with Coursera financial aid available on the course page.",
+      "Free to audit: lectures and readings cost nothing. The certificate is paid (roughly $49-79, or included in a Coursera Plus subscription), with Coursera financial aid available on the course page — it covers most of the fee if granted, not always all of it.",
   },
   {
     id: "mru-economics",
@@ -2658,7 +2667,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "A recognised, career-ready data credential you can earn from anywhere — spreadsheets, SQL, R, dashboards.",
     cost: "free_cert_paid",
     costDetail:
-      "Free to audit the material. The certificate itself is a Coursera subscription — around $49 a month after a 7-day free trial — so finishing in three months costs roughly three payments. Financial aid is available and, if granted, covers the whole thing.",
+      "Free to audit the material. The certificate itself is a Coursera subscription — around $49 a month after a 7-day free trial — so finishing in three months costs roughly three payments. Financial aid is available and covers most of it if granted — recently capped at around 90%, so expect a small remainder.",
   },
   {
     id: "mit-linear-algebra",
@@ -2722,7 +2731,7 @@ export const COMPETITIONS: Competition[] = [
     blurb: "A proper university genetics course, free to audit — the serious biology foundation before medicine.",
     cost: "free_cert_paid",
     costDetail:
-      "Free to audit: lectures and readings cost nothing. The certificate is paid (roughly $49-79, or included in a Coursera Plus subscription), with Coursera financial aid available on the course page.",
+      "Free to audit: lectures and readings cost nothing. The certificate is paid (roughly $49-79, or included in a Coursera Plus subscription), with Coursera financial aid available on the course page — it covers most of the fee if granted, not always all of it.",
   },
 
   // ── Data-science contests built for emerging markets, and remote research ──
