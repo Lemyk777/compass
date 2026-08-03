@@ -131,6 +131,7 @@ export default async function AdminPage() {
       <AppHeader
         admin
         links={[
+          { href: "/admin/intents", label: "Commitments" },
           { href: "/admin/opportunities", label: t("admin.opps") },
           { href: "/admin/ambassadors", label: t("admin.ambassadors") },
           { href: "/dashboard", label: t("common.dashboard") },
@@ -186,6 +187,27 @@ export default async function AdminPage() {
                 {t("admin.ambReferred")}
               </span>
             </div>
+          </div>
+        </Link>
+
+        {/* The behavioural half of the metrics. Kept as its own screen because
+            it answers a different question from everything here: not how many
+            people arrived, but whether any of them did anything. */}
+        <Link
+          href="/admin/intents"
+          className="group mt-4 block rounded-2xl border border-line bg-card p-4 shadow-card transition-colors hover:border-accent/40 focus-visible:focus-ring"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-ink">Commitments</h2>
+              <p className="mt-0.5 text-xs text-ink-soft">
+                Who said &ldquo;I&rsquo;m doing this&rdquo;, what they picked,
+                and whether they entered it.
+              </p>
+            </div>
+            <span className="shrink-0 text-ink-faint transition-colors group-hover:text-accent">
+              →
+            </span>
           </div>
         </Link>
 

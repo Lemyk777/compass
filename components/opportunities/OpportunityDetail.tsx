@@ -97,14 +97,24 @@ export function OpportunityDetail({
   const tone = TONE[cost.tone];
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Escape closes; the panel takes focus so a keyboard user lands inside it.
+  // Escape closes; the panel takes focus so a keyboard user lands inside it;
+  // the page behind stops scrolling (otherwise a flick on a phone scrolls the
+  // list under the panel and you lose your place); and focus returns to
+  // whatever opened it, so closing never dumps you at the top of the document.
   useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     panelRef.current?.focus();
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+      opener?.focus?.();
+    };
   }, [onClose]);
 
   // Who runs it, read off the official URL — never invented.

@@ -2790,7 +2790,9 @@ export const COMPETITIONS: Competition[] = [
   }
 ];
 
-const COMPETITION_BY_ID = new Map(COMPETITIONS.map((c) => [c.id, c]));
+/** Registry lookup by id. Exported so metrics can name what a stored
+ *  `opportunity_id` actually refers to (see /admin/intents). */
+export const COMPETITION_BY_ID = new Map(COMPETITIONS.map((c) => [c.id, c]));
 
 /**
  * Ids removed from the registry that must never come back.

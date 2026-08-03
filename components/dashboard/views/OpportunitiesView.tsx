@@ -5,12 +5,8 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 // framer-backed MotionCard (position animation) instead of the plain Card.
 import { MotionCard as Card } from "@/components/report/MotionCard";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
-import {
-  CostPill,
-  OpportunityDetail,
-} from "@/components/opportunities/OpportunityDetail";
+import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
 import { PageHeader } from "@/components/dashboard/states";
-import { regionLabel } from "@/lib/data/geo";
 import {
   clearOpportunityIntent,
   saveGraduationYear,
@@ -27,9 +23,7 @@ import {
 } from "@/lib/data/intents";
 import {
   buildExtracurriculars,
-  formatDate,
   type CompetitionCategory,
-  type CompetitionTier,
   type Opportunity,
   type OpportunityFit,
   type StrengthBand,
@@ -85,12 +79,6 @@ const FIT_GROUPS: { fit: OpportunityFit; title: string; hint: string }[] = [
   },
 ];
 
-const TIER_BADGE: Record<CompetitionTier, { label: string; cls: string }> = {
-  accessible: { label: "Accessible", cls: "bg-likely-soft text-[#2C6B4D]" },
-  selective: { label: "Selective", cls: "bg-target-soft text-target" },
-  elite: { label: "Elite", cls: "bg-accent-soft text-accent-ink" },
-};
-
 type CategoryFilter = "all" | CompetitionCategory;
 
 // How many to put in front of the student by default.
@@ -105,6 +93,9 @@ type CategoryFilter = "all" | CompetitionCategory;
 // and both peak for exactly the students who have no record yet. So: five, and
 // the rest one deliberate tap away.
 const SHOWN = 5;
+
+/** Rows a fit group opens with, and adds per "show more". */
+const PAGE = 8;
 
 export function OpportunitiesView() {
   const { analysis, profileMeta, liveDates, basePath } = useDashboard();
@@ -148,6 +139,16 @@ export function OpportunitiesView() {
     plan?.items.filter(
       (o) => category === "all" || o.categoryResolved === category
     ) ?? [];
+
+  // How many sit behind each tab. Showing the number turns the filter from a
+  // guess ("is there anything under Courses?") into a decision.
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: plan?.items.length ?? 0 };
+    for (const o of plan?.items ?? []) {
+      counts[o.categoryResolved] = (counts[o.categoryResolved] ?? 0) + 1;
+    }
+    return counts;
+  }, [plan]);
 
   // What to act on now: eligible today, in the order buildExtracurriculars
   // already put them (matched to strength first, then datable, then soonest).
@@ -202,13 +203,22 @@ export function OpportunitiesView() {
                 </button>
               ) : (
                 <>
-                  <CategoryTabs active={category} onChange={setCategory} />
+                  {/* The tabs stay reachable while you scroll a hundred cards —
+                      having to scroll back up to change filter is the thing
+                      that makes a long list feel like work. */}
+                  <div className="sticky top-2 z-20 -mx-1 px-1 py-1">
+                    <CategoryTabs
+                      active={category}
+                      onChange={setCategory}
+                      counts={categoryCounts}
+                    />
+                  </div>
                   {FIT_GROUPS.map((g) => {
                     const rows = visible.filter((o) => o.fit === g.fit);
                     if (rows.length === 0) return null;
                     return (
                       <FitSection
-                        key={g.fit}
+                        key={`${g.fit}-${category}`}
                         title={g.title}
                         hint={g.hint}
                         count={rows.length}
@@ -216,6 +226,15 @@ export function OpportunitiesView() {
                       />
                     );
                   })}
+                  {visible.length === 0 && (
+                    <Card>
+                      <p className="text-sm text-ink-soft">
+                        Nothing in this category matches your profile yet. Try
+                        another tab — everything we track for you is still in
+                        &ldquo;All&rdquo;.
+                      </p>
+                    </Card>
+                  )}
                 </>
               )}
 
@@ -347,8 +366,16 @@ function Shortlist({
         )}
       </div>
       <ul className="mt-4 space-y-2.5">
-        {rows.map((o) => (
-          <OpportunityRow key={o.id} o={o} commit />
+        {rows.map((o, i) => (
+          <li
+            key={o.id}
+            className="animate-fade-up"
+            // Same 45ms stagger as the public page — the two lists should feel
+            // like the same product.
+            style={{ animationDelay: `${i * 45}ms`, animationFillMode: "backwards" }}
+          >
+            <OpportunityRow o={o} commit />
+          </li>
         ))}
       </ul>
     </Card>
@@ -415,33 +442,44 @@ function YearPrompt({ onPick }: { onPick: (year: number) => void }) {
 function CategoryTabs({
   active,
   onChange,
+  counts,
 }: {
   active: CategoryFilter;
   onChange: (c: CategoryFilter) => void;
+  counts: Record<string, number>;
 }) {
   const tabs: { key: CategoryFilter; label: string }[] = [
     { key: "all", label: "All" },
     { key: "olympiad", label: "Olympiads" },
     { key: "competition", label: "Competitions" },
     { key: "course", label: "Courses" },
-    { key: "summer_program", label: "Summer Programs" },
+    { key: "summer_program", label: "Summer" },
     { key: "research_program", label: "Research" },
   ];
   return (
-    <div className="inline-flex rounded-xl border border-line bg-card p-1 shadow-card">
+    // Scrollable on a phone rather than wrapping into two ragged rows.
+    <div className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-card/95 p-1 shadow-card backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {tabs.map((t) => {
         const on = t.key === active;
+        const n = counts[t.key] ?? 0;
+        if (n === 0 && t.key !== "all") return null;
         return (
           <button
             key={t.key}
             type="button"
             aria-pressed={on}
             onClick={() => onChange(t.key)}
-            className={`rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus-visible:focus-ring ${
-              on ? "bg-accent text-white" : "text-ink-soft hover:text-ink"
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-200 focus-visible:focus-ring ${
+              on ? "bg-accent text-white" : "text-ink-soft hover:bg-surface hover:text-ink"
             }`}
           >
             {t.label}
+            <span
+              data-num
+              className={`tabular-nums text-xs ${on ? "text-white/70" : "text-ink-faint"}`}
+            >
+              {n}
+            </span>
           </button>
         );
       })}
@@ -460,10 +498,17 @@ function FitSection({
   count: number;
   rows: Opportunity[];
 }) {
+  // A fit group can hold sixty cards. Rendering all of them costs a long,
+  // janky first paint and gives the student a wall to scroll past to reach the
+  // next section — so the group opens at a readable length and grows on demand.
+  const [limit, setLimit] = useState(PAGE);
+  const page = rows.slice(0, limit);
+  const rest = rows.length - page.length;
+
   return (
     <Card>
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
+        <h2 className="flex items-baseline gap-2 text-base font-semibold text-ink">
           {title}
           <span data-num className="text-xs font-normal text-ink-faint">
             ({count})
@@ -472,121 +517,41 @@ function FitSection({
         <p className="text-xs text-ink-faint">{hint}</p>
       </div>
       <ul className="mt-3 space-y-2.5">
-        {rows.map((o) => (
-          <OpportunityRow key={o.id} o={o} />
+        {page.map((o, i) => (
+          <li
+            key={o.id}
+            // Only the newly revealed rows animate in — re-animating the whole
+            // group on every "show more" would read as a flicker.
+            className={i >= limit - PAGE && limit > PAGE ? "animate-fade-up" : undefined}
+          >
+            <OpportunityRow o={o} />
+          </li>
         ))}
       </ul>
+      {rest > 0 && (
+        <button
+          type="button"
+          onClick={() => setLimit((n) => n + PAGE)}
+          className="mt-3 w-full rounded-xl border border-dashed border-line py-2.5 text-sm font-medium text-ink-soft transition-colors hover:border-ink/25 hover:text-ink focus-visible:focus-ring"
+        >
+          Show <span data-num>{Math.min(rest, PAGE)}</span> more
+          <span data-num className="text-ink-faint"> ({rest} left)</span>
+        </button>
+      )}
     </Card>
   );
 }
 
-const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
-  olympiad: "Olympiad",
-  competition: "Competition",
-  course: "Course",
-  research_program: "Research program",
-  summer_program: "Summer program",
-};
-
 function OpportunityRow({ o, commit }: { o: Opportunity; commit?: boolean }) {
-  const tier = TIER_BADGE[o.tierResolved];
-  // Each row owns its own detail panel — no state to thread through the two
-  // wrappers that render these.
-  const [detail, setDetail] = useState(false);
+  // One card definition for the whole product — see OpportunityCard. The
+  // commitment step is the only thing unique to the dashboard, so it rides in
+  // as the card's footer.
   return (
-    <li className="rounded-xl border border-line px-4 py-3">
-      {detail && <OpportunityDetail o={o} onClose={() => setDetail(false)} />}
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
-        <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
-            {/* The name is the way in: tapping the thing you're reading about
-                is what people try first. */}
-            <button
-              type="button"
-              onClick={() => setDetail(true)}
-              className="text-left underline-offset-2 hover:underline focus-visible:focus-ring"
-            >
-              {o.name}
-            </button>
-            {/* What it costs, before anyone commits an afternoon to it. */}
-            <CostPill o={o} />
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tier.cls}`}
-            >
-              {tier.label}
-            </span>
-            <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-faint">
-              {CATEGORY_LABEL[o.categoryResolved]}
-            </span>
-            {o.region && (
-              // Local opportunity — only shown to students from this country,
-              // so the badge is a "near you" marker, not a restriction warning.
-              <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-ink">
-                Local · {o.city ?? regionLabel(o.region)}
-              </span>
-            )}
-            {o.notYetEligible && (
-              // Kept deliberately: a younger student should see what to aim
-              // for. It just can never be presented as "do this now".
-              <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-soft">
-                Eligible {o.notYetEligible}
-              </span>
-            )}
-            {o.viaNationalSelection && (
-              <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-faint">
-                Via national selection
-              </span>
-            )}
-          </p>
-          <p className="mt-0.5 text-xs text-ink-soft">{o.blurb}</p>
-          {/* Who can enter — shown on EVERY card so a younger student never
-              wastes a cycle on an event they can't yet join. Live rows without
-              curated eligibility get an honest "check the page" fallback. */}
-          <p className="mt-1 flex items-start gap-1.5 text-xs text-ink-soft">
-            <PersonIcon />
-            <span>
-              <span className="font-medium text-ink">Eligibility:</span>{" "}
-              {o.eligibility ??
-                "varies — check the age/grade rules on the official page"}
-            </span>
-          </p>
-          {o.dateConfirmed ? (
-            <p className="mt-1 text-xs text-ink-faint">
-              Deadline{" "}
-              <span data-num className="tabular-nums">
-                {formatDate(o.deadline)}
-              </span>{" "}
-              · {o.window}
-            </p>
-          ) : (
-            // We never show a countdown for a date we can't stand behind — a wrong
-            // one could make a student miss a real deadline. Show the typical
-            // timing as a hint and point them to the official site to confirm.
-            <p className="mt-1 text-xs text-ink-faint">
-              Dates for the next cycle not yet announced — typically {o.window}.
-            </p>
-          )}
-        </div>
-        <div className="flex shrink-0 items-center gap-3">
-          {o.dateConfirmed ? <Countdown days={o.daysToDeadline} /> : <TbaPill />}
-          {/* Details now opens OUR panel — what it is, who it's for, and what
-              it costs — rather than dropping the student straight onto an
-              organiser's homepage to work that out themselves. The official
-              link is the primary action inside it. */}
-          <button
-            type="button"
-            onClick={() => setDetail(true)}
-            className="whitespace-nowrap rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
-          >
-            Details
-          </button>
-        </div>
-      </div>
-      {/* The commitment step lives only on the shortlist. Offering it against
-          sixty cards would turn a decision into a checklist — and the effect
-          being harnessed here comes from deciding, not from ticking. */}
-      {commit && <CommitRow o={o} />}
-    </li>
+    <OpportunityCard
+      o={o}
+      density="compact"
+      footer={commit ? <CommitRow o={o} /> : undefined}
+    />
   );
 }
 
@@ -819,54 +784,6 @@ function WhyMattersField({
         className="w-full max-w-sm rounded-lg border border-line bg-card px-3 py-1.5 text-xs text-ink placeholder:text-ink-faint focus-visible:focus-ring"
       />
     </label>
-  );
-}
-
-/** Small person glyph for the eligibility line. */
-function PersonIcon() {
-  return (
-    <svg
-      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-faint"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <circle cx="12" cy="8" r="4" />
-      <path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" />
-    </svg>
-  );
-}
-
-/** Neutral pill for opportunities whose next-cycle date isn't published yet. */
-function TbaPill() {
-  return (
-    <span className="whitespace-nowrap rounded-full bg-surface px-2.5 py-1 text-xs font-semibold text-ink-faint">
-      Dates TBA
-    </span>
-  );
-}
-
-/** Days-left pill, colored by urgency (mirrors the Timeline countdown). */
-function Countdown({ days }: { days: number }) {
-  const tone =
-    days <= 14
-      ? "bg-reach-soft text-reach"
-      : days <= 30
-        ? "bg-target-soft text-target"
-        : "bg-likely-soft text-[#2C6B4D]";
-  const text =
-    days <= 0 ? "due today" : days === 1 ? "1 day left" : `${days} days left`;
-  return (
-    <span
-      data-num
-      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${tone}`}
-    >
-      {text}
-    </span>
   );
 }
 
