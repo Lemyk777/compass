@@ -949,7 +949,7 @@ export const COMPETITIONS: Competition[] = [
     name: "Bebras Computing Challenge",
     fields: ["computer_science"],
     deadline: "2026-11-01",
-    window: "Challenge weeks in November",
+    window: "National challenge weeks, usually the second week of November",
     level: "international",
     category: "competition",
     tier: "accessible",
@@ -1237,8 +1237,12 @@ export const COMPETITIONS: Competition[] = [
     id: "space-apps",
     name: "NASA Space Apps Challenge",
     fields: ["computer_science", "engineering", "natural_sciences"],
-    deadline: "2026-10-01",
-    window: "48-hour global hackathon each October",
+    deadline: "2026-11-14",
+    // Checked 2026-08-03: the 2026 edition runs 14-15 November, registration
+    // opens 26 August and full challenge statements land 28 October. We had it
+    // as "each October", which is the pattern of earlier years, not this cycle.
+    window: "48-hour global hackathon, 14-15 Nov 2026 — registration opens 26 Aug",
+    dateConfirmed: true,
     level: "international",
     category: "competition",
     tier: "accessible",
@@ -1285,8 +1289,12 @@ export const COMPETITIONS: Competition[] = [
     id: "iymc",
     name: "International Youth Math Challenge",
     fields: ["computer_science", "engineering", "natural_sciences", "business_economics"],
-    deadline: "2026-09-30",
-    window: "Qualification round in autumn, final round in winter",
+    deadline: "2026-09-27",
+    // Checked 2026-08-03 against the organiser's own deadlines document
+    // (iymc.info/docs/IYMC_Deadlines.pdf): qualification closes 27 Sep 2026,
+    // 23:59 UTC. Our previous estimate of 30 Sep would have been three days late.
+    window: "Qualification round closes 27 Sep 2026; final round in winter",
+    dateConfirmed: true,
     level: "international",
     category: "competition",
     tier: "accessible",
@@ -2435,7 +2443,10 @@ export const COMPETITIONS: Competition[] = [
     name: "Advent of Code",
     fields: ["computer_science"],
     deadline: "2026-12-01",
-    window: "A new puzzle every day through December; free, any language",
+    // Not an announcement but a fixed annual shape: puzzles unlock daily from
+    // 1 to 25 December, unchanged every year since 2015. Checked 2026-08-03.
+    window: "A new puzzle every day 1-25 December; free, any language",
+    dateConfirmed: true,
     level: "international",
     category: "competition",
     tier: "accessible",
