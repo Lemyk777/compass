@@ -1,7 +1,7 @@
 # Opportunities — status & next steps
 
 Working notes for the Opportunities feature (catalog, discovery, matching).
-Last updated: 2026-08-02.
+Last updated: 2026-08-03.
 
 **Direction of the whole project is changing.** We are moving the centre of
 Compass off *scoring a portfolio* and onto *giving a student opportunities*. The
@@ -22,10 +22,43 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
 
 ## Where it stands
 
-**Catalog** — 148 curated opportunities in `lib/data/key-dates.ts`. Every link
-verified: `npm run test:links` reports 144/148 healthy (3 bot-walled but live in
-a real browser; 1 genuinely down — `ijso`, an SSL failure on its official domain,
-left in place per the "don't delete on a same-day outage" trap).
+**Latest (2026-08-03), all shipped to prod:**
+- **Honest cost & accessibility panel.** Tapping any opportunity opens a detail
+  panel (`components/opportunities/OpportunityDetail.tsx`) showing what it is,
+  who runs it, who it's for, why it's worth it — and, FIRST, what it COSTS. Cost
+  is a first-class field on `Competition` (`cost: CostModel`, 10 values from
+  `free` to `unknown`, + `costDetail`), rendered by `opportunityCost()` and shown
+  as a colour-coded `CostPill` on the card too, so "this costs money" is never
+  hidden behind a click. `unknown` is the honest default — never implies free.
+- **8 free industry certificates open to under-18s** (IBM SkillsBuild, AWS
+  Educate, Google Skillshop, freeCodeCamp, GitHub Foundations, Cisco Skills for
+  All, Microsoft Learn = `free_cert_paid`, Sololearn = `freemium`) — age AND cost
+  verified against each provider, not from memory.
+- **Confirmed dates 8 → 17.** Hand-verified 6 more autumn-2026 deadlines against
+  official pages (Congressional App, YoungArts, Wharton, Breakthrough Junior,
+  Astro Pi, Purple Comet); two were correcting plain-wrong estimates. Most
+  2026-27 dates simply aren't published yet in August — those stay honest "Dates
+  TBA" for the `sync-dates` cron to confirm as organisers publish through autumn.
+- `alwaysOpen` distinguishes self-paced things ("open now") from unannounced
+  cycles ("dates TBA"). Candidate fee/date research notes live in
+  [OPPORTUNITIES_CANDIDATES.md](OPPORTUNITIES_CANDIDATES.md).
+
+**Catalog** — 156 curated opportunities in `lib/data/key-dates.ts`. Every link
+verified: `npm run test:links` reports 155/156 healthy (only `ijso` down — an SSL
+failure on its official domain, left in place per the "don't delete on a same-day
+outage" trap).
+
+**Age is eligibility, so it is verified, not assumed.** The +8 free industry
+certificates people share as "free and valuable" were added only after each
+one's age policy was checked against the source and confirmed open to under-18s,
+each with an `ageMin` gate encoded: IBM SkillsBuild (13–18), AWS Educate (13/14+),
+GitHub Foundations (students 13+), Google Skillshop (no age limit), freeCodeCamp
+(all ages), Microsoft Learn (13+), Cisco Networking Academy / Skills for All
+(13+, mobile-first), Sololearn (13+, phone-first). The 18+/enterprise ones from
+the same lists were deliberately NOT added — Salesforce Trailhead (account 18+),
+MongoDB University, NVIDIA DLI, Snowflake — and Codecademy (16+) was passed over
+as freeCodeCamp already covers free coding: showing a 14-year-old an 18+ course
+is the exact "is this for me?" ambiguity the whole section exists to remove.
 
 The 2026-08-02 push (three passes, +48: 100 → 148) was built around the
 section's actual mission — students who are NOT in a first-tier country (London /
@@ -90,8 +123,9 @@ students without approval at `/admin/opportunities`.
 
 **Dates** — `/api/cron/sync-dates` runs daily over a rotating batch of 8. It
 reads the landing page *and* the linked "key dates"/"apply" page, because
-landing pages carry no deadlines. **8 of 100 entries have a confirmed date** and
-8 SAT sittings are synced — see step (3), this is the constraint on everything
+landing pages carry no deadlines. **17 of 156 entries now have a confirmed date**
+(hand-verified through 2026-08-03; the cron confirms more as they publish) plus
+SAT sittings — see step (3), date coverage is still the constraint on everything
 in the "remove the work" direction. Failures report a typed reason
 (`fetch_failed` / `no_content` / `model_error` / `declined` / `invalid_date`)
 rather than a silent null.
@@ -108,7 +142,7 @@ npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
 npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog
 npm run build           # lint + type-check gate
-node --import tsx scripts/test-session-checks.ts   # 56 logic checks
+node --import tsx scripts/test-session-checks.ts   # 60 logic checks
 ```
 
 `test:links` separates *dead* from *blocked*: a 403/429 from a bot wall is
@@ -172,7 +206,7 @@ audience and date-layer decisions. Only then more rules.
 
 ## Next steps, in order
 
-1. **Keep expanding the catalog.** Now **148 entries** across 5 types
+1. **Keep expanding the catalog.** Now **156 entries** across 5 types
    (competition, olympiad, course, summer_program, research_program). The
    guiding filter for new entries is the mission: would a student in Kazakhstan
    or Uzbekistan, with no first-tier network, actually be able to do this? Prefer

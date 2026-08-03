@@ -31,13 +31,17 @@ export default async function LandingPage() {
           />
           <nav className="flex items-center gap-2 sm:gap-3">
             {isAdmin && <AdminSwitcher className="mr-1 hidden lg:inline-flex" />}
+            {/* Reflect the actual session. A signed-in student was still shown
+                "Log in" here — the page knows who they are (it renders the admin
+                switcher above off the same session) — which reads as "my profile
+                was reset". Show the way back into their account instead. */}
             <ButtonLink
-              href="/auth/login"
+              href={session ? "/dashboard" : "/auth/login"}
               variant="ghost"
               size="sm"
               className="hidden whitespace-nowrap font-medium sm:inline-flex"
             >
-              {t("common.logIn")}
+              {session ? t("common.dashboard") : t("common.logIn")}
             </ButtonLink>
             {/* The main button is now Opportunities — the front door of the
                 product. Signup (the profile assessment) stays reachable from the
@@ -98,12 +102,12 @@ export default async function LandingPage() {
                 {t("landing.ctaOpportunities")}
               </ButtonLink>
               <ButtonLink
-                href="/auth/signup"
+                href={session ? "/dashboard" : "/auth/signup"}
                 variant="subtle"
                 size="lg"
                 className="rounded-full border border-ink/10 bg-white px-7 py-4 text-base font-medium text-ink transition-all hover:shadow-md"
               >
-                {t("landing.ctaAssess")}
+                {session ? t("common.dashboard") : t("landing.ctaAssess")}
               </ButtonLink>
             </div>
 
@@ -226,7 +230,7 @@ export default async function LandingPage() {
       <FAQ />
 
       {/* ── CTA ── the close. */}
-      <FinalCTA />
+      <FinalCTA signedIn={!!session} />
 
       <footer className="mx-auto max-w-6xl px-6 py-10 text-sm font-light text-ink/40">
         <div className="flex flex-col items-start justify-between gap-4 border-t border-black/10 pt-8 sm:flex-row sm:items-center">

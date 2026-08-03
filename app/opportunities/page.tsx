@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { ButtonLink } from "@/components/ui/Button";
 import { EligibilityChecker } from "@/components/opportunities/EligibilityChecker";
 import { COMPETITIONS } from "@/lib/data/key-dates";
+import { getSession } from "@/lib/auth/session";
 
 // The public face of Opportunities: no account, no analysis, no paywall.
-// It exists to answer one question for a stranger — "what can I enter?" — and
-// it is the entry point if this is to stand alone as a product.
+// It exists to answer one question for a STRANGER — "what can I enter?" — and
+// it is the front door if this is to stand alone as a product.
+//
+// It is deliberately the GUEST surface only. A signed-in student already has an
+// Opportunities view inside the dashboard shell (sidebar, their profile, the
+// full report), so landing them on this bare page made the product feel like
+// two separate sites. When we know who they are we send them to that integrated
+// view instead — one Opportunities experience per state, not two.
 
 export const metadata: Metadata = {
   title: "What can you enter this year? — Compass",
@@ -14,14 +22,19 @@ export const metadata: Metadata = {
     "Competitions, olympiads and programmes open to school students worldwide, filtered to the ones you can actually enter at your age. Free, no account needed.",
 };
 
-export default function PublicOpportunitiesPage() {
+export default async function PublicOpportunitiesPage() {
+  // Signed in? Go to the account's own Opportunities, not this stripped-down
+  // public copy. This is what stops the site feeling like disconnected islands.
+  const session = await getSession();
+  if (session) redirect("/dashboard/opportunities");
+
   return (
     <main className="min-h-dvh bg-surface text-ink">
       <header className="border-b border-line/70">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-5 sm:px-6">
           <Logo className="shrink-0 text-ink" />
-          <ButtonLink href="/auth/signup" variant="subtle" size="sm">
-            Get the full report
+          <ButtonLink href="/auth/login" variant="subtle" size="sm">
+            Sign in
           </ButtonLink>
         </div>
       </header>
