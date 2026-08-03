@@ -67,6 +67,16 @@ export function downloadIcs(items: Competition[]): void {
   const a = document.createElement("a");
   a.href = url;
   a.download = datable.length === 1 ? `${datable[0].id}-deadline.ics` : "deadlines.ics";
+  a.rel = "noopener";
+  // The anchor must be in the document for the click to register a download in
+  // every browser (a detached <a> is ignored by some), and the object URL must
+  // outlive the click: revoking it synchronously cancels the download while the
+  // browser is still reading the blob, which is exactly the "works sometimes"
+  // flakiness testers hit. Tear both down on the next tick instead.
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
