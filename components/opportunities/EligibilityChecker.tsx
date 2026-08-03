@@ -6,7 +6,10 @@ import {
   type Opportunity,
 } from "@/lib/data/key-dates";
 import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
-import { graduationYearFromGrade } from "@/lib/data/eligibility";
+import {
+  graduationYearFromGrade,
+  gradeFromGraduationYear,
+} from "@/lib/data/eligibility";
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { downloadIcs } from "@/lib/calendar/ics";
 
@@ -33,14 +36,37 @@ const GRADES = [5, 6, 7, 8, 9, 10, 11, 12];
 
 type Step = "grade" | "results";
 
-export function EligibilityChecker() {
+export function EligibilityChecker({
+  initialGraduationYear = null,
+  initialFields = [],
+}: {
+  /** A signed-in student's known graduation year — pre-selects their school
+   *  year so they never re-answer what onboarding already asked. */
+  initialGraduationYear?: number | null;
+  /** A signed-in student's chosen faculties — pre-applies the field filter so
+   *  the public checker and the dashboard agree from the first render. */
+  initialFields?: FacultyValue[];
+} = {}) {
   // `today` resolves on the client — the countdown depends on the visitor's
   // clock, and a server-rendered one would hydrate wrong.
   const [today, setToday] = useState<Date | null>(null);
   useEffect(() => setToday(new Date()), []);
 
   const [grade, setGrade] = useState<number | null>(null);
-  const [fields, setFields] = useState<FacultyValue[]>([]);
+  const [fields, setFields] = useState<FacultyValue[]>(initialFields);
+
+  // Pre-select the school year for a signed-in student once `today` is known
+  // (grade depends on the June rollover, so it can only be derived client-side).
+  // Only when it lands inside the range the buttons offer — an already-graduated
+  // profile is left to answer for itself rather than pre-filled wrong.
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (prefilled.current || !today || initialGraduationYear == null) return;
+    prefilled.current = true;
+    const g = gradeFromGraduationYear(initialGraduationYear, today);
+    if (g != null && g >= GRADES[0] && g <= GRADES[GRADES.length - 1]) setGrade(g);
+  }, [today, initialGraduationYear]);
+
   const step: Step = grade == null ? "grade" : "results";
 
   const resultsRef = useRef<HTMLDivElement>(null);
