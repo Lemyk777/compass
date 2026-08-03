@@ -6,6 +6,10 @@ import {
   type CompetitionTier,
   type Opportunity,
 } from "@/lib/data/key-dates";
+import {
+  CostPill,
+  OpportunityDetail,
+} from "@/components/opportunities/OpportunityDetail";
 import { graduationYearFromGrade } from "@/lib/data/eligibility";
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { downloadIcs } from "@/lib/calendar/ics";
@@ -295,11 +299,21 @@ const TIER_LABEL: Record<CompetitionTier, string> = {
 };
 
 function OpportunityCard({ o }: { o: Opportunity }) {
+  const [detail, setDetail] = useState(false);
   return (
     <article className="rounded-2xl border border-line bg-card p-5 shadow-card transition-shadow duration-200 hover:shadow-lift">
+      {detail && <OpportunityDetail o={o} onClose={() => setDetail(false)} />}
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold leading-snug text-ink">{o.name}</h3>
+          <h3 className="text-lg font-semibold leading-snug text-ink">
+            <button
+              type="button"
+              onClick={() => setDetail(true)}
+              className="text-left underline-offset-2 hover:underline focus-visible:focus-ring"
+            >
+              {o.name}
+            </button>
+          </h3>
           <p className="mt-1 text-[0.95rem] leading-relaxed text-ink-soft">
             {o.blurb}
           </p>
@@ -317,6 +331,9 @@ function OpportunityCard({ o }: { o: Opportunity }) {
         <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 font-medium text-ink-soft">
           {TIER_LABEL[o.tierResolved]}
         </span>
+        {/* Money on the card itself. Someone who never opens the detail panel
+            still has to know whether this one costs anything. */}
+        <CostPill o={o} className="px-2.5 py-1 text-[11px]" />
         <span>{o.eligibility ?? "Check the age rules on the official page"}</span>
       </div>
 
@@ -329,6 +346,13 @@ function OpportunityCard({ o }: { o: Opportunity }) {
         >
           Open the official page
         </a>
+        <button
+          type="button"
+          onClick={() => setDetail(true)}
+          className="inline-flex h-11 items-center rounded-xl border border-line bg-card px-4 text-sm font-medium text-ink-soft transition-colors hover:border-ink/25 hover:text-ink focus-visible:focus-ring"
+        >
+          What it is, and what it costs
+        </button>
         {o.dateConfirmed && (
           <button
             type="button"

@@ -5,6 +5,10 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 // framer-backed MotionCard (position animation) instead of the plain Card.
 import { MotionCard as Card } from "@/components/report/MotionCard";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
+import {
+  CostPill,
+  OpportunityDetail,
+} from "@/components/opportunities/OpportunityDetail";
 import { PageHeader } from "@/components/dashboard/states";
 import { regionLabel } from "@/lib/data/geo";
 import {
@@ -486,12 +490,26 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
 
 function OpportunityRow({ o, commit }: { o: Opportunity; commit?: boolean }) {
   const tier = TIER_BADGE[o.tierResolved];
+  // Each row owns its own detail panel — no state to thread through the two
+  // wrappers that render these.
+  const [detail, setDetail] = useState(false);
   return (
     <li className="rounded-xl border border-line px-4 py-3">
+      {detail && <OpportunityDetail o={o} onClose={() => setDetail(false)} />}
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
-            {o.name}
+            {/* The name is the way in: tapping the thing you're reading about
+                is what people try first. */}
+            <button
+              type="button"
+              onClick={() => setDetail(true)}
+              className="text-left underline-offset-2 hover:underline focus-visible:focus-ring"
+            >
+              {o.name}
+            </button>
+            {/* What it costs, before anyone commits an afternoon to it. */}
+            <CostPill o={o} />
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tier.cls}`}
             >
@@ -551,14 +569,17 @@ function OpportunityRow({ o, commit }: { o: Opportunity; commit?: boolean }) {
         </div>
         <div className="flex shrink-0 items-center gap-3">
           {o.dateConfirmed ? <Countdown days={o.daysToDeadline} /> : <TbaPill />}
-          <a
-            href={o.url}
-            target="_blank"
-            rel="noreferrer"
-            className="whitespace-nowrap rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
+          {/* Details now opens OUR panel — what it is, who it's for, and what
+              it costs — rather than dropping the student straight onto an
+              organiser's homepage to work that out themselves. The official
+              link is the primary action inside it. */}
+          <button
+            type="button"
+            onClick={() => setDetail(true)}
+            className="whitespace-nowrap rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
           >
-            Details ↗
-          </a>
+            Details
+          </button>
         </div>
       </div>
       {/* The commitment step lives only on the shortlist. Offering it against

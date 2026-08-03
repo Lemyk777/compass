@@ -10,6 +10,12 @@
 // linked per item. Keeping them roughly right is far better than the old generic
 // "register for the next SAT" with no date at all.
 //
+// The same applies to `cost`/`costDetail` (see CostModel below): fees drift
+// between cycles, so the figures below are approximate by design and the UI
+// always pairs them with "confirm on the official page". Re-check them in the
+// annual pass alongside the dates — a stale "free" is the one error that costs
+// us a student's trust outright.
+//
 // Competition dates hand-verified against official sources on 2026-06-27. Where
 // an exact 2026–27 date wasn't yet published, the entry uses the competition's
 // stable annual pattern (noted in the window text) — re-check before relying.
@@ -68,6 +74,37 @@ export type CompetitionCategory =
   | "summer_program";
 export type CompetitionTier = "accessible" | "selective" | "elite";
 
+// ── Cost & accessibility ──────────────────────────────────────────────────────
+// The second question after "can I enter this" is "what does it cost me", and
+// getting it wrong is the fastest way to lose a student's trust: a card that
+// says "free" and ends in a paywalled certificate reads as a lie, even when the
+// learning really was free. So money is a FIRST-CLASS field on every card, not a
+// footnote — and the distinction the catalog has to carry is not free/paid but:
+//
+//   free            nothing to pay, end to end (any certificate included)
+//   free_cert_paid  the course is free; the CERTIFICATE costs money
+//   freemium        a real free tier, with an optional paid plan on top
+//   subscription    you pay per month/year to use it at all
+//   one_time        a single up-front fee
+//   paid_aid        it costs money, but need-based aid or waivers exist
+//   funded          they pay YOU (stipend, or all costs covered)
+//   varies          the fee is set by your school/chapter/country, not centrally
+//   unknown         we have not verified it — say so, never guess
+//
+// `unknown` is the default for a reason: an unverified row must say "check the
+// official page", never imply free. The discovery pipeline deliberately does NOT
+// fill this in — a hallucinated price is worse than no price.
+export type CostModel =
+  | "free"
+  | "free_cert_paid"
+  | "freemium"
+  | "subscription"
+  | "one_time"
+  | "paid_aid"
+  | "funded"
+  | "varies"
+  | "unknown";
+
 export type Competition = {
   id: string;
   name: string;
@@ -104,6 +141,19 @@ export type Competition = {
   gate?: EligibilityGate;
   url: string;
   blurb: string;
+  /**
+   * What taking part actually costs. Absent = "unknown" — the UI then says we
+   * haven't verified it and points at the official page, which is the only
+   * honest thing to render for a row we can't stand behind.
+   * Prices checked 2026-08 — re-verify with the annual date pass.
+   */
+  cost?: CostModel;
+  /**
+   * One concrete sentence about the money: what's free, what isn't, what aid
+   * exists. Figures are approximate on purpose (they drift between cycles) and
+   * the UI always pairs them with "confirm on the official page".
+   */
+  costDetail?: string;
 };
 
 /** Resolved tier — falls back from `level` when a row predates the column. */
@@ -119,6 +169,107 @@ export function competitionTier(c: Competition): CompetitionTier {
 /** Resolved category — defaults to "competition" for rows without the column. */
 export function competitionCategory(c: Competition): CompetitionCategory {
   return c.category ?? "competition";
+}
+
+/**
+ * Resolved cost, ready to render: a short pill label, a full sentence, and a
+ * tone the UI colours by.
+ *
+ * `tone` is deliberately three-valued rather than free/paid — "free to learn,
+ * paid certificate" is the case students get burned by, and it has to be
+ * visually distinct from both. Colour never carries the meaning alone; the
+ * label always says the same thing in words.
+ */
+export type CostTone = "free" | "partial" | "paid" | "unknown";
+
+export type CostInfo = {
+  model: CostModel;
+  /** Full badge text for the detail panel heading. */
+  label: string;
+  /** Compact badge text for a card in a list. */
+  short: string;
+  /** The full, honest sentence for the detail panel. */
+  detail: string;
+  tone: CostTone;
+};
+
+const COST_COPY: Record<
+  CostModel,
+  { label: string; short: string; tone: CostTone; fallback: string }
+> = {
+  free: {
+    label: "Free",
+    short: "Free",
+    tone: "free",
+    fallback: "Free to take part — no fee at any stage.",
+  },
+  free_cert_paid: {
+    label: "Free to learn · the certificate costs money",
+    short: "Free · paid certificate",
+    tone: "partial",
+    fallback:
+      "Free to learn, but the certificate is a paid extra. You can do the whole course without paying — you just won't get the certificate at the end.",
+  },
+  freemium: {
+    label: "Free tier · paid plan optional",
+    short: "Free tier",
+    tone: "partial",
+    fallback:
+      "There is a real free tier you can learn from; a paid plan adds extras. You are never forced to pay.",
+  },
+  subscription: {
+    label: "Paid subscription",
+    short: "Subscription",
+    tone: "paid",
+    fallback:
+      "This one is a subscription — you pay every month for as long as you use it. Check the current price before you start.",
+  },
+  one_time: {
+    label: "Costs money — a one-off fee",
+    short: "Costs money",
+    tone: "paid",
+    fallback: "There is a single up-front fee to take part.",
+  },
+  paid_aid: {
+    label: "Costs money · financial aid available",
+    short: "Paid · aid available",
+    tone: "paid",
+    fallback:
+      "This costs money, but need-based financial aid is available — ask for it inside the application, not after you are admitted.",
+  },
+  funded: {
+    label: "Free — and it pays you",
+    short: "Free · funded",
+    tone: "free",
+    fallback:
+      "Nothing to pay: selected participants are funded (a stipend, or their costs covered).",
+  },
+  varies: {
+    label: "The fee depends on your school or country",
+    short: "Fee varies",
+    tone: "unknown",
+    fallback:
+      "The fee is set by your school, team or national organiser rather than centrally, so it varies — ask them what entry actually costs you.",
+  },
+  unknown: {
+    label: "We haven't verified the cost",
+    short: "Cost unverified",
+    tone: "unknown",
+    fallback:
+      "We haven't verified what this one costs, so don't assume it's free. Check the fees on the official page before you commit to it.",
+  },
+};
+
+export function opportunityCost(c: Competition): CostInfo {
+  const model = c.cost ?? "unknown";
+  const copy = COST_COPY[model] ?? COST_COPY.unknown;
+  return {
+    model,
+    label: copy.label,
+    short: copy.short,
+    detail: c.costDetail ?? copy.fallback,
+    tone: copy.tone,
+  };
 }
 
 export const COMPETITIONS: Competition[] = [
@@ -142,6 +293,9 @@ export const COMPETITIONS: Competition[] = [
     gate: { gradeMax: 12 },
     url: "https://maa.org/maa-invitational-competitions/",
     blurb: "Gateway to AIME/USAMO — the standard math-talent signal for STEM.",
+    cost: "varies",
+    costDetail:
+      "You sit it through a school, which pays the MAA a registration fee plus a few dollars per student. Some schools pass that on, many absorb it — ask your teacher what it costs you.",
   },
   {
     id: "math-kangaroo",
@@ -156,6 +310,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 1–12 — no minimum age",
     url: "https://mathkangaroo.org/mks/",
     blurb: "Friendly entry-level math contest — a good first competition signal.",
+    cost: "varies",
+    costDetail:
+      "A small per-student participation fee (around $20-25 in most countries), set by your national organiser; some schools cover it for you.",
   },
   {
     id: "usaco",
@@ -170,6 +327,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Any pre-college student — no age limit",
     url: "https://usaco.org/",
     blurb: "Promote through Bronze→Silver→Gold→Platinum to prove real CS ability.",
+    cost: "free",
+    costDetail:
+      "Free — no registration fee, contests run online, and you enter directly.",
   },
   {
     id: "naclo",
@@ -185,6 +345,9 @@ export const COMPETITIONS: Competition[] = [
     // competition and answers reliably. Verified 2026-07-29.
     url: "https://www.naclo.org/",
     blurb: "Logic-puzzle olympiad bridging languages and CS — no prior knowledge needed.",
+    cost: "free",
+    costDetail:
+      "Free — no entry fee. You sit it at a host site or at your own school.",
   },
   // ── Science olympiads ──────────────────────────────────────────────────────
   {
@@ -199,6 +362,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 9–12 at a US school — no minimum age",
     url: "https://www.usabo-trc.org/",
     blurb: "Top biology signal for pre-med / life-science applicants.",
+    cost: "varies",
+    costDetail:
+      "Your school registers and pays a fee (roughly $100 per school); individual students are usually not charged. Ask your teacher to register you.",
   },
   {
     id: "usapho",
@@ -213,6 +379,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 9–12 at a US school — no minimum age",
     url: "https://www.aapt.org/physicsteam/",
     blurb: "The U.S. physics olympiad pipeline — a sharp signal for physics/engineering.",
+    cost: "varies",
+    costDetail:
+      "Entry is through a school, which pays a registration fee; students are usually not charged directly. Ask your physics teacher.",
   },
   {
     id: "usnco",
@@ -226,6 +395,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 9–12 at a US school · under 20",
     url: "https://www.acs.org/education/students/highschool/olympiad.html",
     blurb: "National chemistry olympiad — strong for chem / pre-med profiles.",
+    cost: "varies",
+    costDetail:
+      "Entry is through your local ACS section via a school, and any fee is set locally — usually nothing for the student.",
   },
   {
     id: "brain-bee",
@@ -239,6 +411,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 13–19",
     url: "https://thebrainbee.org/",
     blurb: "Neuroscience olympiad — a focused spike for aspiring doctors and researchers.",
+    cost: "free",
+    costDetail:
+      "Free — local chapters run the qualifying rounds at no cost to students.",
   },
   // ── STEM research / innovation competitions ────────────────────────────────
   {
@@ -254,6 +429,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 9–12 · under 20 on May 1 — no minimum age",
     url: "https://www.societyforscience.org/isef/",
     blurb: "Original research project — the strongest STEM 'spike' you can build.",
+    cost: "varies",
+    costDetail:
+      "ISEF itself does not charge you, but you must qualify through an affiliated regional fair and some local fairs charge a small registration fee. Travel to the finals is usually covered by your fair.",
   },
   {
     id: "regeneron-sts",
@@ -268,6 +446,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Final-year (grade 12) students only",
     url: "https://www.societyforscience.org/regeneron-sts/",
     blurb: "The most prestigious U.S. high-school research competition — senior-year capstone.",
+    cost: "free",
+    costDetail:
+      "Free to apply — no entry fee, and finalists receive travel and awards.",
   },
   {
     id: "conrad-challenge",
@@ -283,6 +464,9 @@ export const COMPETITIONS: Competition[] = [
     // outright (ERR_SSL_PROTOCOL_ERROR). Verified live 2026-07-29.
     url: "https://conrad.spacecenter.org/",
     blurb: "Team innovation contest — build a real product solving a global problem.",
+    cost: "free",
+    costDetail:
+      "Free to enter the online rounds. Finalists invited to the summit cover their own travel, so budget for that only if you get through.",
   },
   {
     id: "technovation",
@@ -296,6 +480,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Girls ages 8–18 (senior division 16–18)",
     url: "https://www.technovation.org/",
     blurb: "Beginner-friendly app + startup challenge — great first tech project.",
+    cost: "free",
+    costDetail:
+      "Free — Technovation Girls charges nothing to take part, including the curriculum and mentoring.",
   },
   // ── Business / economics ───────────────────────────────────────────────────
   {
@@ -311,6 +498,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 9–12, via a school DECA chapter",
     url: "https://www.deca.org/",
     blurb: "Case-based business competition — leadership + commercial sense.",
+    cost: "varies",
+    costDetail:
+      "You join through a school chapter: DECA membership dues (usually a small annual fee) plus conference costs set by your chapter. Ask your advisor what the year costs.",
   },
   {
     id: "econ-challenge",
@@ -324,6 +514,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 9–12 (US) — no minimum age",
     url: "https://www.councilforeconed.org/programs/for-students/national-economic-challenge/",
     blurb: "Team econ contest — a sharp signal for economics applicants.",
+    cost: "varies",
+    costDetail:
+      "Entry is through your school and its state affiliate; students are not usually charged, but the national finals mean travel costs for the team.",
   },
   {
     id: "ieo",
@@ -337,6 +530,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "High-school students · under 20 at the finals (via national selection)",
     url: "https://ieo-official.org/",
     blurb: "The global economics olympiad — the top international econ credential.",
+    cost: "free",
+    costDetail:
+      "Free for you: entry is through your national economics olympiad, and team costs are covered by the host and your national organiser.",
   },
   {
     id: "diamond-challenge",
@@ -350,6 +546,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 14–18",
     url: "https://diamondchallenge.org/",
     blurb: "Entry-level entrepreneurship pitch — turn an idea into a venture concept.",
+    cost: "free",
+    costDetail:
+      "Free to enter — no registration fee; finalists' travel support is offered.",
   },
   {
     id: "wharton-investment",
@@ -363,6 +562,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 14–18 (grades 9–12)",
     url: "https://globalyouth.wharton.upenn.edu/investment-competition/",
     blurb: "Run a real portfolio as a team — finance and strategy under pressure.",
+    cost: "free",
+    costDetail:
+      "Free — teams enter with a teacher advisor and pay nothing.",
   },
   // ── Humanities / law / social sciences ─────────────────────────────────────
   {
@@ -377,6 +579,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Age 18 or under on the deadline (Junior Prize: under 15)",
     url: "https://www.johnlockeinstitute.com/essay-competition",
     blurb: "Flagship essay prize for humanities, law, philosophy and econ.",
+    cost: "free",
+    costDetail:
+      "Free to enter if you submit by the standard deadline; a late submission carries a fee (around $20). Registration itself costs nothing.",
   },
   {
     id: "nhd",
@@ -393,6 +598,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 6–12 — no minimum age",
     url: "https://www.nhd.org/",
     blurb: "Research-and-present history project — depth in argument and sourcing.",
+    cost: "varies",
+    costDetail:
+      "Entry is through your school and state or national affiliate; affiliate fees are small but vary, and reaching the national contest means travel costs.",
   },
   {
     id: "ippf",
@@ -406,6 +614,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 9–12 — no minimum age",
     url: "https://www.ippfdebate.com/",
     blurb: "Written + oral public-policy debate — sharp for law and policy applicants.",
+    cost: "free",
+    costDetail:
+      "Free to enter — the qualifying rounds are online, and the organisers cover finalists' travel to the finals.",
   },
   {
     id: "mun",
@@ -419,6 +630,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Typically 13+ — varies by conference",
     url: "https://www.nmun.org/",
     blurb: "Diplomacy, public speaking and current-affairs depth — easy to start.",
+    cost: "one_time",
+    costDetail:
+      "Conference fees are typically $100-400 per delegate, plus travel and accommodation — a Model UN season is one of the pricier extracurriculars. Local and school-run conferences cost far less than the big international ones.",
   },
   {
     id: "world-scholars-cup",
@@ -435,6 +649,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "No age limit — Junior and Senior divisions split at age 15",
     url: "https://www.scholarscup.org/",
     blurb: "Team academic tournament across subjects — a welcoming first competition.",
+    cost: "one_time",
+    costDetail:
+      "Paid, and it compounds: roughly $100+ per student for a regional round, then more for the Global Round and Tournament of Champions, plus travel and accommodation. Budget for the whole pathway, not just the first round.",
   },
   // ── Arts & design ──────────────────────────────────────────────────────────
   {
@@ -449,6 +666,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 13+ · grades 7–12",
     url: "https://www.artandwriting.org/",
     blurb: "The most recognized awards for creative arts and writing.",
+    cost: "one_time",
+    costDetail:
+      "There is a per-entry fee (around $10 per work, more for a portfolio), and fee waivers are available for students who need them — ask your teacher to request one.",
   },
   {
     id: "youngarts",
@@ -462,6 +682,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 15–18 (or grades 10–12)",
     url: "https://youngarts.org/",
     blurb: "National honor for emerging artists — the top pre-college arts credential.",
+    cost: "one_time",
+    costDetail:
+      "There is an application fee (around $35), and fee waivers are available for students who need one — request it during the application.",
   },
   // ── Summer Programs ────────────────────────────────────────────────────────
   {
@@ -476,6 +699,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Age 16+ by July 1 · rising seniors (year before final HS year completed)",
     url: "https://www.cee.org/programs/research-science-institute",
     blurb: "The most prestigious and selective STEM summer research program in the world [Fully Funded].",
+    cost: "free",
+    costDetail:
+      "Free: RSI charges no tuition and covers room and board for the six weeks. You cover only your travel to the US.",
   },
   {
     id: "ssp",
@@ -489,6 +715,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 15–18 during the program · current juniors (some sophomores)",
     url: "https://ssp.org/",
     blurb: "Intensive 39-day residential research program in astrophysics, biochemistry, or genomics [Financial aid available].",
+    cost: "paid_aid",
+    costDetail:
+      "Tuition is roughly $9,000 and SSP is need-blind with significant need-based aid — many participants pay much less. Apply for aid alongside admission.",
   },
   {
     id: "mostec",
@@ -502,6 +731,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Rising seniors (US citizens/permanent residents)",
     url: "https://mites.mit.edu/",
     blurb: "Online science and engineering program for rising seniors from underrepresented backgrounds [Fully Funded].",
+    cost: "free",
+    costDetail:
+      "Free: MIT covers the full cost of MITES programs, including materials. There is no application fee and no tuition.",
   },
   {
     id: "yygs",
@@ -515,6 +747,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 16–18 by the session start · grades 10–11",
     url: "https://globalscholars.yale.edu/",
     blurb: "Highly diverse international summer program covering global challenges, politics, and STEM [Financial aid available].",
+    cost: "paid_aid",
+    costDetail:
+      "Tuition is roughly $6,000-7,000 plus travel, with need-based financial aid up to a full scholarship. You apply for aid at the same time as admission.",
   },
   {
     id: "nyu-shanghai-summer",
@@ -556,6 +791,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 9–11 (research runs before your final application year)",
     url: "https://pioneeracademics.com/",
     blurb: "Respected, college-credit bearing online research program with university faculty [Financial aid available].",
+    cost: "paid_aid",
+    costDetail:
+      "Tuition is around $6,000 for the full research program, with need-based financial aid available. The application itself is free.",
   },
   {
     // TASP was discontinued in 2021; the Telluride Association's current
@@ -571,6 +809,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 10–11 (sophomores and juniors)",
     url: "https://www.tellurideassociation.org/our-programs/high-school-students/",
     blurb: "The pinnacle free summer seminar for humanities and social sciences — critical, discussion-driven and fully funded [Fully Funded].",
+    cost: "free",
+    costDetail:
+      "Free in the fullest sense: no tuition, and the Telluride Association covers room, board and usually travel too. There is no application fee.",
   },
   {
     id: "promys",
@@ -584,6 +825,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Age 14+ by the program start · grades 9–12",
     url: "https://promys.org/",
     blurb: "Legendary mathematics summer program for exceptionally talented high schoolers [Financial aid available].",
+    cost: "paid_aid",
+    costDetail:
+      "Tuition is around $6,000, but PROMYS is need-blind and awards substantial need-based aid — many students pay far less or nothing. You request aid inside the same application, not afterwards.",
   },
   {
     id: "launchx",
@@ -597,6 +841,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 14–18 (grades 9–12)",
     url: "https://launchx.com/",
     blurb: "Premier high school entrepreneurship program — build a real startup [Financial aid available].",
+    cost: "paid_aid",
+    costDetail:
+      "A paid program running into several thousand dollars (the in-person track is the expensive one; online costs less), with a limited number of need-based scholarships. Confirm the current price on the site.",
   },
   {
     id: "garcia-center",
@@ -610,6 +857,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Rising juniors/seniors, typically 16+ (lab access) — confirm on the program page",
     url: "https://www.stonybrook.edu/commcms/garcia/summer_program/",
     blurb: "Elite polymer engineering and materials science research program [Some aid/stipends available].",
+    cost: "one_time",
+    costDetail:
+      "The summer research program charges a program fee running into the thousands of dollars, plus your own housing if you are not local. Check the current figure and any aid on the official page before applying.",
   },
   {
     id: "clark-scholars",
@@ -623,6 +873,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Age 17+ by the program start · juniors/seniors (US citizens/PR)",
     url: "https://www.depts.ttu.edu/clarkscholars/",
     blurb: "Highly selective, fully-funded research program accepting only 12 students globally [Fully Funded/Stipend].",
+    cost: "funded",
+    costDetail:
+      "Free: room and board are covered and scholars receive a stipend (around $750) for the seven weeks.",
   },
   {
     id: "sumac",
@@ -636,6 +889,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 10–11 · age 15+ during the program",
     url: "https://sumac.spcs.stanford.edu/",
     blurb: "Intensive mathematics camp at Stanford for advanced high school students [Financial aid available].",
+    cost: "paid_aid",
+    costDetail:
+      "Stanford charges tuition — roughly $3,000 online and around $8,000 residential — with need-based financial aid available. Confirm the current figures before applying.",
   },
   {
     id: "cmu-sams",
@@ -649,6 +905,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Rising seniors · age 16+ by the program start",
     url: "https://www.cmu.edu/pre-college/academic-programs/sams.html",
     blurb: "Fully-funded STEM program focused on diversity and rigorous academic preparation [Fully Funded].",
+    cost: "free",
+    costDetail:
+      "Free: Carnegie Mellon funds SAMS in full for admitted students — no tuition, housing or meal costs. Budget for travel.",
   },
   {
     id: "horizon-academic",
@@ -662,6 +921,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "High-school students, typically 14+ — confirm on the program page",
     url: "https://www.horizoninspires.com/",
     blurb: "Guided research program ending with a college-level paper [Financial aid available].",
+    cost: "paid_aid",
+    costDetail:
+      "A paid program, typically several thousand dollars depending on the track, with need-based financial aid available. Confirm your price before you apply.",
   },
   // ── Accessible / Beginner-Friendly Competitions ──────────────────────────────
   {
@@ -676,6 +938,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "All school ages — no minimum",
     url: "https://www.bebras.org/",
     blurb: "A fun, beginner-friendly online challenge introducing computational thinking.",
+    cost: "varies",
+    costDetail:
+      "Run through schools by a national organiser; usually free for students, but the fee is set nationally — ask your teacher.",
   },
   // (Math Kangaroo used to be duplicated here with the same id — it lives in
   // the olympiad section above; a duplicate id breaks the by-id merge and
@@ -695,6 +960,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 6–12, via a school/organization team — no minimum age",
     url: "https://www.uscyberpatriot.org/",
     blurb: "Team-based cybersecurity competition perfect for beginners and high schools.",
+    cost: "varies",
+    costDetail:
+      "Teams pay a registration fee (around $200), with free or discounted places for Title I and JROTC teams. The cost sits with the team, not usually the student.",
   },
   {
     id: "caribou-math",
@@ -708,6 +976,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades K–12 — no minimum age",
     url: "https://cariboutests.com/",
     blurb: "Low-stress, accessible online math contests held six times a year.",
+    cost: "varies",
+    costDetail:
+      "Registration goes through a school or supervisor and carries a small per-student fee set by the organiser; some schools cover it.",
   },
   // (NaNoWriMo YWP removed — the NaNoWriMo nonprofit shut down in 2025; we
   // don't recommend programs that no longer exist.)
@@ -723,6 +994,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 6–12 (US congressional districts) — no minimum age",
     url: "https://www.congressionalappchallenge.us/",
     blurb: "Create an app and submit a video pitch — great entry-level tech portfolio builder.",
+    cost: "free",
+    costDetail:
+      "Free — no entry fee for students or schools.",
   },
 
   // ── International olympiad finals ─────────────────────────────────────────
@@ -743,6 +1017,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Under 20, pre-university — via your country's national team selection",
     url: "https://www.imo-official.org/",
     blurb: "The world championship of school mathematics — the strongest quantitative signal there is.",
+    cost: "free",
+    costDetail:
+      "Free for you: you get there through your national olympiad, and the national team's costs are covered by the host country and your national organiser.",
   },
   {
     id: "ioi",
@@ -756,6 +1033,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary-school students — via your country's national informatics olympiad",
     url: "https://ioinformatics.org/",
     blurb: "The world final for competitive programming — the top CS credential for an applicant.",
+    cost: "free",
+    costDetail:
+      "Free for you: entry is through your national informatics olympiad, and team costs are covered by the host and your national organiser.",
   },
   {
     id: "icho",
@@ -769,6 +1049,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Under 20, pre-university — via your country's national chemistry olympiad",
     url: "https://www.ichosc.org/",
     blurb: "World final in chemistry — a decisive signal for chemistry, medicine and materials.",
+    cost: "free",
+    costDetail:
+      "Free for you: entry is through your national chemistry olympiad, and team costs are covered by the host and your national organiser.",
   },
   {
     id: "ibo",
@@ -782,6 +1065,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary-school students — via your country's national biology olympiad",
     url: "https://www.ibo-info.org/",
     blurb: "World final in biology — the headline credential for pre-med and life sciences.",
+    cost: "free",
+    costDetail:
+      "Free for you: entry is through your national biology olympiad, and team costs are covered by the host and your national organiser.",
   },
   {
     id: "ioaa",
@@ -795,6 +1081,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary-school students under 20 — via national selection",
     url: "https://www.ioaastrophysics.org/",
     blurb: "World final in astronomy and astrophysics — a rare, highly distinctive spike.",
+    cost: "free",
+    costDetail:
+      "Free for you: entry is through your national astronomy olympiad, and team costs are covered by the host and your national organiser.",
   },
   {
     id: "iol",
@@ -808,6 +1097,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary-school students — via your country's national linguistics olympiad",
     url: "https://ioling.org/",
     blurb: "Puzzle-based olympiad bridging languages and computation — no prior linguistics needed.",
+    cost: "free",
+    costDetail:
+      "Free for you: entry is through your national linguistics olympiad, and team costs are covered by the host and your national organiser.",
   },
   {
     id: "igeo",
@@ -821,6 +1113,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 16–19, not enrolled at university — via national selection",
     url: "https://www.geoolympiad.org/",
     blurb: "Fieldwork, mapping and spatial analysis — strong for geography, environment and urbanism.",
+    cost: "free",
+    costDetail:
+      "Free for you: entry is through your national geography olympiad, and team costs are covered by the host and your national organiser.",
   },
   {
     id: "ijso",
@@ -834,6 +1129,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Age 15 or under on 31 December of the competition year",
     url: "https://ijso-official.org/",
     blurb: "The junior science world final — the natural first target for a strong younger student.",
+    cost: "free",
+    costDetail:
+      "Free for you: entry is through your national junior science olympiad, and team costs are covered by the host and your national organiser.",
   },
   {
     id: "ieso",
@@ -847,6 +1145,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary-school students under 19 — via national selection",
     url: "https://www.ieso-info.org/",
     blurb: "Geology, meteorology and oceanography — a distinctive route for earth-science applicants.",
+    cost: "free",
+    costDetail:
+      "Free for you: entry is through your national earth-science olympiad, and team costs are covered by the host and your national organiser.",
   },
   {
     id: "ipo-philosophy",
@@ -860,6 +1161,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary-school students — essay written in a non-native language, via national selection",
     url: "https://www.philosophy-olympiad.org/",
     blurb: "Write a philosophical essay in a foreign language — unusual, memorable humanities signal.",
+    cost: "free",
+    costDetail:
+      "Free for you: entry is through your national philosophy olympiad, and team costs are covered by the host and your national organiser.",
   },
 
   // ── Open international competitions (enter directly, no national team) ────
@@ -875,6 +1179,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 13–18 — open worldwide",
     url: "https://breakthroughjuniorchallenge.org/",
     blurb: "Explain a big scientific idea in a short video — $250k scholarship, judged worldwide.",
+    cost: "free",
+    costDetail:
+      "Free — submitting a video costs nothing, and the prize is a $250,000 scholarship.",
   },
   {
     id: "genius-olympiad",
@@ -888,6 +1195,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "High-school students aged 13–18 — open worldwide",
     url: "https://www.geniusolympiad.org/",
     blurb: "Environment-focused across science, art, writing and business — unusually broad entry point.",
+    cost: "one_time",
+    costDetail:
+      "Not free: there are fees at the finalist stage — event registration plus travel and stay in New York. Check the current figures before you invest in a project for it.",
   },
   {
     id: "earth-prize",
@@ -901,6 +1211,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 13–19 worldwide, in teams of 2–5 with a mentor",
     url: "https://www.theearthprize.org/",
     blurb: "Team sustainability challenge with a $200k prize pool — real projects, global field.",
+    cost: "free",
+    costDetail:
+      "Free — no entry fee; the prize money goes to the winning teams and their schools.",
   },
   {
     id: "space-apps",
@@ -914,6 +1227,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Open to all ages worldwide — under-18s join with guardian consent",
     url: "https://spaceappschallenge.org/",
     blurb: "The world's largest hackathon, run on real NASA data — an accessible first team project.",
+    cost: "free",
+    costDetail:
+      "Free — NASA and local host sites run it at no cost to participants.",
   },
   {
     id: "wro",
@@ -927,6 +1243,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 8–19 by category — enter through your country's national organiser",
     url: "https://wro-association.org/",
     blurb: "Build and program a robot for a themed challenge — strong hands-on engineering evidence.",
+    cost: "varies",
+    costDetail:
+      "Team registration fees are set by your national organiser and vary widely by country — ask the national WRO organiser what a team pays.",
   },
   {
     id: "first-robotics",
@@ -940,6 +1259,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Grades 9–12, as part of a registered school or community team",
     url: "https://www.firstinspires.org/",
     blurb: "Season-long robotics with a real team — the classic sustained engineering commitment.",
+    cost: "varies",
+    costDetail:
+      "Team-based and costly: a rookie team's registration and kit run into thousands of dollars, plus travel. As a student you normally join an existing school team and pay little or nothing — ask what your team charges.",
   },
   {
     id: "iymc",
@@ -953,6 +1275,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Students under 25 worldwide — no national selection needed",
     url: "https://www.iymc.info/",
     blurb: "Enter directly from any country — a good first international maths credential.",
+    cost: "one_time",
+    costDetail:
+      "The qualification round is free; the later rounds carry a small participation fee (about EUR 25), and the organisers waive it for students who cannot pay — you have to ask.",
   },
   {
     id: "purple-comet",
@@ -966,6 +1291,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "School teams of up to 6 — open worldwide, free to enter",
     url: "https://purplecomet.org/",
     blurb: "Free online team maths contest — low-barrier way to start competing internationally.",
+    cost: "free",
+    costDetail:
+      "Free to enter — teams register through a supervisor at no cost.",
   },
   {
     id: "math-prize-girls",
@@ -979,6 +1307,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Female students with under 4 years of secondary school remaining",
     url: "https://mathprize.atfoundation.org/",
     blurb: "The largest maths prize for young women — a highly recognised selective win.",
+    cost: "free",
+    costDetail:
+      "Free to enter, and the foundation covers housing and meals for participants at the contest.",
   },
   {
     id: "stockholm-water",
@@ -992,6 +1323,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 15–20 — enter via your country's national round",
     url: "https://stockholmwaterfoundation.org/stockholm-junior-water-prize/",
     blurb: "Water and sustainability research judged internationally — a focused science spike.",
+    cost: "free",
+    costDetail:
+      "Free to enter, but you go in through your national competition, so check the national organiser's own rules and dates.",
   },
 
   // ── Business, economics & entrepreneurship ────────────────────────────────
@@ -1008,6 +1342,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "High-school students worldwide — free to enter, video pitch only",
     url: "https://www.blueoceancompetition.org/",
     blurb: "No business plan needed — a short video pitch makes this a genuine first-time entry.",
+    cost: "free",
+    costDetail:
+      "Free to enter — it is fully online with no entry fee.",
   },
 
   // ── Humanities, writing & essay prizes ───────────────────────────────────
@@ -1029,6 +1366,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 13–19 worldwide — free to enter",
     url: "https://www.nytimes.com/spotlight/learning-contests",
     blurb: "Editorial, review, podcast and STEM-writing contests year-round — publishable, low-barrier.",
+    cost: "free",
+    costDetail:
+      "Free — the student contests have no entry fee. A Times subscription is not required to enter.",
   },
   {
     id: "immerse-essay",
@@ -1042,6 +1382,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 13–18 worldwide",
     url: "https://www.immerse.education/essay-competition/",
     blurb: "Short subject essay judged internationally, with a programme scholarship attached.",
+    cost: "free",
+    costDetail:
+      "Free to enter. Note what the prize is: a scholarship towards Immerse's own summer programmes, which are otherwise expensive.",
   },
   {
     id: "bow-seat",
@@ -1055,6 +1398,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 11–18 worldwide",
     url: "https://bowseat.org/",
     blurb: "Art, writing, film or music on ocean themes — a rare creative-plus-environment entry.",
+    cost: "free",
+    costDetail:
+      "Free — no entry fee for any category.",
   },
 
   // ── Research & summer programmes ─────────────────────────────────────────
@@ -1071,6 +1417,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Students aged 16+ who have completed grade 10 — open internationally",
     url: "https://summer.harvard.edu/high-school-programs/",
     blurb: "Earn real college credit on campus or online — a credible academic-rigour signal.",
+    cost: "paid_aid",
+    costDetail:
+      "One of the expensive ones: roughly $5,000 for a two-week program and $15,000+ for the seven-week credit program, plus travel. Some need-based aid exists but it is limited — check what you would actually pay before you invest in the application.",
   },
   {
     id: "rise-schmidt",
@@ -1084,6 +1433,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 15–17 worldwide — fully funded, no cost to apply",
     url: "https://www.risefortheworld.org/",
     blurb: "Lifetime support programme for young people who serve others — fully funded, global cohort.",
+    cost: "funded",
+    costDetail:
+      "Free to enter — no application fee — and winners receive a scholarship, funding and long-term support.",
   },
   {
     id: "polygence",
@@ -1097,6 +1449,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Middle- and high-school students worldwide",
     url: "https://www.polygence.org/",
     blurb: "Mentored independent project on any topic — an accessible way to produce real research.",
+    cost: "paid_aid",
+    costDetail:
+      "A paid mentorship: the standard program runs to roughly $2,000-3,000, with need-based financial aid available. Ask about the aid before you enrol, not after.",
   },
   {
     id: "lumiere",
@@ -1112,6 +1467,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "High-school students worldwide, ages ~13–18",
     url: "https://www.lumiere-education.com/",
     blurb: "Guided research with a PhD mentor, producing an independent paper [need-based aid].",
+    cost: "paid_aid",
+    costDetail:
+      "A paid research program — roughly $2,000-8,000 depending on the track — with need-based financial aid. Ask what your actual price would be before committing.",
   },
 
   // ── Filling the thin fields ──────────────────────────────────────────────
@@ -1133,6 +1491,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 9–18 — individual or team, via affiliate programs worldwide",
     url: "https://www.futureproblemsolving.org/",
     blurb: "Research-and-solve future scenarios, often health and society — a gentle first entry.",
+    cost: "varies",
+    costDetail:
+      "Run through schools with affiliate membership and per-team fees set locally — ask your coach what it costs.",
   },
 
   // Law, politics & debate
@@ -1148,6 +1509,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary-school debaters worldwide — entry level to world championships",
     url: "https://idebate.net/",
     blurb: "Structured debate at every level — the most reliable way to build a law-facing record.",
+    cost: "varies",
+    costDetail:
+      "Tournaments and academies carry fees that vary by event — some are free, the residential academies are not. Scholarships are sometimes offered.",
   },
   {
     id: "eyp",
@@ -1161,6 +1525,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 16–22 in EYP member countries — check whether your country has a national committee",
     url: "https://eyp.org/",
     blurb: "Draft and defend resolutions in committee — policy and legal reasoning under scrutiny.",
+    cost: "varies",
+    costDetail:
+      "Run by national committees: some sessions charge a participation fee, others are free and even cover food and accommodation. Ask your national committee.",
   },
   // (National History Day already lives in the humanities section above.)
 
@@ -1177,6 +1544,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Under 20 — free to enter, open worldwide",
     url: "https://www.worldphoto.org/sony-world-photography-awards",
     blurb: "Free global photography award with a dedicated youth category — a real published credit.",
+    cost: "free",
+    costDetail:
+      "Free — the Youth award has no entry fee.",
   },
   {
     id: "toyota-dream-car",
@@ -1190,6 +1560,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Under 16, in three age groups — entered via your country's national round",
     url: "https://www.toyota-dreamcarart.com/",
     blurb: "Design the car of the future — one of the few global art contests for younger students.",
+    cost: "free",
+    costDetail:
+      "Free — no entry fee at any stage; national winners are flown to the world contest.",
   },
   {
     id: "evolo-skyscraper",
@@ -1203,6 +1576,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Open worldwide to students and professionals, individually or in teams",
     url: "https://www.evolo.us/",
     blurb: "The best-known conceptual architecture prize — a standout for design and architecture.",
+    cost: "one_time",
+    costDetail:
+      "A registration fee applies (roughly $100-200, cheaper if you register early).",
   },
   {
     id: "destination-imagination",
@@ -1216,6 +1592,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "School teams of up to 7 — affiliate programs in many countries",
     url: "https://www.destinationimagination.org/",
     blurb: "Open-ended creative and engineering challenges solved as a team over a season.",
+    cost: "varies",
+    costDetail:
+      "Team-based: the team pays a membership fee plus tournament registration (a few hundred dollars in total, split across the team).",
   },
 
   // Business & economics
@@ -1231,6 +1610,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary-school students — via your country's JA organisation",
     url: "https://www.jaworldwide.org/",
     blurb: "Run a real student company for a year — the most hands-on business credential available.",
+    cost: "varies",
+    costDetail:
+      "Run through your school or national Junior Achievement organisation, so any fee is set locally — usually nothing for the student.",
   },
 
   // ── Student publishing ───────────────────────────────────────────────────
@@ -1250,6 +1632,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Middle- and high-school authors worldwide — free to submit",
     url: "https://emerginginvestigators.org/",
     blurb: "Peer-reviewed journal for school students — turn a class or side project into a citation.",
+    cost: "free",
+    costDetail:
+      "Free to submit and free to publish — JEI charges no article fee, and everything it publishes is free to read.",
   },
   {
     id: "young-scientist-journal",
@@ -1263,6 +1648,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Students aged 12–20 worldwide",
     url: "https://www.youngscientistjournal.org/",
     blurb: "Student-run science journal — publish articles or reviews without needing a lab.",
+    cost: "free",
+    costDetail:
+      "Free to submit and free to publish; the journal is student-run and charges no fee.",
   },
   {
     id: "concord-review",
@@ -1276,6 +1664,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary-school students worldwide — submission fee applies",
     url: "https://tcr.org/",
     blurb: "The only journal publishing serious high-school history essays — a rare humanities credential.",
+    cost: "one_time",
+    costDetail:
+      "Reading it is free, but submitting an essay costs around $70, which includes a subscription. Publication itself is not paid for separately.",
   },
   {
     id: "stem-fellowship",
@@ -1289,6 +1680,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "High-school and undergraduate teams — open internationally",
     url: "https://www.stemfellowship.org/",
     blurb: "Analyse a real dataset and write it up — data skills plus a publication route.",
+    cost: "free",
+    costDetail:
+      "Free to enter its data-science challenges.",
   },
   {
     id: "curieux",
@@ -1302,6 +1696,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Middle- and high-school authors worldwide, any subject",
     url: "https://curieuxacademicjournal.com/",
     blurb: "Publishes student research and essays across every field — a low-barrier first byline.",
+    cost: "one_time",
+    costDetail:
+      "Curieux charges a publication fee for accepted articles — check the current amount on their site before you submit, because it is not free.",
   },
 
   // ── The younger cohort (roughly grades 5–9) ───────────────────────────────
@@ -1323,6 +1720,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 9–16 — school or community teams, age bands vary by country",
     url: "https://www.firstlegoleague.org/",
     blurb: "Build, program and present a robot with a team — the standard first robotics entry.",
+    cost: "varies",
+    costDetail:
+      "Team-based: the team pays a registration fee plus the LEGO set (a few hundred dollars in total). Students joining a school team usually pay nothing directly.",
   },
   {
     id: "coolest-projects",
@@ -1336,6 +1736,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Up to age 18 — no minimum age, free to enter",
     url: "https://online.coolestprojects.org/",
     blurb: "Show any tech project you made — code, hardware or art. No winners' pedigree needed.",
+    cost: "free",
+    costDetail:
+      "Free — the Raspberry Pi Foundation runs it at no cost to participants.",
   },
   {
     id: "astro-pi",
@@ -1349,6 +1752,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Age 19 or under — Mission Zero needs no experience and no hardware",
     url: "https://astro-pi.org/",
     blurb: "Write code that actually runs on the ISS — a real, verifiable first CS credential.",
+    cost: "free",
+    costDetail:
+      "Free — ESA and the Raspberry Pi Foundation cover everything, including actually running your code on the ISS.",
   },
   {
     id: "robocup-junior",
@@ -1362,6 +1768,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 10–19 by league — enter through your regional or national event",
     url: "https://junior.robocup.org/",
     blurb: "Soccer, rescue and on-stage robot leagues with a genuine route to a world final.",
+    cost: "varies",
+    costDetail:
+      "Fees are set by your regional or national organiser and vary by country; the robot hardware is the real cost.",
   },
   {
     id: "odyssey-of-the-mind",
@@ -1375,6 +1784,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "School teams from primary upwards — via affiliate programs worldwide",
     url: "https://www.odysseyofthemind.com/",
     blurb: "Long-term creative engineering problems solved as a team — starts as young as primary school.",
+    cost: "varies",
+    costDetail:
+      "Team-based: a school or group buys a membership (around $135) and pays regional tournament fees on top.",
   },
   {
     id: "globe-ivss",
@@ -1388,6 +1800,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "School students of any age — via a GLOBE-registered school or club",
     url: "https://www.globe.gov/",
     blurb: "Collect real environmental data and present it — a first taste of research with no age floor.",
+    cost: "free",
+    costDetail:
+      "Free — GLOBE is a NASA-supported program and the symposium charges nothing to enter.",
   },
   {
     id: "tournament-of-towns",
@@ -1401,6 +1816,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "School students, junior and senior papers — roughly ages 12–18",
     url: "https://www.turgor.ru/",
     blurb: "The classic problem-solving olympiad across the CIS — a junior paper exists from year one.",
+    cost: "free",
+    costDetail:
+      "Free — local organising centres run it at no cost to participants.",
   },
   {
     id: "izho",
@@ -1414,6 +1832,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary-school students — via your country's national team selection",
     url: "https://izho.kz/",
     blurb: "Maths, physics and informatics olympiad hosted in Almaty — the nearest elite stage there is.",
+    cost: "free",
+    costDetail:
+      "Free for you: you are selected through your national olympiad, and the host covers participants during the event.",
   },
   {
     id: "nhsmun",
@@ -1427,6 +1848,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "School delegations worldwide — no minimum age set by the conference",
     url: "https://imuna.org/nhsmun/nyc/",
     blurb: "The largest MUN conference, at the UN itself — a serious first law-and-policy credential.",
+    cost: "one_time",
+    costDetail:
+      "Delegate fees run into the hundreds of dollars, plus travel and hotel in New York. Limited scholarships exist — ask before you commit.",
   },
   // (The John Locke Institute's Junior Prize — its own under-15 category — is
   // part of the john-locke entry above, not a separate listing: it shares one
@@ -1444,6 +1868,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Age 17 or under — separate categories for 10 and under, 11–14, 15–17",
     url: "https://www.nhm.ac.uk/wpy/competition",
     blurb: "A world-famous photography award with a category for ten-year-olds. One image is the entry.",
+    cost: "free",
+    costDetail:
+      "Free for the under-18 Young Wildlife Photographer categories.",
   },
   {
     id: "icaf-arts-olympiad",
@@ -1457,6 +1884,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 8–12 — the school art program runs it, no portfolio needed",
     url: "https://icaf.org/",
     blurb: "The world's largest art program for children — the rare entry aimed below secondary school.",
+    cost: "free",
+    costDetail:
+      "Free — schools and students enter at no cost.",
   },
   // ── Law and arts: the two thinnest fields ─────────────────────────────────
   // A coverage pass by persona found a year-8 student choosing LAW saw 18
@@ -1479,6 +1909,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "High-school students, entered as a school delegation",
     url: "https://www.harvardmodelcongress.org/",
     blurb: "Simulate a government under Harvard-run committees — legislation, debate and negotiation.",
+    cost: "one_time",
+    costDetail:
+      "A delegate fee (typically a few hundred dollars) plus travel and hotel for the conference.",
   },
   {
     id: "wimun",
@@ -1495,6 +1928,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary and university students — check the level of the conference you pick",
     url: "https://wfuna.org/wimun/",
     blurb: "Model UN run by the UN's own association, using real UN rules of procedure.",
+    cost: "one_time",
+    costDetail:
+      "Delegate fees run into the hundreds of dollars, plus travel and accommodation at the UN host city.",
   },
   {
     id: "petchenik",
@@ -1516,6 +1952,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Age 15 or under — four age bands from under 6, via your country's national round",
     url: "https://icaci.org/petchenik/",
     blurb: "Draw the world as you see it. Age bands start under 6 — the earliest entry point we know of.",
+    cost: "free",
+    costDetail:
+      "Free — entries go through your national cartographic body at no cost.",
   },
   {
     id: "plural-plus",
@@ -1530,6 +1969,9 @@ export const COMPETITIONS: Competition[] = [
       "Young people worldwide — confirm the age range in the rules before you enter",
     url: "https://pluralplus.unaoc.org/",
     blurb: "Make a short film on migration, diversity or inclusion for a UN festival. Free to enter.",
+    cost: "free",
+    costDetail:
+      "Free — the UN-backed festival charges nothing to submit a video.",
   },
   {
     id: "simply-neuroscience",
@@ -1543,6 +1985,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 13+ worldwide — free to join",
     url: "https://www.simplyneuroscience.org/",
     blurb: "Student-run neuroscience clubs, contests and publishing — the softest landing into medicine.",
+    cost: "free",
+    costDetail:
+      "Free — the student-run programs and competitions have no entry fee.",
   },
 
   // ── University courses (the missing type) ──────────────────────────────────
@@ -1561,6 +2006,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free to audit; some prior Python (CS50-level) helps",
     url: "https://cs50.harvard.edu/ai/",
     blurb: "Search, knowledge, optimization, neural nets — Harvard's AI course, free and self-paced.",
+    cost: "free",
+    costDetail:
+      "Free to take, and CS50 issues its own free certificate from cs50.harvard.edu. The paid one is the OPTIONAL edX verified certificate, and it is not cheap — roughly $200-300 depending on the course (Harvard lists $219 for CS50 Python). You never need it: the course, the problem sets and the free CS50 certificate cost nothing.",
   },
   {
     id: "cs50-cyber",
@@ -1574,6 +2022,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — no coding required; free to audit",
     url: "https://cs50.harvard.edu/cybersecurity/",
     blurb: "How systems get attacked and defended, for a general audience — a rare beginner cyber course that carries a name.",
+    cost: "free",
+    costDetail:
+      "Free to take, and CS50 issues its own free certificate from cs50.harvard.edu. The paid one is the OPTIONAL edX verified certificate, and it is not cheap — roughly $200-300 depending on the course (Harvard lists $219 for CS50 Python). You never need it: the course, the problem sets and the free CS50 certificate cost nothing.",
   },
   {
     id: "mit-deep-learning",
@@ -1587,6 +2038,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Open to everyone worldwide — free; introductory university level",
     url: "https://introtodeeplearning.com/",
     blurb: "MIT's flagship intro to deep learning — lectures, code labs and guest talks, all free online.",
+    cost: "free",
+    costDetail:
+      "Free — MIT publishes the lectures, slides and code labs openly every year. No paid tier, and no certificate to buy.",
   },
   {
     id: "code-in-place",
@@ -1600,6 +2054,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Beginners worldwide — free; apply for each cohort",
     url: "https://codeinplace.stanford.edu/",
     blurb: "Stanford's intro-to-Python (CS106A) taught free with a live human section leader — real teaching, no fee.",
+    cost: "free",
+    costDetail:
+      "Completely free — Stanford charges nothing for the course or the certificate. Places are limited, so you apply for each cohort.",
   },
   {
     id: "yale-financial-markets",
@@ -1613,6 +2070,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Open to everyone worldwide — free to audit on Coursera",
     url: "https://www.coursera.org/learn/financial-markets-global",
     blurb: "A Nobel laureate's tour of risk, insurance and markets — the serious econ course to name before university.",
+    cost: "free_cert_paid",
+    costDetail:
+      "Free to audit: lectures and readings cost nothing. Graded assignments and the shareable certificate are paid (Coursera charges roughly $49-79 for this course, or it is included in a Coursera Plus subscription). Coursera financial aid can cover the certificate in full — apply on the course page and expect to wait about two weeks.",
   },
 
   // ── Internships / open-source (real, paid, remote, global) ─────────────────
@@ -1629,6 +2089,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "18+ worldwide — open to newcomers to open source, not only students; stipend paid",
     url: "https://summerofcode.withgoogle.com/",
     blurb: "Get paid to write open-source software with a real project and mentor — remote, from anywhere.",
+    cost: "funded",
+    costDetail:
+      "Free to take part, and Google pays a stipend (roughly $1,500-6,600 depending on project size and your country). You are never asked for money — anyone charging you for GSoC is a scam.",
   },
   {
     id: "outreachy",
@@ -1643,6 +2106,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "18+ worldwide, for people under-represented in tech — remote, paid",
     url: "https://www.outreachy.org/",
     blurb: "A paid, remote, mentored open-source internship built for people the industry usually overlooks.",
+    cost: "funded",
+    costDetail:
+      "Free, and interns are paid a stipend of about $7,000 for the three months.",
   },
 
   // ── Competitions & hackathons that a student anywhere can actually enter ────
@@ -1658,6 +2124,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "High-school and university teams worldwide — see the High School division",
     url: "https://igem.org/",
     blurb: "Build something living. The world's synthetic-biology competition, with a division made for school teams.",
+    cost: "one_time",
+    costDetail:
+      "Expensive and team-based: registration runs into thousands of dollars per team, plus lab costs and travel to the Jamboree. Teams raise sponsorship for it — this is not a solo entry you can self-fund.",
   },
   {
     id: "picoctf",
@@ -1671,6 +2140,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Middle- and high-school students worldwide — free; all levels",
     url: "https://picoctf.org/",
     blurb: "Learn hacking by doing it — Carnegie Mellon's free capture-the-flag, from first puzzle to hard.",
+    cost: "free",
+    costDetail:
+      "Free — Carnegie Mellon runs it at no cost, including the practice gym that stays open all year.",
   },
   {
     id: "kaggle",
@@ -1685,6 +2157,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone 13+ worldwide — free; join any open competition",
     url: "https://www.kaggle.com/competitions",
     blurb: "Real data-science problems with public leaderboards — the standard way to prove ML skill from anywhere.",
+    cost: "free",
+    costDetail:
+      "Free to enter, and many competitions pay prize money rather than charge it.",
   },
   {
     id: "codeforces",
@@ -1698,6 +2173,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; rounds open to all",
     url: "https://codeforces.com/",
     blurb: "The global home of competitive programming — free rounds several times a week, a rating you can grow.",
+    cost: "free",
+    costDetail:
+      "Free — contests, editorials and the whole archive cost nothing.",
   },
   {
     id: "hack-club",
@@ -1711,6 +2189,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Teenagers worldwide — free to join",
     url: "https://hackclub.com/",
     blurb: "A worldwide network of teenage makers — start a club, join a hackathon, ship real projects.",
+    cost: "free",
+    costDetail:
+      "Free — Hack Club is a non-profit; clubs, events and most hardware grants cost students nothing.",
   },
   {
     id: "first-global",
@@ -1724,6 +2205,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Roughly ages 14–18 — one national team per country; ask your country's team",
     url: "https://first.global/",
     blurb: "An Olympics of robotics with one team per nation — built so students everywhere, not just rich schools, compete.",
+    cost: "varies",
+    costDetail:
+      "You take part through your country's national team, whose costs are carried by its organisers and sponsors rather than by you.",
   },
 
   // ── Physics, astronomy, space (accessible, mostly online/free) ─────────────
@@ -1739,6 +2223,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Teams of high-school students worldwide (about 16+) — free to enter",
     url: "https://beamlineforschools.cern/",
     blurb: "Propose a real particle-physics experiment; winning teams actually run it on a CERN/DESY beam.",
+    cost: "free",
+    costDetail:
+      "Free — entering costs nothing, and CERN or DESY covers the winning teams' travel and stay.",
   },
   {
     id: "iaac",
@@ -1753,6 +2240,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Pre-university students worldwide, under 20 — online; qualification is free",
     url: "https://iaac.space/",
     blurb: "Solve astrophysics problems online, at your own desk — no telescope, no travel, open to everyone.",
+    cost: "one_time",
+    costDetail:
+      "The qualification and pre-final rounds are free; the final round carries a small fee (about EUR 20), waived on request for students who cannot pay.",
   },
   {
     id: "cubes-in-space",
@@ -1767,6 +2257,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 11–18 worldwide — free to enter",
     url: "https://www.cubesinspace.com/",
     blurb: "Design a tiny experiment that actually flies to near-space on a NASA rocket or balloon — free, for young students.",
+    cost: "free",
+    costDetail:
+      "Free — the program covers the launch itself; selected teams pay nothing to fly an experiment.",
   },
 
   // ── Immersive summer maths (competitive, but with real financial aid) ──────
@@ -1782,6 +2275,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Pre-college students ~15+ worldwide — need-based financial aid offered",
     url: "https://rossprogram.org/",
     blurb: "Deep number theory from scratch, the way mathematicians actually think — famously transformative, with aid.",
+    cost: "paid_aid",
+    costDetail:
+      "Tuition is around $6,000 with need-based financial aid available — ask for it in the application rather than after you are admitted.",
   },
   {
     id: "mathcamp",
@@ -1795,6 +2291,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 13–18 worldwide — need-based financial aid offered",
     url: "https://www.mathcamp.org/",
     blurb: "Five weeks of mathematics you choose yourself, with real mathematicians — need-blind aid for internationals.",
+    cost: "paid_aid",
+    costDetail:
+      "Tuition is roughly $5,000-6,000 and Mathcamp awards large need-based scholarships, so a substantial share of campers pay a reduced fee or nothing. Aid is requested in the application.",
   },
 
   // ── More free university courses (highest-accessibility type) ──────────────
@@ -1810,6 +2309,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free to audit; some prior programming helps",
     url: "https://cs50.harvard.edu/web/",
     blurb: "Build and deploy real web apps (Django, React, SQL) — the practical follow-on to CS50.",
+    cost: "free",
+    costDetail:
+      "Free to take, and CS50 issues its own free certificate from cs50.harvard.edu. The paid one is the OPTIONAL edX verified certificate, and it is not cheap — roughly $200-300 depending on the course (Harvard lists $219 for CS50 Python). You never need it: the course, the problem sets and the free CS50 certificate cost nothing.",
   },
   {
     id: "cs50-python",
@@ -1823,6 +2325,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — no experience needed; free to audit",
     url: "https://cs50.harvard.edu/python/",
     blurb: "A gentler on-ramp than CS50 itself — pure Python from zero, taught to Harvard's standard.",
+    cost: "free",
+    costDetail:
+      "Free to take, and CS50 issues its own free certificate from cs50.harvard.edu. The paid one is the OPTIONAL edX verified certificate, and it is not cheap — roughly $200-300 depending on the course (Harvard lists $219 for CS50 Python). You never need it: the course, the problem sets and the free CS50 certificate cost nothing.",
   },
   {
     id: "full-stack-open",
@@ -1836,6 +2341,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; modern web development, certificate on completion",
     url: "https://fullstackopen.com/en/",
     blurb: "The web-dev course companies actually rate — React, Node, GraphQL, testing — free from a real university.",
+    cost: "free",
+    costDetail:
+      "Genuinely free end to end: the course, the certificate and even the University of Helsinki credits cost nothing. This is the rare one with no catch at the finish line.",
   },
   {
     id: "elements-of-ai",
@@ -1849,6 +2357,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; no maths or coding required",
     url: "https://www.elementsofai.com/",
     blurb: "What AI actually is, for everyone — a famous free course that a whole country used to reskill.",
+    cost: "free",
+    costDetail:
+      "Free including the certificate — the University of Helsinki funds it. Study credits are available free too.",
   },
   {
     id: "ml-andrew-ng",
@@ -1862,6 +2373,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free to audit; the classic first ML course",
     url: "https://www.coursera.org/specializations/machine-learning-introduction",
     blurb: "The machine-learning course that taught a generation — rebuilt and still free to audit.",
+    cost: "free_cert_paid",
+    costDetail:
+      "Each of the three courses is free to audit. The certificate runs on a Coursera subscription — about $49 a month after a 7-day free trial — so the total depends on how fast you finish. Financial aid is available and covers it in full if granted.",
   },
   {
     id: "missing-semester",
@@ -1875,6 +2389,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; the tooling every CS course skips",
     url: "https://missing.csail.mit.edu/",
     blurb: "The shell, git, editors, debugging — the practical skills that make everything else faster. Free from MIT.",
+    cost: "free",
+    costDetail:
+      "Free — MIT publishes the videos and notes openly. Nothing to sign up for, nothing to pay, no certificate.",
   },
 
   // ── Do-it-anywhere CS contests & fellowships ───────────────────────────────
@@ -1890,6 +2407,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; solve in any programming language",
     url: "https://adventofcode.com/",
     blurb: "A daily December programming puzzle with a huge global following — the friendliest way into coding contests.",
+    cost: "free",
+    costDetail:
+      "Free — all 25 days of puzzles are open to everyone. Donations are optional and change nothing about the puzzles.",
   },
   {
     id: "project-euler",
@@ -1903,6 +2423,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; no deadline, work at your own pace",
     url: "https://projecteuler.net/",
     blurb: "Maths problems you crack with code — an endless, free ladder that builds real problem-solving.",
+    cost: "free",
+    costDetail:
+      "Free — an account is all you need, and there is no paid tier.",
   },
   {
     id: "atcoder",
@@ -1916,6 +2439,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; contests have full English support",
     url: "https://atcoder.jp/",
     blurb: "Japan's top competitive-programming judge, in English — clean problems and a rating you can climb.",
+    cost: "free",
+    costDetail:
+      "Free to compete in the contests. There is an optional paid membership for extra practice material, but the rated contests are free.",
   },
   {
     id: "mlh-fellowship",
@@ -1930,6 +2456,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "18+ worldwide — a remote, mentored software programme in small teams",
     url: "https://fellowship.mlh.com/",
     blurb: "Twelve weeks building real open-source or projects with a mentor and a pod — fully remote, from anywhere.",
+    cost: "funded",
+    costDetail:
+      "The fellowship charges no tuition, and most tracks pay participants a stipend. Confirm what applies to the track you are applying for.",
   },
 
   // ── Physics, engineering, maths modelling (teams, global) ──────────────────
@@ -1945,6 +2474,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "School teams via your country's national selection — check your organiser",
     url: "https://www.iypt.org/",
     blurb: "Argue open-ended physics problems like real researchers — a debate-tournament, not an exam.",
+    cost: "free",
+    costDetail:
+      "Free for you: you compete through your national team, whose costs are carried by the national organiser.",
   },
   {
     id: "immc",
@@ -1958,6 +2490,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "School teams worldwide — enter through your country's organiser",
     url: "https://immchallenge.org/",
     blurb: "A team takes a messy real-world problem and models it over a few days — maths that looks like the job.",
+    cost: "varies",
+    costDetail:
+      "You enter through your school and your national organiser, so any fee is set locally — ask your supervising teacher.",
   },
   {
     id: "junior-academy",
@@ -1972,6 +2507,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 13–17 worldwide — free; team innovation challenges, entirely online",
     url: "https://www.nyas.org/programs/the-junior-academy/",
     blurb: "Get placed on a global team to solve a real STEM challenge online, mentored — free, and selective on merit not money.",
+    cost: "free",
+    costDetail:
+      "Free — the New York Academy of Sciences funds it; membership and mentoring cost students nothing.",
   },
 
   // ── Writing, economics, the humanities (global, low-cost) ──────────────────
@@ -1987,6 +2525,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Secondary and undergraduate students worldwide — fee waivers available",
     url: "https://theadroitjournal.org/",
     blurb: "A respected literary prize that reads student work seriously — poetry or prose, judged by real writers.",
+    cost: "one_time",
+    costDetail:
+      "There is a small submission fee (around $15), and the journal waives it for students for whom it is a barrier — you have to write and ask.",
   },
   {
     id: "foyle-young-poets",
@@ -2001,6 +2542,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Ages 11–17 worldwide — free to enter",
     url: "https://foyleyoungpoets.org/",
     blurb: "One of the biggest youth poetry awards anywhere — free, open worldwide, and it has launched real careers.",
+    cost: "free",
+    costDetail:
+      "Free — the Poetry Society charges nothing to enter at any age.",
   },
 
   // ── Free courses across fields (not just CS) — the accessible core ─────────
@@ -2016,6 +2560,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; Harvard's famous moral-philosophy course",
     url: "https://justiceharvard.org/",
     blurb: "The most popular course Harvard ever put online — how to reason about right and wrong, for free.",
+    cost: "free",
+    costDetail:
+      "Free to watch — the full lecture series is open on justiceharvard.org. The edX version is also free to audit; only its certificate costs money.",
   },
   {
     id: "odin-project",
@@ -2029,6 +2576,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; a complete path from zero to employable web developer",
     url: "https://www.theodinproject.com/",
     blurb: "A free, project-based route into web development that people actually get hired from — no fee, ever.",
+    cost: "free",
+    costDetail:
+      "Free and open-source, permanently — no paid tier and no certificate to buy. You may choose to pay for optional third-party tools, but nothing in the curriculum requires it.",
   },
   {
     id: "yale-psychology",
@@ -2042,6 +2592,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free to audit; Yale's introduction to the mind",
     url: "https://www.coursera.org/learn/introduction-psychology",
     blurb: "Yale's introduction to psychology — perception, memory, emotion, happiness — free to audit from anywhere.",
+    cost: "free_cert_paid",
+    costDetail:
+      "Free to audit: lectures and readings cost nothing. Graded assignments and the shareable certificate are paid (roughly $49-79, or included in a Coursera Plus subscription). Coursera financial aid can cover the certificate in full — apply on the course page.",
   },
   {
     id: "learning-how-to-learn",
@@ -2055,6 +2608,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free to audit; useful for every subject",
     url: "https://www.coursera.org/learn/learning-how-to-learn",
     blurb: "The most-taken online course in the world — how your brain learns, and how to study far less painfully.",
+    cost: "free_cert_paid",
+    costDetail:
+      "Free to audit: the videos and readings cost nothing. The certificate is paid (roughly $49-79, or included in a Coursera Plus subscription), and Coursera financial aid can cover it in full if you apply on the course page.",
   },
   {
     id: "model-thinking",
@@ -2068,6 +2624,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free to audit; the mental models economists actually use",
     url: "https://www.coursera.org/learn/model-thinking",
     blurb: "A toolbox of models for thinking clearly about the world — economics, networks, decisions — free.",
+    cost: "free_cert_paid",
+    costDetail:
+      "Free to audit: lectures and readings cost nothing. The certificate is paid (roughly $49-79, or included in a Coursera Plus subscription), with Coursera financial aid available on the course page.",
   },
   {
     id: "mru-economics",
@@ -2081,6 +2640,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; clear economics from working economists",
     url: "https://mru.org/",
     blurb: "Economics explained in short, sharp videos by real economists — the friendliest serious econ on the web.",
+    cost: "free",
+    costDetail:
+      "Free — every video and course is open, funded by the Mercatus Center. No account needed.",
   },
   {
     id: "google-data-analytics",
@@ -2094,6 +2656,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — audit free, financial aid available; a job-ready credential",
     url: "https://www.coursera.org/professional-certificates/google-data-analytics",
     blurb: "A recognised, career-ready data credential you can earn from anywhere — spreadsheets, SQL, R, dashboards.",
+    cost: "free_cert_paid",
+    costDetail:
+      "Free to audit the material. The certificate itself is a Coursera subscription — around $49 a month after a 7-day free trial — so finishing in three months costs roughly three payments. Financial aid is available and, if granted, covers the whole thing.",
   },
   {
     id: "mit-linear-algebra",
@@ -2107,6 +2672,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; the maths behind machine learning and graphics",
     url: "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/",
     blurb: "The legendary linear-algebra course — the foundation under ML, engineering and computer graphics, free from MIT.",
+    cost: "free",
+    costDetail:
+      "Free forever — MIT OpenCourseWare publishes the whole course (videos, problem sets, exams) with no account and no fee. There is no certificate at all, paid or free.",
   },
   {
     id: "mit-physics-mechanics",
@@ -2120,6 +2688,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; calculus-based introductory physics from MIT",
     url: "https://ocw.mit.edu/courses/8-01sc-classical-mechanics-fall-2016/",
     blurb: "MIT's first-year physics — the real thing, with problem sets and exams, free to work through at your pace.",
+    cost: "free",
+    costDetail:
+      "Free forever — MIT OpenCourseWare publishes the whole course (videos, problem sets, exams) with no account and no fee. There is no certificate at all, paid or free.",
   },
   {
     id: "cs50-games",
@@ -2133,6 +2704,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free to audit; some prior programming helps",
     url: "https://cs50.harvard.edu/games/",
     blurb: "Rebuild Mario, Zelda and Pong to learn how games really work — Harvard's game-dev course, free.",
+    cost: "free",
+    costDetail:
+      "Free to take, and CS50 issues its own free certificate from cs50.harvard.edu. The paid one is the OPTIONAL edX verified certificate, and it is not cheap — roughly $200-300 depending on the course (Harvard lists $219 for CS50 Python). You never need it: the course, the problem sets and the free CS50 certificate cost nothing.",
   },
   {
     id: "duke-genetics",
@@ -2146,6 +2720,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free to audit; genetics and evolution from the ground up",
     url: "https://www.coursera.org/learn/genetics-evolution",
     blurb: "A proper university genetics course, free to audit — the serious biology foundation before medicine.",
+    cost: "free_cert_paid",
+    costDetail:
+      "Free to audit: lectures and readings cost nothing. The certificate is paid (roughly $49-79, or included in a Coursera Plus subscription), with Coursera financial aid available on the course page.",
   },
 
   // ── Data-science contests built for emerging markets, and remote research ──
@@ -2161,6 +2738,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; challenges built around real emerging-market problems",
     url: "https://zindi.world/",
     blurb: "A data-science community that grew up outside Silicon Valley — real competitions, open to everyone, no gatekeeping.",
+    cost: "free",
+    costDetail:
+      "Free to enter — competitions are open and several carry cash prizes.",
   },
   {
     id: "driven-data",
@@ -2174,6 +2754,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; machine-learning competitions with a real-world purpose",
     url: "https://www.drivendata.org/",
     blurb: "Data-science competitions where the prize is impact — health, conservation and public services, not just a leaderboard.",
+    cost: "free",
+    costDetail:
+      "Free to enter, and the competitions carry prize money.",
   },
   {
     id: "codingame",
@@ -2187,6 +2770,9 @@ export const COMPETITIONS: Competition[] = [
     eligibility: "Anyone worldwide — free; learn by solving games and bot battles",
     url: "https://www.codingame.com/",
     blurb: "Programming puzzles and bot-battles dressed up as games — the least intimidating way into competitive coding.",
+    cost: "free",
+    costDetail:
+      "Free for you — the platform is paid for by companies recruiting on it, not by players.",
   },
   {
     id: "lfx-mentorship",
