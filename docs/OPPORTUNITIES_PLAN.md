@@ -22,10 +22,43 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
 
 ## Where it stands
 
-**Catalog** — 100 curated opportunities in `lib/data/key-dates.ts`. Every link
-verified: `npm run test:links` reports 100/100 healthy.
+**Catalog** — 148 curated opportunities in `lib/data/key-dates.ts`. Every link
+verified: `npm run test:links` reports 144/148 healthy (3 bot-walled but live in
+a real browser; 1 genuinely down — `ijso`, an SSL failure on its official domain,
+left in place per the "don't delete on a same-day outage" trap).
 
-The most recent pass added 12 entries a student can enter **in grades 5–9** —
+The 2026-08-02 push (three passes, +48: 100 → 148) was built around the
+section's actual mission — students who are NOT in a first-tier country (London /
+US / Hong Kong already drown in options; the point is Kazakhstan, Uzbekistan, the
+wider CIS and Europe, where a student has to hunt). So the additions are
+deliberately **global, online, and free / aided**, never US-school-bound:
+
+- **The whole `course` type, previously empty → ~21 entries.** CS50 AI /
+  Cybersecurity / Web / Python / Games, MIT 6.S191, Stanford Code in Place, Full
+  Stack Open, Elements of AI, Andrew Ng's ML, The Missing Semester, MIT Linear
+  Algebra & 8.01 Physics, Harvard Justice, Yale Psychology, Learning How to
+  Learn, Model Thinking, MRU economics, Google Data Analytics, Duke Genetics.
+  Free courses are the single most accessible thing a student far from opportunity
+  can hold, so this type is now the largest — and a **"Courses" tab** was added
+  to the dashboard filter.
+- **Remote, paid internships / research:** Google Summer of Code, Outreachy, MLH
+  Fellowship, LFX (Linux Foundation) Mentorship — work you can do from anywhere.
+- **Contests across fields:** iGEM, picoCTF, Kaggle, **Zindi** (built for
+  emerging markets), DrivenData, Codeforces, AtCoder, CodinGame, Hack Club,
+  **FIRST Global** (one team per country by design), CERN Beamline for Schools,
+  IAAC, Cubes in Space, IYPT, IM²C, the NY Academy Junior Academy, the Adroit
+  Prizes and Foyle Young Poets.
+- **Aided maths summers:** Ross, Mathcamp.
+
+All dates are unconfirmed estimates (shown "Dates TBA") for the cron to confirm.
+Deliberately NOT duplicated: Technovation, Conrad, Diamond, IEO, Brain Bee,
+Purple Comet, PROMYS, all the major olympiads, FLL, Astro Pi and the rest were
+already in the catalog. Two entries were pulled when `test:links` found their
+official sites down (F1 in Schools, Marshall Society) — better absent than broken.
+The remaining global-and-verifiable gaps are now thin; further growth is better
+served by discovery (local/regional finds) than by more hand-curation.
+
+An earlier pass added 12 entries a student can enter **in grades 5–9** —
 the catalog's earliest real entry point used to be grade 9, so a 12-year-old
 got a page of "eligible from grade 9" stretch goals. Two long-standing
 duplicates were merged out (Lumiere under two ids in two different tiers; NYT
@@ -139,8 +172,12 @@ audience and date-layer decisions. Only then more rules.
 
 ## Next steps, in order
 
-1. **Keep expanding the catalog.** Now **100 entries**. Per-field coverage for
-   a year-8 student in Kazakhstan (visible / recommended / open now):
+1. **Keep expanding the catalog.** Now **148 entries** across 5 types
+   (competition, olympiad, course, summer_program, research_program). The
+   guiding filter for new entries is the mission: would a student in Kazakhstan
+   or Uzbekistan, with no first-tier network, actually be able to do this? Prefer
+   global + online + free/aided over anything US-school-bound. Per-field coverage
+   below predates the 2026-08-02 pass — re-measure with `diag:dates`/matching:
 
    | field | | field | |
    |---|---|---|---|
