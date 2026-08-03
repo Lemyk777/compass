@@ -1,7 +1,7 @@
 # Opportunities — status & next steps
 
 Working notes for the Opportunities feature (catalog, discovery, matching).
-Last updated: 2026-08-02.
+Last updated: 2026-08-03.
 
 **Direction of the whole project is changing.** We are moving the centre of
 Compass off *scoring a portfolio* and onto *giving a student opportunities*. The
@@ -22,10 +22,31 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
 
 ## Where it stands
 
+**Latest (2026-08-03), all shipped to prod:**
+- **Honest cost & accessibility panel.** Tapping any opportunity opens a detail
+  panel (`components/opportunities/OpportunityDetail.tsx`) showing what it is,
+  who runs it, who it's for, why it's worth it — and, FIRST, what it COSTS. Cost
+  is a first-class field on `Competition` (`cost: CostModel`, 10 values from
+  `free` to `unknown`, + `costDetail`), rendered by `opportunityCost()` and shown
+  as a colour-coded `CostPill` on the card too, so "this costs money" is never
+  hidden behind a click. `unknown` is the honest default — never implies free.
+- **8 free industry certificates open to under-18s** (IBM SkillsBuild, AWS
+  Educate, Google Skillshop, freeCodeCamp, GitHub Foundations, Cisco Skills for
+  All, Microsoft Learn = `free_cert_paid`, Sololearn = `freemium`) — age AND cost
+  verified against each provider, not from memory.
+- **Confirmed dates 8 → 17.** Hand-verified 6 more autumn-2026 deadlines against
+  official pages (Congressional App, YoungArts, Wharton, Breakthrough Junior,
+  Astro Pi, Purple Comet); two were correcting plain-wrong estimates. Most
+  2026-27 dates simply aren't published yet in August — those stay honest "Dates
+  TBA" for the `sync-dates` cron to confirm as organisers publish through autumn.
+- `alwaysOpen` distinguishes self-paced things ("open now") from unannounced
+  cycles ("dates TBA"). Candidate fee/date research notes live in
+  [OPPORTUNITIES_CANDIDATES.md](OPPORTUNITIES_CANDIDATES.md).
+
 **Catalog** — 156 curated opportunities in `lib/data/key-dates.ts`. Every link
-verified: `npm run test:links` reports 152/156 healthy (3 bot-walled but live in
-a real browser; 1 genuinely down — `ijso`, an SSL failure on its official domain,
-left in place per the "don't delete on a same-day outage" trap).
+verified: `npm run test:links` reports 155/156 healthy (only `ijso` down — an SSL
+failure on its official domain, left in place per the "don't delete on a same-day
+outage" trap).
 
 **Age is eligibility, so it is verified, not assumed.** The +8 free industry
 certificates people share as "free and valuable" were added only after each
@@ -102,8 +123,9 @@ students without approval at `/admin/opportunities`.
 
 **Dates** — `/api/cron/sync-dates` runs daily over a rotating batch of 8. It
 reads the landing page *and* the linked "key dates"/"apply" page, because
-landing pages carry no deadlines. **8 of 100 entries have a confirmed date** and
-8 SAT sittings are synced — see step (3), this is the constraint on everything
+landing pages carry no deadlines. **17 of 156 entries now have a confirmed date**
+(hand-verified through 2026-08-03; the cron confirms more as they publish) plus
+SAT sittings — see step (3), date coverage is still the constraint on everything
 in the "remove the work" direction. Failures report a typed reason
 (`fetch_failed` / `no_content` / `model_error` / `declined` / `invalid_date`)
 rather than a silent null.
