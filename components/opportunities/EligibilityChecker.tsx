@@ -61,12 +61,13 @@ export function EligibilityChecker() {
   // attention with what is actionable today.
   const openNow = plan?.items.filter((o) => !o.notYetEligible) ?? [];
   const later = plan?.items.filter((o) => o.notYetEligible) ?? [];
-  // Datable first. The promise on this page is "and when they close", so an
-  // entry we can put a real date on earns its place ahead of one we can't —
-  // otherwise the top of the list is five cards reading "Dates TBA".
-  const shown = [...openNow]
-    .sort((a, b) => Number(!!b.dateConfirmed) - Number(!!a.dateConfirmed))
-    .slice(0, SHOWN);
+  // Actionable first. A real deadline earns the top spot (the promise on this
+  // page is "and when they close"), then the ones with no deadline at all —
+  // which a student can start tonight — and only then the "dates TBA" rows we
+  // cannot say anything useful about yet.
+  const rank = (o: Opportunity) =>
+    o.dateConfirmed ? 0 : o.alwaysOpen ? 1 : 2;
+  const shown = [...openNow].sort((a, b) => rank(a) - rank(b)).slice(0, SHOWN);
   // The soonest real deadline on screen — the minimum, not the first one we
   // happen to render.
   const nearest = shown

@@ -234,15 +234,16 @@ export function OpportunityDetail({
           </Section>
 
           <Section
-            title={o.categoryResolved === "course" ? "When you can start" : "When"}
+            title={o.alwaysOpen ? "When you can start" : "When"}
           >
             {/* A self-paced course has no cycle to miss, so the "dates not
                 announced" line below would be nonsense for one. */}
-            {!o.dateConfirmed && o.categoryResolved === "course" ? (
+            {!o.dateConfirmed && o.alwaysOpen ? (
               <p>
-                {o.window}. There is no deadline to miss — which is exactly why
-                most people never finish one. Pick the day you start and the
-                slot you keep each week.
+                You can start today — {o.window.charAt(0).toLowerCase()}
+                {o.window.slice(1)}. There is no deadline to miss, which is
+                exactly why these are the ones people never get round to. Pick
+                the day you start and the slot you keep each week.
               </p>
             ) : o.dateConfirmed ? (
               <p>

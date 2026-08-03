@@ -137,9 +137,8 @@ export function OpportunityCard({
                 </span>{" "}
                 · {o.window}
               </>
-            ) : o.categoryResolved === "course" ? (
-              // A self-paced course has no cycle to miss — saying "dates not
-              // announced" about one is just noise.
+            ) : o.alwaysOpen ? (
+              // Nothing to announce and nothing to miss — say what is true.
               <>{o.window}</>
             ) : (
               // We never show a countdown for a date we cannot stand behind: a
@@ -152,6 +151,8 @@ export function OpportunityCard({
         <div className="shrink-0">
           {o.dateConfirmed ? (
             <Countdown days={o.daysToDeadline} compact={compact} />
+          ) : o.alwaysOpen ? (
+            <OpenNowPill compact={compact} />
           ) : (
             <TbaPill compact={compact} />
           )}
@@ -254,6 +255,22 @@ export function Countdown({
       }`}
     >
       {text}
+    </span>
+  );
+}
+
+/**
+ * For the rows with no deadline at all. It reads as the positive it is: these
+ * are the only things on the list a student can act on the same evening.
+ */
+export function OpenNowPill({ compact = false }: { compact?: boolean }) {
+  return (
+    <span
+      className={`whitespace-nowrap rounded-full bg-likely-soft font-semibold text-[#2C6B4D] ${
+        compact ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm"
+      }`}
+    >
+      Open now
     </span>
   );
 }
