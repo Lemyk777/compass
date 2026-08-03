@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildExtracurriculars,
-  type CompetitionTier,
   type Opportunity,
 } from "@/lib/data/key-dates";
+import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
 import { graduationYearFromGrade } from "@/lib/data/eligibility";
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { downloadIcs } from "@/lib/calendar/ics";
@@ -61,12 +61,13 @@ export function EligibilityChecker() {
   // attention with what is actionable today.
   const openNow = plan?.items.filter((o) => !o.notYetEligible) ?? [];
   const later = plan?.items.filter((o) => o.notYetEligible) ?? [];
-  // Datable first. The promise on this page is "and when they close", so an
-  // entry we can put a real date on earns its place ahead of one we can't —
-  // otherwise the top of the list is five cards reading "Dates TBA".
-  const shown = [...openNow]
-    .sort((a, b) => Number(!!b.dateConfirmed) - Number(!!a.dateConfirmed))
-    .slice(0, SHOWN);
+  // Actionable first. A real deadline earns the top spot (the promise on this
+  // page is "and when they close"), then the ones with no deadline at all —
+  // which a student can start tonight — and only then the "dates TBA" rows we
+  // cannot say anything useful about yet.
+  const rank = (o: Opportunity) =>
+    o.dateConfirmed ? 0 : o.alwaysOpen ? 1 : 2;
+  const shown = [...openNow].sort((a, b) => rank(a) - rank(b)).slice(0, SHOWN);
   // The soonest real deadline on screen — the minimum, not the first one we
   // happen to render.
   const nearest = shown
@@ -147,40 +148,53 @@ export function EligibilityChecker() {
 
             {/* Refinement comes AFTER the answer, never before it. They already
                 got something; this only sharpens it. */}
-            <FieldFilter value={fields} onChange={setFields} />
+            <PageSection
+              title="Into something in particular?"
+              hint="Optional — it only sharpens the list above."
+            >
+              <FieldFilter value={fields} onChange={setFields} />
+            </PageSection>
 
-            <ul className="mt-6 space-y-3">
-              {shown.map((o, i) => (
-                <li
-                  key={o.id}
-                  className="animate-fade-up"
-                  // Stagger by 45ms — enough to read as a sequence, short
-                  // enough that the fifth card is not late.
-                  style={{ animationDelay: `${i * 45}ms`, animationFillMode: "backwards" }}
-                >
-                  <OpportunityCard o={o} />
-                </li>
-              ))}
-            </ul>
+            <PageSection
+              title="Start with these"
+              hint="Tap a name to see what it is, who it's for and what it costs."
+              count={shown.length}
+            >
+              <ul className="space-y-3">
+                {shown.map((o, i) => (
+                  <li
+                    key={o.id}
+                    className="animate-fade-up"
+                    // Stagger by 45ms — enough to read as a sequence, short
+                    // enough that the fifth card is not late.
+                    style={{ animationDelay: `${i * 45}ms`, animationFillMode: "backwards" }}
+                  >
+                    <OpportunityCard o={o} />
+                  </li>
+                ))}
+              </ul>
 
-            {shown.length === 0 && (
-              <p className="rounded-2xl border border-line bg-card p-6 text-base text-ink-soft shadow-card">
-                Nothing in those subjects is open to year {grade} right now. Try
-                turning the subjects off, or come back in September — that&rsquo;s
-                when most of them open for the year.
-              </p>
-            )}
+              {shown.length === 0 && (
+                <p className="rounded-2xl border border-line bg-card p-6 text-base text-ink-soft shadow-card">
+                  Nothing in those subjects is open to year {grade} right now.
+                  Try turning the subjects off, or come back in September —
+                  that&rsquo;s when most of them open for the year.
+                </p>
+              )}
+            </PageSection>
 
             {/* Everything not yet open, stated as a fact rather than offered as
                 a second list to wade through. */}
             {later.length > 0 && (
-              <p className="mt-6 text-sm text-ink-faint">
-                <span data-num className="font-semibold text-ink-soft">
-                  {later.length}
-                </span>{" "}
-                more open up as you get older — we&rsquo;ll show them when they
-                do.
-              </p>
+              <PageSection title="Opens up later">
+                <p className="text-[0.95rem] leading-relaxed text-ink-soft">
+                  <span data-num className="font-semibold text-ink">
+                    {later.length}
+                  </span>{" "}
+                  more become available as you move up the school — we&rsquo;ll
+                  put them on this list the year you can enter them.
+                </p>
+              </PageSection>
             )}
 
             <CalendarCta items={shown} />
@@ -252,19 +266,8 @@ function FieldFilter({
     onChange(value.includes(f) ? value.filter((x) => x !== f) : [...value, f]);
 
   return (
-    <div className="mt-7">
-      <p className="text-sm font-medium text-ink-soft">
-        Into something in particular? {value.length > 0 && (
-          <button
-            type="button"
-            onClick={() => onChange([])}
-            className="font-semibold text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
-          >
-            clear
-          </button>
-        )}
-      </p>
-      <div className="mt-2.5 flex flex-wrap gap-2">
+    <div>
+      <div className="flex flex-wrap gap-2">
         {FACULTIES.map((f) => {
           const on = value.includes(f.value);
           return (
@@ -284,82 +287,51 @@ function FieldFilter({
           );
         })}
       </div>
+      {value.length > 0 && (
+        <button
+          type="button"
+          onClick={() => onChange([])}
+          className="mt-2.5 text-sm font-semibold text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+        >
+          Clear the subjects
+        </button>
+      )}
     </div>
   );
 }
 
-const TIER_LABEL: Record<CompetitionTier, string> = {
-  accessible: "Good first one",
-  selective: "Step up",
-  elite: "The big one",
-};
-
-function OpportunityCard({ o }: { o: Opportunity }) {
-  return (
-    <article className="rounded-2xl border border-line bg-card p-5 shadow-card transition-shadow duration-200 hover:shadow-lift">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold leading-snug text-ink">{o.name}</h3>
-          <p className="mt-1 text-[0.95rem] leading-relaxed text-ink-soft">
-            {o.blurb}
-          </p>
-        </div>
-        {o.dateConfirmed ? (
-          <Countdown days={o.daysToDeadline} />
-        ) : (
-          <span className="whitespace-nowrap rounded-full bg-surface px-3 py-1.5 text-sm font-semibold text-ink-faint">
-            Dates TBA
-          </span>
-        )}
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-faint">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 font-medium text-ink-soft">
-          {TIER_LABEL[o.tierResolved]}
-        </span>
-        <span>{o.eligibility ?? "Check the age rules on the official page"}</span>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2.5 border-t border-line pt-4">
-        <a
-          href={o.url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex h-11 items-center rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
-        >
-          Open the official page
-        </a>
-        {o.dateConfirmed && (
-          <button
-            type="button"
-            onClick={() => downloadIcs([o])}
-            className="inline-flex h-11 items-center rounded-xl border border-line bg-card px-4 text-sm font-medium text-ink-soft transition-colors hover:border-ink/25 hover:text-ink focus-visible:focus-ring"
-          >
-            Add the deadline to my calendar
-          </button>
-        )}
-      </div>
-    </article>
-  );
-}
-
 /**
- * Days-left pill. Colour follows the product's semantic tier scale, and the
- * text says the same thing the colour does — colour alone never carries meaning.
+ * One section shell for the whole page, so the answer, the filter, the list and
+ * the calendar all sit on the same rhythm instead of being four differently
+ * spaced blocks. Same shape as the dashboard's sections — a student who checks
+ * this page and then signs in should recognise the layout.
  */
-function Countdown({ days }: { days: number }) {
-  const tone =
-    days <= 14
-      ? "bg-reach-soft text-reach"
-      : days <= 30
-        ? "bg-target-soft text-target"
-        : "bg-likely-soft text-[#2C6B4D]";
+function PageSection({
+  title,
+  hint,
+  count,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  count?: number;
+  children: React.ReactNode;
+}) {
   return (
-    <span
-      className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold ${tone}`}
-    >
-      <span data-num>{days <= 0 ? "closes today" : `${days} days left`}</span>
-    </span>
+    <section className="mt-10">
+      <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h3 className="flex items-baseline gap-2 text-base font-semibold tracking-tight text-ink">
+          {title}
+          {count != null && (
+            <span data-num className="text-sm font-normal text-ink-faint">
+              ({count})
+            </span>
+          )}
+        </h3>
+        {hint && <p className="text-sm text-ink-faint">{hint}</p>}
+      </div>
+      {children}
+    </section>
   );
 }
 

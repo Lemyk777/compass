@@ -22,10 +22,22 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
 
 ## Where it stands
 
-**Catalog** — 148 curated opportunities in `lib/data/key-dates.ts`. Every link
-verified: `npm run test:links` reports 144/148 healthy (3 bot-walled but live in
+**Catalog** — 156 curated opportunities in `lib/data/key-dates.ts`. Every link
+verified: `npm run test:links` reports 152/156 healthy (3 bot-walled but live in
 a real browser; 1 genuinely down — `ijso`, an SSL failure on its official domain,
 left in place per the "don't delete on a same-day outage" trap).
+
+**Age is eligibility, so it is verified, not assumed.** The +8 free industry
+certificates people share as "free and valuable" were added only after each
+one's age policy was checked against the source and confirmed open to under-18s,
+each with an `ageMin` gate encoded: IBM SkillsBuild (13–18), AWS Educate (13/14+),
+GitHub Foundations (students 13+), Google Skillshop (no age limit), freeCodeCamp
+(all ages), Microsoft Learn (13+), Cisco Networking Academy / Skills for All
+(13+, mobile-first), Sololearn (13+, phone-first). The 18+/enterprise ones from
+the same lists were deliberately NOT added — Salesforce Trailhead (account 18+),
+MongoDB University, NVIDIA DLI, Snowflake — and Codecademy (16+) was passed over
+as freeCodeCamp already covers free coding: showing a 14-year-old an 18+ course
+is the exact "is this for me?" ambiguity the whole section exists to remove.
 
 The 2026-08-02 push (three passes, +48: 100 → 148) was built around the
 section's actual mission — students who are NOT in a first-tier country (London /
@@ -108,7 +120,7 @@ npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
 npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog
 npm run build           # lint + type-check gate
-node --import tsx scripts/test-session-checks.ts   # 56 logic checks
+node --import tsx scripts/test-session-checks.ts   # 60 logic checks
 ```
 
 `test:links` separates *dead* from *blocked*: a 403/429 from a bot wall is
@@ -172,7 +184,7 @@ audience and date-layer decisions. Only then more rules.
 
 ## Next steps, in order
 
-1. **Keep expanding the catalog.** Now **148 entries** across 5 types
+1. **Keep expanding the catalog.** Now **156 entries** across 5 types
    (competition, olympiad, course, summer_program, research_program). The
    guiding filter for new entries is the mission: would a student in Kazakhstan
    or Uzbekistan, with no first-tier network, actually be able to do this? Prefer
