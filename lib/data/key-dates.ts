@@ -296,8 +296,12 @@ export const COMPETITIONS: Competition[] = [
     id: "amc",
     name: "AMC 10/12 (math)",
     fields: ["computer_science", "engineering", "natural_sciences"],
-    deadline: "2026-10-28",
-    window: "Contests Nov 5 & 13, 2026",
+    deadline: "2026-10-15",
+    // Oct 15 is the regular registration deadline your school has to hit; the
+    // Oct 28 "late" deadline is only open to returning competition managers, so
+    // for a student the honest last date is Oct 15. Contests are Nov 5 & 13.
+    // Checked 2026-08-03 against maa.org/amcreg.
+    window: "School registers you by Oct 15, 2026; contests Nov 5 & 13, 2026",
     level: "national",
     category: "olympiad",
     tier: "selective",
@@ -319,8 +323,12 @@ export const COMPETITIONS: Competition[] = [
     id: "math-kangaroo",
     name: "Math Kangaroo",
     fields: ["computer_science", "engineering", "natural_sciences"],
-    deadline: "2026-12-15",
-    window: "Contest March 18, 2027",
+    deadline: "2026-12-31",
+    // A student's regular enrolment closes Dec 31, 2026 (late enrolment runs to
+    // Feb 1, 2027). Our earlier Dec 15 was the deadline to START a school centre,
+    // not the student deadline. Contest is March 18, 2027. Checked 2026-08-03
+    // against mathkangaroo.org/mks/registration.
+    window: "Register by Dec 31, 2026; contest March 18, 2027",
     level: "international",
     category: "olympiad",
     tier: "accessible",
