@@ -56,12 +56,19 @@ export async function GET(request: NextRequest) {
     if (role === "student") {
       // A returning student who already has results should land on their
       // dashboard — not be dumped back into the questionnaire (which looks like
-      // their results vanished). Only brand-new students go to onboarding.
+      // their results vanished).
+      //
+      // A BRAND-NEW student lands in Opportunities, not the questionnaire. That
+      // section asks a single question (school year) inline and hands back value
+      // immediately — the friction the whole product is being built around
+      // removing. The full profile and admission report stay one opt-in tap away
+      // ("Update profile" in the sidebar, "Get the full report" prompts), so
+      // nothing is lost; it just isn't a wall between signing up and value.
       const { count } = await supabase
         .from("analyses")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id);
-      target = (count ?? 0) > 0 ? "/dashboard" : "/onboarding";
+      target = (count ?? 0) > 0 ? "/dashboard" : "/dashboard/opportunities";
     } else {
       target = landingPathForRole(role);
     }
