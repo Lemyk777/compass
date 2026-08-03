@@ -653,4 +653,37 @@ ok("country and year lead the list, so the head start shows at the top", () => {
   assert.equal(r.items.length, 7);
 });
 
+// ── opportunity expiry (registration deadline) ───────────────────────────────
+// Once a CONFIRMED registration deadline passes, the opportunity must disappear
+// from every surface (all of them go through buildExtracurriculars). A regression
+// here would put closed competitions in front of students — the worst failure
+// this feature has.
+console.log("opportunity expiry");
+const confirmedGlobal = COMPETITIONS.find((c) => c.dateConfirmed && !c.region)!;
+const addDays = (iso: string, n: number) => {
+  const d = new Date(iso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
+  return d;
+};
+const hasItem = (today: Date, id: string) =>
+  buildExtracurriculars({ today, faculties: [], factors: [] }).items.some((i) => i.id === id);
+
+ok("a confirmed deadline in the FUTURE is shown", () => {
+  assert.equal(hasItem(addDays(confirmedGlobal.deadline, -10), confirmedGlobal.id), true);
+});
+ok("day-of the deadline is still shown (you can usually still enter)", () => {
+  assert.equal(hasItem(addDays(confirmedGlobal.deadline, 0), confirmedGlobal.id), true);
+});
+ok("a confirmed deadline in the PAST disappears", () => {
+  assert.equal(hasItem(addDays(confirmedGlobal.deadline, 2), confirmedGlobal.id), false);
+});
+ok("an UNCONFIRMED estimate never expires (dates unknown → shown as TBA)", () => {
+  // Take an unconfirmed entry and run the clock well past its estimate: it must
+  // still appear, because we never stood behind that date as a real deadline.
+  const c = COMPETITIONS.find((x) => !x.dateConfirmed && !x.region)!;
+  const today = addDays(c.deadline, 400);
+  const plan = buildExtracurriculars({ today, faculties: [], factors: [] });
+  assert.equal(plan.items.some((i) => i.id === c.id), true);
+});
+
 console.log(`\nAll ${passed} checks passed.`);
