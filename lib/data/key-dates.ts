@@ -336,12 +336,16 @@ export const COMPETITIONS: Competition[] = [
     id: "usaco",
     name: "USACO (competitive programming)",
     fields: ["computer_science", "engineering"],
-    deadline: "2027-01-09",
-    window: "Online contests Jan–Mar (no pre-registration)",
+    deadline: "2026-12-11",
+    // There is no registration deadline (you just log in during a contest
+    // window), and the 2026–27 schedule is not published yet — the first contest
+    // is normally the second Thursday of December, so this is an ESTIMATE, not a
+    // confirmed date. Checked 2026-08-03: usaco.org had not posted the schedule.
+    window: "Online contests Dec–Mar (no pre-registration); 2026–27 dates not yet published",
     level: "national",
     category: "olympiad",
     tier: "selective",
-    dateConfirmed: true,
+    dateConfirmed: false,
     eligibility: "Any pre-college student — no age limit",
     url: "https://usaco.org/",
     blurb: "Promote through Bronze→Silver→Gold→Platinum to prove real CS ability.",
@@ -388,12 +392,16 @@ export const COMPETITIONS: Competition[] = [
     id: "usapho",
     name: "F=ma / USAPhO (physics olympiad)",
     fields: ["engineering", "natural_sciences"],
-    deadline: "2027-02-12",
-    window: "F=ma exam Feb 12, 2027",
+    deadline: "2027-01-30",
+    // The Feb date is the EXAM date, not a registration deadline, and the 2027
+    // exam date isn't published yet — registration (through your school) closes
+    // in late January in prior years. Checked 2026-08-03: aapt.org had no 2027
+    // date posted, so this is an estimate.
+    window: "F=ma exam ~February 2027 (date TBA); your school registers you, ~late Jan",
     level: "national",
     category: "olympiad",
     tier: "selective",
-    dateConfirmed: true,
+    dateConfirmed: false,
     eligibility: "Grades 9–12 at a US school — no minimum age",
     url: "https://www.aapt.org/physicsteam/",
     blurb: "The U.S. physics olympiad pipeline — a sharp signal for physics/engineering.",
@@ -439,11 +447,15 @@ export const COMPETITIONS: Competition[] = [
     name: "Regeneron ISEF (research)",
     fields: ["natural_sciences", "engineering", "medicine_health", "computer_science"],
     deadline: "2027-02-01",
-    window: "Regional fairs Feb–Mar, finals May 12–18, 2027",
+    // You qualify through a regional/affiliated fair, so there is no single ISEF
+    // deadline — each regional fair sets its own, spread across autumn–winter.
+    // The finals are 8–14 May 2027 in Los Angeles (checked 2026-08-03; an earlier
+    // "May 12–18" was wrong). Left as an estimate, not a hard deadline.
+    window: "Qualify via a regional fair (autumn–winter); finals May 8–14, 2027, Los Angeles",
     level: "international",
     category: "competition",
     tier: "elite",
-    dateConfirmed: true,
+    dateConfirmed: false,
     eligibility: "Grades 9–12 · under 20 on May 1 — no minimum age",
     url: "https://www.societyforscience.org/isef/",
     blurb: "Original research project — the strongest STEM 'spike' you can build.",
@@ -2449,10 +2461,12 @@ export const COMPETITIONS: Competition[] = [
     name: "Advent of Code",
     fields: ["computer_science"],
     deadline: "2026-12-01",
-    // Not an announcement but a fixed annual shape: puzzles unlock daily from
-    // 1 to 25 December, unchanged every year since 2015. Checked 2026-08-03.
-    window: "A new puzzle every day 1-25 December; free, any language",
-    dateConfirmed: true,
+    // Dec 1 is when the new event STARTS, not a deadline — puzzles unlock daily
+    // 1–25 December and there is nothing to submit "by" a date. Every past year's
+    // puzzles stay open to solve any time, so this is genuinely open now rather
+    // than a countdown. Showing "Deadline Dec 1" was wrong. Checked 2026-08-03.
+    window: "New puzzles daily 1–25 December; all past years playable any time, free",
+    alwaysOpen: true,
     level: "international",
     category: "competition",
     tier: "accessible",
