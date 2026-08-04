@@ -15,6 +15,7 @@ import {
 } from "@/app/dashboard/actions";
 import { graduationYearFromGrade } from "@/lib/data/eligibility";
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
+import { InterestQuiz } from "@/components/opportunities/InterestQuiz";
 import { downloadIcs } from "@/lib/calendar/ics";
 import {
   INTENT_TEXT_MAX,
@@ -121,7 +122,21 @@ export function OpportunitiesView() {
     FacultyValue[] | null
   >(null);
   const [fieldsDismissed, setFieldsDismissed] = useState(false);
-  const faculties = facultiesOverride ?? profileMeta.faculties;
+  const [showQuiz, setShowQuiz] = useState(false);
+  const faculties = (facultiesOverride ?? profileMeta.faculties) as FacultyValue[];
+  const [, startFacSave] = useTransition();
+
+  // Apply a chosen field set from either the manual picker or the quiz: filter
+  // immediately (optimistic) and persist best-effort. The optimistic override
+  // drives the list for this visit even if the save fails, so the answer is
+  // never lost to a transient error.
+  function applyFaculties(picked: FacultyValue[]) {
+    setFacultiesOverride(picked);
+    setShowQuiz(false);
+    startFacSave(async () => {
+      await saveFaculties(picked);
+    });
+  }
 
   // The catalog is deterministic, so it works BEFORE any analysis exists —
   // that's the "grow with us" mode for younger students with thin portfolios.
@@ -187,18 +202,26 @@ export function OpportunitiesView() {
             <StarterBanner basePath={basePath} hasProfile={hasProfile} />
           )}
 
-          {/* The two default questions, in order: grade, then field. The full
-              analysis questionnaire stays opt-in (StarterBanner). */}
+          {/* The two default questions, in order: grade, then field. A student
+              who doesn't know their field can take the optional interest quiz
+              instead. The full analysis questionnaire stays opt-in. */}
           {graduationYear == null ? (
             <YearPrompt onPick={(year) => setYearOverride(year)} />
           ) : (
             faculties.length === 0 &&
-            !fieldsDismissed && (
-              <FieldPrompt
-                onChoose={(picked) => setFacultiesOverride(picked)}
-                onSkip={() => setFieldsDismissed(true)}
+            !fieldsDismissed &&
+            (showQuiz ? (
+              <InterestQuiz
+                onComplete={applyFaculties}
+                onCancel={() => setShowQuiz(false)}
               />
-            )
+            ) : (
+              <FieldPrompt
+                onChoose={applyFaculties}
+                onSkip={() => setFieldsDismissed(true)}
+                onQuiz={() => setShowQuiz(true)}
+              />
+            ))
           )}
 
           {plan.items.length > 0 ? (
@@ -491,26 +514,16 @@ function YearPrompt({ onPick }: { onPick: (year: number) => void }) {
 function FieldPrompt({
   onChoose,
   onSkip,
+  onQuiz,
 }: {
   onChoose: (faculties: FacultyValue[]) => void;
   onSkip: () => void;
+  onQuiz: () => void;
 }) {
   const [sel, setSel] = useState<FacultyValue[]>([]);
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
   const toggle = (f: FacultyValue) =>
     setSel((s) => (s.includes(f) ? s.filter((x) => x !== f) : [...s, f]));
-
-  function save() {
-    if (sel.length === 0) return;
-    onChoose(sel); // optimistic — the list re-filters immediately
-    setError(null);
-    startTransition(async () => {
-      const res = await saveFaculties(sel);
-      if (!res.ok) setError(res.error);
-    });
-  }
 
   return (
     <Card>
@@ -529,9 +542,8 @@ function FieldPrompt({
               key={f.value}
               type="button"
               aria-pressed={on}
-              disabled={pending}
               onClick={() => toggle(f.value)}
-              className={`h-10 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:focus-ring disabled:opacity-50 ${
+              className={`h-10 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:focus-ring ${
                 on
                   ? "border-accent bg-accent-soft text-accent-ink"
                   : "border-line bg-card text-ink-soft hover:border-ink/30 hover:text-ink"
@@ -545,8 +557,8 @@ function FieldPrompt({
       <div className="mt-4 flex flex-wrap items-center gap-2.5">
         <button
           type="button"
-          disabled={pending || sel.length === 0}
-          onClick={save}
+          disabled={sel.length === 0}
+          onClick={() => onChoose(sel)}
           className="h-10 rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring disabled:opacity-40"
         >
           Show these{sel.length > 0 && <span data-num> ({sel.length})</span>}
@@ -559,11 +571,15 @@ function FieldPrompt({
           Show all fields
         </button>
       </div>
-      {error && (
-        <p role="alert" className="mt-2 text-xs text-reach">
-          {error} Your list still works for this visit.
-        </p>
-      )}
+      {/* The whole point of the quiz: a student who can't answer the question
+          above isn't stuck with a blind guess. */}
+      <button
+        type="button"
+        onClick={onQuiz}
+        className="mt-3 text-sm font-medium text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+      >
+        Not sure what you like? Take a 2-minute quiz &rarr;
+      </button>
     </Card>
   );
 }
