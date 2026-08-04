@@ -3,7 +3,7 @@
 import type { SchoolLikelihood } from "@/lib/ai/schema";
 import { TIER_HEX, TIER_META } from "@/lib/tiers";
 import { resolveSchoolDeadlines } from "@/lib/data/app-deadlines";
-import { formatDate } from "@/lib/data/key-dates";
+import { formatDate } from "@/lib/data/opportunity-format";
 import { branchCampusFor, type BranchCampus } from "@/lib/data/branch-campuses";
 import { Flag } from "@/components/ui/Flag";
 import { useT } from "@/lib/i18n/client";

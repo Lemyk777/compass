@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { buildExtracurriculars } from "@/lib/data/key-dates";
+import type { ExtracurricularsPlan } from "@/lib/data/key-dates";
 import { useOnboardingContext } from "./context/OnboardingContext";
 
 // Pay the student before asking them for anything else.
@@ -35,15 +35,24 @@ export function FirstWin() {
     [data.faculties]
   );
 
-  const plan = useMemo(() => {
-    if (!today || !graduationYear) return null;
-    return buildExtracurriculars({
-      today,
-      faculties,
-      factors: [], // no analysis yet — everyone starts at "emerging", which is
-      // the right footing for someone who has not told us anything else.
-      graduationYear,
+  // Lazy-load the matching engine so the catalog is a separate async chunk, not
+  // part of the onboarding bundle. No analysis yet → everyone starts "emerging".
+  const [plan, setPlan] = useState<ExtracurricularsPlan | null>(null);
+  useEffect(() => {
+    if (!today || !graduationYear) {
+      setPlan(null);
+      return;
+    }
+    let cancelled = false;
+    import("@/lib/data/key-dates").then((m) => {
+      if (cancelled) return;
+      setPlan(
+        m.buildExtracurriculars({ today, faculties, factors: [], graduationYear }),
+      );
     });
+    return () => {
+      cancelled = true;
+    };
   }, [today, graduationYear, faculties]);
 
   if (!plan) return null;

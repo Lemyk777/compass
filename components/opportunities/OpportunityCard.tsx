@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import {
-  formatDate,
-  type CompetitionCategory,
-  type CompetitionTier,
-  type Opportunity,
+import { formatDate } from "@/lib/data/opportunity-format";
+import type {
+  CompetitionCategory,
+  CompetitionTier,
+  Opportunity,
 } from "@/lib/data/key-dates";
 import { regionLabel } from "@/lib/data/geo";
 import { downloadIcs } from "@/lib/calendar/ics";

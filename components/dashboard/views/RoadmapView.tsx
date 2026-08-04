@@ -5,7 +5,7 @@ import { Card } from "@/components/report/Section";
 import { GapAnalysis } from "@/components/report/GapAnalysis";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { PageHeader } from "@/components/dashboard/states";
-import { formatDate } from "@/lib/data/key-dates";
+import { formatDate } from "@/lib/data/opportunity-format";
 import { COUNTRY_CONTENT } from "@/lib/data/country-content";
 import {
   buildRoadmap,

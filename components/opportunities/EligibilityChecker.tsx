@@ -1,10 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  buildExtracurriculars,
-  type Opportunity,
-} from "@/lib/data/key-dates";
+import { useEffect, useRef, useState } from "react";
+import type { ExtracurricularsPlan, Opportunity } from "@/lib/data/key-dates";
 import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
 import { graduationYearFromGrade } from "@/lib/data/eligibility";
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
@@ -45,15 +42,30 @@ export function EligibilityChecker() {
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const plan = useMemo(() => {
-    if (!today || grade == null) return null;
-    return buildExtracurriculars({
-      today,
-      faculties: fields,
-      factors: [], // no analysis here — everyone starts at "emerging", which is
-      // exactly right for a beginner: accessible events first.
-      graduationYear: graduationYearFromGrade(grade, today),
+  // Lazy-load the matching engine so the ~2,700-entry catalog is a separate
+  // async chunk, not part of this public page's initial JS. Everyone starts at
+  // "emerging" (factors: []), exactly right for a beginner: accessible first.
+  const [plan, setPlan] = useState<ExtracurricularsPlan | null>(null);
+  useEffect(() => {
+    if (!today || grade == null) {
+      setPlan(null);
+      return;
+    }
+    let cancelled = false;
+    import("@/lib/data/key-dates").then((m) => {
+      if (cancelled) return;
+      setPlan(
+        m.buildExtracurriculars({
+          today,
+          faculties: fields,
+          factors: [],
+          graduationYear: graduationYearFromGrade(grade, today),
+        }),
+      );
     });
+    return () => {
+      cancelled = true;
+    };
   }, [today, grade, fields]);
 
   // Open now vs later. The "later" ones stay knowable — a younger student

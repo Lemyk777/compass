@@ -19,12 +19,12 @@ import { InterestQuiz } from "@/components/opportunities/InterestQuiz";
 import { DirectionSummary } from "@/components/opportunities/DirectionSummary";
 import { OpportunityRow } from "@/components/opportunities/CommitRow";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  buildExtracurriculars,
-  type CompetitionCategory,
-  type Opportunity,
-  type OpportunityFit,
-  type StrengthBand,
+import type {
+  CompetitionCategory,
+  ExtracurricularsPlan,
+  Opportunity,
+  OpportunityFit,
+  StrengthBand,
 } from "@/lib/data/key-dates";
 
 // The "Opportunities" section — OUR recommendations of what to enter next, not
@@ -141,16 +141,33 @@ export function OpportunitiesView() {
   // that's the "grow with us" mode for younger students with thin portfolios.
   // Without factors the strength is 0 → "emerging" → accessible events first,
   // exactly the right starting point for someone building a record.
-  const plan = useMemo(() => {
-    if (!today) return null;
-    return buildExtracurriculars({
-      today,
-      faculties,
-      factors: analysis?.factors ?? [],
-      liveCompetitions: liveDates.competitions,
-      homeCountry: profileMeta.homeCountry,
-      graduationYear,
+  const [plan, setPlan] = useState<ExtracurricularsPlan | null>(null);
+  useEffect(() => {
+    if (!today) {
+      setPlan(null);
+      return;
+    }
+    let cancelled = false;
+    // Lazy-load the matching engine (and the ~2,700-entry catalog it pulls in)
+    // so the dataset is a separate async chunk instead of this route's initial
+    // JS. The client filter stays instant once the chunk has loaded — the plan
+    // is null for one paint (the skeleton already handles that).
+    import("@/lib/data/key-dates").then((m) => {
+      if (cancelled) return;
+      setPlan(
+        m.buildExtracurriculars({
+          today,
+          faculties,
+          factors: analysis?.factors ?? [],
+          liveCompetitions: liveDates.competitions,
+          homeCountry: profileMeta.homeCountry,
+          graduationYear,
+        }),
+      );
     });
+    return () => {
+      cancelled = true;
+    };
   }, [
     today,
     analysis,
