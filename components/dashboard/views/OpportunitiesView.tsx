@@ -98,7 +98,7 @@ const SHOWN = 5;
 const PAGE = 8;
 
 export function OpportunitiesView() {
-  const { analysis, profileMeta, liveDates, basePath } = useDashboard();
+  const { analysis, hasProfile, profileMeta, liveDates, basePath } = useDashboard();
 
   // "today" depends on the visitor's clock — resolve on the client to avoid a
   // hydration mismatch (same pattern as the Timeline view).
@@ -173,7 +173,7 @@ export function OpportunitiesView() {
           {analysis ? (
             <StrengthBanner band={plan.band} strength={plan.strength} />
           ) : (
-            <StarterBanner basePath={basePath} />
+            <StarterBanner basePath={basePath} hasProfile={hasProfile} />
           )}
 
           {graduationYear == null && (
@@ -262,9 +262,24 @@ export function OpportunitiesView() {
 }
 
 // Pre-analysis ("grow with us") banner: the student sees the full catalog with
-// beginner-friendly events first, and a nudge that the analysis will match it
-// to their actual strength. The overview owns the run-analysis flow.
-function StarterBanner({ basePath }: { basePath: string }) {
+// beginner-friendly events first, and a clear, opt-in path to the full report.
+//
+// Since signup now lands here (not the questionnaire), this banner is the main
+// place a new student discovers that a full admission report exists. It is
+// deliberately opt-in, not a wall: a profile-less student is pointed at the
+// profile builder that unlocks the report; one who already has a profile just
+// needs to run the analysis from the overview.
+function StarterBanner({
+  basePath,
+  hasProfile,
+}: {
+  basePath: string;
+  hasProfile: boolean;
+}) {
+  const href = hasProfile ? basePath : "/onboarding";
+  const cta = hasProfile
+    ? "Run your full admission report"
+    : "Build your profile for the full report";
   return (
     <Card>
       <div className="flex flex-wrap items-center gap-3">
@@ -276,13 +291,20 @@ function StarterBanner({ basePath }: { basePath: string }) {
           <p className="mt-1 text-pretty text-sm leading-relaxed text-ink-soft">
             These are real competitions, olympiads and programs you can enter —
             beginner-friendly ones first. It&rsquo;s completely fine to have
-            nothing on your list yet: pick one accessible event and start there.{" "}
-            <a href={basePath} className="font-medium text-accent hover:underline">
-              Run the analysis
-            </a>{" "}
-            when you&rsquo;re ready and we&rsquo;ll match these to your strength.
+            nothing on your list yet: pick one accessible event and start there.
           </p>
         </div>
+      </div>
+      <div className="mt-3.5">
+        <a
+          href={href}
+          className="inline-flex h-10 items-center rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+        >
+          {cta} &rarr;
+        </a>
+        <p className="mt-2 text-xs text-ink-faint">
+          Optional — your Opportunities stay free whether or not you do this.
+        </p>
       </div>
     </Card>
   );
