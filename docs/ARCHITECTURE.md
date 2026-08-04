@@ -28,8 +28,12 @@ almost never a prompt change.
 | How scores and benchmarks are computed | `lib/ai/assemble.ts`, `lib/rubric.ts` |
 | Odds for Italy / Hong Kong / UAE / Korea | `lib/ai/italy-analyze.ts`, `hk-analyze.ts`, `uae-analyze.ts`, `korea-analyze.ts` |
 | The universities and programmes | `lib/data/*-universities.ts` |
-| Competitions, olympiads, programmes | `lib/data/key-dates.ts` |
+| A competition/olympiad/course entry | `lib/data/competitions-data.ts` (the catalog array) |
+| How opportunities are matched and ranked | `lib/data/key-dates.ts` (types + logic; re-exports the catalog) |
+| Date/cost formatting used by client cards | `lib/data/opportunity-format.ts` — **import these from here, not key-dates** (see the bundle rule below) |
 | Who may enter an opportunity | `lib/data/eligibility.ts` |
+| The "what do you like?" quiz | `lib/data/interest-quiz.ts` (questions + weights + pure scoring) |
+| Where a field can lead (careers) | `lib/data/careers.ts` |
 | The dated roadmap | `lib/data/roadmap.ts` |
 | Adding a whole new destination country | `lib/data/country-content.ts`, `deterministic-countries.ts`, `country-views.tsx` — one entry each, not edits across eight files |
 | Input caps (lengths, counts) | `lib/limits.ts` — enforced in three places, all of which read from it |
@@ -46,9 +50,9 @@ almost never a prompt change.
 
 | | |
 | --- | --- |
-| `(marketing)/` | The public landing page |
-| `opportunities/` | **Public eligibility checker** — no login, no analysis |
-| `onboarding/` | The intake wizard; `actions.ts` holds the Zod schema that is the single source of truth for a valid profile |
+| `(marketing)/` | The public landing page. Session-aware: a signed-in visitor gets "Dashboard", not "Log in"/"Sign up" |
+| `opportunities/` | **Public eligibility checker — the guest surface only.** A signed-in student is redirected to `/dashboard/opportunities` so there is one Opportunities experience per state, not two |
+| `onboarding/` | The full intake wizard — now **opt-in** (the analysis path), no longer where signups land; `actions.ts` holds the Zod schema that is the single source of truth for a valid profile |
 | `dashboard/` | The logged-in product. `layout.tsx` loads everything once and hands it to `DashboardContext`; each subroute is a thin view |
 | `demo/` | The same dashboard over a sample analysis, no auth |
 | `admin/` | Founder metrics and the opportunity-approval queue |
@@ -95,11 +99,27 @@ migration runner and no state table, so:
   select table_name from information_schema.tables where table_name = 'your_table';
   ```
 
+**This drifts silently — check it, don't assume it.** On 2026-08-05 an audit of
+the live database found `0010_graduation_year` had never been applied: every
+student's school year silently failed to save (the app degrades rather than
+crashing, so nothing surfaced), while every other migration through 0023 *was*
+applied. If a feature "doesn't persist" and the code looks right, check the
+column exists before debugging the code.
+
 ### `scripts/`
 
-Verification, run directly with `node --import tsx`. `test-session-checks.ts`
-is the closest thing to a unit-test suite — pure logic, no key, no network, no
-DB. `test-links.ts` checks every catalog URL.
+Verification, run directly with `node --import tsx`. Two pure suites, both in
+the CI gate and neither needing a key, network or DB:
+
+- `test-engine.ts` (`npm run test:unit`, node:test) — the deterministic core:
+  rubric/overall scoring, benchmarks, eligibility arithmetic, the interest quiz,
+  the careers registry, matching invariants. **Add a case here when you touch
+  scoring or eligibility.**
+- `test-session-checks.ts` — 60 checks over geography, eligibility gates,
+  registry integrity, the commitment vocabulary and cron rotation maths.
+
+`test-links.ts` checks every catalog URL (weekly job, deliberately outside the
+gate — datacenter IPs get bot-walled differently than a student's browser).
 
 ### Elsewhere
 
@@ -113,6 +133,17 @@ work that does not ship in the app.
 - **Prompt caching**: the static system prompt must stay byte-identical across
   requests. Per-user data goes in the user message, never the system block, and
   dataset ordering must stay stable.
+- **Keep the catalog out of client bundles.** `key-dates.ts` builds a lookup map
+  over the whole ~2,700-entry catalog at module load, so *any* runtime import
+  pulls the dataset into that route's JS. Client components import
+  `formatDate`/`opportunityCost` from `opportunity-format.ts`, and the three
+  matching views (`OpportunitiesView`, `EligibilityChecker`, `FirstWin`)
+  dynamic-import `buildExtracurriculars` inside an effect. Type-only imports
+  from key-dates are free. Reverting any of this to a static import + `useMemo`
+  silently adds ~25 kB back to First Load JS.
+- **Only two questions are ever mandatory** (school year, field), both answered
+  inline on Opportunities. Everything else — the quiz, careers, the full
+  analysis intake — is optional and dismissible.
 - **Unknown facts never exclude.** No country, no graduation year, no fields ⇒
   the student sees more, never less. Exclusion requires knowing both sides.
 - **Never show a countdown for a date we cannot stand behind.** An unconfirmed
