@@ -17,6 +17,7 @@ import {
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { InterestQuiz } from "@/components/opportunities/InterestQuiz";
 import { DirectionSummary } from "@/components/opportunities/DirectionSummary";
+import { CareersPanel } from "@/components/opportunities/CareersPanel";
 import { OpportunityRow } from "@/components/opportunities/CommitRow";
 import { AnimatePresence, motion } from "framer-motion";
 import type {
@@ -255,6 +256,10 @@ export function OpportunitiesView() {
               )
             ) : null}
           </AnimatePresence>
+
+          {/* Where the chosen field can lead — the careers layer, optional and
+              collapsed, sitting between "what field" and "what to enter". */}
+          {faculties.length > 0 && <CareersPanel faculties={faculties} />}
 
           {plan.items.length > 0 ? (
             <>

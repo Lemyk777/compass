@@ -28,6 +28,8 @@ import {
 } from "@/lib/data/interest-quiz";
 import { buildExtracurriculars, strengthBand } from "@/lib/data/key-dates";
 import { emptyProfile } from "@/lib/types";
+import { CAREERS_BY_FACULTY, careersForFaculties } from "@/lib/data/careers";
+import { FACULTY_VALUES } from "@/lib/data/faculties";
 
 // A fixed "today" in the second half of the year → academic year end rolls to
 // the next year (June rollover), so a Class of 2027 student is in grade 12.
@@ -195,4 +197,23 @@ test("buildExtracurriculars: a chosen field never widens the list", () => {
   });
   assert.ok(cs.items.length <= all.items.length);
   assert.ok(cs.items.length > 0);
+});
+
+// ── Careers layer ────────────────────────────────────────────────────────────
+test("every faculty has at least 3 fully-filled careers", () => {
+  for (const f of FACULTY_VALUES) {
+    const careers = CAREERS_BY_FACULTY[f];
+    assert.ok(careers && careers.length >= 3, `${f} has too few careers`);
+    for (const c of careers) {
+      assert.ok(c.title.trim() && c.what.trim() && c.path.trim(), `${f}/${c.title} has an empty field`);
+    }
+  }
+});
+
+test("careersForFaculties groups by chosen field; empty in, empty out", () => {
+  assert.deepEqual(careersForFaculties([]), []);
+  const groups = careersForFaculties(["computer_science", "law"]);
+  assert.equal(groups.length, 2);
+  assert.equal(groups[0].faculty, "computer_science");
+  assert.ok(groups[0].careers.length >= 3);
 });
