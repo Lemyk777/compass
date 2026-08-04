@@ -13,9 +13,14 @@ import {
   saveGraduationYear,
   saveOpportunityIntent,
 } from "@/app/dashboard/actions";
-import { graduationYearFromGrade } from "@/lib/data/eligibility";
+import {
+  graduationYearFromGrade,
+  gradeFromGraduationYear,
+} from "@/lib/data/eligibility";
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { InterestQuiz } from "@/components/opportunities/InterestQuiz";
+import { DirectionSummary } from "@/components/opportunities/DirectionSummary";
+import { AnimatePresence, motion } from "framer-motion";
 import { downloadIcs } from "@/lib/calendar/ics";
 import {
   INTENT_TEXT_MAX,
@@ -114,6 +119,10 @@ export function OpportunitiesView() {
   // A year answered inline this session, before the server round-trip lands.
   const [yearOverride, setYearOverride] = useState<number | null>(null);
   const graduationYear = yearOverride ?? profileMeta.graduationYear;
+  const grade =
+    today && graduationYear != null
+      ? gradeFromGraduationYear(graduationYear, today)
+      : null;
 
   // The two default questions are grade (above) and field (below). Fields
   // answered inline this session; `dismissed` lets "show me everything" close
@@ -196,6 +205,15 @@ export function OpportunitiesView() {
 
       {plan ? (
         <>
+          <DirectionSummary
+            grade={grade}
+            faculties={faculties}
+            nearest={
+              nearest ? { name: nearest.name, days: nearest.daysToDeadline } : null
+            }
+            totalOpen={openNow.length}
+          />
+
           {analysis ? (
             <StrengthBanner band={plan.band} strength={plan.strength} />
           ) : (
@@ -204,25 +222,32 @@ export function OpportunitiesView() {
 
           {/* The two default questions, in order: grade, then field. A student
               who doesn't know their field can take the optional interest quiz
-              instead. The full analysis questionnaire stays opt-in. */}
-          {graduationYear == null ? (
-            <YearPrompt onPick={(year) => setYearOverride(year)} />
-          ) : (
-            faculties.length === 0 &&
-            !fieldsDismissed &&
-            (showQuiz ? (
-              <InterestQuiz
-                onComplete={applyFaculties}
-                onCancel={() => setShowQuiz(false)}
-              />
-            ) : (
-              <FieldPrompt
-                onChoose={applyFaculties}
-                onSkip={() => setFieldsDismissed(true)}
-                onQuiz={() => setShowQuiz(true)}
-              />
-            ))
-          )}
+              instead. The full analysis questionnaire stays opt-in. Each swap
+              animates so the surface feels like one flow, not a jump-cut. */}
+          <AnimatePresence mode="wait" initial={false}>
+            {graduationYear == null ? (
+              <PromptSwap key="year">
+                <YearPrompt onPick={(year) => setYearOverride(year)} />
+              </PromptSwap>
+            ) : faculties.length === 0 && !fieldsDismissed ? (
+              showQuiz ? (
+                <PromptSwap key="quiz">
+                  <InterestQuiz
+                    onComplete={applyFaculties}
+                    onCancel={() => setShowQuiz(false)}
+                  />
+                </PromptSwap>
+              ) : (
+                <PromptSwap key="field">
+                  <FieldPrompt
+                    onChoose={applyFaculties}
+                    onSkip={() => setFieldsDismissed(true)}
+                    onQuiz={() => setShowQuiz(true)}
+                  />
+                </PromptSwap>
+              )
+            ) : null}
+          </AnimatePresence>
 
           {plan.items.length > 0 ? (
             <>
@@ -300,6 +325,21 @@ export function OpportunitiesView() {
         <div className="h-40 animate-pulse rounded-2xl border border-line bg-card" />
       )}
     </div>
+  );
+}
+
+/** Animated wrapper so the intake prompts cross-fade instead of jump-cutting
+ *  when one answer swaps in the next (year → field → quiz). */
+function PromptSwap({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
