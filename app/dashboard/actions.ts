@@ -8,6 +8,7 @@ import { HK_PROGRAMS } from "@/lib/data/hk-universities";
 import { UAE_PROGRAMS } from "@/lib/data/uae-universities";
 import { KOREA_PROGRAMS } from "@/lib/data/korea-universities";
 import { normalizeDestinations } from "@/lib/types";
+import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { LIMITS } from "@/lib/limits";
 import {
   cleanIntentText,
@@ -340,6 +341,64 @@ export async function saveGraduationYear(year: number): Promise<SaveResult> {
       };
     }
     return { ok: false, error: "Could not save your year." };
+  }
+
+  try {
+    revalidatePath("/dashboard");
+  } catch {
+    // ignore cache revalidation errors
+  }
+  return { ok: true };
+}
+
+/**
+ * The second default question: which fields to search opportunities in.
+ *
+ * Same shape and spirit as saveGraduationYear — asked inline on the Opportunities
+ * view, answered in a tap, saved without opening the analysis questionnaire. With
+ * a grade and a field we can match a student to what's worth entering; the full
+ * profile stays opt-in. An empty array is a valid answer ("show me everything"),
+ * so it is stored as given and never rejected.
+ */
+export async function saveFaculties(faculties: string[]): Promise<SaveResult> {
+  const valid = Array.from(new Set(faculties)).filter((f) =>
+    (FACULTY_VALUES as string[]).includes(f)
+  );
+  if (valid.length > LIMITS.faculties) {
+    return { ok: false, error: `Pick up to ${LIMITS.faculties} fields.` };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Please log in again." };
+
+  // No unique constraint on user_id (see saveGraduationYear) — look up, then
+  // insert or update explicitly rather than upsert.
+  const { data: existing } = await supabase
+    .from("student_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const { error } = existing
+    ? await supabase
+        .from("student_profiles")
+        .update({ faculties: valid })
+        .eq("id", existing.id)
+    : await supabase
+        .from("student_profiles")
+        .insert({ user_id: user.id, faculties: valid });
+
+  if (error) {
+    if (error.code === "42703" || error.code === "PGRST204") {
+      return {
+        ok: false,
+        error: "Fields of study aren't enabled on this database yet.",
+      };
+    }
+    return { ok: false, error: "Could not save your fields." };
   }
 
   try {
