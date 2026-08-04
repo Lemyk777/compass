@@ -9,10 +9,12 @@ import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
 import { PageHeader } from "@/components/dashboard/states";
 import {
   clearOpportunityIntent,
+  saveFaculties,
   saveGraduationYear,
   saveOpportunityIntent,
 } from "@/app/dashboard/actions";
 import { graduationYearFromGrade } from "@/lib/data/eligibility";
+import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { downloadIcs } from "@/lib/calendar/ics";
 import {
   INTENT_TEXT_MAX,
@@ -112,6 +114,15 @@ export function OpportunitiesView() {
   const [yearOverride, setYearOverride] = useState<number | null>(null);
   const graduationYear = yearOverride ?? profileMeta.graduationYear;
 
+  // The two default questions are grade (above) and field (below). Fields
+  // answered inline this session; `dismissed` lets "show me everything" close
+  // the prompt without forcing a choice — an empty field set is a valid answer.
+  const [facultiesOverride, setFacultiesOverride] = useState<
+    FacultyValue[] | null
+  >(null);
+  const [fieldsDismissed, setFieldsDismissed] = useState(false);
+  const faculties = facultiesOverride ?? profileMeta.faculties;
+
   // The catalog is deterministic, so it works BEFORE any analysis exists —
   // that's the "grow with us" mode for younger students with thin portfolios.
   // Without factors the strength is 0 → "emerging" → accessible events first,
@@ -120,7 +131,7 @@ export function OpportunitiesView() {
     if (!today) return null;
     return buildExtracurriculars({
       today,
-      faculties: profileMeta.faculties,
+      faculties,
       factors: analysis?.factors ?? [],
       liveCompetitions: liveDates.competitions,
       homeCountry: profileMeta.homeCountry,
@@ -129,7 +140,7 @@ export function OpportunitiesView() {
   }, [
     today,
     analysis,
-    profileMeta.faculties,
+    faculties,
     profileMeta.homeCountry,
     graduationYear,
     liveDates.competitions,
@@ -176,10 +187,18 @@ export function OpportunitiesView() {
             <StarterBanner basePath={basePath} hasProfile={hasProfile} />
           )}
 
-          {graduationYear == null && (
-            <YearPrompt
-              onPick={(year) => setYearOverride(year)}
-            />
+          {/* The two default questions, in order: grade, then field. The full
+              analysis questionnaire stays opt-in (StarterBanner). */}
+          {graduationYear == null ? (
+            <YearPrompt onPick={(year) => setYearOverride(year)} />
+          ) : (
+            faculties.length === 0 &&
+            !fieldsDismissed && (
+              <FieldPrompt
+                onChoose={(picked) => setFacultiesOverride(picked)}
+                onSkip={() => setFieldsDismissed(true)}
+              />
+            )
           )}
 
           {plan.items.length > 0 ? (
@@ -455,6 +474,94 @@ function YearPrompt({ onPick }: { onPick: (year: number) => void }) {
       {error && (
         <p role="alert" className="mt-2 text-xs text-reach">
           {error} Your list is filtered for this visit either way.
+        </p>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * The second default question: which fields to look in.
+ *
+ * Asked right after the school year, inline, in a tap — the pair (grade + field)
+ * is the whole default intake now that the analysis questionnaire is opt-in.
+ * Choosing nothing is a real answer ("show me everything"), so "Show all fields"
+ * closes the prompt without forcing a pick rather than blocking on one.
+ */
+function FieldPrompt({
+  onChoose,
+  onSkip,
+}: {
+  onChoose: (faculties: FacultyValue[]) => void;
+  onSkip: () => void;
+}) {
+  const [sel, setSel] = useState<FacultyValue[]>([]);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const toggle = (f: FacultyValue) =>
+    setSel((s) => (s.includes(f) ? s.filter((x) => x !== f) : [...s, f]));
+
+  function save() {
+    if (sel.length === 0) return;
+    onChoose(sel); // optimistic — the list re-filters immediately
+    setError(null);
+    startTransition(async () => {
+      const res = await saveFaculties(sel);
+      if (!res.ok) setError(res.error);
+    });
+  }
+
+  return (
+    <Card>
+      <p className="text-sm font-semibold text-ink">
+        What do you want to look into?
+      </p>
+      <p className="mt-1 text-sm text-ink-soft">
+        Pick the fields you care about and we&rsquo;ll match competitions and
+        programs to them — or see everything.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {FACULTIES.map((f) => {
+          const on = sel.includes(f.value);
+          return (
+            <button
+              key={f.value}
+              type="button"
+              aria-pressed={on}
+              disabled={pending}
+              onClick={() => toggle(f.value)}
+              className={`h-10 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:focus-ring disabled:opacity-50 ${
+                on
+                  ? "border-accent bg-accent-soft text-accent-ink"
+                  : "border-line bg-card text-ink-soft hover:border-ink/30 hover:text-ink"
+              }`}
+            >
+              {FACULTY_LABEL[f.value]}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2.5">
+        <button
+          type="button"
+          disabled={pending || sel.length === 0}
+          onClick={save}
+          className="h-10 rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring disabled:opacity-40"
+        >
+          Show these{sel.length > 0 && <span data-num> ({sel.length})</span>}
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="text-sm font-medium text-ink-soft underline-offset-2 hover:text-ink hover:underline focus-visible:focus-ring"
+        >
+          Show all fields
+        </button>
+      </div>
+      {error && (
+        <p role="alert" className="mt-2 text-xs text-reach">
+          {error} Your list still works for this visit.
         </p>
       )}
     </Card>
