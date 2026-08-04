@@ -59,12 +59,18 @@ export default async function AdminIntentsPage() {
     { data: intentRows, error: intentsErr },
     { data: profiles },
     { data: studentProfiles },
+    { data: analysisRows },
   ] = await Promise.all([
     admin.from("opportunity_intents").select("*"),
     admin.from("profiles").select("id"),
     admin
       .from("student_profiles")
       .select("user_id, graduation_year, faculties, activities"),
+    // Who opted into the full admission report. Since signup now lands on
+    // Opportunities and the report is opt-in (not a forced questionnaire), this
+    // is THE conversion to watch — did making it optional keep report completion,
+    // or quietly kill it? One row is enough to count a user as converted.
+    admin.from("analyses").select("user_id"),
   ]);
 
   const intents = (intentRows ?? []) as IntentRow[];
@@ -85,6 +91,12 @@ export default async function AdminIntentsPage() {
   const withActivities = sp.filter(
     (p) => Array.isArray(p.activities) && p.activities.length > 0
   ).length;
+  // Distinct users who ran the full report at least once — the opt-in the new
+  // signup flow bets on. Counted by user, not by analysis row (one student can
+  // re-run it many times).
+  const withReport = new Set(
+    (analysisRows ?? []).map((a) => a.user_id as string)
+  ).size;
 
   const byStatus = (s: string) => intents.filter((i) => i.status === s);
   const planning = byStatus("planning");
@@ -255,9 +267,11 @@ export default async function AdminIntentsPage() {
                   Profile completion
                 </h2>
                 <p className="mb-3 mt-0.5 text-xs text-ink-soft">
-                  Of {totalUsers} signups. Without a graduation year no age or
-                  grade rule can fire at all, so those students see an
-                  unfiltered catalog.
+                  Of {totalUsers} signups. Signup now lands on Opportunities and
+                  the full report is opt-in, so &ldquo;Ran the full report&rdquo;
+                  is the conversion to watch — not a step everyone is pushed
+                  through. Without a graduation year no age or grade rule can
+                  fire, so those students see an unfiltered catalog.
                 </p>
                 <Bars
                   rows={[
@@ -265,6 +279,7 @@ export default async function AdminIntentsPage() {
                     { label: "Graduation year", count: withYear },
                     { label: "Field of study", count: withFaculties },
                     { label: "Any activity", count: withActivities },
+                    { label: "Ran the full report", count: withReport },
                   ]}
                   base={Math.max(totalUsers, 1)}
                 />
