@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import {
-  formatDate,
-  opportunityCost,
-  type CompetitionCategory,
-  type CompetitionTier,
-  type CostTone,
-  type Opportunity,
+import { formatDate, opportunityCost } from "@/lib/data/opportunity-format";
+import type {
+  CompetitionCategory,
+  CompetitionTier,
+  CostTone,
+  Opportunity,
 } from "@/lib/data/key-dates";
 import { FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { regionLabel } from "@/lib/data/geo";
