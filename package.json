@@ -14,6 +14,7 @@
     "test:links": "node --import tsx scripts/test-links.ts",
     "trace:reasoning": "node --env-file=.env.local --import tsx scripts/trace-reasoning.ts",
     "test:onboarding": "node --experimental-test-module-mocks --import tsx --test scripts/test-onboarding.ts",
+    "test:unit": "node --import tsx --test scripts/test-engine.ts",
     "create:test-user": "node --env-file=.env.local --import tsx scripts/create-test-user.ts"
   },
   "dependencies": {

@@ -44,6 +44,11 @@ jobs:
       - name: Logic checks
         run: node --import tsx scripts/test-session-checks.ts
 
+      # Unit tests for the deterministic engine: scoring (rubric/assemble),
+      # eligibility arithmetic, the interest quiz, matching invariants.
+      - name: Engine unit tests
+        run: npm run test:unit
+
 # Link health is deliberately NOT here. It hits ~100 third-party sites, and
 # from shared CI runners the answers differ from what a student gets: the very
 # first run reported NYU Shanghai as broken while it returned 200 from a normal
