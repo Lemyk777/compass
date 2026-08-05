@@ -15,6 +15,7 @@ import {
   type ValuesAnswers,
 } from "@/lib/data/values";
 import { hubsByRegion, REGION_LABEL, type Hub } from "@/lib/data/world";
+import { destinationsForFaculties } from "@/lib/data/study-destinations";
 
 // The guide: one page for the whole question a catalog can't answer — what is
 // out there, where it is, and how someone standing here reaches it.
@@ -72,6 +73,7 @@ export function GuideView({
     rows: rankAreasByValues(g.areas, scores),
   }));
   const regions = hubsByRegion(selected);
+  const destinations = destinationsForFaculties(selected);
   const showingAll = selected.length === 0;
 
   return (
@@ -152,6 +154,28 @@ export function GuideView({
         </section>
       )}
 
+      {/* The optional questions sit OUTSIDE the field-dependent block on
+          purpose: they used to render only once a field was chosen, which meant
+          anyone browsing the whole guide never saw they existed. They are
+          answerable at any time; the reordering they drive simply starts
+          applying as soon as there is something to reorder. */}
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-ink">
+          What do you want out of work?
+        </h2>
+        <p className="max-w-2xl text-sm leading-relaxed text-ink-soft">
+          Three optional questions. They never change which opportunities you
+          see — they only put the kinds of work closest to your answers first.
+        </p>
+        <ValuesRefine
+          answers={values}
+          onAnswer={(questionId, optionId) =>
+            persistValues({ ...values, [questionId]: optionId })
+          }
+          onClear={() => persistValues({})}
+        />
+      </section>
+
       {/* ── Kinds of work ───────────────────────────────────────────────── */}
       {groups.length > 0 && (
         <section className="space-y-4">
@@ -162,14 +186,6 @@ export function GuideView({
               are reaching for, and most people move between them anyway.
             </p>
           </div>
-
-          <ValuesRefine
-            answers={values}
-            onAnswer={(questionId, optionId) =>
-              persistValues({ ...values, [questionId]: optionId })
-            }
-            onClear={() => persistValues({})}
-          />
 
           {groups.map((g) => (
             <div key={g.faculty} className="space-y-2.5">
@@ -185,6 +201,45 @@ export function GuideView({
           ))}
         </section>
       )}
+
+      {/* ── The big destinations, in full ───────────────────────────────── */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold text-ink">
+            The big destinations, in full
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-soft">
+            The places students actually argue about. Each one opens a full
+            page: what only it gives you, what it genuinely costs, what
+            admissions weighs, what happens after you graduate — and who should
+            go somewhere else instead.
+          </p>
+        </div>
+        <ul className="grid gap-2.5 sm:grid-cols-2">
+          {destinations.map((d) => (
+            <li key={d.id}>
+              <Link
+                href={`/guide/${d.id}`}
+                className="block h-full rounded-2xl border border-line bg-card p-4 transition-colors hover:border-accent focus-visible:focus-ring"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-ink">
+                    {d.name}
+                  </span>
+                  {d.modelled && (
+                    <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-ink">
+                      Odds modelled
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+                  {d.oneLine}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {/* ── The map ─────────────────────────────────────────────────────── */}
       <section className="space-y-4">

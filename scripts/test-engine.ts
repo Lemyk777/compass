@@ -45,6 +45,11 @@ import {
   hubsByRegion,
   hubsForFaculties,
 } from "@/lib/data/world";
+import {
+  STUDY_DESTINATIONS,
+  destinationById,
+  destinationsForFaculties,
+} from "@/lib/data/study-destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { competitionsFromRows } from "@/lib/partners/live";
 
@@ -384,6 +389,84 @@ test("the home region leads the map", () => {
     HUBS.filter((h) => h.region === "central_asia").length >= 3,
     "the students' own region is barely represented",
   );
+});
+
+// ── Destination deep-dives (guide) ───────────────────────────────────────────
+// The rule that keeps these pages from turning into brochures: a destination
+// must carry at least as many honest trade-offs as strengths, and must say who
+// it is WRONG for. Agencies sell these countries to exactly our students; the
+// only thing we can offer that they can't is the other half of the story.
+test("no destination is a brochure: trade-offs >= strengths, and all filled", () => {
+  const ids = new Set<string>();
+  for (const d of STUDY_DESTINATIONS) {
+    assert.ok(!ids.has(d.id), `duplicate destination id ${d.id}`);
+    ids.add(d.id);
+    assert.ok(d.strengths.length >= 4, `${d.id} lists too few strengths`);
+    assert.ok(
+      d.tradeoffs.length >= d.strengths.length,
+      `${d.id} sells more than it warns (${d.strengths.length} up, ${d.tradeoffs.length} down)`,
+    );
+    for (const line of [...d.strengths, ...d.tradeoffs]) {
+      assert.ok(line.trim().length > 30, `${d.id} has a throwaway bullet`);
+    }
+    for (const [field, min] of [
+      ["oneLine", 40],
+      ["unique", 60],
+      ["money", 60],
+      ["admissions", 60],
+      ["afterStudy", 40],
+      ["suitsYou", 40],
+      ["notForYou", 40],
+    ] as const) {
+      assert.ok(
+        d[field].trim().length > min,
+        `${d.id}.${field} is too thin to be useful`,
+      );
+    }
+  }
+});
+
+test("destination fields and hub links resolve", () => {
+  const hubIds = new Set(HUBS.map((h) => h.id));
+  const faculties = new Set<string>(FACULTY_VALUES);
+  for (const d of STUDY_DESTINATIONS) {
+    assert.ok(d.fields.length > 0, `${d.id} claims no fields`);
+    for (const f of d.fields) {
+      assert.ok(faculties.has(f), `${d.id} has unknown field ${f}`);
+    }
+    for (const h of d.hubs) {
+      assert.ok(hubIds.has(h), `${d.id} points at missing hub ${h}`);
+    }
+  }
+});
+
+test("every field reaches at least three destinations; empty in ⇒ all", () => {
+  assert.equal(
+    destinationsForFaculties([]).length,
+    STUDY_DESTINATIONS.length,
+  );
+  for (const f of FACULTY_VALUES) {
+    assert.ok(
+      destinationsForFaculties([f]).length >= 3,
+      `${f} has too few destinations to compare`,
+    );
+  }
+});
+
+test("every destination Compass models odds for has a profile", () => {
+  // US, Italy, Hong Kong, UAE and Korea have deterministic or AI odds engines;
+  // a student reading their odds must be able to read what the place is like.
+  for (const id of [
+    "united-states",
+    "italy",
+    "hong-kong",
+    "uae",
+    "south-korea",
+  ]) {
+    const d = destinationById(id);
+    assert.ok(d, `no profile for modelled destination ${id}`);
+    assert.equal(d!.modelled, true, `${id} is modelled but not marked as such`);
+  }
 });
 
 // ── Partner attribution and the kill switch ──────────────────────────────────

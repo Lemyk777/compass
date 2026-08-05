@@ -124,6 +124,12 @@ export function OpportunitiesView() {
   >(null);
   const [fieldsDismissed, setFieldsDismissed] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
+  // Which answer the student has re-opened from the summary. Without this the
+  // two questions were one-way doors: they rendered only while the answer was
+  // MISSING, so nobody could correct a year or change fields afterwards — and
+  // the interest quiz, which is reached from inside the field question, became
+  // unreachable the moment a field existed.
+  const [editing, setEditing] = useState<"year" | "fields" | null>(null);
   const faculties = (facultiesOverride ?? profileMeta.faculties) as FacultyValue[];
   const [, startFacSave] = useTransition();
 
@@ -134,6 +140,7 @@ export function OpportunitiesView() {
   function applyFaculties(picked: FacultyValue[]) {
     setFacultiesOverride(picked);
     setShowQuiz(false);
+    setEditing(null);
     startFacSave(async () => {
       await saveFaculties(picked);
     });
@@ -227,6 +234,15 @@ export function OpportunitiesView() {
               nearest ? { name: nearest.name, days: nearest.daysToDeadline } : null
             }
             totalOpen={openNow.length}
+            onEditYear={() => {
+              setShowQuiz(false);
+              setEditing("year");
+            }}
+            onEditFields={() => {
+              setShowQuiz(false);
+              setFieldsDismissed(false);
+              setEditing("fields");
+            }}
           />
 
           {analysis ? (
@@ -240,11 +256,17 @@ export function OpportunitiesView() {
               instead. The full analysis questionnaire stays opt-in. Each swap
               animates so the surface feels like one flow, not a jump-cut. */}
           <AnimatePresence mode="wait" initial={false}>
-            {graduationYear == null ? (
+            {graduationYear == null || editing === "year" ? (
               <PromptSwap key="year">
-                <YearPrompt onPick={(year) => setYearOverride(year)} />
+                <YearPrompt
+                  onPick={(year) => {
+                    setYearOverride(year);
+                    setEditing(null);
+                  }}
+                />
               </PromptSwap>
-            ) : faculties.length === 0 && !fieldsDismissed ? (
+            ) : (faculties.length === 0 && !fieldsDismissed) ||
+              editing === "fields" ? (
               showQuiz ? (
                 <PromptSwap key="quiz">
                   <InterestQuiz
@@ -255,8 +277,12 @@ export function OpportunitiesView() {
               ) : (
                 <PromptSwap key="field">
                   <FieldPrompt
+                    initial={faculties}
                     onChoose={applyFaculties}
-                    onSkip={() => setFieldsDismissed(true)}
+                    onSkip={() => {
+                      setFieldsDismissed(true);
+                      setEditing(null);
+                    }}
                     onQuiz={() => setShowQuiz(true)}
                   />
                 </PromptSwap>
@@ -627,15 +653,19 @@ function YearPrompt({ onPick }: { onPick: (year: number) => void }) {
  * closes the prompt without forcing a pick rather than blocking on one.
  */
 function FieldPrompt({
+  initial = [],
   onChoose,
   onSkip,
   onQuiz,
 }: {
+  /** Current fields, so re-opening this to CHANGE them starts from the answer
+   *  the student already gave rather than from an empty set. */
+  initial?: FacultyValue[];
   onChoose: (faculties: FacultyValue[]) => void;
   onSkip: () => void;
   onQuiz: () => void;
 }) {
-  const [sel, setSel] = useState<FacultyValue[]>([]);
+  const [sel, setSel] = useState<FacultyValue[]>(initial);
 
   const toggle = (f: FacultyValue) =>
     setSel((s) => (s.includes(f) ? s.filter((x) => x !== f) : [...s, f]));
