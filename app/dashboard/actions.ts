@@ -494,7 +494,7 @@ export async function saveOpportunityIntent(input: {
   }
 
   try {
-    revalidatePath("/dashboard/opportunities");
+    revalidatePath("/opportunities");
   } catch {
     // ignore cache revalidation errors
   }
@@ -525,7 +525,7 @@ export async function clearOpportunityIntent(
   }
 
   try {
-    revalidatePath("/dashboard/opportunities");
+    revalidatePath("/opportunities");
   } catch {
     // ignore cache revalidation errors
   }

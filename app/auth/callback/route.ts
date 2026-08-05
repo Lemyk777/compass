@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         .from("analyses")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id);
-      target = (count ?? 0) > 0 ? "/dashboard" : "/dashboard/opportunities";
+      target = (count ?? 0) > 0 ? "/dashboard" : "/opportunities";
     } else {
       target = landingPathForRole(role);
     }

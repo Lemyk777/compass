@@ -31,6 +31,34 @@ The **CI gate** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on e
 
 Five vars (see [.env.example](.env.example)) in `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SITE_URL`. Without them the app still builds and `/demo` renders the full report from a sample; auth and analysis require them.
 
+## Site structure: the student's section vs the report
+
+Two shells, and the distinction is load-bearing:
+
+- **The student's section** — `/opportunities` (what you can enter) and `/guide`
+  (where it leads). Frame: [components/student/StudentShell.tsx](components/student/StudentShell.tsx)
+  — one narrow column, two destinations, the report a link away. Both routes are
+  session-aware and work signed out; `/opportunities` shows the guest
+  eligibility checker, `/guide` opens on every field instead of the student's.
+- **The report** — `/dashboard/*`, the opt-in admission analysis, in the sidebar
+  shell. **Whether Opportunities appears as a tab there depends on one thing:
+  does the student have an analysis?**
+  - **Has one** → the report keeps its Opportunities panel exactly as before
+    (removing it would read as the feature being deleted), and the panel opens
+    with a loud door across to the dedicated section (`SectionDoor`).
+  - **Has none** → no tab; `/dashboard/opportunities` redirects to
+    `/opportunities`, and the sidebar's top link goes up to it. Handing a
+    student with no report an eight-tab analysis console is the inversion we
+    undid.
+  - `/demo` always shows the tab — it previews the report shell with no account.
+
+  The flag is `analysis !== null` (`sectionsFor` in `Sidebar.tsx`, the count
+  query in `app/dashboard/opportunities/page.tsx`). `standalone` on
+  `DashboardProvider` is what stops the section linking to itself.
+
+[lib/dashboard/load.ts](lib/dashboard/load.ts) is the one loader feeding both
+shells (profile, analysis, live dates, intents) — don't duplicate those queries.
+
 ## Opportunities — the front door (read [docs/OPPORTUNITIES_PLAN.md](docs/OPPORTUNITIES_PLAN.md) first)
 
 Everything here is **deterministic** — no model call — and the design rules come from [docs/OPPORTUNITIES_RESEARCH.md](docs/OPPORTUNITIES_RESEARCH.md) (information alone measured zero; what moved behaviour was removing ambiguity and removing the work).
@@ -38,8 +66,13 @@ Everything here is **deterministic** — no model call — and the design rules 
 - **The default intake is two inline questions**, both on the Opportunities view: school year (`YearPrompt` → `saveGraduationYear`) then field (`FieldPrompt` → `saveFaculties`, both in [app/dashboard/actions.ts](app/dashboard/actions.ts)). A student who can't answer the second takes the optional **interest quiz** ([lib/data/interest-quiz.ts](lib/data/interest-quiz.ts) — fixed per-option weights, pure scoring). **The full analysis questionnaire is opt-in** — new signups land on `/dashboard/opportunities`, not `/onboarding`. Don't re-add a mandatory intake gate.
 - **Empty faculties is a valid answer** meaning "show everything", not "show nothing". Unknown facts never exclude.
 - **The catalog is split by concern**: entries live in [lib/data/competitions-data.ts](lib/data/competitions-data.ts), matching logic in [lib/data/key-dates.ts](lib/data/key-dates.ts) (which re-exports the data, so existing imports still work), and the careers layer in [lib/data/careers.ts](lib/data/careers.ts). The careers
-  layer names career **areas** with the real job titles inside them — never one
-  prescribed profession per field. We can't know which job a student is reaching
+  layer moved to the **`/guide` page** ([components/guide/GuideView.tsx](components/guide/GuideView.tsx)),
+  which runs interest → field → sphere of work → the cities that work lives in
+  ([lib/data/world.ts](lib/data/world.ts)) → what to enter from home. Every hub
+  there must carry BOTH its catch and a real route in — a city with only good
+  news listed is an advert, and a test enforces it. The layer names career
+  **areas** with the real job titles inside them — never one prescribed
+  profession per field. We can't know which job a student is reaching
   for, so we widen instead of guessing (the same rule as "unknown facts never
   exclude"); a unit test enforces ≥3 roles per area. The optional values refine
   ([lib/data/values.ts](lib/data/values.ts)) may only **reorder** those areas —

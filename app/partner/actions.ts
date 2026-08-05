@@ -189,7 +189,6 @@ function revalidateOpportunitySurfaces(partnerId: string): void {
   revalidatePath(`/partners/${partnerId}`);
   revalidatePath("/partners");
   revalidatePath("/opportunities");
-  revalidatePath("/dashboard/opportunities");
   revalidatePath("/admin/partners");
 }
 

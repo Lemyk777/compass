@@ -8,6 +8,15 @@ import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { useT } from "@/lib/i18n/client";
 
 // One source of truth for the nav. `slug: ""` is the dashboard overview itself.
+//
+// Opportunities appears here ONLY for a student who already has an analysis.
+// For them this report is something they built and return to, and removing a
+// panel from it would read as the feature being deleted — so they keep it, with
+// a door across to the dedicated section inside the panel itself. A student
+// without an analysis has no report to speak of and gets the dedicated section
+// straight away, so a tab pointing back into an analysis console would be
+// exactly the inversion we are undoing. The demo always shows it: it previews
+// the report shell with no account behind it.
 const SECTIONS: { slug: string; labelKey: string; icon: keyof typeof ICONS }[] = [
   { slug: "", labelKey: "common.dashboard", icon: "grid" },
   { slug: "standing", labelKey: "nav.standing", icon: "user" },
@@ -15,14 +24,26 @@ const SECTIONS: { slug: string; labelKey: string; icon: keyof typeof ICONS }[] =
   { slug: "odds", labelKey: "nav.results", icon: "bars" },
   { slug: "costs", labelKey: "nav.costs", icon: "dollar" },
   { slug: "plan", labelKey: "nav.plan", icon: "calendar" },
-  { slug: "opportunities", labelKey: "nav.opportunities", icon: "spark" },
   { slug: "summary", labelKey: "nav.summary", icon: "list" },
 ];
+
+const OPPORTUNITIES_TAB = {
+  slug: "opportunities",
+  labelKey: "nav.opportunities",
+  icon: "spark" as const,
+};
+
+/** The report's sections, with the Opportunities panel only where it belongs. */
+function sectionsFor(withOpportunities: boolean) {
+  if (!withOpportunities) return SECTIONS;
+  return [...SECTIONS.slice(0, 6), OPPORTUNITIES_TAB, ...SECTIONS.slice(6)];
+}
 
 export function Sidebar() {
   const t = useT();
   const pathname = usePathname();
-  const { basePath, isAdmin, demo } = useDashboard();
+  const { basePath, isAdmin, demo, analysis } = useDashboard();
+  const sections = sectionsFor(demo || analysis !== null);
 
   const hrefFor = (slug: string) => (slug ? `${basePath}/${slug}` : basePath);
   const isActive = (slug: string) => {
@@ -39,6 +60,29 @@ export function Sidebar() {
         <Logo className="text-ink" style={{ viewTransitionName: "brand-logo" }} />
       </div>
 
+      {/* Up, not across — for a student who has no report panel for it. Anyone
+          who kept the panel (they have an analysis) reaches the section from
+          inside it instead, so two same-named entries never sit side by side. */}
+      {!demo && analysis === null && (
+        <div className="border-b border-line px-3 pb-3 pt-3 lg:border-b-0 lg:pt-0">
+          <Link
+            href="/opportunities"
+            className="flex items-center gap-2.5 rounded-xl border border-line bg-surface px-3.5 py-3 text-sm font-medium text-ink transition-colors hover:border-accent hover:bg-accent-soft/40 focus-visible:focus-ring"
+          >
+            <span className="text-ink-faint" aria-hidden>
+              {BACK_ARROW}
+            </span>
+            <span className="min-w-0">
+              <span className="block whitespace-nowrap">
+                {t("nav.opportunities")}
+              </span>
+              <span className="block text-xs font-normal text-ink-faint">
+                What you can enter
+              </span>
+            </span>
+          </Link>
+        </div>
+      )}
 
       <nav
         aria-label="Dashboard"
@@ -47,7 +91,7 @@ export function Sidebar() {
         // with no scroll affordance). Desktop: vertical rail.
         className="flex flex-wrap gap-2 border-b border-line px-3 py-3 lg:flex-1 lg:flex-col lg:flex-nowrap lg:gap-2 lg:border-b-0 lg:px-3 lg:py-2"
       >
-        {SECTIONS.map((s) => {
+        {sections.map((s) => {
           const on = isActive(s.slug);
           return (
             <Link
@@ -103,6 +147,12 @@ export function Sidebar() {
     </aside>
   );
 }
+
+const BACK_ARROW = (
+  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 18l-6-6 6-6" />
+  </svg>
+);
 
 const iconCls = "h-[18px] w-[18px]";
 const ICONS = {

@@ -65,7 +65,7 @@ export default async function PartnerPage() {
             )}
           </Card>
           <div className="mt-5">
-            <ButtonLink href="/dashboard/opportunities" variant="tonal" size="md">
+            <ButtonLink href="/opportunities" variant="tonal" size="md">
               See what students see
             </ButtonLink>
           </div>
@@ -82,7 +82,7 @@ export default async function PartnerPage() {
       <AppHeader
         links={[
           { href: `/partners/${partner.id}`, label: "Your public page" },
-          { href: "/dashboard/opportunities", label: "Student view" },
+          { href: "/opportunities", label: "Student view" },
         ]}
       />
 

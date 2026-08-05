@@ -22,7 +22,46 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
 
 ## Where it stands
 
-**Latest (2026-08-04/05) — the front door became the product. All shipped:**
+**Latest (2026-08-05, evening) — Opportunities left the report's sidebar.**
+
+The front door had been declared the product for days while still being served
+as *one of eight tabs inside the admission report's shell*. A student who came
+to find what they can enter landed in a portfolio-scoring console with their
+profile score at the centre — the exact inversion of the plan. That is now
+fixed, structurally rather than by copy:
+
+- **`/opportunities` is a top-level page for both states** — the guest
+  eligibility checker as before, and, signed in, the full matched view inside a
+  new `StudentShell` (`components/student/`): logo, two destinations
+  (Opportunities · Guide), the report a link on the right. `/dashboard/opportunities`
+  redirects, so old links and bookmarks survive.
+- **The report's sidebar keeps the Opportunities tab only for a student who
+  already has an analysis** (owner call, and the right one). For them the report
+  is something they built and return to; pulling a panel out of it mid-flight
+  reads as the feature being deleted. So they keep the old shape exactly, and
+  the panel now opens with a loud door across to the dedicated section — where
+  the questionnaires, the careers layer and the map live. A student with **no**
+  analysis has no report to speak of: no tab, `/dashboard/opportunities`
+  redirects to the section, and the sidebar's top link goes up to it. `/demo`
+  always shows the tab — it previews the report shell with no account.
+- **New `/guide` page** — the whole "where can this take me" story in one place:
+  every field's spheres of work, then **where in the world that work actually
+  is** (`lib/data/world.ts`, 22 hubs from Almaty and Tashkent to Zurich, Seoul
+  and Toronto), then what to enter from home this year. The careers panel moved
+  off the Opportunities page into it; `CareersPanel.tsx` is deleted.
+- **Every hub carries its catch and a real route in** — GKS, MEXT, CSC, Türkiye
+  Bursları, Italian DSU, German semester fees, the Dutch orientation year, the
+  Canadian PGWP ladder. A city listed with only good news is an advert, and a
+  unit test fails the build if one appears. No salary figures or rankings: those
+  rot, structural facts don't.
+- **The home region leads the map on purpose** (Central Asia & the Caucasus
+  first, also test-enforced) — "you don't have to move" is a section of the
+  guide, not an afterthought, because for our students it is often the right
+  answer.
+- **Signup lands on `/opportunities`**, and the landing page's closing CTA sends
+  a returning student there rather than to the report.
+
+**Earlier (2026-08-04/05) — the front door became the product. All shipped:**
 
 - **Signups no longer meet the questionnaire.** A brand-new student lands on
   `/dashboard/opportunities`, not `/onboarding`. The full profile/analysis intake
@@ -278,7 +317,8 @@ ignorable.** The surface is one page (Opportunities), layered:
 | Stage | The student's question | Where it lives | Status |
 |---|---|---|---|
 | Who am I | "what am I into?" | interest quiz | ✅ shipped |
-| Where does it lead | "who could I become?" | `careers.ts` + `CareersPanel` | ✅ shipped (areas, not one job) |
+| Where does it lead | "who could I become?" | `careers.ts` + `/guide` | ✅ shipped (areas, not one job) |
+| Where in the world | "where is that work, and can I get there?" | `world.ts` + `/guide` | ✅ shipped (22 hubs, each with its catch) |
 | What do I want from it | "which of those suits me?" | `values.ts` + `ValuesRefine` | ✅ shipped (reorders areas only) |
 | What do I do | "what can I enter?" | the matched list | ✅ shipped |
 | Where do I stand | "what are my odds?" | the opt-in analysis | ✅ shipped |
