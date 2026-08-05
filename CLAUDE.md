@@ -41,6 +41,29 @@ Everything here is **deterministic** — no model call — and the design rules 
 - **Bundle rule (easy to break):** `key-dates.ts` builds a lookup map over the whole ~2,700-entry catalog at module load, so *any* runtime import drags the dataset into that route's client bundle. Client components must import `formatDate`/`opportunityCost` from [lib/data/opportunity-format.ts](lib/data/opportunity-format.ts), and the three matching views (`OpportunitiesView`, `EligibilityChecker`, `FirstWin`) **dynamic-import** `buildExtracurriculars`. Keep it that way; type-only imports from key-dates are free.
 - **Never show a countdown for a date we can't stand behind.** A confirmed date renders as a countdown; anything else is "Dates TBA" or "open now". Verify a date against the organiser's own page before setting `dateConfirmed: true`, and read what the page says — `test:links` cannot tell you a contest was discontinued.
 
+## Partner organisations (Astana Hub, Shymkent Hub, …)
+
+An organisation posts its own competitions under its own name, logo and
+verification tick. Migration `0024_partners.sql`; routes `/partners` (public
+list + profile + application), `/partner` (their console), `/admin/partners`
+(review). Role `partner` is granted by an admin approving an application.
+
+- **Trust is granted once, per organisation, not per post.** An approved partner
+  publishes instantly with no queue. The safety net is removal: an admin can
+  unpublish one post or suspend the whole partner, and
+  [lib/partners/live.ts](lib/partners/live.ts) drops every row whose partner is
+  not `active`. That file is the single mapping from live rows to `Competition`
+  for both student surfaces — don't reimplement it per page.
+- **The tick means "we confirmed the account belongs to that organisation, and
+  they posted this."** Not "this is good". Verification is a separate admin
+  action from approval, and a partner cannot rename itself after being verified.
+- **A partner-set deadline is `dateConfirmed: true`** — the one place that is
+  granted without a scrape or a hand check, because it's the organiser stating
+  their own date. Past dates are rejected at the form.
+- Partner posts land in `competition_deadlines` with a `partner_id`, so they
+  flow through `resolveCompetitions()` like any other live row. No second
+  catalog, no second renderer.
+
 ## The AI analysis pipeline (the heart — read these together)
 
 Spans [lib/ai/prompt.ts](lib/ai/prompt.ts), [lib/ai/analyze.ts](lib/ai/analyze.ts), [lib/ai/schema.ts](lib/ai/schema.ts), [lib/ai/assemble.ts](lib/ai/assemble.ts), [lib/ai/italy-analyze.ts](lib/ai/italy-analyze.ts), [lib/rubric.ts](lib/rubric.ts), [lib/data/universities.ts](lib/data/universities.ts).

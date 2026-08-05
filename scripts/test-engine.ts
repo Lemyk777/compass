@@ -30,6 +30,7 @@ import { buildExtracurriculars, strengthBand } from "@/lib/data/key-dates";
 import { emptyProfile } from "@/lib/types";
 import { CAREERS_BY_FACULTY, careersForFaculties } from "@/lib/data/careers";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
+import { competitionsFromRows } from "@/lib/partners/live";
 
 // A fixed "today" in the second half of the year → academic year end rolls to
 // the next year (June rollover), so a Class of 2027 student is in grade 12.
@@ -216,4 +217,94 @@ test("careersForFaculties groups by chosen field; empty in, empty out", () => {
   assert.equal(groups.length, 2);
   assert.equal(groups[0].faculty, "computer_science");
   assert.ok(groups[0].careers.length >= 3);
+});
+
+// ── Partner attribution and the kill switch ──────────────────────────────────
+// The rules that decide whether an organisation's name and tick appear on a
+// student's card, and — the security-relevant half — whether a suspended
+// organisation's posts disappear. `competitionsFromRows` is the ONE place both
+// student surfaces map live rows, so these invariants only need holding here.
+
+const partnerRow = (over: Record<string, unknown> = {}) => ({
+  id: "astana-hub",
+  name: "Astana Hub",
+  status: "active",
+  verified_at: "2026-08-01T00:00:00Z",
+  logo_url: null,
+  ...over,
+});
+
+const postRow = (over: Record<string, unknown> = {}) => ({
+  id: "astana-hub-hackathon",
+  name: "Astana Hub Hackathon",
+  fields: "all",
+  deadline: "2026-11-01",
+  event_window: "Two days in November",
+  level: "national",
+  url: "https://astanahub.com/hack",
+  blurb: "A weekend hackathon for school students.",
+  date_confirmed: true,
+  published: true,
+  partner_id: "astana-hub",
+  ...over,
+});
+
+test("a verified partner's post carries the name and the tick", () => {
+  const [c] = competitionsFromRows([postRow()], [partnerRow()]);
+  assert.equal(c.partner?.name, "Astana Hub");
+  assert.equal(c.partner?.verified, true);
+});
+
+test("verification is separate from listing — no verified_at, no tick", () => {
+  const [c] = competitionsFromRows([postRow()], [partnerRow({ verified_at: null })]);
+  assert.equal(c.partner?.name, "Astana Hub");
+  assert.equal(c.partner?.verified, false);
+});
+
+test("suspending a partner removes its posts, not just its name", () => {
+  const rows = competitionsFromRows([postRow()], [partnerRow({ status: "suspended" })]);
+  assert.equal(rows.length, 0);
+  // Same when the partner row is absent entirely (RLS hid it).
+  assert.equal(competitionsFromRows([postRow()], []).length, 0);
+});
+
+test("a taken-down post is gone whatever the partner's state", () => {
+  assert.equal(
+    competitionsFromRows([postRow({ published: false })], [partnerRow()]).length,
+    0,
+  );
+});
+
+test("a non-partner live row is untouched by any of this", () => {
+  const rows = competitionsFromRows([postRow({ partner_id: null })], []);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].partner, undefined);
+});
+
+test("partner rows join the student pool as ordinary opportunities", () => {
+  const live = competitionsFromRows([postRow()], [partnerRow()]);
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+    liveCompetitions: live,
+    homeCountry: null,
+  });
+  const found = plan.items.find((o) => o.id === "astana-hub-hackathon");
+  assert.ok(found, "partner post should reach the matched list");
+  assert.equal(found?.partner?.verified, true);
+});
+
+test("a local partner post reaches its own country and nobody else", () => {
+  const live = competitionsFromRows([postRow({ region: "KZ" })], [partnerRow()]);
+  const seen = (homeCountry: string | null) =>
+    buildExtracurriculars({
+      today: TODAY,
+      faculties: [],
+      factors: [],
+      liveCompetitions: live,
+      homeCountry,
+    }).items.some((o) => o.id === "astana-hub-hackathon");
+  assert.equal(seen("KZ"), true);
+  assert.equal(seen("UZ"), false);
 });

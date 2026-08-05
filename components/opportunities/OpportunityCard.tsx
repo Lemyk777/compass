@@ -9,6 +9,7 @@ import type {
 } from "@/lib/data/key-dates";
 import { regionLabel } from "@/lib/data/geo";
 import { downloadIcs } from "@/lib/calendar/ics";
+import { PartnerBadge } from "@/components/partners/PartnerBadge";
 import { CostPill, OpportunityDetail } from "./OpportunityDetail";
 
 // ONE opportunity card, used by both surfaces that show opportunities: the
@@ -83,6 +84,18 @@ export function OpportunityCard({
               {o.name}
             </button>
           </h3>
+
+          {/* Who posted it, when that is an organisation rather than us. It
+              sits directly under the name, above the chips: for a Kazakh
+              student "Astana Hub posted this" is the single most load-bearing
+              fact on the card, and it is worth more than any tier label. */}
+          {o.partner && (
+            <PartnerBadge
+              partner={o.partner}
+              size={compact ? "sm" : "md"}
+              className="mt-1.5"
+            />
+          )}
 
           {/* Chips, in one fixed order everywhere: money first — it is the
               thing people get burned by — then how hard, then what kind. */}

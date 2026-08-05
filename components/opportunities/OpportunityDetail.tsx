@@ -11,6 +11,7 @@ import type {
 import { FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { regionLabel } from "@/lib/data/geo";
 import { downloadIcs } from "@/lib/calendar/ics";
+import { PartnerBadge, VerifiedExplainer } from "@/components/partners/PartnerBadge";
 
 // The detail panel behind every opportunity card.
 //
@@ -209,7 +210,24 @@ export function OpportunityDetail({
 
           <Section title="What it is">
             <p>{o.blurb}</p>
-            <p className="mt-1.5 text-ink-faint">Run by {host}</p>
+            {o.partner ? (
+              // Posted by the organisation itself. We say so instead of naming
+              // the domain — "Run by astanahub.com" is a weaker claim than the
+              // one we can actually make here.
+              <div className="mt-2.5 rounded-xl border border-line bg-surface p-3">
+                <PartnerBadge partner={o.partner} size="md" />
+                {o.partner.verified ? (
+                  <VerifiedExplainer className="mt-2" />
+                ) : (
+                  <p className="mt-2 text-xs leading-relaxed text-ink-faint">
+                    Posted from this organisation&rsquo;s own account on
+                    Compass.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="mt-1.5 text-ink-faint">Run by {host}</p>
+            )}
           </Section>
 
           <Section title="Who it's for">
@@ -255,6 +273,13 @@ export function OpportunityDetail({
                   ? "closes today"
                   : `${o.daysToDeadline} days left`}
                 . {o.window}.
+                {o.partner && (
+                  // Why this countdown is trustworthy: it is not a date we
+                  // extracted from a page, it is the organiser stating it.
+                  <span className="mt-1.5 block text-ink-faint">
+                    This date comes from {o.partner.name}, who run it.
+                  </span>
+                )}
               </p>
             ) : (
               <p>
