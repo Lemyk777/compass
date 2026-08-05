@@ -21,6 +21,7 @@
 // stable annual pattern (noted in the window text) — re-check before relying.
 
 import type { FacultyValue } from "@/lib/data/faculties";
+import type { PartnerRef } from "@/lib/data/partners";
 import {
   checkEligibility,
   gradeFromGraduationYear,
@@ -166,6 +167,14 @@ export type Competition = {
    * the UI always pairs them with "confirm on the official page".
    */
   costDetail?: string;
+  /**
+   * Set when the organisation itself posted this from a partner account, and
+   * the reason the row can be trusted differently from a scraped one: the
+   * deadline is a first-party statement, not something we extracted from a
+   * page. Absent on every curated entry — we never claim someone posted a row
+   * we wrote ourselves.
+   */
+  partner?: PartnerRef;
 };
 
 /** Resolved tier — falls back from `level` when a row predates the column. */

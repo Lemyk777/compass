@@ -5,6 +5,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { EligibilityChecker } from "@/components/opportunities/EligibilityChecker";
 import { COMPETITIONS } from "@/lib/data/key-dates";
 import { getSession } from "@/lib/auth/session";
+import { fetchLivePool } from "@/lib/partners/queries";
 
 // The public face of Opportunities: no account, no analysis, no paywall.
 // It exists to answer one question for a STRANGER — "what can I enter?" — and
@@ -28,6 +29,15 @@ export default async function PublicOpportunitiesPage() {
   const session = await getSession();
   if (session) redirect("/dashboard/opportunities");
 
+  // Partner-posted opportunities have to reach this page too — it is the front
+  // door, and an organisation that publishes with us would rightly ask why its
+  // hackathon is missing from the page we point everyone at. Note the limit
+  // this inherits: a LOCAL post only shows to a student whose country we know,
+  // and here we know nothing about the visitor. That is the existing rule
+  // (someone else's local list is worse than none), and the partner's own
+  // /partners/[id] page is the surface that shows their full list regardless.
+  const live = await fetchLivePool();
+
   return (
     <main className="min-h-dvh bg-surface text-ink">
       <header className="border-b border-line/70">
@@ -39,7 +49,7 @@ export default async function PublicOpportunitiesPage() {
         </div>
       </header>
 
-      <EligibilityChecker />
+      <EligibilityChecker live={live} />
 
       {/* The account ask comes last, and only after something useful has
           already been handed over. Note what is NOT being sold: Compass is free

@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ExtracurricularsPlan, Opportunity } from "@/lib/data/key-dates";
+import type {
+  Competition,
+  ExtracurricularsPlan,
+  Opportunity,
+} from "@/lib/data/key-dates";
 import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
 import { graduationYearFromGrade } from "@/lib/data/eligibility";
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
@@ -30,7 +34,16 @@ const GRADES = [5, 6, 7, 8, 9, 10, 11, 12];
 
 type Step = "grade" | "results";
 
-export function EligibilityChecker() {
+export function EligibilityChecker({
+  /**
+   * Live rows from Supabase — today that means partner-posted opportunities.
+   * Passed in by the server page rather than fetched here, so this component
+   * stays a pure client renderer and the anon key never has to reach it.
+   */
+  live,
+}: {
+  live?: Competition[];
+} = {}) {
   // `today` resolves on the client — the countdown depends on the visitor's
   // clock, and a server-rendered one would hydrate wrong.
   const [today, setToday] = useState<Date | null>(null);
@@ -60,13 +73,14 @@ export function EligibilityChecker() {
           faculties: fields,
           factors: [],
           graduationYear: graduationYearFromGrade(grade, today),
+          liveCompetitions: live,
         }),
       );
     });
     return () => {
       cancelled = true;
     };
-  }, [today, grade, fields]);
+  }, [today, grade, fields, live]);
 
   // Open now vs later. The "later" ones stay knowable — a younger student
   // should be able to see what they are aiming at — but they never compete for

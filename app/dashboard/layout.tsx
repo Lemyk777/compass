@@ -7,6 +7,7 @@ import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import type { DestinationCode } from "@/lib/data/destinations";
 import { normalizeCountry } from "@/lib/data/geo";
 import { isIntentStatus, type OpportunityIntent } from "@/lib/data/intents";
+import { competitionsFromRows } from "@/lib/partners/live";
 import { buildReadiness } from "@/lib/data/readiness";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,7 @@ export default async function DashboardLayout({
     { data: satRows },
     { data: compRows },
     { data: intentRows },
+    { data: partnerRows },
   ] = await Promise.all([
     supabase
       .from("analyses")
@@ -65,6 +67,12 @@ export default async function DashboardLayout({
       .from("opportunity_intents")
       .select("*")
       .eq("user_id", session.id),
+    // Partner organisations (migration 0024). Only ACTIVE ones: a post whose
+    // partner is missing here is dropped entirely, which is what makes
+    // suspending an organisation take its opportunities down with it. Missing
+    // table → null → no partner rows survive, and the curated catalog is
+    // unaffected.
+    supabase.from("partners").select("*").eq("status", "active"),
   ]);
 
   let analysis: Analysis | null = null;
@@ -135,24 +143,13 @@ export default async function DashboardLayout({
   // curated code as authoritative and overlays a live date ONLY when the scraper
   // marked it confirmed (date_confirmed). The column may not exist before
   // migration 0015 — then it's undefined → treated as unconfirmed → code wins.
-  const liveCompetitions: Competition[] = (compRows ?? []).map((r: Record<string, unknown>) => ({
-    id: r.id as string,
-    name: r.name as string,
-    fields: r.fields as Competition["fields"],
-    deadline: r.deadline as string,
-    window: r.event_window as string,
-    level: r.level as Competition["level"],
-    url: r.url as string,
-    blurb: r.blurb as string,
-    dateConfirmed: r.date_confirmed === true,
-    // Discovery columns (migration 0020). Absent on older DBs → undefined,
-    // and competitionTier()/competitionCategory() supply the defaults.
-    category: (r.category as Competition["category"]) ?? undefined,
-    tier: (r.tier as Competition["tier"]) ?? undefined,
-    eligibility: (r.eligibility as string | null) ?? undefined,
-    region: (r.region as string | null) ?? null,
-    city: (r.city as string | null) ?? null,
-  }));
+  // The mapping lives in lib/partners/live.ts because the public eligibility
+  // checker needs exactly the same rules (including "a suspended partner's
+  // posts are gone").
+  const liveCompetitions: Competition[] = competitionsFromRows(
+    compRows as Record<string, unknown>[] | null,
+    partnerRows as Record<string, unknown>[] | null,
+  );
 
   return (
     <DashboardProvider
