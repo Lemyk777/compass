@@ -35,9 +35,17 @@ export default async function PartnersIndexPage() {
           <Link href="/" className="shrink-0 focus-visible:focus-ring">
             <Logo className="text-ink" />
           </Link>
-          <ButtonLink href="/opportunities" variant="subtle" size="sm">
-            What can I enter?
-          </ButtonLink>
+          <div className="flex items-center gap-2">
+            <ButtonLink href="/opportunities" variant="ghost" size="sm">
+              What can I enter?
+            </ButtonLink>
+            {/* The reason an organisation is on this page. It was only at the
+                very bottom, under an empty list — which is the one place a
+                first-time visitor does not read. */}
+            <ButtonLink href="/partners/apply" variant="primary" size="sm">
+              Apply to be listed
+            </ButtonLink>
+          </div>
         </div>
       </header>
 

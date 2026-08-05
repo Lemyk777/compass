@@ -35,6 +35,23 @@ export default async function LandingPage() {
                 "Log in" here — the page knows who they are (it renders the admin
                 switcher above off the same session) — which reads as "my profile
                 was reset". Show the way back into their account instead. */}
+            {/* The way in for an ORGANISATION rather than a student. Without a
+                link here the partner surfaces were unreachable from the front
+                door — a hub had to be told the URL, which is no way to recruit
+                one. Sits before "log in" because a hub arriving at this page is
+                not looking for an account, it is looking for us. */}
+            <ButtonLink
+              href="/partners"
+              variant="ghost"
+              size="sm"
+              className="whitespace-nowrap px-2 font-medium sm:px-4"
+            >
+              {/* Visible at every width, because the people this is for read us
+                  on a phone. The label shortens rather than disappearing — a
+                  link that exists only on desktop is a link a hub never finds. */}
+              <span className="sm:hidden">Partners</span>
+              <span className="hidden sm:inline">For organisations</span>
+            </ButtonLink>
             <ButtonLink
               href={session ? "/dashboard" : "/auth/login"}
               variant="ghost"
@@ -236,6 +253,11 @@ export default async function LandingPage() {
         <div className="flex flex-col items-start justify-between gap-4 border-t border-black/10 pt-8 sm:flex-row sm:items-center">
           <Logo className="text-ink/80" />
           <nav className="flex items-center gap-5">
+            {/* Also here, because the header link is hidden on a phone and half
+                the people we want reading it will open this on a phone. */}
+            <a href="/partners" className="transition hover:text-ink/70">
+              For organisations
+            </a>
             <a href="/privacy" className="transition hover:text-ink/70">
               Privacy Policy
             </a>
