@@ -35,6 +35,9 @@ almost never a prompt change.
 | The "what do you like?" quiz | `lib/data/interest-quiz.ts` (questions + weights + pure scoring) |
 | Where a field can lead (career areas + the jobs in them) | `lib/data/careers.ts` — spheres, never one prescribed profession |
 | "What do you want out of work?" | `lib/data/values.ts` (3 questions + pure scoring) — may only REORDER the areas, never filter or change the fields |
+| Where in the world a sphere of work lives | `lib/data/world.ts` — hubs with a catch and a route in, both mandatory |
+| The student's own shell (Opportunities + Guide) | `components/student/StudentShell.tsx`; the report keeps `components/dashboard/DashboardShell.tsx` |
+| Loading a signed-in student's facts once | `lib/dashboard/load.ts` — feeds both shells |
 | The dated roadmap | `lib/data/roadmap.ts` |
 | Adding a whole new destination country | `lib/data/country-content.ts`, `deterministic-countries.ts`, `country-views.tsx` — one entry each, not edits across eight files |
 | What a partner organisation may post | `app/partner/actions.ts` (the schema is the contract), `components/partners/OpportunityForm.tsx` |

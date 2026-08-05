@@ -1,21 +1,28 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { ButtonLink } from "@/components/ui/Button";
 import { EligibilityChecker } from "@/components/opportunities/EligibilityChecker";
+import { OpportunitiesView } from "@/components/dashboard/views/OpportunitiesView";
+import { DashboardProvider } from "@/components/dashboard/DashboardContext";
+import { StudentShell } from "@/components/student/StudentShell";
 import { COMPETITIONS } from "@/lib/data/key-dates";
 import { getSession } from "@/lib/auth/session";
 import { fetchLivePool } from "@/lib/partners/queries";
+import { loadStudentContext } from "@/lib/dashboard/load";
 
-// The public face of Opportunities: no account, no analysis, no paywall.
-// It exists to answer one question for a STRANGER — "what can I enter?" — and
-// it is the front door if this is to stand alone as a product.
+// Opportunities — the front door, at its own address, for BOTH states.
 //
-// It is deliberately the GUEST surface only. A signed-in student already has an
-// Opportunities view inside the dashboard shell (sidebar, their profile, the
-// full report), so landing them on this bare page made the product feel like
-// two separate sites. When we know who they are we send them to that integrated
-// view instead — one Opportunities experience per state, not two.
+// It used to be two different things: this bare public checker for strangers,
+// and a tab inside the admission report's sidebar for anyone signed in. That
+// arrangement said the report was the product and this was one of its eight
+// panels; a student who came to find what they can enter landed in a portfolio
+// scoring console. Now the student's own section of the site is Opportunities +
+// Guide, and the report is a link out of it.
+//
+// Signed in → the matched, personal view inside the student shell.
+// Signed out → the checker that answers "what can I enter?" for a stranger.
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "What can you enter this year? — Compass",
@@ -23,19 +30,45 @@ export const metadata: Metadata = {
     "Competitions, olympiads and programmes open to school students worldwide, filtered to the ones you can actually enter at your age. Free, no account needed.",
 };
 
-export default async function PublicOpportunitiesPage() {
-  // Signed in? Go to the account's own Opportunities, not this stripped-down
-  // public copy. This is what stops the site feeling like disconnected islands.
+export default async function OpportunitiesPage() {
   const session = await getSession();
-  if (session) redirect("/dashboard/opportunities");
+
+  if (session) {
+    const ctx = await loadStudentContext(session);
+    return (
+      <DashboardProvider
+        initialAnalysis={ctx.analysis}
+        name={session.full_name}
+        hasProfile={ctx.hasProfile}
+        isAdmin={session.role === "admin"}
+        // Links out of this view (e.g. "run your full report") go to the report
+        // section, which still lives under /dashboard.
+        basePath="/dashboard"
+        canAnalyze
+        standalone
+        destinations={ctx.destinations}
+        profileMeta={ctx.profileMeta}
+        readiness={ctx.readiness}
+        liveDates={ctx.liveDates}
+        intents={ctx.intents}
+      >
+        <StudentShell
+          isAdmin={session.role === "admin"}
+          hasReport={Boolean(ctx.analysis)}
+        >
+          <OpportunitiesView />
+        </StudentShell>
+      </DashboardProvider>
+    );
+  }
 
   // Partner-posted opportunities have to reach this page too — it is the front
   // door, and an organisation that publishes with us would rightly ask why its
-  // hackathon is missing from the page we point everyone at. Note the limit
-  // this inherits: a LOCAL post only shows to a student whose country we know,
-  // and here we know nothing about the visitor. That is the existing rule
-  // (someone else's local list is worse than none), and the partner's own
-  // /partners/[id] page is the surface that shows their full list regardless.
+  // hackathon is missing from the page we point everyone at. Note the limit this
+  // inherits: a LOCAL post only shows to a student whose country we know, and
+  // here we know nothing about the visitor. That is the existing rule (someone
+  // else's local list is worse than none), and the partner's own /partners/[id]
+  // page shows their full list regardless.
   const live = await fetchLivePool();
 
   return (
@@ -51,10 +84,9 @@ export default async function PublicOpportunitiesPage() {
 
       <EligibilityChecker live={live} />
 
-      {/* The account ask comes last, and only after something useful has
-          already been handed over. Note what is NOT being sold: Compass is free
-          either way, so the trade on offer is information, not money. Copy that
-          implies a paid tier ("the free half") would be a straight lie. */}
+      {/* The account ask comes last, and only after something useful has already
+          been handed over. Note what is NOT being sold: Compass is free either
+          way, so the trade on offer is information, not money. */}
       <section className="border-t border-line/70 bg-card">
         <div className="mx-auto max-w-3xl px-5 py-14 sm:px-6">
           <h2 className="text-balance text-2xl font-semibold tracking-tight text-ink">
@@ -76,7 +108,10 @@ export default async function PublicOpportunitiesPage() {
             <ButtonLink href="/auth/signup" variant="primary" size="md">
               Make an account
             </ButtonLink>
-            <ButtonLink href="/demo" variant="tonal" size="md">
+            <ButtonLink href="/guide" variant="tonal" size="md">
+              Where can this lead?
+            </ButtonLink>
+            <ButtonLink href="/demo" variant="subtle" size="md">
               See an example first
             </ButtonLink>
           </div>

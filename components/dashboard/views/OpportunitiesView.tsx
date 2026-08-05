@@ -17,7 +17,7 @@ import {
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { InterestQuiz } from "@/components/opportunities/InterestQuiz";
 import { DirectionSummary } from "@/components/opportunities/DirectionSummary";
-import { CareersPanel } from "@/components/opportunities/CareersPanel";
+import Link from "@/components/ui/Link";
 import { OpportunityRow } from "@/components/opportunities/CommitRow";
 import { AnimatePresence, motion } from "framer-motion";
 import type {
@@ -97,7 +97,8 @@ const SHOWN = 5;
 const PAGE = 8;
 
 export function OpportunitiesView() {
-  const { analysis, hasProfile, profileMeta, liveDates, basePath } = useDashboard();
+  const { analysis, hasProfile, profileMeta, liveDates, basePath, standalone } =
+    useDashboard();
 
   // "today" depends on the visitor's clock — resolve on the client to avoid a
   // hydration mismatch (same pattern as the Timeline view).
@@ -211,6 +212,12 @@ export function OpportunitiesView() {
         hint="Competitions and olympiads we recommend for you — matched to your field and strength. These are our suggestions to enter next, not your own activities."
       />
 
+      {/* Inside the report, this panel is a summary of a section that is bigger
+          than a panel. The door across is the first thing on the page and is
+          deliberately loud: everything built around Opportunities — the
+          questionnaires, the careers guide, the map — lives over there. */}
+      {!standalone && <SectionDoor />}
+
       {plan ? (
         <>
           <DirectionSummary
@@ -257,9 +264,11 @@ export function OpportunitiesView() {
             ) : null}
           </AnimatePresence>
 
-          {/* Where the chosen field can lead — the careers layer, optional and
-              collapsed, sitting between "what field" and "what to enter". */}
-          {faculties.length > 0 && <CareersPanel faculties={faculties} />}
+          {/* Where the chosen field can lead. The careers layer itself moved to
+              /guide — the whole "kinds of work → where in the world → the way
+              in" story needs a page, not a drawer on the page you came to for
+              deadlines. What stays here is the door to it. */}
+          {faculties.length > 0 && <GuideLink faculties={faculties} />}
 
           {plan.items.length > 0 ? (
             <>
@@ -337,6 +346,60 @@ export function OpportunitiesView() {
         <div className="h-40 animate-pulse rounded-2xl border border-line bg-card" />
       )}
     </div>
+  );
+}
+
+/** The door from the report's panel across to the dedicated Opportunities
+ *  section. Shown only inside the report — the section does not link to itself. */
+function SectionDoor() {
+  return (
+    <Link
+      href="/opportunities"
+      className="block rounded-2xl border border-accent/40 bg-accent-soft/25 p-5 transition-colors hover:border-accent focus-visible:focus-ring"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-ink">
+            Open the full Opportunities section &rarr;
+          </p>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-soft">
+            Its own space, built around this instead of around your profile
+            score: the short questions that sharpen the match, the interest quiz,
+            what each field leads to, and the cities where that work actually is.
+            This panel stays here — nothing moves out of your report.
+          </p>
+        </div>
+        <span className="text-xs font-medium uppercase tracking-wide text-accent-ink">
+          Opportunities &middot; Guide
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+/** The door to the guide. Deliberately a link and not a panel: this page is for
+ *  deciding what to enter, and the "where could my life go" question deserves
+ *  more room than a drawer under the deadlines. */
+function GuideLink({ faculties }: { faculties: FacultyValue[] }) {
+  const names = faculties.map((f) => FACULTY_LABEL[f]).join(" & ");
+  return (
+    <Link
+      href="/guide"
+      className="flex items-center justify-between gap-3 rounded-2xl border border-line/70 bg-card p-5 shadow-sm transition-colors hover:border-accent focus-visible:focus-ring"
+    >
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-ink">
+          Where {names} can lead
+        </span>
+        <span className="mt-0.5 block text-xs text-ink-soft">
+          Kinds of work, the jobs inside each, and the cities where that work
+          actually is — with the catch and the way in
+        </span>
+      </span>
+      <span className="shrink-0 text-ink-faint" aria-hidden>
+        &rarr;
+      </span>
+    </Link>
   );
 }
 
