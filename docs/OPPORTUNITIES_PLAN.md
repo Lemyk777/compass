@@ -35,9 +35,18 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
   `components/opportunities/InterestQuiz.tsx`) for the student who can't answer
   "what field?" — 6 questions, fixed per-option weights, pure deterministic
   scoring, top 3 fields returned as an editable selection.
-- **Careers layer** (`lib/data/careers.ts` + `CareersPanel.tsx`) — 4 real careers
-  per field (what the job actually is + the path in), collapsed by default. The
-  surface now reads interest → field → career → what to enter next.
+- **Careers layer** (`lib/data/careers.ts` + `CareersPanel.tsx`) — 4–5 career
+  **areas** per field (what that kind of work actually is, the real job titles
+  inside it, and the path in), collapsed by default. The surface reads
+  interest → field → area → what to enter next.
+
+  **We name spheres, not one profession (owner call, 2026-08-05).** The layer
+  first shipped as four exact job titles per field. That is a guess about what is
+  in a student's head, and we have no evidence for it; an area plus its roles is
+  a claim we can stand behind *and* is far likelier to contain the thing they
+  actually want. Same reasoning as "unknown facts never exclude" — widen when
+  the evidence is thin instead of inventing precision. `roles.length >= 3` per
+  area is enforced by a unit test so the shape can't quietly regress to one job.
 - **One product, not two sites.** A signed-in student hitting the public
   `/opportunities` is redirected to their in-dashboard view; the landing header
   and CTAs recognise a session ("Dashboard", not "Log in"/"Sign up"). An animated
@@ -50,7 +59,8 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
 - **Engineering:** the 3,385-line `key-dates.ts` was split (catalog →
   `competitions-data.ts`, formatters → `opportunity-format.ts`), the catalog is
   lazy-loaded out of the initial bundle (First Load JS: `/dashboard/opportunities`
-  200 → 179 kB, `/opportunities` 134 → 108 kB), the commitment cluster moved to
+  200 → 179 kB, `/opportunities` 134 → 108 kB; the career areas added ~6 kB back
+  on the dashboard route, 185 kB today), the commitment cluster moved to
   `CommitRow.tsx`, and `scripts/test-engine.ts` (21 unit tests) now runs in CI.
 
 **Earlier (2026-08-03), also shipped:**
@@ -268,18 +278,46 @@ ignorable.** The surface is one page (Opportunities), layered:
 | Stage | The student's question | Where it lives | Status |
 |---|---|---|---|
 | Who am I | "what am I into?" | interest quiz | ✅ shipped |
-| Where does it lead | "who could I become?" | `careers.ts` + `CareersPanel` | ✅ shipped |
+| Where does it lead | "who could I become?" | `careers.ts` + `CareersPanel` | ✅ shipped (areas, not one job) |
+| What do I want from it | "which of those suits me?" | `values.ts` + `ValuesRefine` | ✅ shipped (reorders areas only) |
 | What do I do | "what can I enter?" | the matched list | ✅ shipped |
 | Where do I stand | "what are my odds?" | the opt-in analysis | ✅ shipped |
 
 Left, in the order they're worth doing:
 
-1. **Careers in the quiz result.** The quiz ends on field names; showing one
-   career per suggested field turns it into the "oh — *that's* where this goes"
-   moment. Cheapest remaining win, and it joins two things already built.
-2. **Values / strengths refine** — 2–3 optional questions ("what matters to you:
-   money, impact, freedom, stability") that sharpen the field and career
-   suggestions. Interests alone are a thin signal.
+1. ~~**Careers in the quiz result.**~~ **Done, 2026-08-05.** The quiz used to end
+   on bare field names; each selected field now carries its career **areas**
+   ("Kinds of work they open" — sphere titles only, joined by `·`), which is the
+   "oh — *that's* where this goes" moment without pretending we know which job
+   they want. Deliberately titles-only: the full roles-and-path list is one
+   screen away in `CareersPanel`, and a wall of forty job titles at the end of a
+   quiz is the overload screen we keep removing.
+2. ~~**Values / strengths refine.**~~ **Done, 2026-08-05.**
+   `lib/data/values.ts` + `ValuesRefine.tsx`, living inside the (collapsed)
+   careers panel: three questions, fixed weights, pure scoring, six axes
+   (earning well / helping people / independence / security / working with
+   people / making things). Every career area carries 2–3 of those tags.
+
+   **What it is allowed to do is deliberately narrow — it only REORDERS the
+   areas inside the fields the student already chose.** It does not touch the
+   fields themselves, because the fields drive which opportunities we show and
+   "I want to earn well" is not evidence about what a 14-year-old should enter
+   next month. It never hides an area either: unit tests pin the ranking as a
+   permutation, and an unanswered (or non-matching) refine leaves the curated
+   order untouched with nothing badged.
+
+   Two honesty rules fell out of building it, both now enforced:
+   - **A field with no matching area badges nothing.** Law offers no
+     "independence / making things" sphere, so a student who wants those gets
+     the plain list back rather than an invented match. The first version of the
+     test asserted a badge always appears; the *test* was wrong, not the code.
+   - **The tags are generalisations, and the UI says so** — pay and security
+     vary enormously by country and employer, and most of our students are not
+     in the countries these generalisations were written about.
+
+   Answers live in `localStorage` (`compass.work-values.v1`), not the profile:
+   nothing server-side reads them, so a column and a manual migration would buy
+   nothing. Promote it if that ever changes.
 3. **A mentor answer.** One persistent "ask" entry point for the questions a
    quiz can't take ("I like biology but I faint at blood"). Needs cost bounds and
    a clear refusal boundary before it ships.

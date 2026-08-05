@@ -25,6 +25,7 @@ export default async function AdminPage() {
     { data: ambassadors },
     { count: referredCount },
     { data: stepEvents },
+    { data: partnerRows },
   ] = await Promise.all([
     admin.from("profiles").select("id, country, created_at"),
     admin.from("analyses").select("user_id, created_at, usage"),
@@ -36,6 +37,10 @@ export default async function AdminPage() {
       .not("ref_code", "is", null),
     // Onboarding funnel: every "onboarding_step:<key>" event (see logOnboardingStep).
     admin.from("events").select("user_id, type").like("type", "onboarding_step:%"),
+    // Partner applications. Nothing about a new application is pushed anywhere —
+    // no email, no webhook — so this page is the only place one surfaces. That
+    // is exactly why the count sits above the metrics when it isn't zero.
+    admin.from("partners").select("id, status, created_at"),
   ]);
 
   const users = profiles ?? [];
@@ -56,6 +61,23 @@ export default async function AdminPage() {
   }
   const ambassadorCount = ambassadors?.length ?? 0;
   const referredSignups = referredCount ?? 0;
+
+  // Partner applications waiting on a decision. An organisation that applies and
+  // hears nothing walks away, and no email is sent to anyone — so the number
+  // that matters is not "how many" but "how long has the oldest one waited".
+  // Missing table (migration 0024 not applied) → null → an empty, quiet card.
+  const partners = (partnerRows ?? []) as {
+    id: string;
+    status: string;
+    created_at: string | null;
+  }[];
+  const pendingPartners = partners.filter((p) => p.status === "pending");
+  const listedPartners = partners.filter((p) => p.status === "active").length;
+  const oldestPendingDays = pendingPartners.reduce<number | null>((oldest, p) => {
+    if (!p.created_at) return oldest;
+    const days = Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86_400_000);
+    return oldest == null || days > oldest ? days : oldest;
+  }, null);
 
   const totalUsers = users.length;
   const totalAnalyses = runs.length;
@@ -143,6 +165,12 @@ export default async function AdminPage() {
           {t("admin.title")}
         </h1>
         <p className="mb-6 text-sm text-ink-soft">{t("admin.sub")}</p>
+
+        <PartnerQueue
+          pending={pendingPartners.length}
+          oldestDays={oldestPendingDays}
+          listed={listedPartners}
+        />
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Stat label={t("admin.totalUsers")} value={totalUsers} />
@@ -259,6 +287,85 @@ export default async function AdminPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+/**
+ * The partner application queue, above the metrics.
+ *
+ * It exists because nothing about an application is pushed anywhere: no email,
+ * no webhook, no notification. This page is the only place one appears, so the
+ * card has to do the work an alert would. Two states on purpose:
+ *
+ *  • waiting — loud, and it leads with how long the OLDEST one has sat there.
+ *    "2 applications" is a statistic; "one has been waiting six days" is a
+ *    person who is deciding whether we are serious.
+ *  • clear — one quiet line, so the page isn't shouting when there is nothing
+ *    to do, and so the route is still learnable when the queue is empty.
+ */
+function PartnerQueue({
+  pending,
+  oldestDays,
+  listed,
+}: {
+  pending: number;
+  oldestDays: number | null;
+  listed: number;
+}) {
+  if (pending === 0) {
+    return (
+      <Link
+        href="/admin/partners"
+        className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 shadow-card transition-colors hover:border-accent/40 focus-visible:focus-ring"
+      >
+        <span className="text-sm text-ink-soft">
+          Partner organisations —{" "}
+          <span data-num className="font-semibold text-ink">
+            {listed}
+          </span>{" "}
+          listed, nothing waiting for you
+        </span>
+        <span className="shrink-0 text-ink-faint">→</span>
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      href="/admin/partners"
+      className="group mb-6 block rounded-2xl border border-accent/50 bg-accent-soft/50 p-4 shadow-card transition-colors hover:border-accent focus-visible:focus-ring"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-ink">
+            <span data-num>{pending}</span>{" "}
+            {pending === 1 ? "organisation is" : "organisations are"} waiting to
+            be listed
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+            {oldestDays != null && oldestDays >= 1 ? (
+              <>
+                The oldest applied{" "}
+                <span data-num className="font-semibold text-ink">
+                  {oldestDays === 1 ? "yesterday" : `${oldestDays} days ago`}
+                </span>
+                . They have not heard anything — no email is sent when an
+                application arrives or when you approve one.
+              </>
+            ) : (
+              <>
+                Arrived today. No email is sent when an application arrives or
+                when you approve one, so this page is the only place it shows
+                up.
+              </>
+            )}
+          </p>
+        </div>
+        <span className="shrink-0 text-ink-faint transition-colors group-hover:text-accent">
+          →
+        </span>
+      </div>
+    </Link>
   );
 }
 
