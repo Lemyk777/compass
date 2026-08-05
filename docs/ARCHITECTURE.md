@@ -36,6 +36,7 @@ almost never a prompt change.
 | Where a field can lead (career areas + the jobs in them) | `lib/data/careers.ts` — spheres, never one prescribed profession |
 | "What do you want out of work?" | `lib/data/values.ts` (3 questions + pure scoring) — may only REORDER the areas, never filter or change the fields |
 | Where in the world a sphere of work lives | `lib/data/world.ts` — hubs with a catch and a route in, both mandatory |
+| A full destination profile (US, UK, HK, …) | `lib/data/study-destinations.ts` → `/guide/[place]`; trade-offs must outnumber strengths, `notForYou` is mandatory, no prices or rankings |
 | The student's own shell (Opportunities + Guide) | `components/student/StudentShell.tsx`; the report keeps `components/dashboard/DashboardShell.tsx` |
 | Loading a signed-in student's facts once | `lib/dashboard/load.ts` — feeds both shells |
 | The dated roadmap | `lib/data/roadmap.ts` |

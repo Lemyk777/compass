@@ -70,7 +70,13 @@ Everything here is **deterministic** — no model call — and the design rules 
   which runs interest → field → sphere of work → the cities that work lives in
   ([lib/data/world.ts](lib/data/world.ts)) → what to enter from home. Every hub
   there must carry BOTH its catch and a real route in — a city with only good
-  news listed is an advert, and a test enforces it. The layer names career
+  news listed is an advert, and a test enforces it. The deep layer is
+  [lib/data/study-destinations.ts](lib/data/study-destinations.ts) → `/guide/[place]`:
+  11 full country profiles (money, admissions, after-study, cities). **Rules,
+  test-enforced: trade-offs must outnumber strengths, `notForYou` is mandatory,
+  and no prices or rankings** — those rot within a year, structural facts don't.
+  Post-study work rules DO drift; they're written as "current rule, check it"
+  and need a yearly pass. The layer names career
   **areas** with the real job titles inside them — never one prescribed
   profession per field. We can't know which job a student is reaching
   for, so we widen instead of guessing (the same rule as "unknown facts never

@@ -32,11 +32,17 @@ export function DirectionSummary({
   faculties,
   nearest,
   totalOpen,
+  onEditYear,
+  onEditFields,
 }: {
   grade: number | null;
   faculties: FacultyValue[];
   nearest: { name: string; days: number } | null;
   totalOpen: number;
+  /** Re-open the school-year question. Omitted ⇒ the chip is static. */
+  onEditYear?: () => void;
+  /** Re-open the field question (and with it the interest quiz). */
+  onEditFields?: () => void;
 }) {
   const fieldLabel =
     faculties.length === 0
@@ -61,7 +67,13 @@ export function DirectionSummary({
         animate="show"
         className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm"
       >
-        <Segment done={grade != null}>
+        {/* Both answers are editable from here. They used to be dead text: the
+            questions only ever rendered while an answer was MISSING, so once a
+            student answered, there was no way back to change it — and the
+            interest quiz, which lives inside the field question, became
+            unreachable forever. The answer you can see is the answer you can
+            change. */}
+        <Segment done={grade != null} onEdit={onEditYear} label="Change your school year">
           {grade != null ? (
             <>
               Year <span data-num>{grade}</span>
@@ -71,7 +83,13 @@ export function DirectionSummary({
           )}
         </Segment>
         <Arrow />
-        <Segment done={fieldLabel != null}>{fieldLabel ?? "pick a field"}</Segment>
+        <Segment
+          done={fieldLabel != null}
+          onEdit={onEditFields}
+          label="Change your fields, or take the interest quiz"
+        >
+          {fieldLabel ?? "pick a field"}
+        </Segment>
         {nearest && (
           <>
             <Arrow />
@@ -103,25 +121,63 @@ function Segment({
   children,
   done,
   accent,
+  onEdit,
+  label,
 }: {
   children: React.ReactNode;
   done?: boolean;
   accent?: boolean;
+  onEdit?: () => void;
+  label?: string;
 }) {
+  const cls = `inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+    accent
+      ? "bg-ivy text-white"
+      : done
+        ? "bg-card text-ink shadow-sm ring-1 ring-line/60"
+        : "border border-dashed border-ink/25 text-ink-faint"
+  }`;
+
+  if (!onEdit) {
+    return (
+      <motion.span variants={segment} layout className={cls}>
+        {children}
+      </motion.span>
+    );
+  }
+
   return (
-    <motion.span
+    <motion.button
+      type="button"
       variants={segment}
       layout
-      className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-        accent
-          ? "bg-ivy text-white"
-          : done
-            ? "bg-card text-ink shadow-sm ring-1 ring-line/60"
-            : "border border-dashed border-ink/25 text-ink-faint"
-      }`}
+      onClick={onEdit}
+      title={label}
+      aria-label={label}
+      className={`${cls} hover:ring-2 hover:ring-ivy/40 focus-visible:focus-ring`}
     >
       {children}
-    </motion.span>
+      <PencilGlyph />
+    </motion.button>
+  );
+}
+
+/** Small affordance so an editable answer doesn't look like static text. */
+function PencilGlyph() {
+  return (
+    <svg
+      className="h-3 w-3 opacity-50"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
   );
 }
 
