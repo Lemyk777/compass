@@ -1,7 +1,7 @@
 # Opportunities — status & next steps
 
 Working notes for the Opportunities feature (catalog, discovery, matching).
-Last updated: 2026-08-03.
+Last updated: 2026-08-05.
 
 **Direction of the whole project is changing.** We are moving the centre of
 Compass off *scoring a portfolio* and onto *giving a student opportunities*. The
@@ -22,7 +22,38 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
 
 ## Where it stands
 
-**Latest (2026-08-03), all shipped to prod:**
+**Latest (2026-08-04/05) — the front door became the product. All shipped:**
+
+- **Signups no longer meet the questionnaire.** A brand-new student lands on
+  `/dashboard/opportunities`, not `/onboarding`. The full profile/analysis intake
+  is now opt-in ("Update profile", "Get the full report"). Don't re-add a
+  mandatory gate.
+- **The default intake is two inline questions**: school year (`YearPrompt` →
+  `saveGraduationYear`) then field (`FieldPrompt` → `saveFaculties`). Empty
+  faculties stays a valid answer meaning "show everything".
+- **Optional interest quiz** (`lib/data/interest-quiz.ts` +
+  `components/opportunities/InterestQuiz.tsx`) for the student who can't answer
+  "what field?" — 6 questions, fixed per-option weights, pure deterministic
+  scoring, top 3 fields returned as an editable selection.
+- **Careers layer** (`lib/data/careers.ts` + `CareersPanel.tsx`) — 4 real careers
+  per field (what the job actually is + the path in), collapsed by default. The
+  surface now reads interest → field → career → what to enter next.
+- **One product, not two sites.** A signed-in student hitting the public
+  `/opportunities` is redirected to their in-dashboard view; the landing header
+  and CTAs recognise a session ("Dashboard", not "Log in"/"Sign up"). An animated
+  "Your direction, so far" summary (`DirectionSummary.tsx`) fills in as answers
+  land.
+- **Calendar download fixed.** `downloadIcs` revoked the object URL synchronously
+  after `click()`, which cancelled the download intermittently — the "works by
+  mood" bug. The anchor is now in the DOM and teardown is deferred.
+- **Six wrong deadlines corrected** against official sources (see "Dates" below).
+- **Engineering:** the 3,385-line `key-dates.ts` was split (catalog →
+  `competitions-data.ts`, formatters → `opportunity-format.ts`), the catalog is
+  lazy-loaded out of the initial bundle (First Load JS: `/dashboard/opportunities`
+  200 → 179 kB, `/opportunities` 134 → 108 kB), the commitment cluster moved to
+  `CommitRow.tsx`, and `scripts/test-engine.ts` (21 unit tests) now runs in CI.
+
+**Earlier (2026-08-03), also shipped:**
 - **Honest cost & accessibility panel.** Tapping any opportunity opens a detail
   panel (`components/opportunities/OpportunityDetail.tsx`) showing what it is,
   who runs it, who it's for, why it's worth it — and, FIRST, what it COSTS. Cost
@@ -43,7 +74,9 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
   cycles ("dates TBA"). Candidate fee/date research notes live in
   [OPPORTUNITIES_CANDIDATES.md](OPPORTUNITIES_CANDIDATES.md).
 
-**Catalog** — 156 curated opportunities in `lib/data/key-dates.ts`. Every link
+**Catalog** — 156 curated opportunities in `lib/data/competitions-data.ts` (the
+array moved out of `key-dates.ts`, which now holds the matching logic and
+re-exports the data). Every link
 verified: `npm run test:links` reports 155/156 healthy (only `ijso` down — an SSL
 failure on its official domain, left in place per the "don't delete on a same-day
 outage" trap).
@@ -123,10 +156,29 @@ students without approval at `/admin/opportunities`.
 
 **Dates** — `/api/cron/sync-dates` runs daily over a rotating batch of 8. It
 reads the landing page *and* the linked "key dates"/"apply" page, because
-landing pages carry no deadlines. **17 of 156 entries now have a confirmed date**
-(hand-verified through 2026-08-03; the cron confirms more as they publish) plus
-SAT sittings — see step (3), date coverage is still the constraint on everything
-in the "remove the work" direction. Failures report a typed reason
+landing pages carry no deadlines. **12 of 156 entries have a confirmed date**
+plus SAT sittings — see step (3), date coverage is still the constraint on
+everything in the "remove the work" direction.
+
+**The count went DOWN on 2026-08-05, and that was the right move.** A user
+reported countdowns that "were definitely wrong", so all 16 confirmed dates were
+re-checked against official sources. Eight were correct (IYMC, Breakthrough
+Junior, YoungArts, Wharton, Congressional App, Regeneron STS, Astro Pi, NASA
+Space Apps). Six were not, and the failure mode is worth remembering — **every
+one was a real date that is not a student deadline**:
+
+| Entry | Was | Reality |
+|---|---|---|
+| USACO | "deadline" 9 Jan | no registration deadline exists; 2026–27 schedule unpublished → `dateConfirmed: false` |
+| F=ma / USAPhO | "deadline" 12 Feb | that's the *exam* date, unpublished for 2027 → `dateConfirmed: false` |
+| ISEF | 1 Feb + "finals May 12–18" | no single deadline (regional fairs); finals are May 8–14 → `dateConfirmed: false` |
+| Advent of Code | "deadline" 1 Dec | 1 Dec is the **start**; nothing to submit by → `alwaysOpen` |
+| AMC | 28 Oct | that's *late* registration (returning managers only) → 15 Oct |
+| Math Kangaroo | 15 Dec | that's the deadline to start a school *centre* → 31 Dec (student enrolment) |
+
+The lesson: a date on the page is not automatically *the* deadline. "Start
+date", "exam date", "late deadline" and "organiser-only deadline" all look like
+deadlines and all mislead a student who trusts a countdown. Failures report a typed reason
 (`fetch_failed` / `no_content` / `model_error` / `declined` / `invalid_date`)
 rather than a silent null.
 
@@ -138,6 +190,7 @@ competition; the admin page lists broken links first.
 ## Verification (no API key needed)
 
 ```bash
+npm run test:unit       # 21 unit tests — scoring, eligibility, quiz, careers, matching
 npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
 npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog
@@ -156,7 +209,8 @@ reported as "(twice, 4s apart)".
 `npm run test:discover -- KZ` exercises live discovery but needs a valid
 `ANTHROPIC_API_KEY` in `.env.local`.
 
-**CI runs the build and the logic checks on every push and pull request** —
+**CI runs the build, the logic checks and the unit tests on every push and pull
+request** —
 [.github/workflows/ci.yml](../.github/workflows/ci.yml), no secrets needed.
 Link health is a separate weekly job, deliberately outside the gate: from
 GitHub's runners the answers differ from what a student gets (the first run
@@ -203,6 +257,34 @@ makes every mechanic above verifiable. Then user conversations, then the
 audience and date-layer decisions. Only then more rules.
 
 ---
+
+## The guidance product — what's built and what's left
+
+The current thread (2026-08-05). The goal is a coherent careers-guidance path,
+not a pile of features, and the ergonomic constraint is fixed: **only the two
+questions are ever mandatory; everything else is optional, collapsible and
+ignorable.** The surface is one page (Opportunities), layered:
+
+| Stage | The student's question | Where it lives | Status |
+|---|---|---|---|
+| Who am I | "what am I into?" | interest quiz | ✅ shipped |
+| Where does it lead | "who could I become?" | `careers.ts` + `CareersPanel` | ✅ shipped |
+| What do I do | "what can I enter?" | the matched list | ✅ shipped |
+| Where do I stand | "what are my odds?" | the opt-in analysis | ✅ shipped |
+
+Left, in the order they're worth doing:
+
+1. **Careers in the quiz result.** The quiz ends on field names; showing one
+   career per suggested field turns it into the "oh — *that's* where this goes"
+   moment. Cheapest remaining win, and it joins two things already built.
+2. **Values / strengths refine** — 2–3 optional questions ("what matters to you:
+   money, impact, freedom, stability") that sharpen the field and career
+   suggestions. Interests alone are a thin signal.
+3. **A mentor answer.** One persistent "ask" entry point for the questions a
+   quiz can't take ("I like biology but I faint at blood"). Needs cost bounds and
+   a clear refusal boundary before it ships.
+4. **Reflection in the student's own words** — the open-ended half of "what do
+   you want", complementing the structured quiz.
 
 ## Next steps, in order
 
@@ -431,22 +513,40 @@ audience and date-layer decisions. Only then more rules.
   discovery/analysis scripts (and any local `sync-dates` run) fail. Production's
   key is healthy and unaffected — which is why the prod cron confirmed dates
   live (above) while `test:discover` still fails locally.
-- **Apply migration `0023_intent_why_matters.sql`** — adds the nullable
-  `why_matters` column behind the self-generated-relevance line (step 9). The app
-  ships without it and degrades cleanly (the note simply doesn't persist across
-  reloads until the column exists), but the feature is dark until it is applied.
-- **Migrations otherwise current.** Verified against the live database on
-  2026-08-02, not taken from these notes: 0015, 0020, 0021 and 0022 are all
-  applied (0023 is the one addition above). Check it the same way rather than
-  trusting this line — one query against `information_schema` beats a stale
-  sentence in a plan file:
+- ~~Apply migration `0023_intent_why_matters.sql`.~~ **Done** — verified applied
+  on 2026-08-05.
+- ~~**Migrations current.**~~ **Audited against the live database 2026-08-05, and
+  one was missing.** Everything from 0011 through 0023 was applied — but
+  **`0010_graduation_year` never had been**, so `saveGraduationYear` had been
+  failing silently for months: students were re-asked their school year every
+  visit and nothing downstream of `graduation_year` (age gates, the timeline)
+  could work for them. Applied 2026-08-05. This is exactly the drift the manual
+  process invites; re-run the audit query below periodically rather than
+  trusting any note in this file:
 
   ```sql
-  select 'link_ok (0021)' as m, count(*) from information_schema.columns
-    where table_name='competition_deadlines' and column_name='link_ok'
-  union all select 'opportunity_intents (0022)', count(*) from information_schema.tables
-    where table_name='opportunity_intents';
+  with checks(migration, applied) as (
+    select '0010 graduation_year', exists(select 1 from information_schema.columns
+      where table_name='student_profiles' and column_name='graduation_year')
+    union all select '0011 competition_deadlines', to_regclass('public.competition_deadlines') is not null
+    union all select '0015 date_confirmed', exists(select 1 from information_schema.columns
+      where table_name='competition_deadlines' and column_name='date_confirmed')
+    union all select '0018 school_years', exists(select 1 from information_schema.columns
+      where table_name='student_profiles' and column_name='school_years')
+    union all select '0020 competition_candidates', to_regclass('public.competition_candidates') is not null
+    union all select '0021 link_ok', exists(select 1 from information_schema.columns
+      where table_name='competition_deadlines' and column_name='link_ok')
+    union all select '0022 opportunity_intents', to_regclass('public.opportunity_intents') is not null
+    union all select '0023 why_matters', exists(select 1 from information_schema.columns
+      where table_name='opportunity_intents' and column_name='why_matters')
+  )
+  select migration, case when applied then 'applied' else 'MISSING' end as status
+  from checks order by migration;
   ```
+
+  Adopting the Supabase CLI (`supabase link` + `migration repair` to baseline the
+  existing 22, then `db push`) would remove this class of bug entirely. Scoped
+  and deferred by owner call on 2026-08-05 — it needs the owner's login.
 - ~~Two catalog links down at their end.~~ `curieux` (nginx 503) and
   `destination-imagination` (Cloudflare 522) both **recovered within the hour**
   — which is why a same-day outage must never be answered by deleting a
@@ -478,3 +578,20 @@ audience and date-layer decisions. Only then more rules.
   "every entry is reachable by at least one real student" check now guards it.
 - **A duplicate id is not the only kind of duplicate.** Two ids pointing at one
   URL put the same programme in two fit groups at once. Checked now.
+- **A date on the page is not *the* deadline.** Six of sixteen "confirmed" dates
+  were a start date, an exam date, a late-registration deadline or an
+  organiser-only deadline. See the Dates section — the countdown is the most
+  trust-destroying thing we render, so an entry only earns `dateConfirmed` when
+  the date is the one a *student* must hit.
+- **A missing migration looks like a code bug.** `graduation_year` was absent
+  from prod for months; the app degraded quietly (as designed) so nothing
+  surfaced except students being re-asked their year. Check the column exists
+  before debugging the code.
+- **Don't import `key-dates` at runtime from a client component.** It builds a
+  map over the whole catalog at module load, so the ~128 kB dataset lands in that
+  route's bundle. Use `opportunity-format.ts` for formatters and dynamic-import
+  the matching engine. Type-only imports are free.
+- **A revoked object URL cancels the download.** `URL.revokeObjectURL` called
+  synchronously after `a.click()` made the .ics download work "sometimes" — the
+  hardest kind of bug report to act on. Defer teardown, and keep the anchor in
+  the DOM.

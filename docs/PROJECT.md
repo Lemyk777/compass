@@ -1,7 +1,21 @@
 # Compass — Project Guide (for humans & AI agents)
 
-> Read this first. It's the single orientation doc: what Compass is, how it's
-> built, where everything lives, and the rules to follow when changing it.
+> ⚠️ **PARTLY HISTORICAL — do not treat this as current (last audited 2026-08-05).**
+> The living docs are [`../CLAUDE.md`](../CLAUDE.md) (working rules),
+> [`ARCHITECTURE.md`](ARCHITECTURE.md) (where code lives) and
+> [`OPPORTUNITIES_PLAN.md`](OPPORTUNITIES_PLAN.md) (the plan of record). Read
+> those first; this file is kept for the reasoning and history behind decisions.
+>
+> Known-stale in the text below:
+> - **Opportunities is the front door now**, not the admission report. New
+>   signups land on `/dashboard/opportunities` and answer two inline questions;
+>   the intake wizard and the analysis are opt-in.
+> - **Five destinations**, not "US and Italy": US · Italy · Hong Kong · UAE · Korea.
+> - **The site is English-only.** The RU dictionary and the EN/RU toggle were
+>   removed; §9 and the "AI report in Russian" note no longer apply.
+> - **The catalog moved** out of `key-dates.ts` into `competitions-data.ts`, and
+>   there is now a unit-test suite (`npm run test:unit`) in the CI gate.
+>
 > Companion docs: [`SETUP.md`](SETUP.md) (how to run it with real keys) and
 > [`compass-project-blueprint.md`](compass-project-blueprint.md) (original spec).
 
