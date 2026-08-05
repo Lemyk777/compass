@@ -28,7 +28,17 @@ import {
 } from "@/lib/data/interest-quiz";
 import { buildExtracurriculars, strengthBand } from "@/lib/data/key-dates";
 import { emptyProfile } from "@/lib/types";
-import { CAREERS_BY_FACULTY, careersForFaculties } from "@/lib/data/careers";
+import {
+  CAREER_AREAS_BY_FACULTY,
+  careerAreasForFaculties,
+  careerAreaTitles,
+} from "@/lib/data/careers";
+import {
+  VALUE_LABEL,
+  rankAreasByValues,
+  scoreValues,
+  topValues,
+} from "@/lib/data/values";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { competitionsFromRows } from "@/lib/partners/live";
 
@@ -201,22 +211,126 @@ test("buildExtracurriculars: a chosen field never widens the list", () => {
 });
 
 // ── Careers layer ────────────────────────────────────────────────────────────
-test("every faculty has at least 3 fully-filled careers", () => {
+test("every faculty has at least 3 fully-filled career areas", () => {
   for (const f of FACULTY_VALUES) {
-    const careers = CAREERS_BY_FACULTY[f];
-    assert.ok(careers && careers.length >= 3, `${f} has too few careers`);
-    for (const c of careers) {
-      assert.ok(c.title.trim() && c.what.trim() && c.path.trim(), `${f}/${c.title} has an empty field`);
+    const areas = CAREER_AREAS_BY_FACULTY[f];
+    assert.ok(areas && areas.length >= 3, `${f} has too few career areas`);
+    for (const a of areas) {
+      assert.ok(a.title.trim() && a.what.trim() && a.path.trim(), `${f}/${a.title} has an empty field`);
     }
   }
 });
 
-test("careersForFaculties groups by chosen field; empty in, empty out", () => {
-  assert.deepEqual(careersForFaculties([]), []);
-  const groups = careersForFaculties(["computer_science", "law"]);
+// The whole point of the change: we name a SPHERE and the jobs in it, never one
+// prescribed profession. An area that carried a single role would be that guess
+// wearing a different label, so the shape is enforced here.
+test("every career area lists several real roles, none empty or duplicated", () => {
+  for (const f of FACULTY_VALUES) {
+    for (const a of CAREER_AREAS_BY_FACULTY[f]) {
+      assert.ok(a.roles.length >= 3, `${f}/${a.title} lists too few roles`);
+      for (const role of a.roles) {
+        assert.ok(role.trim(), `${f}/${a.title} has an empty role`);
+      }
+      assert.equal(
+        new Set(a.roles).size,
+        a.roles.length,
+        `${f}/${a.title} repeats a role`,
+      );
+    }
+  }
+});
+
+test("careerAreasForFaculties groups by chosen field; empty in, empty out", () => {
+  assert.deepEqual(careerAreasForFaculties([]), []);
+  const groups = careerAreasForFaculties(["computer_science", "law"]);
   assert.equal(groups.length, 2);
   assert.equal(groups[0].faculty, "computer_science");
-  assert.ok(groups[0].careers.length >= 3);
+  assert.ok(groups[0].areas.length >= 3);
+});
+
+// ── Values refine ────────────────────────────────────────────────────────────
+// The refine is only allowed to REORDER what the careers panel already shows.
+// These checks pin that down: nothing appears, nothing disappears, and an
+// unanswered quiz changes nothing at all.
+test("every career area carries valid, deduplicated value tags", () => {
+  const axes = new Set(Object.keys(VALUE_LABEL));
+  for (const f of FACULTY_VALUES) {
+    for (const a of CAREER_AREAS_BY_FACULTY[f]) {
+      assert.ok(a.values.length >= 2, `${f}/${a.title} has too few value tags`);
+      assert.equal(
+        new Set(a.values).size,
+        a.values.length,
+        `${f}/${a.title} repeats a value tag`,
+      );
+      for (const v of a.values) {
+        assert.ok(axes.has(v), `${f}/${a.title} has unknown value tag ${v}`);
+      }
+    }
+  }
+});
+
+test("scoreValues sums fixed weights; no answers score nothing", () => {
+  assert.deepEqual(scoreValues({}), {});
+  const scores = scoreValues({ "worth-it": "pay", bother: "less" });
+  assert.equal(scores.money, 4);
+  assert.equal(scores.impact, undefined);
+  assert.deepEqual(topValues(scores), ["money"]);
+});
+
+test("an unanswered refine leaves the areas exactly as curated", () => {
+  const areas = CAREER_AREAS_BY_FACULTY.computer_science;
+  const ranked = rankAreasByValues(areas, scoreValues({}));
+  assert.deepEqual(
+    ranked.map((r) => r.area.title),
+    areas.map((a) => a.title),
+  );
+  assert.ok(ranked.every((r) => !r.fits), "nothing may be badged a fit");
+});
+
+test("ranking reorders but never drops or duplicates an area", () => {
+  const scores = scoreValues({ "worth-it": "own", matters: "build" });
+  for (const f of FACULTY_VALUES) {
+    const areas = CAREER_AREAS_BY_FACULTY[f];
+    const ranked = rankAreasByValues(areas, scores);
+    assert.equal(ranked.length, areas.length, `${f} changed length`);
+    assert.deepEqual(
+      new Set(ranked.map((r) => r.area.title)),
+      new Set(areas.map((a) => a.title)),
+      `${f} lost or invented an area`,
+    );
+    // Scores must be non-increasing, and only the top score is a "fit".
+    for (let i = 1; i < ranked.length; i++) {
+      assert.ok(ranked[i - 1].score >= ranked[i].score, `${f} is out of order`);
+    }
+    // A field where nothing matches what was said badges NOTHING — Law offers
+    // no "independence / making things" area, and inventing a match there would
+    // be exactly the false precision this whole layer exists to avoid.
+    const anyMatch = areas.some((a) =>
+      a.values.some((v) => (scores[v] ?? 0) > 0),
+    );
+    assert.equal(ranked[0].fits, anyMatch, `${f} badges the wrong thing`);
+    if (!anyMatch) {
+      assert.ok(ranked.every((r) => !r.fits), `${f} badged a zero score`);
+    }
+  }
+});
+
+test("wanting money over impact puts the money-tagged area first", () => {
+  const areas = CAREER_AREAS_BY_FACULTY.law;
+  const money = rankAreasByValues(areas, scoreValues({ "worth-it": "pay" }));
+  const impact = rankAreasByValues(areas, scoreValues({ "worth-it": "help" }));
+  assert.ok(money[0].area.values.includes("money"));
+  assert.ok(impact[0].area.values.includes("impact"));
+  assert.notEqual(money[0].area.title, impact[0].area.title);
+});
+
+test("careerAreaTitles gives the quiz result a sphere list, never job titles", () => {
+  const titles = careerAreaTitles("medicine_health");
+  assert.ok(titles.length >= 3);
+  assert.deepEqual(
+    titles,
+    CAREER_AREAS_BY_FACULTY.medicine_health.map((a) => a.title),
+  );
 });
 
 // ── Partner attribution and the kill switch ──────────────────────────────────

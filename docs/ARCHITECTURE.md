@@ -33,7 +33,8 @@ almost never a prompt change.
 | Date/cost formatting used by client cards | `lib/data/opportunity-format.ts` — **import these from here, not key-dates** (see the bundle rule below) |
 | Who may enter an opportunity | `lib/data/eligibility.ts` |
 | The "what do you like?" quiz | `lib/data/interest-quiz.ts` (questions + weights + pure scoring) |
-| Where a field can lead (careers) | `lib/data/careers.ts` |
+| Where a field can lead (career areas + the jobs in them) | `lib/data/careers.ts` — spheres, never one prescribed profession |
+| "What do you want out of work?" | `lib/data/values.ts` (3 questions + pure scoring) — may only REORDER the areas, never filter or change the fields |
 | The dated roadmap | `lib/data/roadmap.ts` |
 | Adding a whole new destination country | `lib/data/country-content.ts`, `deterministic-countries.ts`, `country-views.tsx` — one entry each, not edits across eight files |
 | What a partner organisation may post | `app/partner/actions.ts` (the schema is the contract), `components/partners/OpportunityForm.tsx` |

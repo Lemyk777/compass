@@ -7,6 +7,7 @@ import {
   type QuizAnswers,
 } from "@/lib/data/interest-quiz";
 import { FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
+import { careerAreaTitles } from "@/lib/data/careers";
 
 // The optional "not sure what you want?" quiz. One question at a time (a wall of
 // six is the intake we're avoiding), a progress dot row, then a result the
@@ -191,6 +192,25 @@ function QuizResults({
           );
         })}
       </div>
+
+      {/* "oh — that's where this goes": the fields alone are abstract, so each
+          one shows the AREAS of work it opens. Areas, never a single job title:
+          a quiz cannot tell anyone what they should become, and a sphere is a
+          claim we can stand behind. The full list of roles lives in the careers
+          panel on the page they land on next. */}
+      {selected.length > 0 && (
+        <div className="mt-4 space-y-2 border-t border-line pt-3.5">
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-faint">
+            Kinds of work they open
+          </p>
+          {selected.map((f) => (
+            <p key={f} className="text-xs leading-relaxed text-ink-soft">
+              <span className="font-medium text-ink">{FACULTY_LABEL[f]}</span>{" "}
+              &mdash; {careerAreaTitles(f).join(" · ")}
+            </p>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap items-center gap-2.5">
         <button
