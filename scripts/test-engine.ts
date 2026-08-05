@@ -39,6 +39,12 @@ import {
   scoreValues,
   topValues,
 } from "@/lib/data/values";
+import {
+  HUBS,
+  REGION_ORDER,
+  hubsByRegion,
+  hubsForFaculties,
+} from "@/lib/data/world";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { competitionsFromRows } from "@/lib/partners/live";
 
@@ -330,6 +336,53 @@ test("careerAreaTitles gives the quiz result a sphere list, never job titles", (
   assert.deepEqual(
     titles,
     CAREER_AREAS_BY_FACULTY.medicine_health.map((a) => a.title),
+  );
+});
+
+// ── The world map (guide) ────────────────────────────────────────────────────
+// The rule that makes this layer safe to show a 15-year-old: no city is ever an
+// advert. Every hub states its catch and the actual door in, and every field has
+// somewhere to go — an empty guide would be worse than no guide.
+test("every hub has a catch and a way in, and unique ids", () => {
+  const ids = new Set<string>();
+  for (const h of HUBS) {
+    assert.ok(!ids.has(h.id), `duplicate hub id ${h.id}`);
+    ids.add(h.id);
+    assert.ok(h.city.trim() && h.country.trim(), `${h.id} is missing a name`);
+    assert.ok(h.what.trim().length > 40, `${h.id} has no real description`);
+    assert.ok(h.catch.trim().length > 40, `${h.id} has no catch — that is an advert`);
+    assert.ok(h.route.trim().length > 40, `${h.id} has no way in`);
+    assert.ok(h.fields.length > 0, `${h.id} belongs to no field`);
+    assert.ok(REGION_ORDER.includes(h.region), `${h.id} has an unknown region`);
+  }
+});
+
+test("every field has hubs across more than one region", () => {
+  for (const f of FACULTY_VALUES) {
+    const hubs = hubsForFaculties([f]);
+    assert.ok(hubs.length >= 3, `${f} has too few places to go`);
+    const regions = new Set(hubs.map((h) => h.region));
+    assert.ok(regions.size >= 2, `${f} points at only one region`);
+  }
+});
+
+test("no chosen field ⇒ the whole map; a chosen one never widens it", () => {
+  assert.equal(hubsForFaculties([]).length, HUBS.length);
+  const cs = hubsForFaculties(["computer_science"]);
+  assert.ok(cs.length > 0 && cs.length <= HUBS.length);
+  // Grouping keeps the curated region order and drops empty regions.
+  const groups = hubsByRegion(["law"]);
+  assert.ok(groups.length > 0);
+  const order = groups.map((g) => REGION_ORDER.indexOf(g.region));
+  assert.deepEqual(order, [...order].sort((a, b) => a - b));
+  for (const g of groups) assert.ok(g.hubs.length > 0, "an empty region survived");
+});
+
+test("the home region leads the map", () => {
+  assert.equal(REGION_ORDER[0], "central_asia");
+  assert.ok(
+    HUBS.filter((h) => h.region === "central_asia").length >= 3,
+    "the students' own region is barely represented",
   );
 });
 

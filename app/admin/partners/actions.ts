@@ -32,7 +32,6 @@ function revalidateAll(id: string): void {
   revalidatePath("/partners");
   revalidatePath(`/partners/${id}`);
   revalidatePath("/opportunities");
-  revalidatePath("/dashboard/opportunities");
 }
 
 /** Approve the application: the organisation is listed and can post. */
@@ -215,7 +214,6 @@ export async function adminSetPostPublished(
 
   revalidatePath("/admin/partners");
   revalidatePath("/opportunities");
-  revalidatePath("/dashboard/opportunities");
   return { ok: true };
 }
 

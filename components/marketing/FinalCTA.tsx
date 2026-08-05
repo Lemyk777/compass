@@ -31,11 +31,13 @@ export function FinalCTA({ signedIn = false }: { signedIn?: boolean }) {
           {t("landing.ctaSub")}
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+          {/* A returning student goes to Opportunities, not the report: the
+              report is now one input into the product, not the product. */}
           <Link
-            href={signedIn ? "/dashboard" : "/auth/signup"}
+            href={signedIn ? "/opportunities" : "/auth/signup"}
             className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-base font-medium text-white transition-all hover:bg-ink/90 hover:shadow-[0_0_30px_rgba(14,123,87,0.35)]"
           >
-            {signedIn ? t("common.dashboard") : t("landing.ctaBuild")}
+            {signedIn ? t("nav.opportunities") : t("landing.ctaBuild")}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
