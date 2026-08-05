@@ -36,6 +36,8 @@ almost never a prompt change.
 | Where a field can lead (careers) | `lib/data/careers.ts` |
 | The dated roadmap | `lib/data/roadmap.ts` |
 | Adding a whole new destination country | `lib/data/country-content.ts`, `deterministic-countries.ts`, `country-views.tsx` — one entry each, not edits across eight files |
+| What a partner organisation may post | `app/partner/actions.ts` (the schema is the contract), `components/partners/OpportunityForm.tsx` |
+| Whether a partner's posts are visible | `lib/partners/live.ts` — one filter, both student surfaces |
 | Input caps (lengths, counts) | `lib/limits.ts` — enforced in three places, all of which read from it |
 | Anything a logged-in student sees | `components/dashboard/views/` |
 | The intake form | `components/onboarding/` |
@@ -55,8 +57,10 @@ almost never a prompt change.
 | `onboarding/` | The full intake wizard — now **opt-in** (the analysis path), no longer where signups land; `actions.ts` holds the Zod schema that is the single source of truth for a valid profile |
 | `dashboard/` | The logged-in product. `layout.tsx` loads everything once and hands it to `DashboardContext`; each subroute is a thin view |
 | `demo/` | The same dashboard over a sample analysis, no auth |
-| `admin/` | Founder metrics and the opportunity-approval queue |
+| `admin/` | Founder metrics, the opportunity-approval queue, and partner review |
 | `ambassador/` | Referral dashboard |
+| `partners/` | **Public**: the list of partner organisations, one page each, and the application form |
+| `partner/` | **Private**: one organisation's console — post, edit, take down |
 | `api/` | Route handlers, including `api/cron/*` (date sync, discovery) |
 | `auth/` | Sign-in, callback, email confirmation |
 
@@ -67,7 +71,7 @@ export crashes the production build (not dev) with an opaque digest error.
 ### `components/` — grouped by surface, not by type
 
 `dashboard/`, `onboarding/`, `marketing/`, `opportunities/`, `admin/`,
-`ambassador/`, `auth/`, `report/`, `charts/`, `legal/`, `ui/`.
+`ambassador/`, `partners/`, `auth/`, `report/`, `charts/`, `legal/`, `ui/`.
 
 `ui/` is the shared primitive layer (Button, Link, Logo, view transitions).
 Everything else belongs to one surface and should not be imported across
@@ -146,6 +150,15 @@ work that does not ship in the app.
   analysis intake — is optional and dismissible.
 - **Unknown facts never exclude.** No country, no graduation year, no fields ⇒
   the student sees more, never less. Exclusion requires knowing both sides.
+- **The verification tick is a claim about authorship, not quality.** It means
+  "we confirmed this account belongs to that organisation, and they posted
+  this" — nothing else. It never goes on a row we posted for someone, and an
+  unverified partner shows its name with no tick rather than a weaker one.
+- **A partner post is only as live as its partner.** Posts publish instantly
+  (trust is granted once, per organisation, at `/admin/partners`), so the safety
+  net is removal, not review: `lib/partners/live.ts` drops any row whose partner
+  is not `active`. Suspending an organisation must take its opportunities down
+  with it, or the switch is decorative.
 - **Never show a countdown for a date we cannot stand behind.** An unconfirmed
   date renders as "not yet announced". A wrong one can make a student miss a
   real deadline.

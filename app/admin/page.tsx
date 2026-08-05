@@ -133,6 +133,7 @@ export default async function AdminPage() {
         links={[
           { href: "/admin/intents", label: "Commitments" },
           { href: "/admin/opportunities", label: t("admin.opps") },
+          { href: "/admin/partners", label: "Partners" },
           { href: "/admin/ambassadors", label: t("admin.ambassadors") },
           { href: "/dashboard", label: t("common.dashboard") },
         ]}

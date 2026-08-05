@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export type Role = "student" | "ambassador" | "admin";
+// `partner` is an ORGANISATION account (Astana Hub, a university, a
+// foundation): it posts opportunities under its own name instead of consuming
+// them. Granted only by an admin approving an application — see
+// app/admin/partners/actions.ts and migration 0024.
+export type Role = "student" | "ambassador" | "admin" | "partner";
 
 export type SessionProfile = {
   id: string;
@@ -49,6 +53,7 @@ export async function requireSession(next = "/dashboard"): Promise<SessionProfil
 export function landingPathForRole(role: Role): string {
   if (role === "admin") return "/admin";
   if (role === "ambassador") return "/ambassador";
+  if (role === "partner") return "/partner";
   return "/onboarding";
 }
 
