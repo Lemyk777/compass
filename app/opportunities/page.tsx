@@ -5,7 +5,7 @@ import { EligibilityChecker } from "@/components/opportunities/EligibilityChecke
 import { OpportunitiesView } from "@/components/dashboard/views/OpportunitiesView";
 import { DashboardProvider } from "@/components/dashboard/DashboardContext";
 import { StudentShell } from "@/components/student/StudentShell";
-import { COMPETITIONS } from "@/lib/data/key-dates";
+import { COMPETITIONS, type Competition } from "@/lib/data/key-dates";
 import { getSession } from "@/lib/auth/session";
 import { fetchLivePool } from "@/lib/partners/queries";
 import { loadStudentContext } from "@/lib/dashboard/load";
@@ -68,7 +68,17 @@ export default async function OpportunitiesPage() {
   // here we know nothing about the visitor. That is the existing rule (someone
   // else's local list is worse than none), and the partner's own /partners/[id]
   // page shows their full list regardless.
-  const live = await fetchLivePool();
+  // The ONE place that prefers degrading over failing, stated here rather than
+  // hidden inside every partner query: this page's value is the curated
+  // catalog, and partner posts are additive. If the live pool is unreachable a
+  // stranger should still get their answer — but the failure is logged, not
+  // swallowed into an indistinguishable "no partners".
+  let live: Competition[] = [];
+  try {
+    live = await fetchLivePool();
+  } catch (e) {
+    console.error("[opportunities] live pool unavailable, serving the catalog only:", e);
+  }
 
   return (
     <main className="min-h-dvh bg-surface text-ink">
