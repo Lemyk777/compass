@@ -1,9 +1,18 @@
 // Server-side reads for the partner feature.
 //
-// Every query here tolerates the tables not existing yet (migration 0024 is
-// applied by hand): an error becomes an empty result, and the surface renders
-// as if there were no partners. Nothing about partners is load-bearing enough
-// to be worth blanking a page over.
+// These used to swallow every error — `{ data }` without `error`, wrapped in an
+// empty catch — because the tables might not exist yet (0024 is applied by
+// hand). The cost of that was a lie the admin console could not detect: a broken
+// query and an empty review queue looked identical, so "no applications waiting"
+// might have meant "the query has been failing for a week".
+//
+// The premise is gone: `npm run db:check` verifies 0024 is applied and fails
+// loudly if it ever isn't, so the code no longer has to survive a schema it
+// can't see. A failed query now throws, which is the honest signal — pages that
+// must not lie surface an error, and the ONE surface that genuinely prefers
+// degrading (the guest Opportunities page, where partner posts are additive to a
+// curated catalog) says so at its own call site instead of every reader here
+// pretending nothing went wrong.
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -13,26 +22,41 @@ import { competitionsFromRows } from "./live";
 
 type Row = Record<string, unknown>;
 
+/** Postgres said no ⇒ say so. An empty result must only ever mean "empty". */
+function ok<T>(
+  res: { data: T; error: { message: string } | null },
+  what: string,
+): T {
+  if (res.error) throw new Error(`partners/${what}: ${res.error.message}`);
+  return res.data;
+}
+
 /** Every organisation currently listed publicly, newest first. */
 export async function listActivePartners(): Promise<Partner[]> {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("partners")
-    .select("*")
-    .eq("status", "active")
-    .order("created_at", { ascending: false });
+  const data = ok(
+    await supabase
+      .from("partners")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false }),
+    "listActivePartners",
+  );
   return ((data ?? []) as Row[]).map(partnerFromRow);
 }
 
 /** One organisation's public profile. Null for pending/suspended/unknown ids. */
 export async function getActivePartner(id: string): Promise<Partner | null> {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("partners")
-    .select("*")
-    .eq("id", id)
-    .eq("status", "active")
-    .maybeSingle();
+  const data = ok(
+    await supabase
+      .from("partners")
+      .select("*")
+      .eq("id", id)
+      .eq("status", "active")
+      .maybeSingle(),
+    "getActivePartner",
+  );
   return data ? partnerFromRow(data as Row) : null;
 }
 
@@ -43,31 +67,25 @@ export async function getActivePartner(id: string): Promise<Partner | null> {
  * public policy, and the caller has already been checked by the page.
  */
 export async function getPartnerForUser(userId: string): Promise<Partner | null> {
-  try {
-    const admin = createAdminClient();
-    const { data } = await admin
-      .from("partners")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-    return data ? partnerFromRow(data as Row) : null;
-  } catch {
-    return null;
-  }
+  const admin = createAdminClient();
+  const data = ok(
+    await admin.from("partners").select("*").eq("user_id", userId).maybeSingle(),
+    "getPartnerForUser",
+  );
+  return data ? partnerFromRow(data as Row) : null;
 }
 
 /** All organisations, for the admin review queue. */
 export async function listAllPartners(): Promise<Partner[]> {
-  try {
-    const admin = createAdminClient();
-    const { data } = await admin
+  const admin = createAdminClient();
+  const data = ok(
+    await admin
       .from("partners")
       .select("*")
-      .order("created_at", { ascending: false });
-    return ((data ?? []) as Row[]).map(partnerFromRow);
-  } catch {
-    return [];
-  }
+      .order("created_at", { ascending: false }),
+    "listAllPartners",
+  );
+  return ((data ?? []) as Row[]).map(partnerFromRow);
 }
 
 /**
@@ -78,11 +96,14 @@ export async function listAllPartners(): Promise<Partner[]> {
  */
 export async function fetchLivePool(): Promise<Competition[]> {
   const supabase = createClient();
-  const [{ data: compRows }, { data: partnerRows }] = await Promise.all([
+  const [comps, partners] = await Promise.all([
     supabase.from("competition_deadlines").select("*").order("deadline", { ascending: true }),
     supabase.from("partners").select("*").eq("status", "active"),
   ]);
-  return competitionsFromRows(compRows as Row[] | null, partnerRows as Row[] | null);
+  return competitionsFromRows(
+    ok(comps, "fetchLivePool/competitions") as Row[] | null,
+    ok(partners, "fetchLivePool/partners") as Row[] | null,
+  );
 }
 
 /**
@@ -148,17 +169,16 @@ export type PartnerPost = {
 };
 
 export async function listPartnerPosts(partnerId: string): Promise<PartnerPost[]> {
-  try {
-    const admin = createAdminClient();
-    const { data } = await admin
+  const admin = createAdminClient();
+  const data = ok(
+    await admin
       .from("competition_deadlines")
       .select("*")
       .eq("partner_id", partnerId)
-      .order("posted_at", { ascending: false });
-    return ((data ?? []) as Row[]).map(postFromRow);
-  } catch {
-    return [];
-  }
+      .order("posted_at", { ascending: false }),
+    "listPartnerPosts",
+  );
+  return ((data ?? []) as Row[]).map(postFromRow);
 }
 
 /**
@@ -169,10 +189,13 @@ export async function listPartnerPosts(partnerId: string): Promise<PartnerPost[]
 export async function partnerPostCounts(): Promise<Map<string, { live: number }>> {
   const counts = new Map<string, { live: number }>();
   const supabase = createClient();
-  const { data } = await supabase
-    .from("competition_deadlines")
-    .select("partner_id")
-    .not("partner_id", "is", null);
+  const data = ok(
+    await supabase
+      .from("competition_deadlines")
+      .select("partner_id")
+      .not("partner_id", "is", null),
+    "partnerPostCounts",
+  );
   for (const r of (data ?? []) as Row[]) {
     const id = r.partner_id as string;
     counts.set(id, { live: (counts.get(id)?.live ?? 0) + 1 });
@@ -183,21 +206,20 @@ export async function partnerPostCounts(): Promise<Map<string, { live: number }>
 /** Every partner post, grouped by partner — the admin review table. */
 export async function listAllPartnerPosts(): Promise<Map<string, PartnerPost[]>> {
   const byPartner = new Map<string, PartnerPost[]>();
-  try {
-    const admin = createAdminClient();
-    const { data } = await admin
+  const admin = createAdminClient();
+  const data = ok(
+    await admin
       .from("competition_deadlines")
       .select("*")
       .not("partner_id", "is", null)
-      .order("posted_at", { ascending: false });
-    for (const r of (data ?? []) as Row[]) {
-      const id = r.partner_id as string;
-      const list = byPartner.get(id) ?? [];
-      list.push(postFromRow(r));
-      byPartner.set(id, list);
-    }
-  } catch {
-    // Table or column missing — an empty map renders as "no posts yet".
+      .order("posted_at", { ascending: false }),
+    "listAllPartnerPosts",
+  );
+  for (const r of (data ?? []) as Row[]) {
+    const id = r.partner_id as string;
+    const list = byPartner.get(id) ?? [];
+    list.push(postFromRow(r));
+    byPartner.set(id, list);
   }
   return byPartner;
 }
