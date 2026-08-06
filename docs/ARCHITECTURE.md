@@ -36,8 +36,11 @@ almost never a prompt change.
 | Where a field can lead (career areas + the jobs in them) | `lib/data/careers.ts` — spheres, never one prescribed profession |
 | "What do you want out of work?" | `lib/data/values.ts` (3 questions + pure scoring) — may only REORDER the areas, never filter or change the fields |
 | Where in the world a sphere of work lives | `lib/data/world.ts` — hubs with a catch and a route in, both mandatory |
-| A full destination profile (US, UK, HK, …) | `lib/data/study-destinations.ts` → `/guide/[place]`; trade-offs must outnumber strengths, `notForYou` is mandatory, no prices or rankings |
-| The student's own shell (Opportunities + Guide) | `components/student/StudentShell.tsx`; the report keeps `components/dashboard/DashboardShell.tsx` |
+| A full destination profile (US, UK, HK, …) | `lib/data/study-destinations.ts` → `/guide/places/[place]`; trade-offs must outnumber strengths, `notForYou` is mandatory, no prices or rankings |
+| What you can do without leaving home | `lib/data/from-home.ts` — every route carries its catch and a first move; no URLs (the catalog owns those) |
+| The guide's steps, and what the tabs read | `lib/data/guide-sections.ts` — one registry behind the tabs, the index cards and the "next step" footer |
+| The guide's field filter | `lib/data/guide-fields.ts` (pure, `?f=`) + `lib/guide/student-fields.ts` (the profile default) — "not stated" and "explicitly everything" are different states |
+| The student's own shell (Opportunities + Guide) | `components/student/StudentShell.tsx`; the guide adds its own frame in `app/guide/layout.tsx`; the report keeps `components/dashboard/DashboardShell.tsx` |
 | Loading a signed-in student's facts once | `lib/dashboard/load.ts` — feeds both shells |
 | The dated roadmap | `lib/data/roadmap.ts` |
 | Adding a whole new destination country | `lib/data/country-content.ts`, `deterministic-countries.ts`, `country-views.tsx` — one entry each, not edits across eight files |
