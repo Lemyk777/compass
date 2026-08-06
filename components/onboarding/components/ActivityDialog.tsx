@@ -46,7 +46,10 @@ export default function ActivityDialog({
       aria-labelledby="dialog-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
     >
-      <div className="bg-card border border-line rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-card animate-in fade-in zoom-in-95 duration-200">
+      {/* `animate-fade-up` is the project's own keyframe; the `animate-in` /
+          `zoom-in-95` utilities this used to carry come from tailwindcss-animate,
+          which is not installed, so it had no entrance at all. */}
+      <div className="bg-card border border-line rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-card animate-fade-up [animation-duration:220ms]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-line">
           <h2 id="dialog-title" className="text-lg font-bold text-ink">

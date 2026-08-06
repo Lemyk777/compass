@@ -13,6 +13,8 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 
 import { RUBRIC, computeOverall, type FactorKey } from "@/lib/rubric";
 import { computeOverallFromFactors, computeBenchmarks } from "@/lib/ai/assemble";
@@ -388,6 +390,70 @@ test("the home region leads the map", () => {
   assert.ok(
     HUBS.filter((h) => h.region === "central_asia").length >= 3,
     "the students' own region is barely represented",
+  );
+});
+
+// ── Tailwind utilities that only exist if a plugin is installed ──────────────
+// The actual root cause behind four dead modal animations: Tailwind silently
+// drops utilities it cannot resolve. `animate-in fade-in zoom-in-95` belongs to
+// tailwindcss-animate, which this project does not install — so the classes
+// compiled to nothing, the build stayed green, and the pattern spread by
+// copy-paste to four components over months. Nobody could have caught it by
+// reading a diff.
+//
+// This check closes the loop: if the plugin is absent, its utilities may not
+// appear in the source. Install the plugin and the check relaxes by itself.
+const PLUGIN_ONLY = [
+  /(?<![\w-])animate-in(?![\w-])/,
+  /(?<![\w-])animate-out(?![\w-])/,
+  /(?<![\w-])fade-in(?![\w-])/,
+  /(?<![\w-])fade-out(?![\w-])/,
+  /(?<![\w-])zoom-in-\d+(?![\w-])/,
+  /(?<![\w-])zoom-out-\d+(?![\w-])/,
+  /(?<![\w-])slide-in-from-[a-z]+(?![\w-])/,
+  /(?<![\w-])slide-out-to-[a-z]+(?![\w-])/,
+];
+
+function sourceFiles(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    if (entry === "node_modules" || entry === ".next") continue;
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) sourceFiles(full, out);
+    else if (full.endsWith(".tsx")) out.push(full);
+  }
+  return out;
+}
+
+test("no component uses utilities from a Tailwind plugin we don't install", () => {
+  const pkg = JSON.parse(readFileSync("package.json", "utf8")) as {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  };
+  const installed =
+    "tailwindcss-animate" in { ...pkg.dependencies, ...pkg.devDependencies };
+  const registered = readFileSync("tailwind.config.ts", "utf8").includes(
+    "tailwindcss-animate",
+  );
+  if (installed && registered) return; // plugin is real; its classes are fine.
+
+  const offenders: string[] = [];
+  for (const file of [...sourceFiles("components"), ...sourceFiles("app")]) {
+    // Blank out comments before scanning — prose ABOUT these classes (including
+    // the notes explaining this very rule) is not a use of them. Block comments
+    // are blanked in place so reported line numbers stay true.
+    const src = readFileSync(file, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
+      .replace(/^[ \t]*\/\/.*$/gm, "");
+    src.split("\n").forEach((line, i) => {
+      if (PLUGIN_ONLY.some((re) => re.test(line))) {
+        offenders.push(`${file}:${i + 1}`);
+      }
+    });
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `tailwindcss-animate is not installed, so these classes compile to nothing:\n${offenders.join("\n")}`,
   );
 });
 
