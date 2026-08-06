@@ -45,7 +45,6 @@ export default async function OpportunitiesPage() {
         // section, which still lives under /dashboard.
         basePath="/dashboard"
         canAnalyze
-        standalone
         destinations={ctx.destinations}
         profileMeta={ctx.profileMeta}
         readiness={ctx.readiness}

@@ -7,6 +7,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { denyUnlessCronAuthorized } from "@/lib/cron/auth";
 import { scrapeSatDates, scrapeCompetitionDeadline } from "@/lib/scraper/scrape-dates";
 import { COMPETITIONS, daysBetween, type Competition } from "@/lib/data/key-dates";
 
@@ -42,12 +43,8 @@ function acceptScrapedDate(
 }
 
 export async function GET(req: NextRequest) {
-  // Auth: either Vercel Cron header or a manual trigger from admin
-  const cronSecret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = denyUnlessCronAuthorized(req);
+  if (denied) return denied;
 
   const supabase = createAdminClient();
   const results: Record<string, string> = {};

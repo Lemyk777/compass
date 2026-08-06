@@ -73,7 +73,7 @@ export function AuthAside({ t }: { t: TFunc }) {
 
       {/* ---- middle: a sample result (gauge + radar) ---------------------- */}
       <div
-        className="aside-pop relative max-w-sm rounded-2xl border border-white/12 bg-white/95 p-5 shadow-lift backdrop-blur"
+        className="aside-pop relative max-w-sm rounded-2xl border border-white/[0.12] bg-white/95 p-5 shadow-lift backdrop-blur"
         style={{ animationDelay: "0.3s" }}
       >
         <div className="flex items-center justify-between">

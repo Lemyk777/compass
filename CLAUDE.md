@@ -120,6 +120,22 @@ Spans [lib/ai/prompt.ts](lib/ai/prompt.ts), [lib/ai/analyze.ts](lib/ai/analyze.t
 - **Robustness:** the call is **streamed** (`messages.stream().finalMessage()`), `maxRetries` lets the SDK back off on 429/5xx, and a parse failure retries once. A reply cut off by the token cap (`stop_reason === "max_tokens"`) fails fast with an actionable error. `app/api/analyze/route.ts` sets `maxDuration = 60` and rate-limits to 5 analyses/hour/user.
 - The dashboard re-validates the stored analysis with the full `analysisSchema` and renders charts from the JSON — the model never draws.
 
+## Tailwind classes are linted against the config
+
+`eslint-plugin-tailwindcss` runs inside `next build` with
+`no-custom-classname: error`, so **any class Tailwind cannot generate fails the
+build by name** — a typo (`bg-inkk`), or a utility from a plugin we don't install.
+This exists because Tailwind silently drops what it can't resolve: four modals
+carried `animate-in fade-in zoom-in-95` from the uninstalled `tailwindcss-animate`
+for months and simply never animated, with a green build the whole time. Two
+places had even been patched around with inline `style={{ height: 18 }}`.
+
+Pinned to `eslint-plugin-tailwindcss@3.17.5` on purpose: 3.18 pulls
+`tailwind-api-utils`, which fails to resolve Tailwind 3 ("Could not resolve
+tailwindcss"), and 4.x needs ESLint 9 while Next 14 ships ESLint 8. If a real
+custom class is ever needed, add it to `settings.tailwindcss.whitelist` in
+[.eslintrc.json](.eslintrc.json) — don't disable the rule.
+
 ## Input bounds (single source of truth)
 
 [lib/limits.ts](lib/limits.ts) (`LIMITS`) defines all caps and is enforced in **three places**: the intake Zod schema ([app/onboarding/actions.ts](app/onboarding/actions.ts)), the onboarding UI ([components/onboarding/Onboarding.tsx](components/onboarding/Onboarding.tsx)), and the model-input builder (`buildModelInput` in analyze.ts). Change a limit here and all three follow. This bounds token cost and prevents oversized profiles from timing out the analysis.
@@ -143,13 +159,35 @@ RLS gives every table "own rows only"; ambassador signup counts come from the `s
 
 ## Database migrations
 
-SQL files in [supabase/migrations/](supabase/migrations/). They are applied **manually** in the Supabase SQL editor (no migration runner wired up). After adding a migration, tell the user to run it. `0001_init.sql` = schema + RLS + helper function; `0002_honors.sql` = the `honors` column.
+SQL files in [supabase/migrations/](supabase/migrations/). They are applied **manually** in the Supabase SQL editor (no migration runner wired up). After adding a migration, tell the user to run it.
+
+**`npm run db:check` answers "is the database actually what this code assumes?"**
+in a couple of seconds ([scripts/check-schema.ts](scripts/check-schema.ts)) —
+read-only, one probe per table, no config to expose. Run it after applying a
+migration, and before believing any note about what is applied: the first run
+found `profiles.heard_from` (0006) missing, which had been silently discarding
+every "how did you hear about us?" answer.
+
+**Add the expected columns to that script in the same commit as a new
+migration.** It is what lets defensive scaffolding be deleted instead of
+accumulating: code no longer has to survive an unknown schema, because the
+schema is checkable. The `undefined_column` retry paths around
+`opportunity_intents` were removed on exactly that basis. `0001_init.sql` = schema + RLS + helper function; `0002_honors.sql` = the `honors` column.
 
 ## i18n — the site is English-only
 
 [lib/i18n/dictionary.ts](lib/i18n/dictionary.ts) is a flat `key → string` map. The RU dictionary and the language toggle were **removed** — add new strings in English only, and don't re-add a translation layer. Use `getT()` on the server, `useT()` on the client. New copy can also just live in the component; there is no requirement to route it through the dictionary.
 
 ## Cost & abuse
+
+**Both cron endpoints fail CLOSED** ([lib/cron/auth.ts](lib/cron/auth.ts)): no
+`CRON_SECRET` in the environment ⇒ 503, nobody runs them. The previous gate was
+`if (secret && header !== secret) 401`, which let *everything* through while the
+variable was unset — and it was unset in production. Those routes fetch pages,
+call the model, and write with the service-role key, so an open one is a direct
+route to an unbounded bill. **`CRON_SECRET` must be set in Vercel or the
+scheduled runs stop** (Vercel sends the header automatically once it exists). A
+unit test pins the fail-closed shape.
 
 The only real financial risk is an uncapped API bill. The code rate-limits per user and caps `max_tokens`, but the **hard spend cap must be set in the Anthropic console** (it cannot be set from code). Keep prompt caching working and input bounded.
 

@@ -15,7 +15,8 @@
     "trace:reasoning": "node --env-file=.env.local --import tsx scripts/trace-reasoning.ts",
     "test:onboarding": "node --experimental-test-module-mocks --import tsx --test scripts/test-onboarding.ts",
     "test:unit": "node --import tsx --test scripts/test-engine.ts",
-    "create:test-user": "node --env-file=.env.local --import tsx scripts/create-test-user.ts"
+    "create:test-user": "node --env-file=.env.local --import tsx scripts/create-test-user.ts",
+    "db:check": "node --env-file=.env.local --import tsx scripts/check-schema.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
@@ -42,6 +43,7 @@
     "autoprefixer": "^10.5.4",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",
+    "eslint-plugin-tailwindcss": "3.17.5",
     "postcss": "^8.5.25",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.23.1",

@@ -416,22 +416,6 @@ export async function saveFaculties(faculties: string[]): Promise<SaveResult> {
 // measure is a click, and clicks are what convinced an entire research
 // literature that nudges worked when they did not.
 
-function intentTableMissing(code?: string): boolean {
-  // 42P01 = undefined_table, PGRST205 = PostgREST can't find it in the schema
-  // cache. Both mean migration 0022 has not been applied yet.
-  return code === "42P01" || code === "PGRST205";
-}
-
-function whyColumnMissing(code?: string): boolean {
-  // 42703 = undefined_column, PGRST204 = PostgREST doesn't know the column yet.
-  // Both mean the intents table exists (0022) but why_matters (0023) does not —
-  // so the commit itself can still be saved, just without the note.
-  return code === "42703" || code === "PGRST204";
-}
-
-const INTENT_MIGRATION_HINT =
-  "Saving your plans isn't enabled on this database yet. Apply migration 0022_opportunity_intents.sql.";
-
 /**
  * Record (or update) that the student intends to enter an opportunity, with the
  * concrete moment they said they'd start. Upserts on (user, opportunity), so
@@ -466,32 +450,18 @@ export async function saveOpportunityIntent(input: {
     start_detail: cleanIntentText(input.startDetail),
     updated_at: new Date().toISOString(),
   };
-  // Only touch why_matters when the caller actually passed it. A legacy caller
-  // that omits the field leaves any existing note untouched (undefined ⇒ the
-  // column is left out of the upsert), and — crucially — a deploy that lands
-  // before migration 0023 keeps the whole "I'm doing this" flow working, since
-  // the failing column is never in the statement to begin with.
-  const withWhy =
+  // why_matters is only written when the caller passed it, so a caller that
+  // omits the field leaves an existing note untouched.
+  const row =
     input.whyMatters !== undefined
       ? { ...core, why_matters: cleanIntentText(input.whyMatters, WHY_MATTERS_MAX) }
       : core;
 
-  const conflict = { onConflict: "user_id,opportunity_id" } as const;
-  let { error } = await supabase.from("opportunity_intents").upsert(withWhy, conflict);
+  const { error } = await supabase
+    .from("opportunity_intents")
+    .upsert(row, { onConflict: "user_id,opportunity_id" });
 
-  // 0023 not applied yet: save everything except the note rather than losing the
-  // commit. The note stays in the client's optimistic state for this session and
-  // persists for real once the migration lands.
-  if (error && whyColumnMissing(error.code) && withWhy !== core) {
-    ({ error } = await supabase.from("opportunity_intents").upsert(core, conflict));
-  }
-
-  if (error) {
-    if (intentTableMissing(error.code)) {
-      return { ok: false, error: INTENT_MIGRATION_HINT };
-    }
-    return { ok: false, error: "Could not save that. Try again." };
-  }
+  if (error) return { ok: false, error: "Could not save that. Try again." };
 
   try {
     revalidatePath("/opportunities");
@@ -517,12 +487,7 @@ export async function clearOpportunityIntent(
     .eq("user_id", user.id)
     .eq("opportunity_id", opportunityId);
 
-  if (error) {
-    if (intentTableMissing(error.code)) {
-      return { ok: false, error: INTENT_MIGRATION_HINT };
-    }
-    return { ok: false, error: "Could not update that. Try again." };
-  }
+  if (error) return { ok: false, error: "Could not update that. Try again." };
 
   try {
     revalidatePath("/opportunities");

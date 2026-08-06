@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { analysisSchema, sanitizeAnalysis, type Analysis } from "@/lib/ai/schema";
 import type { SatSitting, Competition } from "@/lib/data/key-dates";
@@ -28,8 +29,30 @@ export type StudentContext = {
   liveDates: { satSittings: SatSitting[]; competitions: Competition[] };
 };
 
-export async function loadStudentContext(
+/**
+ * Deduplicated per request by React `cache`, so the layout and any page under
+ * it share ONE set of queries and therefore one answer. That matters more than
+ * the saved round-trips: before this, `/dashboard/opportunities` asked its own
+ * "does an analysis row exist?" question while the layout asked "does an
+ * analysis row PARSE?" — two predicates, and a corrupt row made the sidebar and
+ * the page disagree about whether the panel exists. Keyed on primitives because
+ * `cache` compares arguments by identity and each caller builds its own session
+ * object.
+ */
+const load = cache(
+  async (userId: string, country: string | null): Promise<StudentContext> =>
+    loadUncached(userId, country),
+);
+
+export function loadStudentContext(
   session: SessionProfile,
+): Promise<StudentContext> {
+  return load(session.id, session.country);
+}
+
+async function loadUncached(
+  userId: string,
+  country: string | null,
 ): Promise<StudentContext> {
   const supabase = createClient();
 
@@ -44,7 +67,7 @@ export async function loadStudentContext(
     supabase
       .from("analyses")
       .select("output")
-      .eq("user_id", session.id)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -52,7 +75,7 @@ export async function loadStudentContext(
     supabase
       .from("student_profiles")
       .select("*")
-      .eq("user_id", session.id)
+      .eq("user_id", userId)
       .maybeSingle(),
     // Live SAT dates from Supabase (populated by the cron scraper). If the table
     // doesn't exist yet (migration not applied), this returns null and the
@@ -72,7 +95,7 @@ export async function loadStudentContext(
     supabase
       .from("opportunity_intents")
       .select("*")
-      .eq("user_id", session.id),
+      .eq("user_id", userId),
     // Partner organisations (migration 0024). Only ACTIVE ones: a post whose
     // partner is missing here is dropped entirely, which is what makes
     // suspending an organisation take its opportunities down with it.
@@ -110,7 +133,7 @@ export async function loadStudentContext(
   // already know, so a returning student sees a head start rather than a blank
   // form. See lib/data/readiness.ts.
   const readiness = buildReadiness({
-    country: Boolean(normalizeCountry(session.country)),
+    country: Boolean(normalizeCountry(country)),
     year: sp?.graduation_year != null,
     faculties: Array.isArray(sp?.faculties) && sp!.faculties.length > 0,
     curriculum: Boolean(sp?.curriculum),
@@ -163,7 +186,7 @@ export async function loadStudentContext(
       graduationYear: (sp?.graduation_year as number | null) ?? undefined,
       faculties: Array.isArray(sp?.faculties) ? (sp!.faculties as string[]) : [],
       satScore: (sp?.tests as { SAT?: number } | null)?.SAT,
-      homeCountry: normalizeCountry(session.country),
+      homeCountry: normalizeCountry(country),
     },
     readiness,
     intents,
