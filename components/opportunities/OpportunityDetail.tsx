@@ -143,10 +143,15 @@ export function OpportunityDetail({
       }}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
     >
+      {/* `animate-fade-up` is the project's OWN keyframe (tailwind.config.ts).
+          This used to carry `animate-in fade-in zoom-in-95`, which comes from
+          the tailwindcss-animate plugin — not installed here, so the panel had
+          no entrance at all. The duration override keeps the original ~200ms
+          intent; fade-up's default 0.5s is sluggish for a modal. */}
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="flex max-h-[92vh] w-full max-w-2xl flex-col rounded-t-2xl border border-line bg-card shadow-card outline-none animate-in fade-in zoom-in-95 duration-200 sm:max-h-[88vh] sm:rounded-2xl"
+        className="flex max-h-[92vh] w-full max-w-2xl flex-col rounded-t-2xl border border-line bg-card shadow-card outline-none animate-fade-up [animation-duration:220ms] sm:max-h-[88vh] sm:rounded-2xl"
       >
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4 sm:px-6">
