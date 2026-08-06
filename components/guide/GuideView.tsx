@@ -9,26 +9,45 @@ import {
 } from "@/lib/data/careers";
 import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { ValuesRefine } from "@/components/opportunities/ValuesRefine";
+import { GuideSheet, SheetBlock } from "@/components/guide/GuideSheet";
 import {
   rankAreasByValues,
   scoreValues,
+  VALUE_LABEL,
   type ValuesAnswers,
 } from "@/lib/data/values";
 import { hubsByRegion, REGION_LABEL, type Hub } from "@/lib/data/world";
-import { destinationsForFaculties } from "@/lib/data/study-destinations";
+import {
+  STUDY_DESTINATIONS,
+  destinationsForFaculties,
+} from "@/lib/data/study-destinations";
 
 // The guide: one page for the whole question a catalog can't answer — what is
 // out there, where it is, and how someone standing here reaches it.
 //
-// The throughline is interest → field → sphere of work → the places that work
-// lives → what you can enter from home this year. The last step deliberately
-// points back at Opportunities: a guide that ends in inspiration and no action
-// is the intervention the research says measures zero.
+// **Cards, then depth on demand.** The first version put every sphere and every
+// city fully expanded on one scroll, which meant finding anything required
+// reading everything — a wall of text is not a guide, it is a document. Each
+// subject is now a small card carrying the one line you need to decide whether
+// to open it, and the full detail lives in a sheet you open deliberately.
 //
-// Everything here is deterministic and curated (careers.ts + world.ts). No model
-// call, and no city gets an appeal without its catch.
+// The order is a zoom, and it matters: kinds of work → the cities that work sits
+// in → the destinations in full → what you can do from home without moving. The
+// destination section is intentionally left as plain cards linking to their own
+// pages; those profiles are long enough to deserve a page, not a sheet.
+//
+// Everything is deterministic and curated (careers.ts + world.ts +
+// study-destinations.ts). No model call, and no place gets an appeal without its
+// catch.
 
 const VALUES_KEY = "compass.work-values.v1";
+
+const SECTIONS = [
+  { id: "work", label: "Kinds of work" },
+  { id: "cities", label: "Cities" },
+  { id: "destinations", label: "Destinations" },
+  { id: "from-home", label: "From home" },
+];
 
 export function GuideView({
   initialFaculties,
@@ -39,6 +58,13 @@ export function GuideView({
 }) {
   const [selected, setSelected] = useState<FacultyValue[]>(initialFaculties);
   const [values, setValues] = useState<ValuesAnswers>({});
+  // Exactly one sheet is open at a time — a subject, not a stack. Kept as ONE
+  // piece of state rather than two booleans: two independent flags could both be
+  // set, and GuideSheet gives its title a fixed id, so two open sheets would put
+  // duplicate ids in the DOM and point aria-labelledby at the wrong one.
+  const [open, setOpen] = useState<
+    { kind: "area"; area: CareerArea } | { kind: "hub"; hub: Hub } | null
+  >(null);
 
   // Shared with the answers given anywhere else in the product — same key, so a
   // student never answers these twice.
@@ -75,9 +101,10 @@ export function GuideView({
   const regions = hubsByRegion(selected);
   const destinations = destinationsForFaculties(selected);
   const showingAll = selected.length === 0;
+  const cityCount = regions.reduce((n, r) => n + r.hubs.length, 0);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <header>
         <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-faint">
           The guide
@@ -86,21 +113,41 @@ export function GuideView({
           Where this can take you
         </h1>
         <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft">
-          A field is not a goal, and a job title is not a life. This page goes
-          the whole way: what kinds of work a field opens, where in the world
-          that work actually sits, what each of those places really costs you —
-          and what you can enter from home this year to move toward it.
+          A field is not a goal, and a job title is not a life. Four steps: what
+          kinds of work a field opens, the cities that work sits in, the big
+          destinations in full — and what you can enter from home this year
+          without moving anywhere.
         </p>
       </header>
 
-      {/* ── Pick the fields ─────────────────────────────────────────────── */}
+      {/* Section nav. The page is long by nature; this makes it navigable
+          instead of something you fall through. */}
+      <nav
+        aria-label="Sections"
+        className="sticky top-16 z-20 -mx-4 overflow-x-auto border-y border-line bg-surface/90 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6"
+      >
+        <ul className="flex gap-2">
+          {SECTIONS.map((s) => (
+            <li key={s.id}>
+              <a
+                href={`#${s.id}`}
+                className="inline-flex h-9 items-center whitespace-nowrap rounded-full border border-line bg-card px-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring"
+              >
+                {s.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {/* ── Your fields ─────────────────────────────────────────────────── */}
       <section>
         <h2 className="text-lg font-semibold text-ink">
           {signedIn ? "Your fields" : "Start with a field"}
         </h2>
         <p className="mt-1 text-sm text-ink-soft">
           {showingAll
-            ? "Showing everything. Pick one or two to narrow it down."
+            ? "Showing everything. Pick one or two to narrow the whole page."
             : "Tap to add or drop a field — nothing here is saved to your profile."}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -125,48 +172,14 @@ export function GuideView({
         </div>
       </section>
 
-      {/* Nothing chosen yet: the whole taxonomy at a glance, one line per field.
-          Rendering all 33 areas in full here would be the wall of cards we keep
-          removing — titles only, and tapping a field opens it properly. */}
-      {showingAll && (
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-ink">
-            Every field, and what it opens
-          </h2>
-          <ul className="space-y-2">
-            {FACULTIES.map((f) => (
-              <li key={f.value}>
-                <button
-                  type="button"
-                  onClick={() => toggle(f.value)}
-                  className="w-full rounded-xl border border-line bg-card p-3.5 text-left transition-colors hover:border-accent focus-visible:focus-ring"
-                >
-                  <span className="block text-sm font-semibold text-ink">
-                    {FACULTY_LABEL[f.value]}
-                  </span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-ink-soft">
-                    {careerAreaTitles(f.value).join(" · ")}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {/* ── 1. Kinds of work ────────────────────────────────────────────── */}
+      <section id="work" className="scroll-mt-28 space-y-4">
+        <SectionHead
+          step={1}
+          title="Kinds of work"
+          hint="Areas, not one prescribed job. Open any card for the actual job titles inside it and the path in."
+        />
 
-      {/* The optional questions sit OUTSIDE the field-dependent block on
-          purpose: they used to render only once a field was chosen, which meant
-          anyone browsing the whole guide never saw they existed. They are
-          answerable at any time; the reordering they drive simply starts
-          applying as soon as there is something to reorder. */}
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-ink">
-          What do you want out of work?
-        </h2>
-        <p className="max-w-2xl text-sm leading-relaxed text-ink-soft">
-          Three optional questions. They never change which opportunities you
-          see — they only put the kinds of work closest to your answers first.
-        </p>
         <ValuesRefine
           answers={values}
           onAnswer={(questionId, optionId) =>
@@ -174,47 +187,80 @@ export function GuideView({
           }
           onClear={() => persistValues({})}
         />
-      </section>
 
-      {/* ── Kinds of work ───────────────────────────────────────────────── */}
-      {groups.length > 0 && (
-        <section className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-ink">Kinds of work</h2>
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-soft">
-              Areas, not one prescribed job — nobody can see which of these you
-              are reaching for, and most people move between them anyway.
-            </p>
-          </div>
-
-          {groups.map((g) => (
+        {showingAll ? (
+          <ul className="grid gap-2.5 sm:grid-cols-2">
+            {FACULTIES.map((f) => (
+              <li key={f.value}>
+                <Card
+                  title={FACULTY_LABEL[f.value]}
+                  line={careerAreaTitles(f.value).join(" · ")}
+                  cta="Open this field"
+                  onClick={() => toggle(f.value)}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          groups.map((g) => (
             <div key={g.faculty} className="space-y-2.5">
               <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
                 {FACULTY_LABEL[g.faculty]}
               </p>
               <ul className="grid gap-2.5 sm:grid-cols-2">
                 {g.rows.map((r) => (
-                  <AreaCard key={r.area.title} area={r.area} fits={r.fits} />
+                  <li key={r.area.title}>
+                    <Card
+                      title={r.area.title}
+                      line={r.area.what}
+                      badge={r.fits ? "Closest to what you said" : undefined}
+                      cta={`${r.area.roles.length} jobs inside`}
+                      onClick={() => setOpen({ kind: "area", area: r.area })}
+                    />
+                  </li>
                 ))}
               </ul>
             </div>
-          ))}
-        </section>
-      )}
+          ))
+        )}
+      </section>
 
-      {/* ── The big destinations, in full ───────────────────────────────── */}
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-lg font-semibold text-ink">
-            The big destinations, in full
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-soft">
-            The places students actually argue about. Each one opens a full
-            page: what only it gives you, what it genuinely costs, what
-            admissions weighs, what happens after you graduate — and who should
-            go somewhere else instead.
-          </p>
-        </div>
+      {/* ── 2. Cities ───────────────────────────────────────────────────── */}
+      <section id="cities" className="scroll-mt-28 space-y-4">
+        <SectionHead
+          step={2}
+          title="The cities that work sits in"
+          hint={`${cityCount} places, home region first. Open one for its catch and the real way in — a city with only good news listed would be an advert.`}
+        />
+        {regions.map((g) => (
+          <div key={g.region} className="space-y-2.5">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
+              {REGION_LABEL[g.region]}
+            </p>
+            <ul className="grid gap-2.5 sm:grid-cols-2">
+              {g.hubs.map((h) => (
+                <li key={h.id}>
+                  <Card
+                    title={h.city}
+                    sub={h.country}
+                    line={h.what}
+                    cta="The catch & the way in"
+                    onClick={() => setOpen({ kind: "hub", hub: h })}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+
+      {/* ── 3. Destinations — left as it is, on purpose ─────────────────── */}
+      <section id="destinations" className="scroll-mt-28 space-y-3">
+        <SectionHead
+          step={3}
+          title="The big destinations, in full"
+          hint="The places students actually argue about. Each opens a full page: what only it gives you, what it genuinely costs, what admissions weighs, what happens after you graduate — and who should go somewhere else instead."
+        />
         <ul className="grid gap-2.5 sm:grid-cols-2">
           {destinations.map((d) => (
             <li key={d.id}>
@@ -241,39 +287,12 @@ export function GuideView({
         </ul>
       </section>
 
-      {/* ── The map ─────────────────────────────────────────────────────── */}
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold text-ink">
-            Where this work is, on the map
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-soft">
-            Every place here comes with its catch and its door in. A city with
-            only good news listed would be an advert, and the door matters more
-            than the appeal: knowing Zurich funds deep tech is useless without
-            knowing how someone from Shymkent gets there.
-          </p>
-        </div>
-
-        {regions.map((g) => (
-          <div key={g.region} className="space-y-2.5">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
-              {REGION_LABEL[g.region]}
-            </p>
-            <ul className="space-y-2.5">
-              {g.hubs.map((h) => (
-                <HubCard key={h.id} hub={h} />
-              ))}
-            </ul>
-          </div>
-        ))}
-      </section>
-
-      {/* ── And the honest alternative ──────────────────────────────────── */}
-      <section className="rounded-2xl border border-line bg-card p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-ink">
-          You don&rsquo;t have to move
-        </h2>
+      {/* ── 4. From home ────────────────────────────────────────────────── */}
+      <section
+        id="from-home"
+        className="scroll-mt-28 rounded-2xl border border-line bg-card p-5 sm:p-6"
+      >
+        <SectionHead step={4} title="You don’t have to move" />
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-soft">
           Several of these spheres pay from anywhere, and the entry points are
           open to you right now, from home: Google Summer of Code, Outreachy and
@@ -292,77 +311,179 @@ export function GuideView({
           </Link>
         </div>
       </section>
+
+      {open?.kind === "area" && (
+        <GuideSheet
+          title={open.area.title}
+          subtitle={open.area.what}
+          onClose={() => setOpen(null)}
+        >
+          <div className="space-y-3">
+            <SheetBlock label="The jobs inside this area">
+              <ul className="mt-1 flex flex-wrap gap-1.5">
+                {open.area.roles.map((role) => (
+                  <li
+                    key={role}
+                    className="rounded-lg border border-line bg-card px-2 py-1 text-xs text-ink-soft"
+                  >
+                    {role}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-ink-faint">
+                A list, not a recommendation — you narrow it, we don&rsquo;t.
+              </p>
+            </SheetBlock>
+            <SheetBlock label="The path in" tone="good">
+              {open.area.path}
+            </SheetBlock>
+            <SheetBlock label="What this kind of work usually offers">
+              {open.area.values.map((v) => VALUE_LABEL[v]).join(" · ")}
+              <span className="mt-1 block text-xs text-ink-faint">
+                A generalisation about the sphere, not a promise about a salary.
+              </span>
+            </SheetBlock>
+          </div>
+        </GuideSheet>
+      )}
+
+      {open?.kind === "hub" && (
+        <GuideSheet
+          title={open.hub.city}
+          subtitle={open.hub.country}
+          onClose={() => setOpen(null)}
+        >
+          <div className="space-y-3">
+            <p className="text-sm leading-relaxed text-ink-soft">
+              {open.hub.what}
+            </p>
+            <SheetBlock label="The catch" tone="warn">
+              {open.hub.catch}
+            </SheetBlock>
+            <SheetBlock label="The way in" tone="good">
+              {open.hub.route}
+            </SheetBlock>
+            <SheetBlock label="The work that clusters here">
+              {open.hub.fields.map((f) => FACULTY_LABEL[f]).join(" · ")}
+            </SheetBlock>
+            {/* If this city sits in a destination we profile, that page is the
+                next question the student will have. */}
+            {STUDY_DESTINATIONS.filter((d) => d.hubs.includes(open.hub.id)).map(
+              (d) => (
+                <Link
+                  key={d.id}
+                  href={`/guide/${d.id}`}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent-soft/25 p-3.5 transition-colors hover:border-accent focus-visible:focus-ring"
+                >
+                  <span className="text-sm font-medium text-ink">
+                    Everything about {d.name}
+                  </span>
+                  <span className="text-ink-faint" aria-hidden>
+                    &rarr;
+                  </span>
+                </Link>
+              ),
+            )}
+          </div>
+        </GuideSheet>
+      )}
     </div>
   );
 }
 
-function AreaCard({ area, fits }: { area: CareerArea; fits: boolean }) {
+function SectionHead({
+  step,
+  title,
+  hint,
+}: {
+  step: number;
+  title: string;
+  hint?: string;
+}) {
   return (
-    <li
-      className={`rounded-2xl border p-4 ${
-        fits ? "border-accent/50 bg-accent-soft/25" : "border-line bg-card"
-      }`}
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm font-semibold text-ink">{area.title}</p>
-        {fits && (
-          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-ink">
-            Closest to what you said
-          </span>
-        )}
+    <div>
+      <div className="flex items-center gap-2.5">
+        <span
+          data-num
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white"
+        >
+          {step}
+        </span>
+        <h2 className="text-lg font-semibold text-ink">{title}</h2>
       </div>
-      <p className="mt-1 text-sm leading-relaxed text-ink-soft">{area.what}</p>
-      <ul className="mt-2.5 flex flex-wrap gap-1.5">
-        {area.roles.map((role) => (
-          <li
-            key={role}
-            className="rounded-lg border border-line bg-surface/60 px-2 py-1 text-xs text-ink-soft"
-          >
-            {role}
-          </li>
-        ))}
-      </ul>
-      <p className="mt-2.5 text-xs leading-relaxed text-ink-faint">
-        <span className="font-medium text-ink-soft">Path:</span> {area.path}
-      </p>
-    </li>
+      {hint && (
+        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-soft">
+          {hint}
+        </p>
+      )}
+    </div>
   );
 }
 
-function HubCard({ hub }: { hub: Hub }) {
+/** A small card that says, visibly, that opening it gives you more. */
+function Card({
+  title,
+  sub,
+  line,
+  badge,
+  cta,
+  onClick,
+}: {
+  title: string;
+  sub?: string;
+  line: string;
+  badge?: string;
+  cta: string;
+  onClick: () => void;
+}) {
   return (
-    <li className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <h3 className="text-base font-semibold text-ink">{hub.city}</h3>
-        <span className="text-sm text-ink-faint">{hub.country}</span>
-      </div>
-      <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{hub.what}</p>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group flex h-full w-full flex-col rounded-2xl border p-4 text-left transition-colors focus-visible:focus-ring ${
+        badge
+          ? "border-accent/50 bg-accent-soft/25 hover:border-accent"
+          : "border-line bg-card hover:border-accent"
+      }`}
+    >
+      <span className="flex items-start justify-between gap-2">
+        <span className="min-w-0">
+          <span className="text-sm font-semibold text-ink">{title}</span>
+          {sub && (
+            <span className="ml-1.5 text-sm font-normal text-ink-faint">
+              {sub}
+            </span>
+          )}
+        </span>
+        <ExpandGlyph />
+      </span>
+      {badge && (
+        <span className="mt-1.5 inline-flex w-fit rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-ink">
+          {badge}
+        </span>
+      )}
+      <span className="mt-1 line-clamp-2 text-sm leading-relaxed text-ink-soft">
+        {line}
+      </span>
+      <span className="mt-2.5 text-xs font-medium text-accent">{cta} &rarr;</span>
+    </button>
+  );
+}
 
-      <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-        <p className="rounded-xl border border-line bg-surface/60 p-3 text-xs leading-relaxed text-ink-soft">
-          <span className="block font-semibold uppercase tracking-wide text-ink-faint">
-            The catch
-          </span>
-          <span className="mt-1 block">{hub.catch}</span>
-        </p>
-        <p className="rounded-xl border border-accent/30 bg-accent-soft/20 p-3 text-xs leading-relaxed text-ink-soft">
-          <span className="block font-semibold uppercase tracking-wide text-accent-ink">
-            The way in
-          </span>
-          <span className="mt-1 block">{hub.route}</span>
-        </p>
-      </div>
-
-      <ul className="mt-3 flex flex-wrap gap-1.5">
-        {hub.fields.map((f) => (
-          <li
-            key={f}
-            className="rounded-lg bg-surface px-2 py-1 text-[11px] font-medium text-ink-faint"
-          >
-            {FACULTY_LABEL[f]}
-          </li>
-        ))}
-      </ul>
-    </li>
+function ExpandGlyph() {
+  return (
+    <svg
+      className="h-4 w-4 shrink-0 text-ink-faint transition-colors group-hover:text-accent"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2v-4M15 3h4a2 2 0 0 1 2 2v4" />
+      <path d="M21 3l-7 7M3 21l7-7" />
+    </svg>
   );
 }

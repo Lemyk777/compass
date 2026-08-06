@@ -56,7 +56,9 @@ export default function HonorDialog({
       aria-labelledby="dialog-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
     >
-      <div className="bg-card border border-line rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-card animate-in fade-in zoom-in-95 duration-200">
+      {/* Same entrance as the other dialogs — see ActivityDialog for why the
+          previous `animate-in` classes did nothing. */}
+      <div className="bg-card border border-line rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-card animate-fade-up [animation-duration:220ms]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-line">
           <h2 id="dialog-title" className="text-lg font-bold text-ink">
