@@ -7,6 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { competitionsFromRows } from "@/lib/partners/live";
 import {
   SAT_SITTINGS,
   resolveCompetitions,
@@ -43,21 +44,22 @@ export async function GET() {
       .order("deadline", { ascending: true });
 
     if (compRows && compRows.length > 0) {
-      // resolveCompetitions keeps the curated code authoritative and overlays a
-      // live date only when the scraper confirmed it (date_confirmed) — so a
-      // stale seed or an unconfirmed scrape can't surface a wrong date here.
+      // Map through competitionsFromRows — the SAME function both student
+      // surfaces use — not by hand. This route used to do its own mapping, and
+      // that quietly disabled the moderation kill switch on it: a post an admin
+      // had taken down, or one belonging to a SUSPENDED partner, kept being
+      // served from this public URL after it had vanished from the product.
+      // resolveCompetitions still keeps the curated entry authoritative and
+      // overlays a live date only when the scraper confirmed it.
+      const { data: partnerRows } = await supabase
+        .from("partners")
+        .select("*")
+        .eq("status", "active");
       competitions = resolveCompetitions(
-        compRows.map((r) => ({
-          id: r.id,
-          name: r.name,
-          fields: r.fields as Competition["fields"],
-          deadline: r.deadline,
-          window: r.event_window,
-          level: r.level as Competition["level"],
-          url: r.url,
-          blurb: r.blurb,
-          dateConfirmed: r.date_confirmed === true,
-        }))
+        competitionsFromRows(
+          compRows as Record<string, unknown>[],
+          partnerRows as Record<string, unknown>[] | null,
+        ),
       );
     }
   } catch (e) {

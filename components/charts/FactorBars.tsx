@@ -76,7 +76,7 @@ export function FactorBars({
                   </ul>
                 )}
                 {f.note && (
-                  <p className="text-xs italic leading-relaxed text-ink-soft bg-card-surface/50 rounded-md p-2 border border-line/30">
+                  <p className="text-xs italic leading-relaxed text-ink-soft bg-surface/50 rounded-md p-2 border border-line/30">
                     Takeaway: {f.note}
                   </p>
                 )}

@@ -78,7 +78,7 @@ export function LockedSection({
                 <ul className="mt-5 space-y-2.5">
                   {bullets.map((b) => (
                     <li key={b} className="flex items-start gap-2.5 text-sm text-ink">
-                      <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-accent text-white" style={{ height: 18, width: 18 }}>
+                      <span className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-accent text-white">
                         <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M5 12l5 5L20 7" />
                         </svg>
