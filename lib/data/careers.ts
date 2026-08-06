@@ -505,3 +505,34 @@ export function careerAreasForFaculties(
 export function careerAreaTitles(faculty: FacultyValue): string[] {
   return (CAREER_AREAS_BY_FACULTY[faculty] ?? []).map((a) => a.title);
 }
+
+/**
+ * The URL slug for an area — `/guide/work/data-and-ai`.
+ *
+ * Areas carry no id of their own: the title IS the identity, both to the student
+ * and in this file, and a parallel id column would be one more thing to keep in
+ * sync for no gain. So the slug is derived, and a unit test pins that all of
+ * them stay distinct — a collision would silently serve one area's page under
+ * another's name.
+ */
+export function areaSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Every area with the field it belongs to — the flat view the routes need. */
+export function allCareerAreas(): { faculty: FacultyValue; area: CareerArea }[] {
+  return (
+    Object.entries(CAREER_AREAS_BY_FACULTY) as [FacultyValue, CareerArea[]][]
+  ).flatMap(([faculty, areas]) => areas.map((area) => ({ faculty, area })));
+}
+
+/** One area by slug, with its field. Undefined for anything unknown. */
+export function areaBySlug(
+  slug: string,
+): { faculty: FacultyValue; area: CareerArea } | undefined {
+  return allCareerAreas().find(({ area }) => areaSlug(area.title) === slug);
+}

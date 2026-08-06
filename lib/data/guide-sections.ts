@@ -1,0 +1,92 @@
+// The guide's four sub-sections, in one place.
+//
+// This registry is the whole reason the section stopped being a single scroll:
+// the tabs, the index cards and the "next step" footer on every page all read
+// it, so adding or renaming a step is one edit rather than four that drift.
+//
+// The order is a zoom, and it is the argument the guide makes: what kinds of
+// work a field opens → the cities that work sits in → the destinations in full
+// → and what you can enter from home without moving at all. The last step is
+// deliberately last and deliberately present; a guide that only says "leave" is
+// a bad guide for our students.
+//
+// Pure data, no imports — the tabs are a client island and this must stay free
+// to travel into that bundle.
+
+export type GuideSectionId = "work" | "cities" | "places" | "from-home";
+
+export type GuideSection = {
+  id: GuideSectionId;
+  /** Position in the zoom, shown as the step number. */
+  step: number;
+  href: string;
+  /** Short form, for the tab. */
+  label: string;
+  /** The page's own h1. */
+  title: string;
+  /** One line: what this step answers. */
+  blurb: string;
+};
+
+export const GUIDE_SECTIONS: GuideSection[] = [
+  {
+    id: "work",
+    step: 1,
+    href: "/guide/work",
+    label: "Kinds of work",
+    title: "Kinds of work",
+    blurb:
+      "Areas of work a field opens — not one prescribed job. Each one lists the actual titles people hold inside it and how you get there.",
+  },
+  {
+    id: "cities",
+    step: 2,
+    href: "/guide/cities",
+    label: "Cities",
+    title: "The cities that work sits in",
+    blurb:
+      "Where each sphere actually clusters, home region first — with the honest catch and the real way in for every place.",
+  },
+  {
+    id: "places",
+    step: 3,
+    href: "/guide/places",
+    label: "Destinations",
+    title: "The big destinations, in full",
+    blurb:
+      "The countries students actually argue about: what only each one gives you, what it genuinely costs, and who should go somewhere else.",
+  },
+  {
+    id: "from-home",
+    step: 4,
+    href: "/guide/from-home",
+    label: "From home",
+    title: "You don’t have to move",
+    blurb:
+      "Routes that pay, teach or judge you from where you already are. Leaving is one answer. It is not the only one.",
+  },
+];
+
+export function guideSection(id: GuideSectionId): GuideSection {
+  // Non-null: the ids are a closed union and the array covers all of them.
+  return GUIDE_SECTIONS.find((s) => s.id === id)!;
+}
+
+/** The step after this one, for the footer that keeps the zoom moving. */
+export function nextGuideSection(id: GuideSectionId): GuideSection | undefined {
+  const i = GUIDE_SECTIONS.findIndex((s) => s.id === id);
+  return i === -1 ? undefined : GUIDE_SECTIONS[i + 1];
+}
+
+/**
+ * The name that ties a card to the page it opens, so the browser morphs the one
+ * into the other instead of cutting. Both sides must produce the identical
+ * string, which is the entire reason it is a function and not two literals.
+ *
+ * A `view-transition-name` must be a CSS custom-ident and unique in the
+ * document: the `guide-` prefix keeps it from starting with a digit, and the
+ * subject's own id keeps it unique within a list.
+ */
+export function guideMorph(kind: "area" | "hub" | "place", id: string): string {
+  return `guide-${kind}-${id}`;
+}
