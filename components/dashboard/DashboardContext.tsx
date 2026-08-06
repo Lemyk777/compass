@@ -34,13 +34,6 @@ type DashboardCtx = {
   basePath: string;
   isAdmin: boolean;
   demo: boolean;
-  /**
-   * True when this view IS the dedicated Opportunities section (/opportunities)
-   * rather than the same view rendered as a panel inside the report shell. The
-   * report copy needs to offer the door across; the section itself must not
-   * offer a door to itself.
-   */
-  standalone: boolean;
   tabs: DestinationCode[];
   country: DestinationCode;
   setCountry: (code: DestinationCode) => void;
@@ -113,7 +106,6 @@ export function DashboardProvider({
   basePath,
   canAnalyze,
   demo = false,
-  standalone = false,
   destinations = [],
   profileMeta = { faculties: [] },
   readiness = null,
@@ -128,8 +120,6 @@ export function DashboardProvider({
   basePath: string;
   canAnalyze: boolean;
   demo?: boolean;
-  /** Set on /opportunities — the dedicated section, not the report's panel. */
-  standalone?: boolean;
   // The student's chosen destination countries — drives the country tabs so
   // every selected country shows. Optional: demo/legacy fall back to content.
   destinations?: DestinationCode[];
@@ -212,7 +202,6 @@ export function DashboardProvider({
       basePath,
       isAdmin,
       demo,
-      standalone,
       tabs,
       country: activeCountry,
       setCountry,
@@ -233,7 +222,6 @@ export function DashboardProvider({
       basePath,
       isAdmin,
       demo,
-      standalone,
       tabs,
       activeCountry,
       profileMeta,

@@ -10,6 +10,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { denyUnlessCronAuthorized } from "@/lib/cron/auth";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { LOCAL_TARGETS, normalizeCountry } from "@/lib/data/geo";
 import {
@@ -25,11 +26,8 @@ export const maxDuration = 300; // web search + per-candidate verification is sl
 const FACULTIES_PER_RUN = 2;
 
 export async function GET(req: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = denyUnlessCronAuthorized(req);
+  if (denied) return denied;
 
   const supabase = createAdminClient();
   const results: Record<string, string> = {};

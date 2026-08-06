@@ -19,6 +19,7 @@ import { InterestQuiz } from "@/components/opportunities/InterestQuiz";
 import { DirectionSummary } from "@/components/opportunities/DirectionSummary";
 import Link from "@/components/ui/Link";
 import { OpportunityRow } from "@/components/opportunities/CommitRow";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import type {
   CompetitionCategory,
@@ -97,8 +98,11 @@ const SHOWN = 5;
 const PAGE = 8;
 
 export function OpportunitiesView() {
-  const { analysis, hasProfile, profileMeta, liveDates, basePath, standalone } =
-    useDashboard();
+  const { analysis, hasProfile, profileMeta, liveDates, basePath } = useDashboard();
+  // Derived, not configured: this view is the dedicated section when it IS the
+  // dedicated section. A flag threaded through the provider was one more thing
+  // to wire correctly at every call site, and one more way to be wrong.
+  const standalone = usePathname() === "/opportunities";
 
   // "today" depends on the visitor's clock — resolve on the client to avoid a
   // hydration mismatch (same pattern as the Timeline view).

@@ -230,10 +230,9 @@ export function MultiSelectField({
                   }`}
                 >
                   <span
-                    className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-md border ${
+                    className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border ${
                       on ? "border-accent bg-accent text-white" : "border-line"
                     }`}
-                    style={{ height: 18, width: 18 }}
                   >
                     {on && (
                       <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
