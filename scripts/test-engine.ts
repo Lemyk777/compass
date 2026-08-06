@@ -32,9 +32,24 @@ import { buildExtracurriculars, strengthBand } from "@/lib/data/key-dates";
 import { emptyProfile } from "@/lib/types";
 import {
   CAREER_AREAS_BY_FACULTY,
+  allCareerAreas,
+  areaBySlug,
+  areaSlug,
   careerAreasForFaculties,
   careerAreaTitles,
 } from "@/lib/data/careers";
+import { HOME_ROUTES, homeRoutesForFaculties } from "@/lib/data/from-home";
+import {
+  ALL_FIELDS,
+  parseFieldsParam,
+  serializeFields,
+  withFields,
+} from "@/lib/data/guide-fields";
+import {
+  GUIDE_SECTIONS,
+  guideMorph,
+  nextGuideSection,
+} from "@/lib/data/guide-sections";
 import {
   VALUE_LABEL,
   rankAreasByValues,
@@ -391,6 +406,136 @@ test("the home region leads the map", () => {
     HUBS.filter((h) => h.region === "central_asia").length >= 3,
     "the students' own region is barely represented",
   );
+});
+
+// ── The guide as a section of routes ─────────────────────────────────────────
+// The guide stopped being one page: each step, each area of work and each city
+// is its own URL now. Two things that used to be impossible to get wrong become
+// possible once addresses exist, so they are pinned here.
+
+// A career area has no id of its own — its slug is derived from its title. Two
+// areas sharing a slug would silently serve one under the other's address.
+test("every career area has a unique slug that resolves back to it", () => {
+  const seen = new Map<string, string>();
+  for (const { faculty, area } of allCareerAreas()) {
+    const slug = areaSlug(area.title);
+    assert.ok(slug.length > 2, `${area.title} slugifies to nothing usable`);
+    assert.ok(
+      /^[a-z0-9-]+$/.test(slug),
+      `${area.title} slugifies to a non-URL string: ${slug}`,
+    );
+    const clash = seen.get(slug);
+    assert.ok(!clash, `${area.title} and ${clash} share the slug ${slug}`);
+    seen.set(slug, area.title);
+
+    const found = areaBySlug(slug);
+    assert.ok(found, `${slug} does not resolve`);
+    assert.equal(found!.area.title, area.title);
+    assert.equal(found!.faculty, faculty);
+  }
+  assert.equal(seen.size, allCareerAreas().length);
+  assert.equal(areaBySlug("not-a-real-area"), undefined);
+});
+
+// The field filter lives in the URL. "Not stated" and "explicitly everything"
+// must stay distinguishable: the first falls back to the student's own fields,
+// the second is a student deliberately widening the guide, and collapsing them
+// would re-apply the profile on every navigation.
+test("the guide's field parameter separates unstated from everything", () => {
+  assert.equal(parseFieldsParam(undefined), null);
+  assert.deepEqual(parseFieldsParam(ALL_FIELDS), []);
+  assert.deepEqual(parseFieldsParam(""), []);
+  assert.deepEqual(parseFieldsParam("law,computer_science"), [
+    "law",
+    "computer_science",
+  ]);
+  // Junk narrows nothing rather than emptying the page — the same rule as the
+  // catalog's "unknown facts never exclude".
+  assert.deepEqual(parseFieldsParam("nonsense"), []);
+  assert.deepEqual(parseFieldsParam("law,nonsense,law"), ["law"]);
+  assert.deepEqual(parseFieldsParam(["law", "medicine_health"]), ["law"]);
+
+  assert.equal(serializeFields([]), ALL_FIELDS);
+  assert.equal(withFields("/guide/cities", null), "/guide/cities");
+  assert.equal(withFields("/guide/cities", []), `/guide/cities?f=${ALL_FIELDS}`);
+  assert.equal(withFields("/guide/cities", ["law"]), "/guide/cities?f=law");
+  // Round trip: whatever a link writes, the next page reads back unchanged.
+  for (const fields of [["law"], ["law", "engineering"], []] as const) {
+    assert.deepEqual(parseFieldsParam(serializeFields([...fields])), [
+      ...fields,
+    ]);
+  }
+});
+
+// The card→page morph only happens if both sides emit the identical string, and
+// it silently does nothing if that string is not a valid CSS custom-ident — a
+// failure with no error anywhere, just a transition that stopped happening.
+test("every guide morph name is a valid, unique custom-ident", () => {
+  const names = [
+    ...allCareerAreas().map(({ area }) => guideMorph("area", areaSlug(area.title))),
+    ...HUBS.map((h) => guideMorph("hub", h.id)),
+    ...STUDY_DESTINATIONS.map((d) => guideMorph("place", d.id)),
+  ];
+  for (const n of names) {
+    assert.ok(
+      /^[a-z][a-z0-9-]*$/.test(n),
+      `${n} is not usable as a view-transition-name`,
+    );
+  }
+  assert.equal(new Set(names).size, names.length, "two subjects share a morph");
+});
+
+test("the guide's steps are a chain that ends", () => {
+  assert.deepEqual(
+    GUIDE_SECTIONS.map((s) => s.step),
+    [1, 2, 3, 4],
+  );
+  const hrefs = new Set(GUIDE_SECTIONS.map((s) => s.href));
+  assert.equal(hrefs.size, GUIDE_SECTIONS.length, "two steps share a route");
+  for (const s of GUIDE_SECTIONS) {
+    assert.ok(s.href.startsWith("/guide/"), `${s.id} is not inside the guide`);
+    assert.ok(s.blurb.trim().length > 40, `${s.id} has no real description`);
+  }
+  assert.equal(nextGuideSection("work")?.id, "cities");
+  // The last step must not point onwards — that footer becomes the CTA into the
+  // catalog instead, which is the whole point of ending on "from home".
+  assert.equal(nextGuideSection("from-home"), undefined);
+});
+
+// Step 4 carries the same honesty rule as the world map: naming a route that
+// pays or teaches you from home without naming what it costs is an advert.
+test("every from-home route has a catch and a first move", () => {
+  const ids = new Set<string>();
+  for (const r of HOME_ROUTES) {
+    assert.ok(!ids.has(r.id), `duplicate route id ${r.id}`);
+    ids.add(r.id);
+    assert.ok(r.name.trim(), `${r.id} has no name`);
+    assert.ok(r.what.trim().length > 40, `${r.id} has no real description`);
+    assert.ok(
+      r.catch.trim().length > 40,
+      `${r.id} has no catch — that is an advert`,
+    );
+    assert.ok(
+      r.firstMove.trim().length > 40,
+      `${r.id} has no first move a student could make this week`,
+    );
+  }
+  assert.ok(HOME_ROUTES.length >= 4, "too few routes to be worth a step");
+});
+
+test("no chosen field ⇒ every from-home route; field-free routes always show", () => {
+  assert.equal(homeRoutesForFaculties([]).length, HOME_ROUTES.length);
+  for (const f of FACULTY_VALUES) {
+    const routes = homeRoutesForFaculties([f]);
+    assert.ok(routes.length > 0, `${f} is told there is nothing to do from home`);
+    assert.ok(routes.length <= HOME_ROUTES.length);
+    for (const r of HOME_ROUTES.filter((x) => x.fields.length === 0)) {
+      assert.ok(
+        routes.some((x) => x.id === r.id),
+        `${r.id} applies to everyone but was hidden from ${f}`,
+      );
+    }
+  }
 });
 
 // ── The cron gate fails CLOSED ───────────────────────────────────────────────

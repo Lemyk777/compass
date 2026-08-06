@@ -275,8 +275,17 @@
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    /* The delay has to go too, not just the duration. Several entrances here
+       (the guide's staggered cards, .aside-pop, the spotlight) run with
+       fill-mode `both` or `forwards`, which holds the from-state — opacity 0 —
+       until the delay elapses. Zeroing only the duration therefore left a
+       reduced-motion reader looking at blank cards for up to a third of a
+       second before they popped in, which is the one thing the guard exists to
+       prevent. */
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
   ::view-transition-group(*),

@@ -35,11 +35,11 @@ Five vars (see [.env.example](.env.example)) in `.env.local`: `NEXT_PUBLIC_SUPAB
 
 Two shells, and the distinction is load-bearing:
 
-- **The student's section** — `/opportunities` (what you can enter) and `/guide`
+- **The student's section** — `/opportunities` (what you can enter) and `/guide/*`
   (where it leads). Frame: [components/student/StudentShell.tsx](components/student/StudentShell.tsx)
-  — one narrow column, two destinations, the report a link away. Both routes are
+  — one narrow column, two destinations, the report a link away. Both are
   session-aware and work signed out; `/opportunities` shows the guest
-  eligibility checker, `/guide` opens on every field instead of the student's.
+  eligibility checker, the guide opens on every field instead of the student's.
 - **The report** — `/dashboard/*`, the opt-in admission analysis, in the sidebar
   shell. **Whether Opportunities appears as a tab there depends on one thing:
   does the student have an analysis?**
@@ -66,12 +66,12 @@ Everything here is **deterministic** — no model call — and the design rules 
 - **The default intake is two inline questions**, both on the Opportunities view: school year (`YearPrompt` → `saveGraduationYear`) then field (`FieldPrompt` → `saveFaculties`, both in [app/dashboard/actions.ts](app/dashboard/actions.ts)). A student who can't answer the second takes the optional **interest quiz** ([lib/data/interest-quiz.ts](lib/data/interest-quiz.ts) — fixed per-option weights, pure scoring). **The full analysis questionnaire is opt-in** — new signups land on `/dashboard/opportunities`, not `/onboarding`. Don't re-add a mandatory intake gate.
 - **Empty faculties is a valid answer** meaning "show everything", not "show nothing". Unknown facts never exclude.
 - **The catalog is split by concern**: entries live in [lib/data/competitions-data.ts](lib/data/competitions-data.ts), matching logic in [lib/data/key-dates.ts](lib/data/key-dates.ts) (which re-exports the data, so existing imports still work), and the careers layer in [lib/data/careers.ts](lib/data/careers.ts). The careers
-  layer moved to the **`/guide` page** ([components/guide/GuideView.tsx](components/guide/GuideView.tsx)),
+  layer moved to **the guide** — a section of routes, not a page (see below),
   which runs interest → field → sphere of work → the cities that work lives in
   ([lib/data/world.ts](lib/data/world.ts)) → what to enter from home. Every hub
   there must carry BOTH its catch and a real route in — a city with only good
   news listed is an advert, and a test enforces it. The deep layer is
-  [lib/data/study-destinations.ts](lib/data/study-destinations.ts) → `/guide/[place]`:
+  [lib/data/study-destinations.ts](lib/data/study-destinations.ts) → `/guide/places/[place]`:
   11 full country profiles (money, admissions, after-study, cities). **Rules,
   test-enforced: trade-offs must outnumber strengths, `notForYou` is mandatory,
   and no prices or rankings** — those rot within a year, structural facts don't.
@@ -86,6 +86,33 @@ Everything here is **deterministic** — no model call — and the design rules 
   drive matching. Answers live in `localStorage`, not the profile.
 - **Bundle rule (easy to break):** `key-dates.ts` builds a lookup map over the whole ~2,700-entry catalog at module load, so *any* runtime import drags the dataset into that route's client bundle. Client components must import `formatDate`/`opportunityCost` from [lib/data/opportunity-format.ts](lib/data/opportunity-format.ts), and the three matching views (`OpportunitiesView`, `EligibilityChecker`, `FirstWin`) **dynamic-import** `buildExtracurriculars`. Keep it that way; type-only imports from key-dates are free.
 - **Never show a countdown for a date we can't stand behind.** A confirmed date renders as a countdown; anything else is "Dates TBA" or "open now". Verify a date against the organiser's own page before setting `dateConfirmed: true`, and read what the page says — `test:links` cannot tell you a contest was discontinued.
+
+## The guide is a section of routes, not a page
+
+`/guide` was one scroll holding all four steps; finding anything meant reading
+33 areas of work, 22 cities and 11 country profiles in a single column, and the
+detail behind every card was a modal with no URL. Every step and every subject
+is its own route now:
+
+```
+/guide                    index — the four steps, with counts
+/guide/work               1 · areas of work        → /guide/work/[area]
+/guide/cities             2 · where the work is    → /guide/cities/[hub]
+/guide/places             3 · destinations in full → /guide/places/[place]
+/guide/from-home          4 · routes that need no move
+```
+
+- **The steps live in one registry** ([lib/data/guide-sections.ts](lib/data/guide-sections.ts)) that the tabs, the index cards and the "next step" footer all read. Add or rename a step there, not in four places.
+- **One session read per request.** `guideView()`/`guideSession()` in [lib/guide/student-fields.ts](lib/guide/student-fields.ts) are `cache()`d, because the layout (picking a shell), the page (labelling the filter) and the filter's default each used to call `getSession()` — three `auth.getUser()` round trips and three `profiles` reads before a page drew anything. Ask through `guideView`, not `getSession`, inside the guide.
+- **The field filter is `?f=`, not state** ([lib/data/guide-fields.ts](lib/data/guide-fields.ts) + [lib/guide/student-fields.ts](lib/guide/student-fields.ts)). Three states, and the last two are NOT the same: absent = "not stated" (falls back to the student's own fields), `f=all` = the student deliberately widened it, `f=a,b` = those fields. Collapsing them re-applies the profile on every navigation. Every in-section link carries it via `withFields`.
+- **`/guide/[place]` still exists, and only to redirect** to `/guide/places/[place]` (308, validated against the registry). Country profiles used to sit in the root of the section, where every later sub-route name had to not-be-a-country.
+- **Detail pages, not sheets.** A modal has no URL: it cannot be sent to a parent, and Back closes it instead of leaving. `DetailShell`/`GuideBlock`/`GuideCard` in [components/guide/parts.tsx](components/guide/parts.tsx) are what make three levels of depth read as one section.
+- **Server-rendered except the two islands** — `FieldFilter` (writes the URL) and `WorkList` (the values refine reorders it from `localStorage`). `WorkList` takes its areas as **props**; importing `careers.ts` into a client component ships all 500 lines of it. Same rule as the catalog's bundle trap above.
+- A career area has no id — its slug is derived from its title (`areaSlug`), and a unit test pins that all 33 stay distinct.
+- **One motion per view, and it is the morph.** A card's title and the `<h1>` of the page it opens share a `view-transition-name` (`guideMorph`, tested for validity and uniqueness), so the browser morphs one into the other and the transition answers "where did this page come from?". A staggered card entrance was tried and removed for two reasons worth not rediscovering: a fade-up holds the card at `opacity: 0` until the animation runs, which makes the page's actual content depend on an animation finishing; and it fights the morph, because a view transition snapshots the incoming page while those cards are still sliding. Everything else is `transition`-based (hover lift, press scale) so the resting state is always visible.
+- The global reduced-motion guard in [app/globals.css](app/globals.css) zeroes `animation-delay`/`transition-delay` as well as the durations. Without that, any `fill-mode: both` entrance leaves a reduced-motion reader staring at invisible content for the length of the delay.
+- `app/guide/loading.tsx` covers the gap routes created: every step is now a server round trip, and its skeleton mirrors the real layout so nothing jumps when content lands.
+- Step 4 obeys the world-map rule: every route in [lib/data/from-home.ts](lib/data/from-home.ts) carries its catch and a first move, test-enforced. **No URLs in that file** — the catalog owns links, because `test:links` checks those.
 
 ## Partner organisations (Astana Hub, Shymkent Hub, …)
 
