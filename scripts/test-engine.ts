@@ -15,7 +15,7 @@ import { test } from "node:test";
 import type { NextRequest } from "next/server";
 import { denyUnlessCronAuthorized } from "@/lib/cron/auth";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { renderModule } from "./build-map-outlines";
 import { MAP_OUTLINES } from "@/lib/data/map-outlines";
@@ -879,6 +879,44 @@ test("every destination states its cycle, its reading, and its teaching", () => 
       d.commonMistake.trim().length > 120,
       `${d.id} names nothing applicants from this region get wrong`,
     );
+  }
+});
+
+// Text that reached production reading "TГјrkiye" and "KrakГіw".
+//
+// Windows PowerShell 5.1 decodes with the system ANSI codepage unless told
+// otherwise, so a read-modify-write of a UTF-8 source file re-encodes the whole
+// thing: every em dash became "вЂ”", every "ü" became "Гј", and the build was
+// green throughout because mojibake is valid TypeScript. Editors do not show it
+// either — it looks like text. This is the only cheap way to catch it.
+//
+// The sequences below cannot occur in real Russian, so this stays safe for the
+// files that legitimately contain it (lib/data/geo.ts, the reasoning traces).
+test("no source file carries mojibake from a bad encoding round-trip", () => {
+  const MOJIBAKE = ["вЂ", "Гј", "Гі", "Гџ", "Г¶", "в†", "вњ“", "в”Ђ", "Д±", "Ã©", "â€"];
+  const roots = ["lib/data", "app/guide", "components/guide"];
+
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return walk(full);
+      return /\.(ts|tsx)$/.test(e.name) ? [full] : [];
+    });
+
+  for (const root of roots) {
+    for (const file of walk(path.join(process.cwd(), root))) {
+      const text = readFileSync(file, "utf8");
+      for (const seq of MOJIBAKE) {
+        assert.ok(
+          !text.includes(seq),
+          `${path.relative(process.cwd(), file)} contains "${seq}" — the file was written by a tool that mis-decoded UTF-8`,
+        );
+      }
+      assert.ok(
+        !text.startsWith("﻿"),
+        `${path.relative(process.cwd(), file)} starts with a byte-order mark`,
+      );
+    }
   }
 });
 
