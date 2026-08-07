@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "@/components/ui/Link";
+import { DetailExit } from "@/components/guide/DetailExit";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
 import { fieldsSuffix, withFields } from "@/lib/data/guide-fields";
 import {
@@ -55,27 +56,34 @@ export default function GuideComparePage({
   return (
     <div className="space-y-6">
       <header>
-        <nav aria-label="Breadcrumb" className="text-sm">
-          <ol className="flex flex-wrap items-center gap-1.5 text-ink-faint">
-            <li>
-              <Link
-                href="/guide"
-                className="underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
-              >
-                The guide
-              </Link>
-            </li>
-            <li aria-hidden>/</li>
-            <li>
-              <Link
-                href={withFields("/guide/places", stated)}
-                className="underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
-              >
-                Countries
-              </Link>
-            </li>
-          </ol>
-        </nav>
+        {/* Same pairing as every other sub-page: where you are, and an explicit
+            way out that survives the scroll. This one runs longer than most —
+            eleven axes, both sides — so it is exactly where the browser's own
+            back button was the only exit left. */}
+        <div className="flex items-center justify-between gap-3">
+          <nav aria-label="Breadcrumb" className="min-w-0 text-sm">
+            <ol className="flex flex-wrap items-center gap-1.5 text-ink-faint">
+              <li>
+                <Link
+                  href="/guide"
+                  className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+                >
+                  The guide
+                </Link>
+              </li>
+              <li aria-hidden>/</li>
+              <li>
+                <Link
+                  href={withFields("/guide/places", stated)}
+                  className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+                >
+                  Countries
+                </Link>
+              </li>
+            </ol>
+          </nav>
+          <DetailExit href={withFields("/guide/places", stated)} label="Countries" />
+        </div>
         <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
           {a && b ? `${a.name} or ${b.name}?` : "Compare two countries"}
         </h1>

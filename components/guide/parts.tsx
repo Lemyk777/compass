@@ -1,4 +1,5 @@
 import Link from "@/components/ui/Link";
+import { DetailExit } from "@/components/guide/DetailExit";
 import type { FacultyValue } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
 import {
@@ -10,8 +11,10 @@ import {
 // levels of depth (index → list → one subject) only read as one section if they
 // are literally made of the same parts.
 //
-// Nothing here is a client component. The guide is curated data and links; the
-// only interactive control in the whole section is the field chips.
+// Everything here renders on the server. The two client islands it reaches for
+// are the field chips and `DetailExit` — the way out of a sub-page, which has
+// to be one because it listens for Escape and watches whether it is still on
+// screen.
 
 /**
  * The band every list page opens with: the step's heading on the left, the
@@ -222,32 +225,37 @@ export function DetailShell({
   return (
     <div className="space-y-6">
       <div>
-        {/* Breadcrumb, not a bare "back": at three levels deep the student needs
-            to know where they are, not only that there is a way out. */}
-        <nav aria-label="Breadcrumb" className="text-sm">
-          <ol className="flex flex-wrap items-center gap-1.5 text-ink-faint">
-            {/* A 44px tap area on the breadcrumb: it is the primary way back out
-                of a detail page on a phone, and at 17px it was a third of the
-                minimum. */}
-            <li>
-              <Link
-                href="/guide"
-                className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
-              >
-                The guide
-              </Link>
-            </li>
-            <li aria-hidden>/</li>
-            <li>
-              <Link
-                href={crumbHref}
-                className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
-              >
-                {crumb}
-              </Link>
-            </li>
-          </ol>
-        </nav>
+        {/* Where you are on the left, the way out on the right. Both, because
+            they answer different questions: at three levels deep a student
+            needs to know where they are, and a breadcrumb still reads as
+            navigation rather than as "this closes". */}
+        <div className="flex items-center justify-between gap-3">
+          <nav aria-label="Breadcrumb" className="min-w-0 text-sm">
+            <ol className="flex flex-wrap items-center gap-1.5 text-ink-faint">
+              {/* A 44px tap area on the breadcrumb: it is the primary way back
+                  out of a detail page on a phone, and at 17px it was a third of
+                  the minimum. */}
+              <li>
+                <Link
+                  href="/guide"
+                  className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+                >
+                  The guide
+                </Link>
+              </li>
+              <li aria-hidden>/</li>
+              <li>
+                <Link
+                  href={crumbHref}
+                  className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+                >
+                  {crumb}
+                </Link>
+              </li>
+            </ol>
+          </nav>
+          <DetailExit href={crumbHref} label={crumb} />
+        </div>
         <h1
           className="mt-3 text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
           style={

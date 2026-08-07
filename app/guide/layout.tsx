@@ -3,6 +3,7 @@ import { Shell } from "@/components/ui/Shell";
 import { ButtonLink } from "@/components/ui/Button";
 import { StudentShell } from "@/components/student/StudentShell";
 import { GuideTabs } from "@/components/guide/GuideTabs";
+import { NavTrail } from "@/components/guide/NavTrail";
 import { guideSession } from "@/lib/guide/student-fields";
 
 // The frame for the whole guide — every step, every city, every destination.
@@ -28,6 +29,11 @@ export default async function GuideLayout({
 
   const inner = (
     <div className="space-y-7">
+      {/* Renders nothing. It sits at the layout because only the layout outlives
+          a navigation, and remembering which page a student came from is what
+          lets a sub-page's Close return them to their place in the list rather
+          than to the top of it. */}
+      <NavTrail />
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-faint">
           The guide
