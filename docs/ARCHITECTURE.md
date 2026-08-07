@@ -62,7 +62,7 @@ almost never a prompt change.
 
 | | |
 | --- | --- |
-| `(marketing)/` | The public landing page. Session-aware: a signed-in visitor gets "Dashboard", not "Log in"/"Sign up" |
+| `(marketing)/` | The public landing page, told in the product's own order: Opportunities → the guide → the report. Session-aware: a signed-in visitor gets "Dashboard", not "Log in"/"Sign up". Every count on it is read from the catalog and the guide registries at request time, so the page cannot claim a number the student won't see |
 | `opportunities/` | **Public eligibility checker — the guest surface only.** A signed-in student is redirected to `/dashboard/opportunities` so there is one Opportunities experience per state, not two |
 | `onboarding/` | The full intake wizard — now **opt-in** (the analysis path), no longer where signups land; `actions.ts` holds the Zod schema that is the single source of truth for a valid profile |
 | `dashboard/` | The logged-in product. `layout.tsx` loads everything once and hands it to `DashboardContext`; each subroute is a thin view |

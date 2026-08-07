@@ -1,71 +1,78 @@
-"use client";
+// Objection handling, rewritten for the front door: the questions a student (or
+// their parent) actually has before clicking, which are about cost, age, and
+// whether the dates can be trusted — not about how a score is computed.
+//
+// Native <details>, so this ships ZERO JavaScript. The previous version was a
+// client component that pulled in framer-motion's AnimatePresence to animate a
+// height, and mounted an IntersectionObserver to fade the heading in. It also
+// kept the answers out of the DOM until opened, which hid them from search.
+// Every answer is now in the HTML on first paint, keyboard-operable for free,
+// and open/close costs the browser one repaint.
 
-import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { useT } from "@/lib/i18n/client";
-import { ScrollReveal } from "@/components/ui/ScrollAnimations";
+const ITEMS: { q: string; a: string }[] = [
+  {
+    q: "What is this, exactly?",
+    a: "A checked list of competitions, olympiads, courses and programmes school students can enter — filtered to the ones open to you at your age, from where you live. You give your school year, we give the list.",
+  },
+  {
+    q: "Do I need an account?",
+    a: "No. The eligibility checker on the Opportunities page works signed out and gives you the full answer. An account only adds the things that need memory: saving what you're doing, tracking a deadline, and the optional admission report.",
+  },
+  {
+    q: "Is it free?",
+    a: "Compass is free — all of it. Some of the opportunities themselves are not, and that is exactly why every entry carries a cost label. 'Free to learn, the certificate costs money' is the case students get caught by, so it gets its own label rather than being filed under free.",
+  },
+  {
+    q: "How do I know a deadline is right?",
+    a: "Because we only show a countdown when we've confirmed the date against the organiser's own page for the current cycle. Everything else says 'dates not announced yet' or 'open now'. A guessed deadline is worse than no deadline: it makes a student miss a real one.",
+  },
+  {
+    q: "I'm 13. Is there anything for me?",
+    a: "Yes, and you'll see the ones you're too young for as well — labelled with the year you become eligible. Knowing what to aim for is worth something; being quietly shown nothing is not. We never hide an opportunity just because a fact about you is missing.",
+  },
+  {
+    q: "What happened to the university assessment?",
+    a: "It's still here, and it's still free — it's now one thing you can opt into rather than the gate you had to pass first. It reads your profile against admitted-student data for the US, Italy, Hong Kong, the UAE and Korea, and gives per-school ranges with the honest number, not a flattering one.",
+  },
+];
 
-// Objection-handling FAQ — earns its place near the close (not another result
-// preview, which the hero already shows).
 export function FAQ() {
-  const t = useT();
-  const [open, setOpen] = useState<number | null>(0);
-  const items = [1, 2, 3, 4, 5, 6].map((i) => ({
-    q: t(`landing.faqQ${i}`),
-    a: t(`landing.faqA${i}`),
-  }));
-
   return (
-    <section className="w-full bg-[#F7F8FA] px-5 py-24 md:px-12 lg:px-20">
+    <section className="w-full bg-surface px-5 py-24 md:px-12 lg:px-20">
       <div className="mx-auto max-w-3xl">
-        <ScrollReveal>
-          <div className="mb-12 text-center">
-            <h2 className="text-balance text-4xl font-medium tracking-tight text-ink md:text-5xl">
-              {t("landing.faqTitle")}
-            </h2>
-            <p className="mt-4 text-lg font-light text-ink/60">{t("landing.faqSub")}</p>
-          </div>
-        </ScrollReveal>
+        <div className="mb-12 text-center">
+          <h2 className="text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
+            Questions, answered
+          </h2>
+          <p className="mt-4 text-lg font-light text-ink/60">
+            The honest answers, before you start.
+          </p>
+        </div>
 
-        <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)]">
-          {items.map((it, i) => {
-            const isOpen = open === i;
-            return (
-              <div key={i}>
-                <button
-                  type="button"
-                  onClick={() => setOpen(isOpen ? null : i)}
-                  aria-expanded={isOpen}
-                  className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition-colors hover:bg-black/[0.015]"
+        <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-card shadow-card">
+          {ITEMS.map((it, i) => (
+            <details key={it.q} className="group" open={i === 0}>
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-left transition-colors hover:bg-ink/[0.015]">
+                <span className="text-base font-medium text-ink">{it.q}</span>
+                <span
+                  className="shrink-0 text-ivy transition-transform duration-300 group-open:rotate-45"
+                  aria-hidden="true"
                 >
-                  <span className="text-base font-medium text-ink">{it.q}</span>
-                  <span
-                    className={`shrink-0 text-accent transition-transform duration-300 ${isOpen ? "rotate-45" : ""}`}
-                    aria-hidden="true"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                </button>
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <p className="px-6 pb-5 text-pretty text-base font-light leading-relaxed text-ink/65">
-                        {it.a}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 5v14M5 12h14"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              </summary>
+              <p className="animate-fade-up px-6 pb-5 text-pretty text-base font-light leading-relaxed text-ink/65">
+                {it.a}
+              </p>
+            </details>
+          ))}
         </div>
       </div>
     </section>

@@ -73,15 +73,42 @@ export default function MapView({ className }: { className?: string }) {
   const flyingRef = useRef(false);
 
   const len = COUNTRIES.length;
-  const country = COUNTRIES[((index % len) + len) % len];
+  const at = (i: number) => COUNTRIES[((i % len) + len) % len];
+  const country = at(index);
 
-  // Warm the browser cache with every country's terrain so switches are instant.
+  // Warm ONLY the next country.
+  //
+  // This used to preload all five at mount — 2.0 MB of terrain PNG downloaded
+  // before the visitor had asked for a single one of them, on the landing page,
+  // competing with the fonts and the first paint.
+  //
+  // One is the right number, not two. The pager moves a step at a time and
+  // forward is the direction people take, so this covers the common case; and
+  // a country whose raster hasn't arrived is not broken — the silhouette draws
+  // instantly and the terrain fades in over it (see OutlineMap). Warming
+  // backwards as well would double the bytes to remove a wait the design
+  // already handles.
+  //
+  // `requestIdleCallback` keeps even this off the critical path; browsers
+  // without it (Safari) fall back to a timeout.
   useEffect(() => {
-    COUNTRIES.forEach((c) => {
+    const warm = () => {
       const img = new window.Image();
-      img.src = topoUrlForCountry(c);
-    });
-  }, []);
+      img.src = topoUrlForCountry(at(index + 1));
+    };
+    const ric = (window as typeof window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+    }).requestIdleCallback;
+    if (ric) {
+      const id = ric(warm, { timeout: 2000 });
+      return () => (window as typeof window & {
+        cancelIdleCallback?: (h: number) => void;
+      }).cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(warm, 800);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
 
   const go = useCallback((d: number) => {
     if (flyingRef.current) return;
