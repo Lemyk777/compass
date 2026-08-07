@@ -5,6 +5,7 @@ import { LanguageProvider } from "@/lib/i18n/client";
 import { getLang } from "@/lib/i18n/server";
 import { CANONICAL_URL } from "@/lib/site";
 import { ViewTransitions } from "@/components/ui/ViewTransitions";
+import { Traffic } from "@/components/analytics/Traffic";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -51,6 +52,9 @@ export default function RootLayout({
       <html lang={lang} className={`${display.variable} ${body.variable}`}>
         <body>
           <LanguageProvider initial={lang}>{children}</LanguageProvider>
+          {/* Renders nothing. Uses usePathname (not useSearchParams), so it
+              adds no Suspense boundary and no static-rendering constraint. */}
+          <Traffic />
         </body>
       </html>
     </ViewTransitions>
