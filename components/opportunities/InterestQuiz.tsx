@@ -7,7 +7,7 @@ import {
   type QuizAnswers,
 } from "@/lib/data/interest-quiz";
 import { FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
-import { careerAreaTitles } from "@/lib/data/careers";
+import { careerAreaTitles } from "@/lib/data/career-titles";
 
 // The optional "not sure what you want?" quiz. One question at a time (a wall of
 // six is the intake we're avoiding), a progress dot row, then a result the

@@ -226,10 +226,13 @@ export function DetailShell({
             to know where they are, not only that there is a way out. */}
         <nav aria-label="Breadcrumb" className="text-sm">
           <ol className="flex flex-wrap items-center gap-1.5 text-ink-faint">
+            {/* A 44px tap area on the breadcrumb: it is the primary way back out
+                of a detail page on a phone, and at 17px it was a third of the
+                minimum. */}
             <li>
               <Link
                 href="/guide"
-                className="underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+                className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
               >
                 The guide
               </Link>
@@ -238,7 +241,7 @@ export function DetailShell({
             <li>
               <Link
                 href={crumbHref}
-                className="underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+                className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
               >
                 {crumb}
               </Link>
@@ -255,7 +258,7 @@ export function DetailShell({
         </h1>
         {sub && <p className="mt-1 text-sm text-ink-faint">{sub}</p>}
         {lead && (
-          <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft">
+          <p className="mt-3 max-w-[60ch] text-pretty text-base leading-relaxed text-ink-soft">
             {lead}
           </p>
         )}
