@@ -10,6 +10,7 @@ import { hubsForFaculties } from "@/lib/data/world";
 import { destinationsForFaculties } from "@/lib/data/study-destinations";
 import { homeRoutesForFaculties } from "@/lib/data/from-home";
 import { guideView } from "@/lib/guide/student-fields";
+import { pageMeta } from "@/lib/seo";
 
 // The guide's front page: a map of the section, not the section itself.
 //
@@ -19,11 +20,12 @@ import { guideView } from "@/lib/guide/student-fields";
 // page's whole job is to say what the four are and how much is inside each, so
 // a student chooses where to go instead of falling through it.
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Where this can take you — Compass",
   description:
     "What each field of study actually leads to, the kinds of work inside it, and where in the world that work sits — with the honest catch and the real way in for each place.",
-};
+  path: "/guide",
+});
 
 export default async function GuidePage({
   searchParams,
@@ -56,10 +58,11 @@ export default async function GuidePage({
               Where this can take you
             </h1>
             <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft">
-              A field is not a goal, and a job title is not a life. Four steps,
-              each one narrower than the last: what kinds of work a field opens,
-              the countries that host that work, the cities inside them — and
-              what you can enter from home this year without moving anywhere.
+              A job title is not a life. Four steps: the first three run from
+              what kinds of work exist, to the countries that host that work, to
+              the cities inside them. The fourth is the one nobody tells you
+              about — what you can enter from home this year, without moving
+              anywhere at all.
             </p>
           </header>
         }

@@ -15,6 +15,11 @@ import { test } from "node:test";
 import type { NextRequest } from "next/server";
 import { denyUnlessCronAuthorized } from "@/lib/cron/auth";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { renderModule } from "./build-map-outlines";
+import { MAP_OUTLINES } from "@/lib/data/map-outlines";
+import { COUNTRIES } from "@/lib/data/map-markers";
 
 import { RUBRIC, computeOverall, type FactorKey } from "@/lib/rubric";
 import { computeOverallFromFactors, computeBenchmarks } from "@/lib/ai/assemble";
@@ -73,6 +78,9 @@ import {
 } from "@/lib/data/study-destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { competitionsFromRows } from "@/lib/partners/live";
+import sitemapRoutes from "@/app/sitemap";
+import robotsFile from "@/app/robots";
+import { CANONICAL_URL } from "@/lib/site";
 import {
   cleanDwell,
   cleanPath,
@@ -639,17 +647,31 @@ test("the guide's steps are a chain that ends", () => {
 // is the reason: most of them are in countries we do not profile, and four of
 // those are the home region. If a future change nests cities strictly inside
 // country profiles, this test is the one that should stop it.
-test("cities in unprofiled countries stay reachable", () => {
-  const claimed = new Set(STUDY_DESTINATIONS.flatMap((d) => d.hubs));
-  const orphans = HUBS.filter((h) => !claimed.has(h.id));
-  assert.ok(
-    orphans.length > 0,
-    "if every hub has a profile this test can be deleted — check that first",
-  );
+// This test used to assert the opposite: that some cities had NO country page,
+// and that Almaty, Astana, Tashkent and Tbilisi were among them — a guard so a
+// tidy-up could not delete the home region from the map. Those countries are
+// profiled now, so the guard becomes the stronger invariant it was standing in
+// for: every city belongs to a country you can open, and no city belongs to two.
+test("every city sits in exactly one country we profile", () => {
+  const claimed = STUDY_DESTINATIONS.flatMap((d) => d.hubs);
+  const claimedSet = new Set(claimed);
+  assert.equal(claimed.length, claimedSet.size, "two countries claim one city");
+
+  for (const h of HUBS) {
+    assert.ok(
+      claimedSet.has(h.id),
+      `${h.id} (${h.city}) has no country page — add one, or the breadcrumb dead-ends`,
+    );
+    assert.equal(
+      destinationForHub(h.id)?.name !== undefined,
+      true,
+      `${h.id} does not resolve to a destination`,
+    );
+  }
   for (const home of ["almaty", "astana", "tashkent", "tbilisi"]) {
     assert.ok(
-      orphans.some((h) => h.id === home),
-      `${home} is expected to be one of the unprofiled hubs`,
+      HUBS.some((h) => h.id === home),
+      `${home} has been dropped from the world map`,
     );
   }
   // Grouping by country must lose nobody: every hub still appears exactly once.
@@ -712,13 +734,12 @@ test("every country's legacy URL is redirected, and no extra ones are", async ()
   }
 });
 
-test("destinationForHub resolves both ways, and is undefined for orphans", () => {
+test("destinationForHub resolves both ways, and is undefined for a non-hub", () => {
   for (const d of STUDY_DESTINATIONS) {
     for (const hubId of d.hubs) {
       assert.equal(destinationForHub(hubId)?.id, d.id);
     }
   }
-  assert.equal(destinationForHub("almaty"), undefined);
   assert.equal(destinationForHub("not-a-hub"), undefined);
 });
 
@@ -858,6 +879,37 @@ test("every destination states its cycle, its reading, and its teaching", () => 
       d.commonMistake.trim().length > 120,
       `${d.id} names nothing applicants from this region get wrong`,
     );
+  }
+});
+
+// The guide's central claim is that its rules come from the organiser or the
+// government that sets them. For two releases it linked to none of them, which
+// made the claim unprovable — and unprovable is the same as untrue to a reader
+// who is deciding whether to believe the rest of the page.
+test("every country links to the body that actually sets its rules", () => {
+  const seen = new Set<string>();
+  for (const d of STUDY_DESTINATIONS) {
+    assert.ok(
+      d.sources.length >= 1,
+      `${d.id} claims to be checked against an official source and links to none`,
+    );
+    for (const s of d.sources) {
+      assert.ok(s.label.trim().length > 10, `${d.id} has an unlabelled source`);
+      assert.ok(
+        s.url.startsWith("https://"),
+        `${d.id}: ${s.url} is not https — a rule read over http is a rule anyone can rewrite in transit`,
+      );
+      assert.ok(!seen.has(s.url), `${s.url} is listed twice across destinations`);
+      seen.add(s.url);
+      // Official bodies only. An agency's page is a sales page, and a ranking
+      // site is the thing this guide exists not to be.
+      assert.ok(
+        !/(wikipedia|blogspot|medium\.com|ranking|topuniversities|timeshigher)/i.test(
+          s.url,
+        ),
+        `${d.id}: ${s.url} is not a primary source`,
+      );
+    }
   }
 });
 
@@ -1200,4 +1252,124 @@ test("durations are never shown as a bare number of seconds", () => {
   assert.equal(formatDuration(200), "3m 20s");
   assert.equal(formatDuration(180), "3m");
   assert.equal(formatDuration(3_840), "1h 4m");
+});
+
+// ── The landing map's precomputed outlines ────────────────────────────────────
+//
+// lib/data/map-outlines.ts is generated from public/data/*.json, and generated
+// files rot silently: someone edits the geo data, the committed module keeps
+// drawing the old coastline, and nothing complains. Regenerating in-memory and
+// diffing catches exactly that.
+
+test("map-outlines.ts matches what the generator produces today", () => {
+  const onDisk = readFileSync(
+    path.join(process.cwd(), "lib", "data", "map-outlines.ts"),
+    "utf8"
+  );
+  assert.equal(
+    renderModule().replace(/\r\n/g, "\n"),
+    onDisk.replace(/\r\n/g, "\n"),
+    "public/data changed without `npm run map:outlines` — the landing map is drawing a stale coastline"
+  );
+});
+
+test("every country the map can show has an outline", () => {
+  for (const c of COUNTRIES) {
+    const o = MAP_OUTLINES[c.code];
+    assert.ok(o, `${c.code} has no generated outline`);
+    // A path that never closes a ring means the clip mask is empty, which
+    // renders as a country-shaped hole rather than a country.
+    assert.ok(o.d.startsWith("M") && o.d.endsWith("Z"), `${c.code} path is malformed`);
+    assert.ok(o.img.w > 0 && o.img.h > 0, `${c.code} has no terrain box`);
+    const [minLon, minLat, maxLon, maxLat] = o.bounds;
+    assert.ok(minLon < maxLon && minLat < maxLat, `${c.code} bounds are inverted`);
+    // Markers are placed by inverting `bounds`, so one outside the box would be
+    // drawn off the coastline entirely.
+    for (const m of c.markers) {
+      assert.ok(
+        m.lon >= minLon && m.lon <= maxLon && m.lat >= minLat && m.lat <= maxLat,
+        `${c.code}: ${m.name} sits outside the generated bounds`
+      );
+    }
+  }
+});
+
+// ── The site is findable ──────────────────────────────────────────────────────
+//
+// 66 evergreen public pages, written for queries our students actually type,
+// and until app/sitemap.ts existed nothing told a crawler they were there. Two
+// invariants worth pinning, because both failures are silent: a sitemap that
+// lists a URL which 404s, and a robots.txt rule that blocks a page we are
+// simultaneously asking to be indexed.
+
+test("every guide URL in the sitemap resolves to a real subject", () => {
+  const urls = sitemapRoutes().map((e) => e.url);
+
+  assert.equal(new Set(urls).size, urls.length, "the sitemap repeats a URL");
+
+  for (const url of urls) {
+    assert.ok(
+      url.startsWith(`${CANONICAL_URL}/`),
+      `${url} is not an absolute URL on the canonical domain`
+    );
+  }
+
+  const paths = urls.map((u) => new URL(u).pathname);
+
+  // The four steps and the section index, from the registry the tabs read.
+  assert.ok(paths.includes("/guide"));
+  for (const s of GUIDE_SECTIONS) assert.ok(paths.includes(s.href), `${s.href} missing`);
+  assert.ok(paths.includes("/"), "the landing page is missing");
+  assert.ok(paths.includes("/opportunities"), "the front door is missing");
+
+  const listed = (prefix: string) =>
+    paths.filter((p) => p.startsWith(prefix)).map((p) => p.slice(prefix.length));
+
+  const areas = listed("/guide/work/");
+  assert.equal(areas.length, allCareerAreas().length);
+  for (const slug of areas) assert.ok(areaBySlug(slug), `no area of work at ${slug}`);
+
+  const places = listed("/guide/places/");
+  assert.equal(places.length, STUDY_DESTINATIONS.length);
+  for (const id of places) assert.ok(destinationById(id), `no country at ${id}`);
+
+  const cities = listed("/guide/cities/");
+  assert.equal(cities.length, HUBS.length);
+  for (const id of cities) assert.ok(HUBS.some((h) => h.id === id), `no city at ${id}`);
+
+  // The old country addresses are 308s, not pages: listing one would ask a
+  // crawler to index a redirect.
+  for (const id of LEGACY_GUIDE_PLACE_IDS) {
+    assert.ok(!paths.includes(`/guide/${id}`), `/guide/${id} is a redirect, not a page`);
+  }
+});
+
+test("robots.txt does not block anything the sitemap advertises", () => {
+  const rules = robotsFile().rules;
+  const blocks = Array.isArray(rules) ? rules : [rules];
+  const disallow = blocks.flatMap((b) => [b.disallow ?? []].flat());
+
+  // robots.txt matches by PREFIX unless the rule is anchored with `$`, which is
+  // how `Disallow: /partner` (the console) would also have hidden `/partners`
+  // (the public list of organisations) — the exact bug this test exists for.
+  const blocked = (pathname: string, rule: string) =>
+    rule.endsWith("$") ? pathname === rule.slice(0, -1) : pathname.startsWith(rule);
+
+  for (const entry of sitemapRoutes()) {
+    const pathname = new URL(entry.url).pathname;
+    for (const rule of disallow) {
+      assert.ok(
+        !blocked(pathname, rule),
+        `robots.txt rule "${rule}" blocks ${pathname}, which the sitemap lists`
+      );
+    }
+  }
+
+  // And the private trees really are closed.
+  for (const priv of ["/dashboard", "/admin/traffic", "/api/track", "/partner"]) {
+    assert.ok(
+      disallow.some((rule) => blocked(priv, rule)),
+      `${priv} is crawlable`
+    );
+  }
 });

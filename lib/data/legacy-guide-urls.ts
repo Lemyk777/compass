@@ -1,7 +1,12 @@
-// The country profiles' old addresses.
+// The short address of every country profile — `/guide/<country>` — as a 308 to
+// its canonical page.
 //
-// They lived at `/guide/<country>` before the guide became a section of routes,
-// and they are public, shareable pages — so the old URLs have to keep working.
+// It started as the old addresses: the profiles lived at `/guide/<country>`
+// before the guide became a section of routes, and they are public, shareable
+// pages, so those URLs had to keep working. Countries added since get the same
+// short URL rather than an exception, because the alternative is a list that
+// means "the first eleven" and drifts the moment anyone forgets which is which.
+// The unit test asserts these ids are exactly the destination registry.
 //
 // This list is duplicated into next.config.mjs, which cannot import TypeScript.
 // That duplication is deliberate and is held honest by a unit test asserting
@@ -19,6 +24,14 @@
 // profiles were moved in the first place: a pattern would also swallow
 // `/guide/work`, `/guide/cities` and every step name added later.
 export const LEGACY_GUIDE_PLACE_IDS = [
+  "kazakhstan",
+  "uzbekistan",
+  "georgia",
+  "poland",
+  "turkiye",
+  "china",
+  "japan",
+  "india",
   "united-states",
   "united-kingdom",
   "hong-kong",

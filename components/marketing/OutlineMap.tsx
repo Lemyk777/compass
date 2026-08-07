@@ -1,53 +1,30 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import statesGeo from "@/public/data/us-states.json";
-import italyGeo from "@/public/data/italy.json";
-import hkGeo from "@/public/data/hong-kong.json";
-import koreaGeo from "@/public/data/korea.json";
-import uaeGeo from "@/public/data/uae.json";
+import { MAP_OUTLINES } from "@/lib/data/map-outlines";
 import type { CountryView, UniMarker } from "@/lib/data/map-markers";
 
-// Boundary source per country (clip mask + bbox for the topo image).
-const SHAPE: Record<string, { features: { properties?: { name?: string }; geometry: { type: string; coordinates: unknown } }[] }> = {
-  US: statesGeo as never,
-  IT: italyGeo as never,
-  HK: hkGeo as never,
-  KR: koreaGeo as never,
-  AE: uaeGeo as never,
-};
-
 // Fixed drawing surface; the SVG scales responsively to its container.
+// Changing either of these means regenerating the outlines (npm run map:outlines).
 const VIEW_W = 1000;
 const VIEW_H = 640;
-const PAD = 46;
 const CHIP = 17;
-const R = 6378137; // Web Mercator earth radius
 
-// Lower-48 only — drop the insets so one flat topo image frames cleanly.
-const US_EXCLUDE = new Set(["Alaska", "Hawaii", "Puerto Rico"]);
-
-type LonLat = [number, number];
 type ProjPoint = UniMarker & { x: number; y: number };
 type Placed = ProjPoint & { cx: number; cy: number; lead: boolean };
 
+/**
+ * Projects a lon/lat marker into the surface the outline was generated in.
+ * The outline generator already fitted the country to the surface, so the only
+ * thing left at runtime is a linear map from the country's own bounding box —
+ * which the generator records as `img` — onto the marker's position within it.
+ * Web Mercator is applied here for exactly the handful of markers on screen,
+ * never for the tens of thousands of coastline points.
+ */
+const R = 6378137;
 const mercX = (lon: number) => (R * lon * Math.PI) / 180;
-const mercY = (lat: number) => R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
-
-// eslint-disable is intentionally NOT used here — the project's eslint config
-// (next/core-web-vitals) doesn't load no-explicit-any, so a disable directive
-// would itself break `next build`. Plain `any` is allowed.
-function outerRings(geo: { features: any[] }, exclude?: Set<string>): LonLat[][] {
-  const rings: LonLat[][] = [];
-  for (const f of geo.features) {
-    if (exclude && exclude.has(f.properties?.name)) continue;
-    const g = f.geometry;
-    if (!g) continue;
-    if (g.type === "Polygon") rings.push(g.coordinates[0]);
-    else if (g.type === "MultiPolygon") for (const poly of g.coordinates) rings.push(poly[0]);
-  }
-  return rings;
-}
+const mercY = (lat: number) =>
+  R * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
 
 function decluster(pts: ProjPoint[]): Placed[] {
   const T = 42; // px in VIEW space below which markers are considered overlapping
@@ -86,99 +63,52 @@ function decluster(pts: ProjPoint[]): Placed[] {
   return out;
 }
 
-// Locally-hosted terrain raster for a country. The three bboxes are fixed
-// (derived from static geo data), so the ArcGIS export is baked once into
-// /public/terrain — served from our own origin, cached, no third-party stall.
-// `remoteTopoUrl` below is kept only as a runtime fallback if the local file is
-// ever missing. Exported so the map can preload all countries for instant switches.
-export function topoUrlForCountry(country: CountryView): string {
-  const code = (SHAPE[country.code] ? country.code : "IT").toLowerCase();
-  return `/terrain/${code}.png`;
-}
+const outlineFor = (code: string) => MAP_OUTLINES[code] ?? MAP_OUTLINES.IT;
 
-// Web-Mercator bbox → Esri World_Topo export URL for a country. Fallback only.
-export function remoteTopoUrl(country: CountryView): string {
-  const geo = (SHAPE[country.code] ?? italyGeo) as unknown as { features: any[] };
-  const rings = outerRings(geo, country.code === "US" ? US_EXCLUDE : undefined);
-  let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
-  for (const ring of rings)
-    for (const [lon, lat] of ring) {
-      if (lon < minLon) minLon = lon;
-      if (lon > maxLon) maxLon = lon;
-      if (lat < minLat) minLat = lat;
-      if (lat > maxLat) maxLat = lat;
-    }
-  const padLon = (maxLon - minLon) * 0.03;
-  const padLat = (maxLat - minLat) * 0.03;
-  minLon -= padLon; maxLon += padLon; minLat -= padLat; maxLat += padLat;
-  const minX = mercX(minLon), maxX = mercX(maxLon);
-  const minY = mercY(minLat), maxY = mercY(maxLat);
-  const mW = maxX - minX, mH = maxY - minY;
-  const scale = Math.min((VIEW_W - 2 * PAD) / mW, (VIEW_H - 2 * PAD) / mH);
-  const drawW = mW * scale;
-  const imgPxW = Math.min(2048, Math.round(drawW * 1.8));
-  const imgPxH = Math.round((imgPxW * mH) / mW);
-  return (
-    `https://server.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/export` +
-    `?bbox=${minX},${minY},${maxX},${maxY}&bboxSR=3857&imageSR=3857` +
-    `&size=${imgPxW},${imgPxH}&format=png&transparent=false&f=image`
-  );
+// Locally-hosted terrain raster for a country. The bboxes are fixed (derived
+// from static geo data), so the ArcGIS export is baked once into /public/terrain
+// — served from our own origin, cached, no third-party stall. The generated
+// `remote` URL is kept only as a runtime fallback if the local file is missing.
+export function topoUrlForCountry(country: CountryView): string {
+  const code = (MAP_OUTLINES[country.code] ? country.code : "IT").toLowerCase();
+  return `/terrain/${code}.png`;
 }
 
 export function OutlineMap({ country }: { country: CountryView }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  // Hold the whole map hidden until the terrain raster is decoded, then reveal
-  // everything (silhouette + relief + markers) together — no staged pop-in.
+  // Hold the terrain hidden until it is decoded, then fade it in over the
+  // silhouette — the shape, border and university chips never wait on it.
   const [loaded, setLoaded] = useState(false);
   // If the local raster is ever missing, fall back to the live ArcGIS export.
   // OutlineMap remounts per country (keyed AnimatePresence), so this resets.
   const [useRemote, setUseRemote] = useState(false);
 
   const { clip, url, remoteUrl, img, placed } = useMemo(() => {
-    const geo = (SHAPE[country.code] ?? italyGeo) as unknown as { features: any[] };
-    const rings = outerRings(geo, country.code === "US" ? US_EXCLUDE : undefined);
+    const outline = outlineFor(country.code);
+    const { img, bounds } = outline;
 
-    let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
-    for (const ring of rings)
-      for (const [lon, lat] of ring) {
-        if (lon < minLon) minLon = lon;
-        if (lon > maxLon) maxLon = lon;
-        if (lat < minLat) minLat = lat;
-        if (lat > maxLat) maxLat = lat;
-      }
-    const padLon = (maxLon - minLon) * 0.03;
-    const padLat = (maxLat - minLat) * 0.03;
-    minLon -= padLon; maxLon += padLon; minLat -= padLat; maxLat += padLat;
+    // The generator fitted this lon/lat box into `img`; invert that fit to put
+    // the markers in the same frame as the coastline it already drew.
+    const minX = mercX(bounds[0]);
+    const maxX = mercX(bounds[2]);
+    const minY = mercY(bounds[1]);
+    const maxY = mercY(bounds[3]);
+    const sx = img.w / (maxX - minX);
+    const sy = img.h / (maxY - minY);
 
-    const minX = mercX(minLon), maxX = mercX(maxLon);
-    const minY = mercY(minLat), maxY = mercY(maxLat);
-    const mW = maxX - minX, mH = maxY - minY;
-    const scale = Math.min((VIEW_W - 2 * PAD) / mW, (VIEW_H - 2 * PAD) / mH);
-    const drawW = mW * scale, drawH = mH * scale;
-    const offX = (VIEW_W - drawW) / 2, offY = (VIEW_H - drawH) / 2;
-    const project = (lon: number, lat: number): [number, number] => [
-      offX + (mercX(lon) - minX) * scale,
-      offY + (maxY - mercY(lat)) * scale,
-    ];
+    const pts: ProjPoint[] = country.markers.map((m) => ({
+      ...m,
+      x: img.x + (mercX(m.lon) - minX) * sx,
+      y: img.y + (maxY - mercY(m.lat)) * sy,
+    }));
 
-    let clip = "";
-    for (const ring of rings) {
-      ring.forEach((pt, i) => {
-        const [x, y] = project(pt[0], pt[1]);
-        clip += (i === 0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1);
-      });
-      clip += "Z";
-    }
-
-    const url = topoUrlForCountry(country);
-    const remoteUrl = remoteTopoUrl(country);
-
-    const pts: ProjPoint[] = country.markers.map((m) => {
-      const [x, y] = project(m.lon, m.lat);
-      return { ...m, x, y };
-    });
-
-    return { clip, url, remoteUrl, img: { x: offX, y: offY, w: drawW, h: drawH }, placed: decluster(pts) };
+    return {
+      clip: outline.d,
+      url: topoUrlForCountry(country),
+      remoteUrl: outline.remote,
+      img,
+      placed: decluster(pts),
+    };
   }, [country]);
 
   // Render the hovered chip last so it sits above its neighbours.
@@ -213,12 +143,11 @@ export function OutlineMap({ country }: { country: CountryView }) {
 
       <g>
         {/* Shadow silhouette lifts the country off the page. Shown immediately so
-            the map is visibly present even before the remote terrain decodes. */}
+            the map is visibly present even before the terrain raster decodes. */}
         <path d={clip} fill="#e8ecf0" filter="url(#terrain-lift)" />
 
         {/* Real topographic terrain, clipped to the country shape. Only THIS layer
-            waits on the remote raster, fading in over the silhouette below it —
-            so the shape, border and university chips never hide behind a slow image. */}
+            waits on the raster, fading in over the silhouette below it. */}
         <image
           href={useRemote ? remoteUrl : url}
           x={img.x}

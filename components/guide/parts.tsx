@@ -1,4 +1,5 @@
 import Link from "@/components/ui/Link";
+import { DetailExit } from "@/components/guide/DetailExit";
 import type { FacultyValue } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
 import {
@@ -10,8 +11,10 @@ import {
 // levels of depth (index → list → one subject) only read as one section if they
 // are literally made of the same parts.
 //
-// Nothing here is a client component. The guide is curated data and links; the
-// only interactive control in the whole section is the field chips.
+// Everything here renders on the server. The two client islands it reaches for
+// are the field chips and `DetailExit` — the way out of a sub-page, which has
+// to be one because it listens for Escape and watches whether it is still on
+// screen.
 
 /**
  * The band every list page opens with: the step's heading on the left, the
@@ -222,32 +225,37 @@ export function DetailShell({
   return (
     <div className="space-y-6">
       <div>
-        {/* Breadcrumb, not a bare "back": at three levels deep the student needs
-            to know where they are, not only that there is a way out. */}
-        <nav aria-label="Breadcrumb" className="text-sm">
-          <ol className="flex flex-wrap items-center gap-1.5 text-ink-faint">
-            {/* A 44px tap area on the breadcrumb: it is the primary way back out
-                of a detail page on a phone, and at 17px it was a third of the
-                minimum. */}
-            <li>
-              <Link
-                href="/guide"
-                className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
-              >
-                The guide
-              </Link>
-            </li>
-            <li aria-hidden>/</li>
-            <li>
-              <Link
-                href={crumbHref}
-                className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
-              >
-                {crumb}
-              </Link>
-            </li>
-          </ol>
-        </nav>
+        {/* Where you are on the left, the way out on the right. Both, because
+            they answer different questions: at three levels deep a student
+            needs to know where they are, and a breadcrumb still reads as
+            navigation rather than as "this closes". */}
+        <div className="flex items-center justify-between gap-3">
+          <nav aria-label="Breadcrumb" className="min-w-0 text-sm">
+            <ol className="flex flex-wrap items-center gap-1.5 text-ink-faint">
+              {/* A 44px tap area on the breadcrumb: it is the primary way back
+                  out of a detail page on a phone, and at 17px it was a third of
+                  the minimum. */}
+              <li>
+                <Link
+                  href="/guide"
+                  className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+                >
+                  The guide
+                </Link>
+              </li>
+              <li aria-hidden>/</li>
+              <li>
+                <Link
+                  href={crumbHref}
+                  className="inline-flex min-h-11 items-center underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+                >
+                  {crumb}
+                </Link>
+              </li>
+            </ol>
+          </nav>
+          <DetailExit href={crumbHref} label={crumb} />
+        </div>
         <h1
           className="mt-3 text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
           style={
@@ -275,7 +283,129 @@ export function DetailShell({
   );
 }
 
-/** One labelled idea. The tone carries the honesty rule: a catch looks like one. */
+/**
+ * A named part of a subject page, with an anchor.
+ *
+ * The subject pages were a stack of seven to nine equally-weighted boxes, and a
+ * reader could not tell from any height what the page contained or where they
+ * were in it — the "wall of text" complaint, which was really a complaint about
+ * having no skeleton. Two or three parts give the page a shape, and the shape is
+ * what `PageContents` above then lists.
+ *
+ * `scroll-mt-24` because StudentNav is sticky: without it, jumping to a part
+ * puts its heading underneath the bar.
+ */
+export function GuidePart({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-24">
+      <h2 className="text-lg font-semibold text-ink">{title}</h2>
+      <div className="mt-2.5 space-y-3">{children}</div>
+    </section>
+  );
+}
+
+/**
+ * The map of the page, at the top of it.
+ *
+ * Deliberately in the content column and not in the sticky rail: below `lg` the
+ * rail stacks BELOW the content, so a contents list living there would arrive
+ * after the thing it was meant to introduce — useless for exactly the phone
+ * reader who needs it most.
+ *
+ * Plain `<a href="#…">`, so it costs no JavaScript and works before hydration.
+ */
+export function PageContents({
+  parts,
+}: {
+  parts: { id: string; title: string }[];
+}) {
+  if (parts.length < 2) return null;
+  return (
+    <nav
+      aria-label="On this page"
+      className="rounded-2xl border border-line bg-card px-4 py-3 sm:px-5"
+    >
+      <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+        On this page
+      </h2>
+      <ol className="mt-2 flex flex-wrap gap-1.5">
+        {parts.map((part, i) => (
+          <li key={part.id}>
+            <a
+              href={`#${part.id}`}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring"
+            >
+              <span aria-hidden className="text-xs text-ink-faint">
+                {i + 1}
+              </span>
+              {part.title}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+/**
+ * Who the subject is for, and who it is not — the one piece of a profile that
+ * points at a reader rather than describing a place.
+ *
+ * It opens the page now. It used to close it, under seven blocks of prose: the
+ * student who left halfway down never reached the only two sentences addressed
+ * to them, and the page read as an encyclopaedia entry because its answer was
+ * buried under its description.
+ *
+ * `avoid` is optional because a city states both halves in one field; a country
+ * states them separately, and there the two sit level — an appeal without its
+ * catch beside it is an advert, which is the rule the whole layer is built on.
+ */
+export function ForYou({
+  suits,
+  avoid,
+  suitsLabel = "This suits you if…",
+  avoidLabel = "Look elsewhere if…",
+}: {
+  suits: string;
+  avoid?: string;
+  suitsLabel?: string;
+  avoidLabel?: string;
+}) {
+  return (
+    <section className={`grid gap-3 ${avoid ? "sm:grid-cols-2" : ""}`}>
+      <div className="rounded-2xl border border-accent/40 bg-accent-soft/25 p-4 sm:p-5">
+        <h2 className="text-sm font-semibold text-ink">{suitsLabel}</h2>
+        <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+          {suits}
+        </p>
+      </div>
+      {avoid && (
+        <div className="rounded-2xl border border-reach/40 bg-reach-soft/25 p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-ink">{avoidLabel}</h2>
+          <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+            {avoid}
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * One labelled idea. The tone carries the honesty rule: a catch looks like one.
+ *
+ * Its label is an `h3`: these sit inside a `GuidePart`, and a page whose
+ * headings all claim the same level is a wall to a screen reader even when it
+ * looks structured on screen.
+ */
 export function GuideBlock({
   label,
   tone = "plain",
@@ -293,9 +423,9 @@ export function GuideBlock({
         : "border-line bg-card";
   return (
     <section className={`rounded-2xl border p-4 sm:p-5 ${cls}`}>
-      <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
         {label}
-      </h2>
+      </h3>
       {/* Capped independently of the container: widening the shell must buy
           more columns, never longer lines. Unbounded, these ran to 131
           characters on a 1900px screen — nearly double the readable measure. */}

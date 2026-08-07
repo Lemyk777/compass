@@ -22,6 +22,107 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
 
 ## Where it stands
 
+**Latest (2026-08-08, later) — the map closed, and the guide started citing its
+sources.**
+
+The map had a hole in the middle of it: nine of the twenty-two cities sat in
+countries with no page, including Almaty, Astana, Tashkent and Tbilisi. The
+site's own logic pointed home and there was nothing at home to point at.
+
+- **19 countries (was 11) and 37 cities (was 22).** New profiles: **Kazakhstan,
+  Uzbekistan, Georgia, Poland, Türkiye, China, Japan, India** — every country
+  that had a city on the map now has a page behind it, test-enforced. New
+  cities: Munich, Kraków, Rome, Geneva, Amsterdam, Manchester, Ankara, Daejeon,
+  Osaka & Kyoto, Beijing, Shanghai, Hyderabad, Seattle, Vancouver, Montreal —
+  so every country now shows its major cities rather than one.
+- **The home region leads the country list**, the same decision the world map
+  made. Kazakhstan's page is written for the student the reviews said we had
+  abandoned: staying is a strategy, with the state grant mechanics, what a local
+  degree does and does not convert into, and the trap of enrolling at home as a
+  fallback and disengaging for four years.
+- **Two facts corrected against their sources.** The UK Graduate Route is 18
+  months for applications from 1 January 2027 (PhD keeps three) — the old "two
+  years" was wrong for every current school student, which is the whole
+  audience. The US page now carries the H-1B fee introduced in September 2025,
+  **including the part the review missed**: a graduate already in the country
+  changing status from F-1 is exempt, so the honest effect is employer caution
+  rather than a bill the student pays. "Admissions is a coin-flip" is gone; it
+  read as 50% and the reality is single digits.
+- **`sources` on every country profile** — anabin, uni-assist, UCAS, Universitaly,
+  Studielink, Türkiye Bursları, MEXT, CSC, GKS, Bolashak, the national testing
+  centre — rendered as "Check it yourself", with `npm run test:guide-links`
+  proving they answer. 29/29 reachable. The rule that decided the list: a
+  403/429/412 is a bot wall and still ships (the server answered), a **timeout
+  does not** (it proves nothing) — which is why Germany links anabin and
+  uni-assist and not DAAD.
+- **Germany's decisive block now names the mechanism** (the review's worked
+  example): anabin, what a Central Asian certificate is actually worth, the two
+  routes past it — Studienkolleg with its T/M/W streams deciding which degrees
+  you may then apply for, or one to two completed years at a university at home,
+  which students overlook entirely.
+- Style: the two headings that shipped on all 19 country pages lost their
+  crutches ("What is **genuinely** good" → "What is good here", "What it
+  **actually** costs you" → "What it costs you"), and "A country is not one job
+  market" now appears once instead of on every country page.
+
+**Latest (2026-08-08) — the subject pages got a shape.**
+
+Two outside reviews of the guide (`compassguidereview.md`, `compassguidedepth.md`,
+7 Aug) said the same thing from two directions: the writing is good and the
+pages are unreadable as pages — nine equally-weighted boxes, no skeleton, and
+the only two sentences addressed to the reader sitting at the very bottom. The
+structural half of that is now fixed on every country, city and area page:
+
+- **The answer opens the page.** `ForYou` ("this suits you if… / look elsewhere
+  if…") moved from the foot of the page to directly under the one-liner.
+- **A map, then parts.** `PageContents` lists the two-to-five named parts, each
+  an anchor. Parts are one array per page read twice — by the contents and by
+  the sections — so the two cannot drift apart.
+- **The order follows the questions**: countries run what it gives / what it
+  costs → money → getting in → living there and after → the cities inside it;
+  cities run the catch and the way in → living there → the work here; areas run
+  what the work is → how you get there → **test it this month**, which is its own
+  part now rather than the seventh box down, because it is the only thing on the
+  page a reader can act on today.
+- The guide index no longer claims four steps "each narrower than the last" —
+  the counters underneath it read 33 → 11 → 22 → 6, and the reviews were right
+  that the first sentence of the section was contradicted by the numbers
+  directly below it.
+
+**What is NOT fixed, and it is the larger half.** Both reviews are about
+content, not layout: five of five pages name the deciding obstacle and stop
+before the mechanism; there is not one outbound link to the organiser or
+government we claim to have checked; the UK Graduate Route figure is already
+wrong for anyone in school today; and the country the site's own logic points at
+— Kazakhstan — has no page. Those need the owner's own knowledge, which is
+exactly what the reviews say. Listed under "the guide's content debt" below.
+
+**Latest (2026-08-07, later) — the guide can now be found, and a wrong URL
+finally says 404.**
+
+Goal A below, shipped bar the caching item (which turned out to be an owner
+call — see the end of A):
+
+- **`app/sitemap.ts` + `app/robots.ts`.** 77 public URLs, generated from the same
+  registries the pages are, so a twelfth country appears in the sitemap the
+  moment it exists. No `lastModified` — we don't record when a profile was
+  revised, and stamping the deploy date on all 77 would be a claim we can't
+  stand behind. robots.txt blocks preview deploys outright and every private
+  tree; a unit test asserts it blocks nothing the sitemap advertises (the
+  `/partner` vs `/partners` prefix trap, caught before it shipped).
+- **Unknown ids are real 404s.** `/guide/places/whatever` answered **200** with a
+  not-found page. The cause was not `notFound()` and not `force-dynamic`: it was
+  the section-wide `app/guide/loading.tsx`. A `loading.tsx` is a Suspense
+  boundary, and a boundary lets the server flush the status line before the page
+  under it runs. Measured both ways on a production build. The skeleton is now
+  scoped to the four list routes (via `(index)`/`(list)` route groups) plus
+  from-home and compare — which is also where the wait actually is, since a list
+  page resolves the session and a subject page reads static data.
+- **Per-page canonical + Open Graph** for every public page (`lib/seo.ts`). The
+  canonical drops `?f=`, so the filter can't split one page into eight; and
+  `/guide/compare` sorts its pair, so `?a=italy&b=germany` and the mirror report
+  one canonical instead of competing.
+
 **Latest (2026-08-07) — the guide became a section, and then said something.**
 
 Four releases in a day, all on the same thing: the guide existed but was one
@@ -416,32 +517,46 @@ written for exactly the student who has nobody to ask. Two things are wrong with
 that, and they are the same problem seen from either end: **nobody can find it,
 and we cannot tell whether it works.**
 
-### A. It is invisible to search — and this is the distribution channel
+**Half of that is now answered: A is done, B is the goal.** A crawler can reach
+the whole section, a wrong URL 404s, and a shared link says what it is. Nothing
+yet says whether reading any of it changes what a student enters.
+
+### A. It was invisible to search — DONE, except the caching item
 
 The guide was made public deliberately: a family deciding between Germany and
 Korea should be able to read it without an account. That only means anything if
-they can arrive. Right now:
+they can arrive. Three of the four blockers are gone (see the top of this file
+for what shipped and how it was verified):
 
-- **There is no `sitemap.xml` and no `robots.txt`.** 66 evergreen pages aimed at
-  queries our students actually type ("studying in Germany cost", "what does a
-  data scientist actually do") and nothing tells a crawler they exist. Only the
-  root is linked from anywhere outside the app.
-- **Unknown URLs answer 200 with a "not found" page.** `/guide/places/whatever`
-  is a soft 404 — `notFound()` cannot set a status once the `force-dynamic`
-  layout has streamed. That actively pollutes an index, and it is app-wide
-  rather than specific to the guide.
-- **Nothing is cached.** The whole section is `force-dynamic` because the layout
-  reads the session to pick a shell. Every crawl is a full server render plus an
-  auth round trip, for content that changes a few times a year.
-- **No per-page `openGraph`/canonical.** A shared link renders the site-wide
-  card, so a link to Berlin looks identical to a link to the home page — which
-  matters because sending a page to a parent is the sharing behaviour we
-  explicitly designed the URLs for.
+- ~~No `sitemap.xml` / `robots.txt`.~~ Both generated from the registries.
+- ~~Unknown URLs answer 200.~~ Real 404s; the cause was the section-wide
+  `loading.tsx` flushing the response before `notFound()` ran, not `notFound()`
+  itself.
+- ~~No per-page `openGraph`/canonical.~~ `lib/seo.ts`, applied to every public
+  page, query string dropped.
 
-The work, in order: `app/sitemap.ts` + `app/robots.ts` (Next generates both);
-split the guide layout so the public shell is static and only the session-aware
-strip is dynamic, so the content can actually be cached; make unknown ids real
-404s; per-page metadata with canonical and OG.
+**The fourth — "nothing is cached" — is an owner call, not a refactor, and the
+diagnosis in the original note was incomplete.** Two independent things make a
+guide response uncacheable, and fixing either alone changes nothing:
+
+1. The layout reads the session to choose a shell. Next 14 has no partial
+   prerendering, so any per-request read makes the whole route dynamic. Serving
+   the guide statically means either dropping the signed-in shell (a product
+   decision) or duplicating the route tree behind a middleware rewrite.
+2. Middleware mints `compass_vid` / `compass_sid` on **every** request, so every
+   HTML response carries `Set-Cookie` and `cache-control: private, no-store`.
+   That is the traffic denominator working as designed — and it defeats CDN
+   caching on its own, whatever the layout does.
+
+What the original note over-estimated: the cost. A crawler has no auth cookie,
+and `supabase.auth.getUser()` short-circuits locally without one, so a crawl is
+a server render over static TypeScript data — no auth round trip and no DB
+query. Worth revisiting when Next's PPR is stable, or if crawl budget ever shows
+up as a real constraint; not worth trading the shell or the denominator for
+today.
+
+Still open, and cheap: no OG **image**, so a shared link shows a text card. That
+is the remaining half of "sending a page to a parent".
 
 ### B. We have no evidence it changes anything
 
@@ -472,6 +587,56 @@ with its definition written under it, in the style already established there.
 - **Signed-in views have never been verified in a browser** across four
   releases — no test account exists. The shells differ between signed-in and
   guest, and the shell is what most of this work changed.
+
+### D. The guide's content debt (from the two outside reviews, 2026-08-07)
+
+The page shape is fixed (see the top of this file). What the reviews actually
+argue is that the guide **describes obstacles without describing mechanisms** —
+"Settle the Studienkolleg question first, because it changes the whole timeline"
+and then no word on how to settle it, five times out of five pages checked. In
+priority order, with who can do each:
+
+1. **Two facts are out of date, and one is out of date for exactly our
+   readers.** The UK Graduate Route is stated as two years; it becomes 18 months
+   for applications from 1 Jan 2027, which is every current 10th–11th grader.
+   The US page describes the pre-September-2025 H-1B world. **Verifiable against
+   the source — no local knowledge needed.** Do this before anything else: a
+   guide with a wrong headline rule is not "honest by design".
+2. **No outbound links to the organiser or government.** The guide claims
+   "checked against the organiser or the government that sets the rule" and
+   links to none of them — while `/opportunities` already ships exactly the right
+   pattern ("Official page ↗"). Add the slot; the URLs are curation work.
+3. **One block per page taken to depth** — the one the page itself calls
+   decisive. Mechanism, in order, with the source link. Owner knowledge.
+4. **A Kazakhstan page, and Almaty/Astana as real city pages.** The site's own
+   filters point home (law leaves 3 countries of 11; Warsaw is named the best
+   cost-to-opportunity ratio in the EU and has no country page) and there is
+   nothing there. This is the one page nobody else can write.
+5. **A "checked" date per page.** Cheap, and the largest trust gain per hour —
+   but it must be a real date the owner stands behind, not a build timestamp.
+6. **Dated orders of magnitude** instead of "competitive" ("~1,200 of ~9,000 in
+   2025 — check this year's"). The no-prices/no-rankings rule was written
+   against figures that rot silently; a dated figure rots *visibly*, which is the
+   opposite failure.
+7. **Style pass**: strike *genuinely*/*actually*, one antithesis per screen,
+   dedupe repeated lines ("A country is not one job market" appears 13+ times).
+   Mechanical, but it must ADD flat factual sentences where a hedge is removed,
+   or it is just deletion.
+
+Items 1, 2 (the slot), 6 and 7 are ours. Items 3, 4 and 5 are the owner's year
+of experience, and both reviews say the same thing about them: a model holds a
+template and cannot decide what matters, which is why all 66 pages read as
+equally confident.
+
+**Status after 2026-08-08:** 1 is **done** (UK Graduate Route, H-1B, coin-flip).
+2 is **done** (`sources` on all 19 countries + `test:guide-links`). 4 is **done
+structurally** — Kazakhstan, Uzbekistan and Georgia have pages and lead the list
+— but the depth inside them is written from public sources, not from the year
+the owner spent in it; that pass is still worth doing and cannot be delegated.
+3, 5, 6 and 7 remain: one block per page taken to mechanism (Germany's is done
+as the worked example), a per-page verification date the owner stands behind,
+dated orders of magnitude instead of "competitive", and the full style pass —
+the repeated headings are fixed, the body prose is not.
 
 ---
 
