@@ -54,6 +54,25 @@ export default async function GuideFromHomePage({
             <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
               {r.what}
             </p>
+            <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+              {(
+                [
+                  ["What it costs you in time", r.commitment],
+                  ["What you can show afterwards", r.proof],
+                  ["Who this suits, and who it doesn’t", r.whoThrives],
+                ] as const
+              ).map(([label, body]) => (
+                <div key={label} className="min-w-0">
+                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+                    {label}
+                  </dt>
+                  <dd className="mt-0.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+                    {body}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+
             <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
               <div className="rounded-xl border border-reach/30 bg-reach-soft/40 p-3.5">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">

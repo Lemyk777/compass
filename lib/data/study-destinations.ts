@@ -55,6 +55,22 @@ export type StudyDestination = {
   suitsYou: string;
   /** Who should look elsewhere — mandatory, and the most useful line here. */
   notForYou: string;
+  /**
+   * When things actually happen in a cycle, and what has to be done a year
+   * ahead. Timing is the most common way a strong applicant loses a place —
+   * not merit — and it is the one failure a guide can genuinely prevent.
+   */
+  applicationCycle: string;
+  /** How an application is actually READ here — what carries weight, and what does not. */
+  howTheyRead: string;
+  /**
+   * What studying there is like once you arrive: teaching style, contact hours,
+   * how you are assessed, how much independence is assumed. Students choose
+   * countries on admissions and then live inside the teaching culture for years.
+   */
+  studyingThere: string;
+  /** What applicants from this region specifically get wrong about this place. */
+  commonMistake: string;
   /** True where Compass already computes admission odds for this destination. */
   modelled: boolean;
 };
@@ -102,6 +118,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "You have a strong record beyond exams, you want to keep your options open for two more years, and either your family income is low enough for real aid or high enough to absorb the cost.",
     notForYou:
       "You need certainty. If a predictable path from degree to work permit to residence matters more than prestige, Canada, Germany or the Netherlands will treat you better.",
+    applicationCycle:
+      "The longest lead time of any country here. Tests and the first drafts of essays belong in the spring and summer before you apply; applications close in the autumn and winter of your final school year, with early rounds in early November and regular rounds in early January. Aid documents have their own, earlier deadlines, and missing them can cost you the aid rather than the place. Decisions arrive in March and you commit by early May.",
+    howTheyRead:
+      "Holistically, and the word is meant literally: grades and rigour first, then tests where required, then essays, activities and teacher letters read as evidence of a person. Depth beats breadth — two activities pursued for years say more than ten joined once. Essays are read for voice and self-awareness rather than achievement, and they are the one part nobody else can write for you.",
+    studyingThere:
+      "Broad first, narrow later: you take courses outside your subject for a year or two and declare a major afterwards, which is why changing direction is normal rather than a restart. Assessment is continuous — problem sets, papers, midterms — so the workload is steady rather than concentrated in finals. Class participation is graded in many courses, which surprises students from systems where listening is the norm.",
+    commonMistake:
+      "Building a list of famous names and assuming that asking for aid is neutral. Most US universities are need-AWARE for internationals, so requesting aid can affect the decision — which makes the small group of need-blind, full-need universities a completely different category. A list with no genuinely likely options in it is how strong applicants end up with nothing.",
     modelled: true,
   },
   {
@@ -146,6 +170,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "You already know your subject, your grades are strong and predictable, and you want the shortest respectable path from school to a degree to a job.",
     notForYou:
       "You're undecided between fields, or you need a scholarship to make it possible at undergraduate level. Both are better served elsewhere.",
+    applicationCycle:
+      "One UCAS application covering up to five courses, submitted in the autumn — with an earlier deadline in mid-October for medicine, veterinary science, dentistry, and for Oxford and Cambridge. Admissions tests and interviews for the most selective courses fall between then and Christmas. Offers are usually conditional on final exam results, which arrive in the summer and decide whether the place holds.",
+    howTheyRead:
+      "Academically, and narrowly on purpose. You apply to a SUBJECT rather than to a university, so the personal statement should be almost entirely about why that subject — reading you have done, ideas you have chased. Predicted grades and the reference carry real weight. Extracurricular breadth matters far less than in the US, and padding the statement with unrelated activities actively weakens it.",
+    studyingThere:
+      "Specialised from the first week and finished in three years. Contact hours are low and independence is assumed — the reading list is the course, and nobody chases you through it. Assessment often concentrates into final examinations or a dissertation, which rewards students who can pace themselves over months without weekly deadlines forcing it.",
+    commonMistake:
+      "Treating the personal statement like a US essay about personal growth. It is an academic argument for your fitness for one subject, and admissions tutors say so explicitly. The second mistake is choosing five wildly different courses — the same statement goes to all of them.",
     modelled: false,
   },
   {
@@ -189,6 +221,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "You want an English-taught degree in Asia, your academic record is strong, and a scholarship is what makes the difference between going and not going.",
     notForYou:
       "You want space, quiet or cheap housing — or you want a political environment that is settled and predictable for the next decade.",
+    applicationCycle:
+      "Applications for international students generally run through the autumn and winter for entry the following September, with the strongest scholarship consideration going to those who apply in the earlier rounds. Scholarship interviews follow. Verify each university's own dates directly — they differ from one another and move between cycles.",
+    howTheyRead:
+      "Grades first, and openly so: examination results and test scores carry decisive weight, and the process is far more transparent and less holistic than the American one. Essays and interviews matter chiefly for scholarship decisions rather than for admission itself. If your record is strong on paper, the odds here are more predictable than almost anywhere else on this list.",
+    studyingThere:
+      "English-medium teaching in a system that combines British structure with Asian intensity. Expect large first-year cohorts, continuous assessment alongside heavy finals, and classmates who are academically formidable. Campuses are compact and residential life is a real part of the experience, which helps enormously when you arrive alone.",
+    commonMistake:
+      "Assuming that because the universities teach in English, daily life runs in it too. Cantonese shapes everything outside campus, and students who never learn any of it describe living beside the city rather than in it.",
     modelled: true,
   },
   {
@@ -231,6 +271,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "You want Asia, in English, with a clear route into a job — and you are willing to trade a few post-graduation years for someone else paying for the degree.",
     notForYou:
       "You want to keep every option open after graduating. A bond is a commitment made at 18 that binds you at 22.",
+    applicationCycle:
+      "Applications open in the autumn and close in late winter or early spring for an August start, with scholarship applications submitted alongside or immediately after. Admission and scholarship decisions arrive in the spring, and the bond terms attached to funding come with them — read those before you accept, not after.",
+    howTheyRead:
+      "Academic results dominate, with a clear preference for demonstrated strength in the subject you are applying to. Interviews are used for scholarships and for the more selective programmes. The process is efficient and evidence-driven; there is little room for a compelling story to compensate for weaker grades.",
+    studyingThere:
+      "Rigorous and fast-paced, with continuous assessment and a great deal of group work, all in English. Universities are well resourced and campuses are self-contained. The academic pressure is genuinely high and is discussed openly by students there.",
+    commonMistake:
+      "Signing a bonded scholarship without understanding what the bond means. It commits you to working in Singapore for a set number of years afterwards, which is a reasonable trade only if you have thought about where you actually want to be at twenty-five.",
     modelled: false,
   },
   {
@@ -274,6 +322,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "You are ready to learn German, you want engineering or the sciences, and the cost of the degree is the thing standing between you and studying abroad.",
     notForYou:
       "You want to be taught in English at bachelor's level, or you need a warm, guided, small-campus environment. Neither is what this system does.",
+    applicationCycle:
+      "Two intakes, winter and summer, with the winter one dominant — applications for it usually fall around mid-July, and go via uni-assist for many international applicants, which adds weeks of processing you must plan for. Before any of that comes the recognition question: whether your school certificate qualifies directly or requires a Studienkolleg foundation year. Settle that first, because it changes the whole timeline. The blocked account for the visa also takes time to open.",
+    howTheyRead:
+      "By the numbers, and refreshingly transparently. Your school grades, subject match and language certificate decide it; many courses admit anyone meeting the published threshold, and selective ones apply a numerical cut-off. There is no essay to agonise over and no interview for most programmes — so the preparation that matters is documents and German, not self-presentation.",
+    studyingThere:
+      "Independent to a degree that surprises people: few contact hours, little chasing, and often a single examination at the end of the semester deciding the grade. Dropout rates reflect that — the freedom is real and so is the requirement to organise yourself. Universities of applied sciences are more structured and more practical, and are often the better fit for students who want employment rather than research.",
+    commonMistake:
+      "Underestimating German because the master's programmes are in English. Bachelor's teaching is mostly in German, the authorities operate in German, and the job market outside tech expects it — students who postpone the language usually find their options narrowing exactly when they graduate.",
     modelled: false,
   },
   {
@@ -317,6 +373,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "Money is the binding constraint, you are willing to learn Italian, and you want design, architecture, engineering or medicine.",
     notForYou:
       "You need high graduate earnings immediately, or you cannot handle administrative uncertainty. Both will make you miserable here.",
+    applicationCycle:
+      "The DSU scholarship application is the one with the unforgiving deadline, and it is usually separate from and earlier than the university's own — typically in the summer, months before term. It requires certified documents about your family's income, legalised and translated, which takes weeks to assemble from abroad. Selective programmes such as Politecnico's design courses run their own admission tests earlier in the year.",
+    howTheyRead:
+      "Academic record and, for selective programmes, an entrance test or portfolio. The distinctive part is not admission but the parallel financial assessment: fees at public universities scale to your family's assessed income, and the DSU grant is awarded on that basis with a merit condition to keep it. Two processes, two deadlines, and the money one is the one people miss.",
+    studyingThere:
+      "Traditional and examination-centred, with oral examinations still common — you sit in front of a professor and defend your understanding aloud, which is unfamiliar and genuinely hard the first time. Attendance rules vary and independence is assumed. The design and architecture studios at Politecnico are the exception: intense, studio-based and project-led.",
+    commonMistake:
+      "Missing the DSU deadline, or arriving with documents that were never legalised properly. Almost every student who loses this opportunity loses it on paperwork rather than on grades — start the document chain the moment you decide Italy is on your list.",
     modelled: true,
   },
   {
@@ -362,6 +426,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "You want Europe in English, you are organised enough to hit early deadlines, and engineering, tech or business is your direction.",
     notForYou:
       "You cannot arrange housing early or absorb its cost, or you need a low-tuition option — Germany does that better.",
+    applicationCycle:
+      "Applications run through Studielink, with a hard national deadline in the spring for most programmes and a much earlier January deadline for selective ones. Capped programmes — including many popular English-taught ones — run their own selection round with additional tests or assignments. Housing should be arranged the day you are admitted, not after.",
+    howTheyRead:
+      "Transparently and criteria-led: published entry requirements, subject prerequisites, and for capped programmes a selection procedure whose weighting is usually stated in advance. Motivation letters matter for selective courses. There is little space for holistic compensation, which is good news if your record is solid and bad news if you hoped to be read generously.",
+    studyingThere:
+      "Small-group, project-based and interactive; Dutch teaching culture expects you to speak, disagree and work in teams from the start, and grades often depend substantially on group work. Feedback is direct to the point of bluntness. Contact hours are moderate and self-study is assumed, but you are far less alone in it than in the German system.",
+    commonMistake:
+      "Treating housing as a detail. The shortage is severe enough that universities warn applicants explicitly, and students have arrived to find nothing available — this is the single most common way a Dutch plan goes wrong.",
     modelled: false,
   },
   {
@@ -404,6 +476,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "You intend to build a life abroad, not just get a degree, and you want the rules written down in advance.",
     notForYou:
       "You want the cheapest degree, or the highest research prestige. Germany wins the first, the US the second.",
+    applicationCycle:
+      "Applications run through the autumn and winter for a September start, with deadlines varying by province and university — Ontario runs a central system, others do not. Study permit processing after an offer takes weeks to months and is the step most often underestimated; apply for it the moment you accept. Scholarship deadlines are frequently earlier than admission deadlines.",
+    howTheyRead:
+      "Primarily on grades and subject prerequisites, with some universities adding supplementary applications or essays for competitive programmes. More predictable than the US and less purely numerical than Germany. English test scores are firm requirements rather than guidelines.",
+    studyingThere:
+      "North American in structure — broad first year, continuous assessment, participation counted — with a strong culture of co-op programmes that alternate study terms with paid work terms. Those work terms are the real asset: they build local experience, which is precisely what the immigration route later rewards.",
+    commonMistake:
+      "Assuming the immigration ladder is automatic. The post-graduation work permit depends on the type and length of the programme you studied — some colleges and short courses do not qualify — so check that the specific programme leads where you think it does before enrolling.",
     modelled: false,
   },
   {
@@ -446,6 +526,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "You want a fully funded degree, you are genuinely willing to learn a hard language, and engineering, tech or the creative industries are your direction.",
     notForYou:
       "You are not prepared to study Korean seriously. Without it this becomes an expensive, isolating four years.",
+    applicationCycle:
+      "Two intakes, March and September, with the March one dominant. The Global Korea Scholarship runs on its own timetable and can be applied for through either the Korean embassy or a university, each with different quotas and dates, usually opening in the winter for a start later that year. Applications for self-funded students fall in the autumn and spring respectively.",
+    howTheyRead:
+      "Documents and academic record, with language certificates carrying real weight — TOPIK for Korean-taught programmes, English tests for English-taught ones. For the scholarship, a study plan and personal statement matter, as does the coherence of your reason for choosing Korea specifically. Recommendation letters are taken seriously.",
+    studyingThere:
+      "Structured, attendance-conscious and hierarchical, with strong bonds inside your year group and department. Group work and after-class socialising are woven into academic life more than Western students expect. Scholarship students spend a full year on language first, which is demanding and is also what makes the rest work.",
+    commonMistake:
+      "Planning to study in English and stay to work without Korean. English-taught degrees exist, but the graduate job market largely does not run in English — students who skip the language often find themselves qualified and locally unemployable.",
     modelled: true,
   },
   {
@@ -488,6 +576,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "You want a Western degree without leaving the region, or you are aiming at NYUAD's aid, or you want to start earning quickly in a tax-free market.",
     notForYou:
       "You want to emigrate permanently or build an academic research career. The residence model and the research depth both point elsewhere.",
+    applicationCycle:
+      "The branch campuses run on the calendar of their home institutions — NYU Abu Dhabi's deadlines mirror the American cycle, with early and regular rounds in the autumn and winter and a candidate weekend for shortlisted applicants. Local universities have their own, generally later, timelines. Financial aid at NYUAD is assessed alongside admission rather than afterwards.",
+    howTheyRead:
+      "At NYU Abu Dhabi, holistically and extremely selectively — it is among the most competitive undergraduate admissions anywhere, reading essays, activities and interviews closely, with need-based aid that can cover the full cost. Local and other branch campuses are more conventional, weighting grades and test scores.",
+    studyingThere:
+      "American-style liberal arts at the branch campuses: broad first years, small seminars, continuous assessment, and an unusually international student body in which nobody is the majority. Campuses are new, well resourced and largely self-contained, and the surrounding city is comfortable but does not integrate you the way a university town would.",
+    commonMistake:
+      "Treating NYU Abu Dhabi as a safety option because it is nearby and in the region. Its selectivity makes it a reach for almost everyone, and the aid that makes it generous is exactly what makes it competitive.",
     modelled: true,
   },
   {
@@ -524,6 +620,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "You are academically exceptional, you can cover living costs, and research or deep tech is genuinely what you want.",
     notForYou:
       "Your budget is tight, or you need an English-taught bachelor's. Both make this the wrong door.",
+    applicationCycle:
+      "Bachelor's applications generally close in the spring for an autumn start, with recognition of your school certificate the gating question — ETH in particular requires either a recognised qualification or its own entrance examination, which is demanding and must be prepared for well in advance. Doctoral positions are advertised as jobs throughout the year and are applied for directly to a research group.",
+    howTheyRead:
+      "Academic record against a published standard, plus the entrance examination where your qualification is not recognised. It is a system with little interest in personal narrative and considerable interest in whether you can handle the mathematics. Doctoral hiring is different again: a supervisor is choosing a colleague, so research fit and prior work decide it.",
+    studyingThere:
+      "Demanding and fast, with first-year examinations that a substantial proportion of students do not pass — that attrition is a known feature of the system rather than a personal failure. Teaching is rigorous and theoretical, and support exists but must be sought. Doctoral study, by contrast, is a salaried job with a supervisor and colleagues.",
+    commonMistake:
+      "Focusing on the low tuition and not on the cost of living. Fees here are among the lowest in Western Europe and existence is among the most expensive in the world — which is why the funded doctoral route, not the undergraduate one, is the realistic door for most students from this region.",
     modelled: false,
   },
 ];

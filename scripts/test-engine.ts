@@ -38,6 +38,7 @@ import {
   careerAreasForFaculties,
   careerAreaTitles,
 } from "@/lib/data/careers";
+import { CAREER_AREA_TITLES } from "@/lib/data/career-titles";
 import { HOME_ROUTES, homeRoutesForFaculties } from "@/lib/data/from-home";
 import { LEGACY_GUIDE_PLACE_IDS } from "@/lib/data/legacy-guide-urls";
 import {
@@ -396,6 +397,48 @@ test("every hub has a catch and a way in, and unique ids", () => {
   }
 });
 
+// The depth layer on cities. Three lines about an industry say nothing about
+// the years a student would actually spend in a place, and the years are what
+// they are deciding about — so each of these is mandatory too.
+test("every hub says what living there is like, costs, and demands", () => {
+  for (const h of HUBS) {
+    assert.ok(
+      h.dayHere.trim().length > 150,
+      `${h.id} does not say what living there is actually like`,
+    );
+    assert.ok(
+      h.money.trim().length > 150,
+      `${h.id} does not explain how the money works`,
+    );
+    assert.ok(
+      h.language.trim().length > 100,
+      `${h.id} does not state the language you need`,
+    );
+    // Both halves, or it is a recommendation rather than a description.
+    assert.ok(
+      h.whoThrives.trim().length > 120 &&
+        /look elsewhere/i.test(h.whoThrives),
+      `${h.id} does not name who should go somewhere else instead`,
+    );
+  }
+});
+
+// No prices anywhere in the world map — the rule the destination profiles are
+// already held to. Figures rot within a year; shape does not.
+test("no hub quotes a price, a salary or a ranking", () => {
+  const forbidden =
+    /(\$|€|£|₸|\bUSD\b|\bEUR\b|\bper month\b|\bper year\b|\brank(ed|ing)? (?:#|no\.?\s?)\d|\btop \d+\b)/i;
+  for (const h of HUBS) {
+    for (const [field, text] of Object.entries(h)) {
+      if (typeof text !== "string") continue;
+      assert.ok(
+        !forbidden.test(text),
+        `${h.id}.${field} quotes a figure or ranking that will rot: ${text.slice(0, 80)}`,
+      );
+    }
+  }
+});
+
 test("every field has hubs across more than one region", () => {
   for (const f of FACULTY_VALUES) {
     const hubs = hubsForFaculties([f]);
@@ -429,6 +472,71 @@ test("the home region leads the map", () => {
 // The guide stopped being one page: each step, each area of work and each city
 // is its own URL now. Two things that used to be impossible to get wrong become
 // possible once addresses exist, so they are pinned here.
+
+// The depth layer. `catch` is the rule this file was missing: every city in
+// world.ts states its downside, areas of work did not, and that made the
+// careers layer the one place in the product that could read as a brochure.
+test("every area of work states its catch, and the rest of the depth", () => {
+  for (const { faculty, area } of allCareerAreas()) {
+    const where = `${faculty}/${area.title}`;
+    assert.ok(
+      area.catch.trim().length > 120,
+      `${where} has no real catch — that is an advert`,
+    );
+    assert.ok(
+      area.dayToDay.trim().length > 120,
+      `${where} does not say what the work is actually like`,
+    );
+    assert.ok(
+      area.misconception.trim().length > 80,
+      `${where} names nothing students get wrong about it`,
+    );
+    assert.ok(
+      area.tryItNow.trim().length > 80,
+      `${where} gives no way to test the fit`,
+    );
+    for (const [k, v] of Object.entries(area.stages)) {
+      assert.ok(
+        v.trim().length > 80,
+        `${where} stage "${k}" is too thin to act on`,
+      );
+    }
+  }
+});
+
+// `adjacent` holds titles, not ids, so a typo would render a dead link with no
+// error anywhere. This is what makes that impossible.
+test("every adjacent area resolves, and none points at itself", () => {
+  for (const { area } of allCareerAreas()) {
+    assert.ok(
+      area.adjacent.length >= 2,
+      `${area.title} offers too few neighbours to be useful`,
+    );
+    assert.equal(
+      new Set(area.adjacent).size,
+      area.adjacent.length,
+      `${area.title} repeats a neighbour`,
+    );
+    for (const title of area.adjacent) {
+      assert.notEqual(title, area.title, `${area.title} lists itself`);
+      const found = areaBySlug(areaSlug(title));
+      assert.ok(found, `${area.title} points at a missing area: ${title}`);
+      assert.equal(found!.area.title, title);
+    }
+  }
+});
+
+// The titles are duplicated into a tiny module so the client-side interest quiz
+// can import labels without pulling 1,100 lines of prose into the browser.
+test("the client-side title list matches the registry exactly", () => {
+  for (const f of FACULTY_VALUES) {
+    assert.deepEqual(
+      CAREER_AREA_TITLES[f],
+      CAREER_AREAS_BY_FACULTY[f].map((a) => a.title),
+      `career-titles.ts has drifted from the registry for ${f}`,
+    );
+  }
+});
 
 // A career area has no id of its own — its slug is derived from its title. Two
 // areas sharing a slug would silently serve one under the other's address.
@@ -631,6 +739,20 @@ test("every from-home route has a catch and a first move", () => {
       r.firstMove.trim().length > 40,
       `${r.id} has no first move a student could make this week`,
     );
+    // "You can do this from home" is only useful next to what it costs and what
+    // it leaves behind — otherwise it is encouragement, not guidance.
+    assert.ok(
+      r.commitment.trim().length > 100,
+      `${r.id} does not say what it costs in time`,
+    );
+    assert.ok(
+      r.proof.trim().length > 100,
+      `${r.id} does not say what you can show for it afterwards`,
+    );
+    assert.ok(
+      r.whoThrives.trim().length > 100 && /look elsewhere/i.test(r.whoThrives),
+      `${r.id} does not name who should pick a different route`,
+    );
   }
   assert.ok(HOME_ROUTES.length >= 4, "too few routes to be worth a step");
 });
@@ -711,6 +833,31 @@ test("no destination is a brochure: trade-offs >= strengths, and all filled", ()
         `${d.id}.${field} is too thin to be useful`,
       );
     }
+  }
+});
+
+// The depth layer on countries. A student picks a country on admissions and
+// then lives inside its teaching culture and its calendar for years, so those
+// are stated too — and timing especially, because missing a deadline is the one
+// way to lose a place that has nothing to do with how good you are.
+test("every destination states its cycle, its reading, and its teaching", () => {
+  for (const d of STUDY_DESTINATIONS) {
+    assert.ok(
+      d.applicationCycle.trim().length > 200,
+      `${d.id} does not say when things actually happen`,
+    );
+    assert.ok(
+      d.howTheyRead.trim().length > 200,
+      `${d.id} does not say how an application is read there`,
+    );
+    assert.ok(
+      d.studyingThere.trim().length > 200,
+      `${d.id} does not say what studying there is like`,
+    );
+    assert.ok(
+      d.commonMistake.trim().length > 120,
+      `${d.id} names nothing applicants from this region get wrong`,
+    );
   }
 });
 
