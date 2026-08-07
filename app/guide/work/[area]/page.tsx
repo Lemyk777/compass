@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "@/components/ui/Link";
 import { DetailShell, GuideBlock } from "@/components/guide/parts";
-import { areaBySlug } from "@/lib/data/careers";
+import { areaBySlug, areaSlug } from "@/lib/data/careers";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
 import { guideMorph } from "@/lib/data/guide-sections";
@@ -50,6 +50,11 @@ export default function GuideAreaPage({
   const cities = hubsByRegion([faculty])
     .map((g) => g.hubs[0])
     .slice(0, 5);
+  // `adjacent` holds area TITLES; resolve each to its route. A test pins that
+  // every one of them resolves, so a silent dead entry cannot ship.
+  const neighbours = area.adjacent
+    .map((title) => ({ title, slug: areaSlug(title) }))
+    .filter((n) => Boolean(areaBySlug(n.slug)));
 
   return (
     <DetailShell
@@ -61,6 +66,35 @@ export default function GuideAreaPage({
       lead={area.what}
       aside={
         <>
+          {/* Nearby areas, for the student who is close but not quite. The
+              guide's rule is that we widen rather than guess, and this is that
+              rule made clickable. */}
+          {neighbours.length > 0 && (
+            <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
+              <h2 className="text-sm font-semibold text-ink">
+                Close to this, if it is not quite right
+              </h2>
+              <ul className="mt-3 space-y-2">
+                {neighbours.map((n) => (
+                  <li key={n.slug}>
+                    <Link
+                      href={withFields(`/guide/work/${n.slug}`, stated)}
+                      className="group flex min-h-11 items-center justify-between gap-2 text-sm font-medium text-ink-soft transition-colors hover:text-ink focus-visible:focus-ring"
+                    >
+                      {n.title}
+                      <span
+                        aria-hidden
+                        className="shrink-0 text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-accent motion-reduce:transition-none"
+                      >
+                        &rarr;
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           {cities.length > 0 && (
             <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
               <h2 className="text-sm font-semibold text-ink">
@@ -104,6 +138,22 @@ export default function GuideAreaPage({
       }
     >
       <div className="space-y-3">
+        {/* The order is the order a student asks the questions in: what is the
+            work actually like, what does it cost me, what am I probably getting
+            wrong — and only then the route in. Leading with the route would be
+            answering "how" before they know whether they want it. */}
+        <GuideBlock label="What the work is actually like">
+          {area.dayToDay}
+        </GuideBlock>
+
+        <GuideBlock label="The catch" tone="warn">
+          {area.catch}
+        </GuideBlock>
+
+        <GuideBlock label="What people get wrong about it">
+          {area.misconception}
+        </GuideBlock>
+
         <GuideBlock label="The jobs inside this area">
           <ul className="flex flex-wrap gap-1.5">
             {area.roles.map((role) => (
@@ -120,7 +170,45 @@ export default function GuideAreaPage({
           </p>
         </GuideBlock>
 
-        <GuideBlock label="The path in" tone="good">
+        {/* Three stages rather than one sentence, because "study engineering"
+            hides every decision that actually matters — when to specialise,
+            what the degree is like, and what the first job is really doing. */}
+        <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+            The route in, stage by stage
+          </h2>
+          <ol className="mt-3 space-y-3">
+            {(
+              [
+                ["While you are still at school", area.stages.school],
+                ["What you study", area.stages.study],
+                ["How the first years actually go", area.stages.first],
+              ] as const
+            ).map(([label, body], i) => (
+              <li key={label} className="flex gap-3">
+                <span
+                  data-num
+                  aria-hidden
+                  className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white"
+                >
+                  {i + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-ink">{label}</p>
+                  <p className="mt-0.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+                    {body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <GuideBlock label="Test it this month, for nothing" tone="good">
+          {area.tryItNow}
+        </GuideBlock>
+
+        <GuideBlock label="The one-line version of the route" tone="good">
           {area.path}
         </GuideBlock>
 

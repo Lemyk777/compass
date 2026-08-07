@@ -105,11 +105,33 @@ export default function GuideHubPage({
       }
     >
       <div className="space-y-3">
+        {/* The catch stays first, before anything attractive — the rule this
+            whole layer is built on. Then the four questions a student actually
+            has about a place they might spend years in: what it is like to live
+            there, what the money does, what language it demands, and whether it
+            is for them at all. */}
         <GuideBlock label="The catch" tone="warn">
           {hub.catch}
         </GuideBlock>
         <GuideBlock label="The way in" tone="good">
           {hub.route}
+        </GuideBlock>
+        <GuideBlock label="What living here is actually like">
+          {hub.dayHere}
+        </GuideBlock>
+        <GuideBlock label="How the money works">
+          {hub.money}
+          <span className="mt-1.5 block max-w-[60ch] text-xs text-ink-faint">
+            Described in shape rather than figures on purpose: rents and salaries
+            move every year and we cannot keep numbers true, but what is
+            expensive and what quietly eats income stays true for far longer.
+          </span>
+        </GuideBlock>
+        <GuideBlock label="The language you actually need">
+          {hub.language}
+        </GuideBlock>
+        <GuideBlock label="Who this suits, and who it doesn’t">
+          {hub.whoThrives}
         </GuideBlock>
         <GuideBlock label="The work that clusters here">
           {hub.fields.map((f) => FACULTY_LABEL[f]).join(" · ")}

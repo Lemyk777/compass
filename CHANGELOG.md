@@ -21,6 +21,55 @@ record.
 
 ---
 
+## 2026-08-07 — The guide says three times as much
+
+### What a student notices
+
+- **Every area of work now answers the questions you actually have.** It was a
+  title, one line and a list of job titles. It now says what a working week is
+  really like, what the work costs you, what people reliably get wrong about it,
+  the route in as three stages (school → what you study → how the first years
+  actually go), and the cheapest way to test whether you like it — this month,
+  from home, for nothing.
+- **Every city says what living there is like**, not only what industry sits
+  there: housing, transport, weather, how the money works, what language you
+  need for the job as distinct from the life, and who should pick somewhere else.
+- **Every country now says when things actually happen.** Missing a deadline is
+  the one way a strong applicant loses a place that has nothing to do with how
+  good they are, so each profile states the cycle, how an application is really
+  read there, what studying there is like once you arrive, and what applicants
+  from this region specifically get wrong.
+- **Each route you can take from home** states what it costs in time and what
+  you can show for it afterwards.
+- **Areas of work link to their neighbours**, for the student who is close but
+  not quite.
+
+In total the guide's writing went from about 7,100 words to about 24,300.
+
+### The honesty rules this extended
+
+- **"The catch" is now mandatory on areas of work.** Every city has stated its
+  downside since the map was written; areas of work did not, which made the
+  careers layer the one place in the product that could read as a brochure. A
+  test enforces it now, exactly as it does for cities.
+- **"No prices, no rankings" is now checked automatically**, not just written
+  down. Money is described in shape — "housing is the whole problem", "income is
+  untaxed but residence is tied to your employer" — because figures rot within a
+  year and shape does not.
+- **"Who should look elsewhere" is required** on cities and on from-home routes.
+  Without it, a description is a recommendation.
+
+### Under the hood
+
+- The interest quiz is a client component and imported the careers registry for
+  eight short labels. Tripling that file would have shipped every paragraph to
+  the browser, so the titles moved to a tiny module of their own
+  ([lib/data/career-titles.ts](lib/data/career-titles.ts)), kept in step by a
+  test. **Bundle sizes are unchanged** — `/guide/work/[area]` is still 1.09 kB.
+- No database migration. No new environment variable.
+
+---
+
 ## 2026-08-07 — The screen gets used
 
 ### What a student notices

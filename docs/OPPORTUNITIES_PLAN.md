@@ -22,6 +22,46 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
 
 ## Where it stands
 
+**Latest (2026-08-07) — the guide became a section, and then said something.**
+
+Four releases in a day, all on the same thing: the guide existed but was one
+page, one scroll and one paragraph deep. It is now a section of routes with real
+content in it.
+
+- **A section, not a page.** `/guide` was a single scroll holding all four
+  steps; finding anything meant reading 33 areas of work, 22 cities and 11
+  country profiles in one column, and the detail behind every card was a modal
+  with **no URL**. Every step and every subject is its own route now — 5 list
+  pages and 66 subject pages — so `/guide/cities/berlin` is a link you can send
+  to a parent. The field filter moved into `?f=` so it survives navigation.
+- **The zoom runs the right way.** Cities came before countries, which asked a
+  student to weigh Berlin and then zoomed *out* to Germany. Order is now
+  work → countries → cities → from home, the city list is grouped by country,
+  and a city's breadcrumb is its country. **Cities stayed their own step** —
+  9 of 22 hubs sit in countries we do not profile, including the entire home
+  region, and nesting them away would have deleted Almaty and Tashkent from the
+  map. A test pins that.
+- **"Compare it with" actually compares.** It was a row of chips that navigated
+  to the other country, throwing away the side you had just read. `/guide/compare`
+  now lays two countries on the same ten axes, trade-offs level with strengths.
+- **The screen gets used.** The content column was 1024px wide whatever the
+  display was; on a 1920px screen that spent ~900px on gutter and turned width
+  into height. One container now (1024 → 1440), denser grids, and a sticky rail
+  on detail pages. `/guide/cities` went from 4.5 screens of scroll to 2.0 at
+  1900px. The rule is in CLAUDE.md: **width buys columns, never line length.**
+- **The writing tripled.** 7,113 → 24,344 words. Every area of work now states a
+  real working week, its honest cost, the misconception, the route in three
+  stages and a way to test the fit this month; every city states what living
+  there is like, how the money works and what language the *job* needs as
+  distinct from the *life*; every country states its application cycle, how an
+  application is really read, what studying there is like, and what applicants
+  from this region get wrong.
+- **Three honesty rules extended and made test-enforced**: `catch` is now
+  mandatory on areas of work (cities always had one — careers were the only
+  layer that could read as a brochure); "look elsewhere if…" is required on
+  cities and from-home routes; and "no prices, no rankings" is now checked by a
+  regex test rather than only written down.
+
 **Latest (2026-08-05, evening) — Opportunities left the report's sidebar.**
 
 The front door had been declared the product for days while still being served
@@ -74,9 +114,11 @@ fixed, structurally rather than by copy:
   `components/opportunities/InterestQuiz.tsx`) for the student who can't answer
   "what field?" — 6 questions, fixed per-option weights, pure deterministic
   scoring, top 3 fields returned as an editable selection.
-- **Careers layer** (`lib/data/careers.ts` + `CareersPanel.tsx`) — 4–5 career
-  **areas** per field (what that kind of work actually is, the real job titles
-  inside it, and the path in), collapsed by default. The surface reads
+- **Careers layer** (`lib/data/careers.ts`) — 4–5 career **areas** per field.
+  *(`CareersPanel.tsx` is long gone; this is `/guide/work` and
+  `/guide/work/[area]` now, and since 2026-08-07 each area also states a real
+  working week, its mandatory `catch`, the misconception, the route in three
+  stages and a way to test the fit this month.)* The surface reads
   interest → field → area → what to enter next.
 
   **We name spheres, not one profession (owner call, 2026-08-05).** The layer
@@ -317,11 +359,14 @@ ignorable.** The surface is one page (Opportunities), layered:
 | Stage | The student's question | Where it lives | Status |
 |---|---|---|---|
 | Who am I | "what am I into?" | interest quiz | ✅ shipped |
-| Where does it lead | "who could I become?" | `careers.ts` + `/guide` | ✅ shipped (areas, not one job) |
-| Where in the world | "where is that work, and can I get there?" | `world.ts` + `/guide` | ✅ shipped (22 hubs, each with its catch) |
+| Where does it lead | "who could I become?" | `careers.ts` + `/guide/work` | ✅ shipped — 33 areas, each with a real week, its catch, the route in three stages |
+| Which country | "where would I actually go?" | `study-destinations.ts` + `/guide/places` | ✅ shipped — 11 profiles + `/guide/compare` |
+| Where in the world | "where is that work, and can I get there?" | `world.ts` + `/guide/cities` | ✅ shipped — 22 hubs, each with its catch, its money and its language |
+| What if I stay | "what can I do without moving?" | `from-home.ts` + `/guide/from-home` | ✅ shipped — 6 routes, each with what it costs and what it proves |
 | What do I want from it | "which of those suits me?" | `values.ts` + `ValuesRefine` | ✅ shipped (reorders areas only) |
 | What do I do | "what can I enter?" | the matched list | ✅ shipped |
 | Where do I stand | "what are my odds?" | the opt-in analysis | ✅ shipped |
+| **Does anyone read it** | **"did the guide change what they entered?"** | **nothing yet** | ⛔ **the next goal — see below** |
 
 Left, in the order they're worth doing:
 
@@ -363,6 +408,72 @@ Left, in the order they're worth doing:
    a clear refusal boundary before it ships.
 4. **Reflection in the student's own words** — the open-ended half of "what do
    you want", complementing the structured quiz.
+
+## THE NEXT GOAL (2026-08-07) — the guide is unreachable and unproven
+
+Two sessions went into the guide. It is now 24,000 words across 66 public pages,
+written for exactly the student who has nobody to ask. Two things are wrong with
+that, and they are the same problem seen from either end: **nobody can find it,
+and we cannot tell whether it works.**
+
+### A. It is invisible to search — and this is the distribution channel
+
+The guide was made public deliberately: a family deciding between Germany and
+Korea should be able to read it without an account. That only means anything if
+they can arrive. Right now:
+
+- **There is no `sitemap.xml` and no `robots.txt`.** 66 evergreen pages aimed at
+  queries our students actually type ("studying in Germany cost", "what does a
+  data scientist actually do") and nothing tells a crawler they exist. Only the
+  root is linked from anywhere outside the app.
+- **Unknown URLs answer 200 with a "not found" page.** `/guide/places/whatever`
+  is a soft 404 — `notFound()` cannot set a status once the `force-dynamic`
+  layout has streamed. That actively pollutes an index, and it is app-wide
+  rather than specific to the guide.
+- **Nothing is cached.** The whole section is `force-dynamic` because the layout
+  reads the session to pick a shell. Every crawl is a full server render plus an
+  auth round trip, for content that changes a few times a year.
+- **No per-page `openGraph`/canonical.** A shared link renders the site-wide
+  card, so a link to Berlin looks identical to a link to the home page — which
+  matters because sending a page to a parent is the sharing behaviour we
+  explicitly designed the URLs for.
+
+The work, in order: `app/sitemap.ts` + `app/robots.ts` (Next generates both);
+split the guide layout so the public shell is static and only the session-aware
+strip is dynamic, so the content can actually be cached; make unknown ids real
+404s; per-page metadata with canonical and OG.
+
+### B. We have no evidence it changes anything
+
+The product's thesis is that understanding where a field leads changes **what a
+student enters**. We now have both halves of the data and no join between them:
+
+- `page_views` (migration 0025) records every visit, signed in or not, and the
+  guide's paths are in it.
+- `opportunity_intents` is still the only behavioural metric — "I'm doing this"
+  and the date they say they will start.
+
+The question worth answering is one query: **do students who read a guide page
+go on to record an intent at a different rate, and for different opportunities,
+than students who never open it?** If the answer is no, 24,000 words is a
+beautiful thing nobody needed and the next investment belongs in the catalog
+instead. That is worth knowing before writing more.
+
+Do not build a funnel dashboard for this. One honest number on `/admin/traffic`,
+with its definition written under it, in the style already established there.
+
+### C. Two smaller things that fall out of the same work
+
+- **The annual verification burden just grew.** Application cycles, post-study
+  work rules and scholarship names are the fastest-rotting text in the guide,
+  and there is now much more of it. `test:links` checks URLs and cannot check
+  claims. Consider a `lastVerified` date per destination and a check that fails
+  when one is older than a year.
+- **Signed-in views have never been verified in a browser** across four
+  releases — no test account exists. The shells differ between signed-in and
+  guest, and the shell is what most of this work changed.
+
+---
 
 ## Next steps, in order
 

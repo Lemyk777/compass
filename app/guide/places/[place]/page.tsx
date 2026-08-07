@@ -147,6 +147,18 @@ function DestinationBody({
       <section className="space-y-3">
         <Block title="Money — how paying for it works">{d.money}</Block>
         <Block title="Getting in — what they weigh">{d.admissions}</Block>
+        {/* Timing is the way a strong applicant most often loses a place, and
+            unlike merit it is entirely preventable by knowing it early. */}
+        <Block title="The cycle — when things actually happen">
+          {d.applicationCycle}
+        </Block>
+        <Block title="How an application is actually read here">
+          {d.howTheyRead}
+        </Block>
+        <Block title="What studying there is like">{d.studyingThere}</Block>
+        <Block title="What applicants from this region get wrong">
+          {d.commonMistake}
+        </Block>
         <Block title="After you graduate">
           {d.afterStudy}
           <span className="mt-1.5 block text-xs text-ink-faint">
