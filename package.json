@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "map:outlines": "node --import tsx scripts/build-map-outlines.ts",
     "test:analyze": "node --env-file=.env.local --import tsx scripts/test-analyze.ts",
     "test:discover": "node --env-file=.env.local --import tsx scripts/test-discover.ts",
     "test:scrape": "node --import tsx scripts/test-scrape-pages.ts",

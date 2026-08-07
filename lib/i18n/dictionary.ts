@@ -19,108 +19,19 @@ const en: Dict = {
   "lang.label": "Language",
 
   // landing
-  "landing.badge": "For international students applying to universities abroad",
-  "landing.title1": "See what you can enter.",
-  "landing.title2": "Then make your move.",
-  "landing.title2b": "Then go and win it.",
-  "landing.title2c": "Then close the gap.",
-  "landing.subtitle":
-    "Competitions, olympiads and programmes you can actually enter at your age — with the deadlines, every link and date checked by us. Free, and no account needed to see them.",
-  "landing.ctaOpportunities": "See what you can enter",
-  "landing.ctaAssess": "Assess your full profile",
-  "landing.navOpps": "Opportunities",
-  "landing.ctaBuild": "Build your scorecard",
-  "landing.ctaHave": "I already have an account",
-  "landing.free": "Free, all of it. No account needed to start.",
-  "landing.problemKicker": "The problem",
-  "landing.problemTitle": "Applying blind is the expensive part.",
-  "landing.problemBody":
-    "Most students only learn where they really stood from a rejection letter — when it's far too late to fix anything.",
-  "landing.pain1Title": "No honest benchmark",
-  "landing.pain1Body":
-    "Rankings describe schools, not you. You never see how your own profile actually compares.",
-  "landing.pain2Title": "Advice that flatters",
-  "landing.pain2Body":
-    "Forums and consultants tell you what you want to hear. Hype doesn't survive an admissions committee.",
-  "landing.pain3Title": "No clear next move",
-  "landing.pain3Body":
-    "Even when you know you're behind, nobody tells you which one thing to fix first.",
-  "landing.heroBadge": "New · Multi-country admissions",
-  "landing.heroTrust": "Now covering the US & Italy — more countries on the way",
-  "landing.howItWorks": "How it works",
-  "landing.step1Title": "Tell us about you",
-  "landing.step1Body":
-    "A short, guided intake — grades, tests, activities, and your target schools. Works with IB, A-Levels, national curricula, and US GPA.",
-  "landing.step2Title": "Get your scorecard",
-  "landing.step2Body":
-    "Seven scored factors, an overall competitiveness score, and per-school likelihood ranges with a confidence level.",
-  "landing.step3Title": "Follow the plan",
-  "landing.step3Body":
-    "A prioritized gap analysis and timeline showing the highest-impact moves you can make next.",
-  "landing.honestTitle": "Honest by design",
-  "landing.honestBody":
-    "We give you confident numbers about your profile — and careful ranges about admission. Top schools are unpredictable for everyone, so we never pretend a single percentage is the truth. The value is the plan, not a false guarantee.",
-  "landing.footer": "Guidance, not guarantees.",
+  //
+  // The landing page copy now lives INLINE in app/(marketing)/page.tsx and the
+  // components under components/marketing. That page was rewritten around
+  // Opportunities (what a student can enter) rather than the admission report,
+  // and ~80 keys here described the old page: "we score you honestly", "build
+  // your scorecard", the campus-mascot gallery. They were dead weight in a
+  // literal sense — this map is imported by LanguageProvider in the root
+  // layout, so every key ships in the client bundle of every route on the site.
+  //
+  // These three stay because MiniScorecard is shared with the report surfaces.
   "landing.standingPreview": "Your standing",
   "landing.preview": "Preview",
   "landing.competitiveness": "competitiveness",
-  "landing.trustedBy": "Benchmark yourself against top universities in the US, Italy & beyond",
-  "landing.fromEverywhere": "Students applying from 50+ countries",
-  "landing.getTitle": "Everything you get",
-  "landing.getSub": "One profile in, a complete game plan out.",
-  "landing.get1Title": "A competitiveness score",
-  "landing.get1Body": "Seven factors scored 0–10 and blended into one honest 0–100 number.",
-  "landing.get2Title": "Per-school odds",
-  "landing.get2Body": "Reach / target / likely tiers with admission-likelihood ranges for every school.",
-  "landing.get3Title": "Benchmarks vs admits",
-  "landing.get3Body": "See your SAT and grades against each school's admitted middle 50%.",
-  "landing.get4Title": "A plan to improve",
-  "landing.get4Body": "Prioritized, specific moves and a month-by-month timeline.",
-  "landing.get5Title": "US & Italy pathways",
-  "landing.get5Body":
-    "One profile, scored for both American and Italian admissions — each evaluated on its own rubric.",
-  "landing.howTitle": "How Compass works",
-  "landing.howSub": "From one profile to a clear, honest plan.",
-  "landing.how1Title": "Tell us about you",
-  "landing.how1Body":
-    "Grades, test scores, activities, honors, and the schools you're aiming for.",
-  "landing.how2Title": "We score you — honestly",
-  "landing.how2Body":
-    "Every factor is rated against a fixed rubric and real admit data. Same profile, same numbers — no hype.",
-  "landing.how3Title": "Get your game plan",
-  "landing.how3Body":
-    "A competitiveness score, per-school odds, gap analysis, and a month-by-month plan.",
-  "landing.reportTitle": "Inside your report",
-  "landing.reportSub": "Not a vague vibe check — concrete numbers you can act on.",
-  "landing.benchYou": "You",
-  "landing.benchAdmitted": "Admitted 50%",
-  "landing.gap1": "Research / publication experience",
-  "landing.gap2": "Sharper personal essays",
-  "landing.seeSample": "See a sample report",
-  "landing.mascotsTitle": "Meet your future campus",
-  "landing.mascotsSub": "Every great application has personality — so does every campus you're aiming for.",
-  "landing.demoTitle": "This is what you walk away with",
-  "landing.demoSub": "A clear, shareable read on exactly where you stand — and what to do next.",
-  "landing.ctaTitle": "Ready to see where you stand?",
-  "landing.ctaSub": "Build your scorecard in a few minutes. Free to start.",
-  "landing.faqTitle": "Questions, answered",
-  "landing.faqSub": "The honest answers, before you start.",
-  "landing.faqQ1": "How is my competitiveness score calculated?",
-  "landing.faqA1":
-    "Seven factors are each scored against a fixed rubric and real admitted-student data, then blended into one 0–100 number. The same profile always produces the same score — no black box, no hype.",
-  "landing.faqQ2": "Can Compass guarantee I'll get in?",
-  "landing.faqA2":
-    "No — and we won't pretend to. Top schools are unpredictable for everyone, so we give honest likelihood ranges instead of a fake percentage. The real value is the prioritized plan to improve.",
-  "landing.faqQ3": "Which countries does it cover?",
-  "landing.faqA3":
-    "The US, Italy and Hong Kong today — each scored on its own admission logic — with more countries on the way.",
-  "landing.faqQ4": "I'm on IB / A-Levels / a national curriculum — does it work?",
-  "landing.faqA4":
-    "Yes. The intake adapts to your curriculum — IB, A-Levels, national systems or US GPA — with no manual conversions.",
-  "landing.faqQ5": "How long does it take?",
-  "landing.faqA5": "A few minutes. One guided intake in, a complete game plan out.",
-  "landing.faqQ6": "Is it free?",
-  "landing.faqA6": "Free to start — no credit card needed.",
 
   // auth
   "auth.welcomeBack": "Welcome back",

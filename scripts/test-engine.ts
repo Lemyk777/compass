@@ -15,6 +15,11 @@ import { test } from "node:test";
 import type { NextRequest } from "next/server";
 import { denyUnlessCronAuthorized } from "@/lib/cron/auth";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { renderModule } from "./build-map-outlines";
+import { MAP_OUTLINES } from "@/lib/data/map-outlines";
+import { COUNTRIES } from "@/lib/data/map-markers";
 
 import { RUBRIC, computeOverall, type FactorKey } from "@/lib/rubric";
 import { computeOverallFromFactors, computeBenchmarks } from "@/lib/ai/assemble";
@@ -1200,4 +1205,44 @@ test("durations are never shown as a bare number of seconds", () => {
   assert.equal(formatDuration(200), "3m 20s");
   assert.equal(formatDuration(180), "3m");
   assert.equal(formatDuration(3_840), "1h 4m");
+});
+
+// ── The landing map's precomputed outlines ────────────────────────────────────
+//
+// lib/data/map-outlines.ts is generated from public/data/*.json, and generated
+// files rot silently: someone edits the geo data, the committed module keeps
+// drawing the old coastline, and nothing complains. Regenerating in-memory and
+// diffing catches exactly that.
+
+test("map-outlines.ts matches what the generator produces today", () => {
+  const onDisk = readFileSync(
+    path.join(process.cwd(), "lib", "data", "map-outlines.ts"),
+    "utf8"
+  );
+  assert.equal(
+    renderModule().replace(/\r\n/g, "\n"),
+    onDisk.replace(/\r\n/g, "\n"),
+    "public/data changed without `npm run map:outlines` — the landing map is drawing a stale coastline"
+  );
+});
+
+test("every country the map can show has an outline", () => {
+  for (const c of COUNTRIES) {
+    const o = MAP_OUTLINES[c.code];
+    assert.ok(o, `${c.code} has no generated outline`);
+    // A path that never closes a ring means the clip mask is empty, which
+    // renders as a country-shaped hole rather than a country.
+    assert.ok(o.d.startsWith("M") && o.d.endsWith("Z"), `${c.code} path is malformed`);
+    assert.ok(o.img.w > 0 && o.img.h > 0, `${c.code} has no terrain box`);
+    const [minLon, minLat, maxLon, maxLat] = o.bounds;
+    assert.ok(minLon < maxLon && minLat < maxLat, `${c.code} bounds are inverted`);
+    // Markers are placed by inverting `bounds`, so one outside the box would be
+    // drawn off the coastline entirely.
+    for (const m of c.markers) {
+      assert.ok(
+        m.lon >= minLon && m.lon <= maxLon && m.lat >= minLat && m.lat <= maxLat,
+        `${c.code}: ${m.name} sits outside the generated bounds`
+      );
+    }
+  }
 });

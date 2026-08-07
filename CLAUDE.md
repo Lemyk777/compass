@@ -165,6 +165,55 @@ column that was empty anyway. It is pinned at `top-20` because StudentNav is
 sticky and ~57px tall.
 - Step 4 obeys the world-map rule: every route in [lib/data/from-home.ts](lib/data/from-home.ts) carries its catch and a first move, test-enforced. **No URLs in that file** — the catalog owns links, because `test:links` checks those.
 
+## The landing page: the front door has to be on the front page
+
+[app/(marketing)/page.tsx](app/(marketing)/page.tsx) was built end-to-end for
+the admission report — hero, three pains, "how we score you", a scorecard, a
+campus-mascot gallery, an FAQ about the score. Opportunities appeared on it as a
+button. It now runs in the product's own order: **what you can enter → what the
+list is made of → how it works → why lists usually fail → where it leads (the
+guide) → honest by design → the report, opt-in → organisations → FAQ → close.**
+
+- **Every number on the page is computed from the data at request time** —
+  `COMPETITIONS.length`, the free count, the always-open count, `allCareerAreas()`,
+  `HUBS`, `STUDY_DESTINATIONS`, `HOME_ROUTES`. A hardcoded "150+" drifts from what
+  the student then sees; a read cannot.
+- **The hero visual is the product, not a picture of it.** `OpportunityPreview`
+  is a SERVER component rendering four real catalog rows with the same four facts
+  every card carries (what it is · who can enter · what it costs · when it
+  closes). It ships as HTML: no image, no hydration, no JS.
+- **The map belongs to the report section and mounts only when scrolled to.**
+  It plots the universities the analysis benchmarks against — that is report
+  content, and it is the most expensive thing on the page.
+
+Four traps that cost real seconds, all of them found by measuring:
+
+1. **Never preload every country's terrain.** `MapView` used to warm all five
+   rasters on mount — 2.0 MB, on the landing page, competing with the fonts.
+   Only the two countries one click away are warmed now, and on idle.
+2. **The map's geometry is precomputed, not imported.** `OutlineMap` used to
+   `import` five GeoJSON files (~126 kB → a 140 kB client chunk) and re-project
+   58 US rings on the main thread on every country switch. Run
+   `npm run map:outlines` to regenerate [lib/data/map-outlines.ts](lib/data/map-outlines.ts)
+   after touching `public/data`; a unit test diffs the committed file against the
+   generator, so a stale commit fails rather than drawing an old coastline.
+3. **`getUniversityLogos()` is size-capped, and picks by weight.** /public/logos
+   is 94 files / 3.8 MB and the marquee renders the list twice. It now takes the
+   32 lightest files under 40 kB (~143 kB). Selecting alphabetically instead
+   ended the row at "Lehigh" and dropped MIT, Yale, Stanford and Princeton —
+   all small files that were never the problem.
+4. **The landing page ships no framer-motion.** FAQ is native `<details>` (zero
+   JS, answers in the HTML for search, keyboard-operable for free); `HowItWorks`
+   and `FinalCTA` are plain server components. The old versions held content at
+   `opacity: 0` behind a scroll observer — the same anti-pattern the guide
+   removed. And **no animated `filter: blur`**: the rotating headline blurred on
+   a 2.6s loop forever, re-rasterising a 60px `<h1>` for as long as the tab was
+   open. Transform and opacity only, and the interval stops when the hero
+   scrolls out of view.
+
+Result: first-load JS for `/` went 163 kB → 107 kB, and the first paint pulls
+no terrain, no logos and no GeoJSON at all.
+
 ## Partner organisations (Astana Hub, Shymkent Hub, …)
 
 An organisation posts its own competitions under its own name, logo and

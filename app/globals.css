@@ -101,8 +101,8 @@
 }
 
 /* Headline line — a deep-navy phrase that smoothly "shuffles" between full
-   sentences: the new line glides DOWN into place (soft blur→sharp) while the old
-   one slips down and out at the SAME time. The trick that keeps it clean: motion
+   sentences: the new line glides DOWN into place while the old one slips down
+   and out at the SAME time. The trick that keeps it clean: motion
    and OPACITY are separate animations. Opacity is LINEAR and complementary over
    the same duration, so the incoming and outgoing opacities always sum to 1 —
    it is mathematically impossible to ever paint two opaque phrases stacked on top
@@ -113,27 +113,30 @@
    below) makes the swap instant and holds the first phrase. */
 .roll-word {
   color: var(--accent-ink);
-  will-change: transform, opacity, filter;
+  /* `will-change` is scoped to the two properties that actually animate.
+     It used to list `filter` too, and the keyframes below used to blur the
+     phrase from 5px to 0 on every swap — which meant the browser re-rasterised
+     a 60px headline every 2.6 seconds, forever, in the hero. Blur is the one
+     filter that cannot be composited; dropping it is most of the reason the
+     page stops stuttering while it sits idle. Transform and opacity are both
+     compositor-only, so the glide now costs a frame's worth of nothing. */
+  will-change: transform, opacity;
 }
-/* Motion + blur — eased, for a fluid glide. Both phrases travel downward. */
+/* Motion — eased, for a fluid glide. Both phrases travel downward. */
 @keyframes roll-move-in {
   0% {
     transform: translateY(-0.34em);
-    filter: blur(5px);
   }
   100% {
     transform: translateY(0);
-    filter: blur(0);
   }
 }
 @keyframes roll-move-out {
   0% {
     transform: translateY(0);
-    filter: blur(0);
   }
   100% {
     transform: translateY(0.34em);
-    filter: blur(5px);
   }
 }
 /* Opacity — linear + complementary + equal duration ⇒ in + out === 1 at all
@@ -194,6 +197,21 @@
 .marquee-row:hover .marquee-track,
 .marquee-row:hover .marquee-track-rev {
   animation-play-state: paused;
+}
+/* An off-screen marquee is still an animation the compositor keeps ticking.
+   `content-visibility` lets the browser skip the whole row until it scrolls
+   near the viewport; `contain-intrinsic-size` keeps its box reserved so nothing
+   jumps when it does. */
+.marquee-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 56px;
+}
+
+/* The FAQ is native <details>. Chrome and Firefox drop the disclosure triangle
+   for `list-style: none` (Tailwind's `list-none` on the summary); Safari needs
+   this. Element-scoped, so no class for the Tailwind linter to reject. */
+summary::-webkit-details-marker {
+  display: none;
 }
 
 /* ---- Hero ambient: faint dotted grid, masked to fade toward the edges ------ */
