@@ -153,6 +153,7 @@ export default async function AdminPage() {
       <AppHeader
         admin
         links={[
+          { href: "/admin/traffic", label: "Traffic" },
           { href: "/admin/intents", label: "Commitments" },
           { href: "/admin/opportunities", label: t("admin.opps") },
           { href: "/admin/partners", label: "Partners" },
@@ -184,9 +185,30 @@ export default async function AdminPage() {
           />
         </div>
 
+        {/* Every number in the grid above is a numerator. This is where the
+            denominator lives — how many people reached the site at all, how
+            long they stayed, and whether any of them came back. */}
+        <Link
+          href="/admin/traffic"
+          className="group mt-6 block rounded-2xl border border-line bg-card p-4 shadow-card transition-colors hover:border-accent/40 focus-visible:focus-ring"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-ink">Site traffic</h2>
+              <p className="mt-0.5 text-xs text-ink-soft">
+                Everyone who arrives — signed in or not. How many, how long they
+                stay, whether they come back.
+              </p>
+            </div>
+            <span className="shrink-0 text-ink-faint transition-colors group-hover:text-accent">
+              →
+            </span>
+          </div>
+        </Link>
+
         <Link
           href="/admin/ambassadors"
-          className="group mt-6 block rounded-2xl border border-line bg-card p-4 shadow-card transition-colors hover:border-accent/40 focus-visible:focus-ring"
+          className="group mt-4 block rounded-2xl border border-line bg-card p-4 shadow-card transition-colors hover:border-accent/40 focus-visible:focus-ring"
         >
           <div className="flex items-center justify-between gap-3">
             <div>

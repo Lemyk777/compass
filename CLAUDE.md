@@ -155,6 +155,43 @@ list + profile + application), `/partner` (their console), `/admin/partners`
   flow through `resolveCompetitions()` like any other live row. No second
   catalog, no second renderer.
 
+## Site traffic (`/admin/traffic`) — the denominator
+
+`events` (0001) only ever recorded what a **signed-in** user did, so every
+conversion number on `/admin` was a fraction with an unknown bottom half.
+Migration `0025_traffic.sql` adds `page_views`, and this is the bottom half:
+everyone who arrives, signed in or not.
+
+- **Two anonymous ids, both minted in middleware** ([lib/supabase/middleware.ts](lib/supabase/middleware.ts)):
+  `compass_vid` (1 year → "a visitor") and `compass_sid` (re-set every request
+  with a 30-minute max-age, so it slides → "a visit"). Both are httpOnly random
+  uuids, derived from nothing about the person. They are also written onto the
+  **request**, or the very first page load of a new visitor would be invisible.
+- **Path only, never the query string.** `cleanPath` in
+  [lib/traffic/track.ts](lib/traffic/track.ts) is the privacy boundary of the
+  whole feature — our URLs carry `?ref=` codes, `?next=` paths and auth callback
+  tokens, and none of that may reach an analytics table. A unit test pins it.
+- **Time on page is VISIBLE time.** The row is written when a page opens; a
+  beacon fills in `dwell_ms` when it closes ([components/analytics/Traffic.tsx](components/analytics/Traffic.tsx)),
+  and the clock pauses when the tab is backgrounded. Writing the row on *close*
+  instead would be tidier and would lose every visit the browser kills. **A null
+  `dwell_ms` means unknown, not zero** — such visits are excluded from the
+  median and from the bounce denominator rather than counted as 0s.
+- **Not recorded:** `/admin` (a dashboard that counts its own reader tells you
+  about yourself), `localhost`, and `*.vercel.app` previews — set `TRACK_LOCAL=1`
+  to record local ones while testing. Bots are filtered by UA, and the tracker
+  is client-side, so crawlers that don't run JS never arrive at all.
+- **Every metric is a definition, and definitions live in one place**
+  ([lib/traffic/summarize.ts](lib/traffic/summarize.ts), pure, unit-tested).
+  "Returned" = seen on **2+ separate days**, never "clicked twice". The page
+  repeats the relevant definition under each panel on purpose: an analytics
+  screen whose terms are unwritten gets believed for six months and then
+  distrusted forever.
+- `page_views` has **RLS on with no policies** — stricter than every other
+  table, because a visitor has no account, so "own rows" has no meaning and a
+  readable traffic log would let any user enumerate what everyone else reads.
+  The service-role client is the only reader and writer.
+
 ## The AI analysis pipeline (the heart — read these together)
 
 Spans [lib/ai/prompt.ts](lib/ai/prompt.ts), [lib/ai/analyze.ts](lib/ai/analyze.ts), [lib/ai/schema.ts](lib/ai/schema.ts), [lib/ai/assemble.ts](lib/ai/assemble.ts), [lib/ai/italy-analyze.ts](lib/ai/italy-analyze.ts), [lib/rubric.ts](lib/rubric.ts), [lib/data/universities.ts](lib/data/universities.ts).

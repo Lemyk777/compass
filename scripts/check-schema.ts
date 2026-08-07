@@ -49,6 +49,7 @@ const EXPECTED: { migration: string; table: string; columns: string[] }[] = [
   { migration: "0023 why matters", table: "opportunity_intents", columns: ["why_matters"] },
   { migration: "0024 partners", table: "partners", columns: ["id", "status", "verified_at"] },
   { migration: "0024 partners", table: "competition_deadlines", columns: ["partner_id", "published", "cost"] },
+  { migration: "0025 traffic", table: "page_views", columns: ["visitor_id", "session_id", "path", "dwell_ms"] },
 ];
 
 async function main() {
