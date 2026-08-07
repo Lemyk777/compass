@@ -1,4 +1,5 @@
 import { Logo } from "@/components/ui/Logo";
+import { Shell } from "@/components/ui/Shell";
 import { ButtonLink } from "@/components/ui/Button";
 import { StudentShell } from "@/components/student/StudentShell";
 import { GuideTabs } from "@/components/guide/GuideTabs";
@@ -48,7 +49,7 @@ export default async function GuideLayout({
   return (
     <main className="min-h-dvh bg-surface text-ink">
       <header className="border-b border-line/70">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-5 sm:px-6">
+        <Shell className="flex items-center justify-between gap-3 py-5">
           <Logo className="shrink-0 text-ink" />
           <div className="flex items-center gap-2">
             <ButtonLink href="/opportunities" variant="subtle" size="sm">
@@ -58,10 +59,10 @@ export default async function GuideLayout({
               Sign in
             </ButtonLink>
           </div>
-        </div>
+        </Shell>
       </header>
 
-      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">{inner}</div>
+      <Shell className="py-8">{inner}</Shell>
     </main>
   );
 }

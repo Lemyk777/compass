@@ -21,6 +21,48 @@ record.
 
 ---
 
+## 2026-08-07 — The screen gets used
+
+### What a student notices
+
+- **The page fills the window.** The content column was 1024px wide whatever the
+  screen was, so a 1920px display spent about 900px on empty margin — and
+  everything the page had to say came out as scrolling instead. The column now
+  grows to 1440px, and the gutters grow with it.
+- **Much less scrolling for the same content.** On a 1900px screen the cities
+  step went from 4.5 screens of scroll to 2.0; the countries step fits in 1.3.
+  Nothing was removed to get there.
+- **Country, city and area pages have a side column.** Where to go next — the
+  cities inside a country, the country a city sits in, what to compare it with —
+  moved out of the bottom of the page and into the space beside it, where it
+  stays in view as you read.
+- **The step heading and the field filter share a row** instead of taking one
+  each.
+- **Bigger tap targets.** Two controls added in the last release were 16px tall
+  against a 44px minimum. The country name in the cities list is now itself the
+  link to that country's profile, which is both a larger target and the more
+  obvious one.
+
+### Under the hood
+
+- One container component ([components/ui/Shell.tsx](components/ui/Shell.tsx))
+  replaces a `max-w-5xl` that was set separately in three files.
+- Long-form text keeps its own cap (`max-w-[60ch]`) independent of the
+  container. Widening without it took the country profile to 131 characters per
+  line against a readable measure of 60–75; it now sits at 72.
+
+### For anyone working on this code
+
+- The rule, and the two ways it was got wrong while writing it, are in the
+  "Layout: width buys columns, never line length" section of
+  [CLAUDE.md](CLAUDE.md). Short version: answer extra width with more columns or
+  a rail, never with longer lines; and apply density at the level that actually
+  repeats — making the city *cards* 4-up saved 2%, flowing the *country groups*
+  into columns saved 54%.
+- No database migration. No new environment variable.
+
+---
+
 ## 2026-08-07 — The guide becomes a section
 
 ### What a student notices

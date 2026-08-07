@@ -1,4 +1,5 @@
 import { StudentNav } from "@/components/student/StudentNav";
+import { Shell } from "@/components/ui/Shell";
 
 // The frame for the student's own section of the site: Opportunities and the
 // Guide. Deliberately NOT the report's sidebar shell — a rail of eight analysis
@@ -17,9 +18,9 @@ export function StudentShell({
   return (
     <div className="min-h-dvh bg-surface text-ink">
       <StudentNav isAdmin={isAdmin} hasReport={hasReport} />
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+      <Shell as="main" className="py-6 sm:py-8">
         {children}
-      </main>
+      </Shell>
     </div>
   );
 }

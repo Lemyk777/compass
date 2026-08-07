@@ -3,6 +3,7 @@
 import Link from "@/components/ui/Link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
+import { Shell } from "@/components/ui/Shell";
 
 // The nav for the student's own half of the site. Two destinations, both about
 // the student's future — what you can enter, and where it leads. The admission
@@ -28,7 +29,10 @@ export function StudentNav({
       className="sticky top-0 z-30 border-b border-line bg-surface/90 backdrop-blur"
       style={{ viewTransitionName: "header" }}
     >
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3 sm:px-6">
+      {/* Same container as the content below it — a header that stops short of
+          where the page starts is the thing that makes a wide layout look
+          broken. */}
+      <Shell className="flex flex-wrap items-center gap-x-5 gap-y-3 py-3">
         <Link href="/opportunities" className="shrink-0 focus-visible:focus-ring">
           <Logo className="text-ink" style={{ viewTransitionName: "brand-logo" }} />
         </Link>
@@ -77,7 +81,7 @@ export function StudentNav({
             </button>
           </form>
         </div>
-      </div>
+      </Shell>
     </header>
   );
 }

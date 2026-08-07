@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "@/components/ui/Link";
 import { FieldFilter } from "@/components/guide/FieldFilter";
-import { GuideCard, NextStep, SectionIntro } from "@/components/guide/parts";
+import { GuideCard, ListHead, NextStep, SectionIntro } from "@/components/guide/parts";
 import { withFields } from "@/lib/data/guide-fields";
 import { guideMorph, guideSection } from "@/lib/data/guide-sections";
 import { hubsByCountry, REGION_LABEL } from "@/lib/data/world";
@@ -40,54 +40,81 @@ export default async function GuideCitiesPage({
 
   return (
     <div className="space-y-6">
-      <SectionIntro
-        step={SECTION.step}
-        title={SECTION.title}
-        blurb={SECTION.blurb}
-        count={`${total} cities in ${groups.length} countries, home region first. A city with only good news listed would be an advert, so every one of these carries its catch.`}
+      <ListHead
+        intro={<SectionIntro
+          step={SECTION.step}
+          title={SECTION.title}
+          blurb={SECTION.blurb}
+          count={`${total} cities in ${groups.length} countries, home region first. A city with only good news listed would be an advert, so every one of these carries its catch.`}
+        />}
+        aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
       />
 
-      <FieldFilter defaultFields={defaults} signedIn={signedIn} />
-
-      {groups.map((g) => {
-        // The country's own profile, where one exists. Plenty of these have
-        // none, and that is simply left absent rather than hidden or apologised
-        // for — see the note at the top.
-        const destination = g.hubs
-          .map((h) => destinationForHub(h.id))
-          .find(Boolean);
-        return (
-          <section key={`${g.region}-${g.country}`} className="space-y-2.5">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h2 className="text-sm font-semibold text-ink">{g.country}</h2>
-              <span className="text-xs uppercase tracking-[0.1em] text-ink-faint">
-                {REGION_LABEL[g.region]}
-              </span>
-              {destination && (
-                <Link
-                  href={withFields(`/guide/places/${destination.id}`, stated)}
-                  className="text-xs font-medium text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
-                >
-                  The full country profile &rarr;
-                </Link>
-              )}
-            </div>
-            <ul className="grid gap-2.5 sm:grid-cols-2">
-              {g.hubs.map((h) => (
-                <li key={h.id}>
-                  <GuideCard
-                    href={withFields(`/guide/cities/${h.id}`, stated)}
-                    transitionName={guideMorph("hub", h.id)}
-                    title={h.city}
-                    line={h.what}
-                    cta="The catch & the way in"
-                  />
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+      {/* The GROUPS are what flows into columns here, not the cards inside them.
+          Grouping by country is right — a city is inside one — but it cut 22
+          cities into 19 groups, and 15 of those hold a single city. Laying the
+          cards out three-up therefore did nothing at all: each group was one
+          card on its own row, and the page just got taller and more repetitive
+          the wider the screen was. Flowing the groups themselves means a wide
+          screen shows five countries where it used to show one. */}
+      <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        {groups.map((g) => {
+          // The country's own profile, where one exists. Plenty of these have
+          // none, and that is simply left absent rather than hidden or
+          // apologised for — see the note at the top.
+          const destination = g.hubs
+            .map((h) => destinationForHub(h.id))
+            .find(Boolean);
+          return (
+            <section key={`${g.region}-${g.country}`} className="space-y-2.5">
+              {/* The country name IS the link to its profile, rather than a
+                  separate "full profile →" chip beside it. That chip was a 16px
+                  tap target — a third of the 44px minimum — and this is both
+                  bigger and more obvious: the heading of a group of cities in
+                  Germany should go to Germany. */}
+              <div className="flex flex-wrap items-center gap-x-3">
+                <h2 className="text-sm font-semibold text-ink">
+                  {destination ? (
+                    <Link
+                      href={withFields(`/guide/places/${destination.id}`, stated)}
+                      className="group inline-flex min-h-11 items-center gap-1.5 transition-colors hover:text-accent focus-visible:focus-ring"
+                    >
+                      {g.country}
+                      <span
+                        aria-hidden
+                        className="text-accent transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+                      >
+                        &rarr;
+                      </span>
+                    </Link>
+                  ) : (
+                    // Not a link, so it needs no tap area — only the linked
+                    // headings pay the 44px, and paying it on plain text would
+                    // add height on a phone for nothing.
+                    g.country
+                  )}
+                </h2>
+                <span className="text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+                  {REGION_LABEL[g.region]}
+                </span>
+              </div>
+              <ul className="grid gap-2.5">
+                {g.hubs.map((h) => (
+                  <li key={h.id}>
+                    <GuideCard
+                      href={withFields(`/guide/cities/${h.id}`, stated)}
+                      transitionName={guideMorph("hub", h.id)}
+                      title={h.city}
+                      line={h.what}
+                      cta="The catch & the way in"
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+      </div>
 
       <NextStep from="cities" fields={stated} />
     </div>

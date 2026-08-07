@@ -75,7 +75,7 @@ export function FieldFilter({
             <button
               type="button"
               onClick={() => write([])}
-              className="text-xs font-medium text-ink-faint underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+              className="inline-flex min-h-11 items-center text-xs font-medium text-ink-faint underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
             >
               Show everything
             </button>
@@ -85,7 +85,7 @@ export function FieldFilter({
             aria-expanded={open}
             aria-controls="guide-fields-chips"
             onClick={() => setOpen((v) => !v)}
-            className="text-xs font-medium text-accent underline-offset-2 transition-colors hover:underline focus-visible:focus-ring"
+            className="inline-flex min-h-11 items-center text-xs font-medium text-accent underline-offset-2 transition-colors hover:underline focus-visible:focus-ring"
           >
             {open ? "Done" : showingAll ? "Narrow it" : "Change"}
           </button>
