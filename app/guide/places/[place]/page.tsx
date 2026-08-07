@@ -68,6 +68,59 @@ function DestinationBody({
       transitionName={guideMorph("place", d.id)}
       sub={d.where}
       lead={d.oneLine}
+      aside={
+        <>
+          <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-ink">Strongest fields here</h2>
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {d.fields.map((f) => (
+                <li
+                  key={f}
+                  className="rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-medium text-ink-soft"
+                >
+                  {FACULTY_LABEL[f]}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* This panel used to be headed "Compare it with" and did not compare: the
+              chips navigated to the other country's page, replacing the one you were
+              reading. It promised the guide's whole premise — nobody chooses a
+              country in isolation — and then threw away one of the two sides. Each
+              chip now opens both countries next to each other on the same axes. */}
+          <section className="rounded-2xl border border-line bg-card p-5 sm:p-6">
+            <h2 className="text-sm font-semibold text-ink">
+              Compare {d.name} with&hellip;
+            </h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              Nobody chooses a country in isolation. Pick one and the two are laid
+              out side by side — money, admissions, what happens after you graduate,
+              and who each one is wrong for.
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {others.map((o) => (
+                <li key={o.id}>
+                  <Link
+                    href={`/guide/compare?a=${d.id}&b=${o.id}${fieldsSuffix(stated)}`}
+                    className="inline-flex h-11 items-center rounded-full border border-line bg-surface px-4 text-sm font-medium text-ink-soft transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-accent hover:text-ink active:scale-[0.96] active:duration-75 focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none"
+                  >
+                    {o.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5">
+              <Link
+                href="/opportunities"
+                className="inline-flex h-11 items-center rounded-xl bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+              >
+                What you can enter from home this year &rarr;
+              </Link>
+            </div>
+          </section>
+        </>
+      }
     >
       {d.modelled && (
         <p className="-mt-2 inline-flex items-center rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent-ink">
@@ -79,7 +132,9 @@ function DestinationBody({
         <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-ivy-ink/80">
           What only this place gives you
         </h2>
-        <p className="mt-2 text-base leading-relaxed text-ink">{d.unique}</p>
+        <p className="mt-2 max-w-[60ch] text-base leading-relaxed text-ink">
+          {d.unique}
+        </p>
       </section>
 
       {/* Strengths and trade-offs side by side, deliberately equal in weight.
@@ -120,20 +175,6 @@ function DestinationBody({
         </div>
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold text-ink">Strongest fields here</h2>
-        <ul className="mt-2 flex flex-wrap gap-1.5">
-          {d.fields.map((f) => (
-            <li
-              key={f}
-              className="rounded-lg border border-line bg-card px-2.5 py-1 text-xs font-medium text-ink-soft"
-            >
-              {FACULTY_LABEL[f]}
-            </li>
-          ))}
-        </ul>
-      </section>
-
       {hubs.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold text-ink">
@@ -143,7 +184,7 @@ function DestinationBody({
             A country is not one job market. Each city opens its own page — what
             clusters there, the catch, and the door in.
           </p>
-          <ul className="mt-3 grid gap-2.5 sm:grid-cols-2">
+          <ul className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
             {hubs.map((h) => (
               <li key={h.id}>
                 <Link
@@ -180,41 +221,6 @@ function DestinationBody({
         </section>
       )}
 
-      {/* This panel used to be headed "Compare it with" and did not compare: the
-          chips navigated to the other country's page, replacing the one you were
-          reading. It promised the guide's whole premise — nobody chooses a
-          country in isolation — and then threw away one of the two sides. Each
-          chip now opens both countries next to each other on the same axes. */}
-      <section className="rounded-2xl border border-line bg-card p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-ink">
-          Compare {d.name} with&hellip;
-        </h2>
-        <p className="mt-1 text-sm text-ink-soft">
-          Nobody chooses a country in isolation. Pick one and the two are laid
-          out side by side — money, admissions, what happens after you graduate,
-          and who each one is wrong for.
-        </p>
-        <ul className="mt-3 flex flex-wrap gap-2">
-          {others.map((o) => (
-            <li key={o.id}>
-              <Link
-                href={`/guide/compare?a=${d.id}&b=${o.id}${fieldsSuffix(stated)}`}
-                className="inline-flex h-11 items-center rounded-full border border-line bg-surface px-4 text-sm font-medium text-ink-soft transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-accent hover:text-ink active:scale-[0.96] active:duration-75 focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none"
-              >
-                {o.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-5">
-          <Link
-            href="/opportunities"
-            className="inline-flex h-11 items-center rounded-xl bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
-          >
-            What you can enter from home this year &rarr;
-          </Link>
-        </div>
-      </section>
     </DetailShell>
   );
 }
@@ -235,7 +241,7 @@ function Column({
       }`}
     >
       <h2 className="text-sm font-semibold text-ink">{title}</h2>
-      <ul className="mt-3 space-y-2.5">
+      <ul className="mt-3 max-w-[60ch] space-y-2.5">
         {items.map((item) => (
           <li
             key={item}
@@ -265,7 +271,9 @@ function Block({
   return (
     <div className="rounded-2xl border border-line bg-card p-5">
       <h2 className="text-sm font-semibold text-ink">{title}</h2>
-      <p className="mt-2 text-sm leading-relaxed text-ink-soft">{children}</p>
+      <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+        {children}
+      </p>
     </div>
   );
 }

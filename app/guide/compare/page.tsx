@@ -307,11 +307,11 @@ function Row({
       <div className="mt-2 grid gap-3 sm:grid-cols-2">
         <div>
           <Side name={aName} />
-          <p className="text-sm leading-relaxed text-ink-soft">{a}</p>
+          <p className="max-w-[58ch] text-sm leading-relaxed text-ink-soft">{a}</p>
         </div>
         <div>
           <Side name={bName} />
-          <p className="text-sm leading-relaxed text-ink-soft">{b}</p>
+          <p className="max-w-[58ch] text-sm leading-relaxed text-ink-soft">{b}</p>
         </div>
       </div>
       {footnote && (
@@ -353,7 +353,7 @@ function ListRow({
         ))}
       </ul>
     ) : (
-      <ul className="space-y-2">
+      <ul className="max-w-[58ch] space-y-2">
         {items.map((item) => (
           <li
             key={item}
