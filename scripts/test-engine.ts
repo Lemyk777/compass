@@ -69,6 +69,20 @@ import {
 } from "@/lib/data/study-destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { competitionsFromRows } from "@/lib/partners/live";
+import {
+  cleanDwell,
+  cleanPath,
+  externalHost,
+  isBot,
+  isMeasurableHost,
+  shouldTrack,
+} from "@/lib/traffic/track";
+import {
+  formatDuration,
+  summarize,
+  visitDurationMs,
+  type ViewRow,
+} from "@/lib/traffic/summarize";
 
 // A fixed "today" in the second half of the year → academic year end rolls to
 // the next year (June rollover), so a Class of 2027 student is in grade 12.
@@ -733,4 +747,212 @@ test("a local partner post reaches its own country and nobody else", () => {
     }).items.some((o) => o.id === "astana-hub-hackathon");
   assert.equal(seen("KZ"), true);
   assert.equal(seen("UZ"), false);
+});
+
+// ---------------------------------------------------------------------------
+// Site traffic (lib/traffic/*)
+//
+// Two things are pinned here, and both fail silently otherwise.
+//
+// The first is the privacy boundary: `cleanPath` is the only thing standing
+// between an auth callback URL and a permanent analytics row. It is one line of
+// string handling, which is exactly why it needs a test — nothing on the admin
+// dashboard would look wrong if it quietly stopped working.
+//
+// The second is the set of definitions the dashboard is made of. "Visit
+// duration", "returned", "bounced" are choices, not facts, and a founder
+// acting on them deserves to know they still mean what the page says.
+// ---------------------------------------------------------------------------
+
+test("a path is stored without its query string, ever", () => {
+  assert.equal(cleanPath("/auth/callback?code=SECRET&next=/x"), "/auth/callback");
+  assert.equal(cleanPath("/opportunities?ref=alibek#top"), "/opportunities");
+  assert.equal(cleanPath("/guide/"), "/guide");
+  assert.equal(cleanPath("/"), "/");
+  // Anything that is not a path of ours is not stored at all.
+  assert.equal(cleanPath("https://evil.test/x"), null);
+  assert.equal(cleanPath(""), null);
+});
+
+test("the admin reading this dashboard is not counted as site traffic", () => {
+  assert.equal(shouldTrack("/admin/traffic"), false);
+  assert.equal(shouldTrack("/api/track"), false);
+  assert.equal(shouldTrack("/auth/callback"), false);
+  assert.equal(shouldTrack("/opportunities"), true);
+  assert.equal(shouldTrack("/"), true);
+});
+
+test("development and preview hosts stay out of production numbers", () => {
+  assert.equal(isMeasurableHost("localhost:3000"), false);
+  assert.equal(isMeasurableHost("127.0.0.1:3000"), false);
+  assert.equal(isMeasurableHost("compass-git-develop.vercel.app"), false);
+  assert.equal(isMeasurableHost("compass.app"), true);
+  assert.equal(isMeasurableHost(null), false);
+});
+
+test("our own pages are never a traffic source", () => {
+  assert.equal(externalHost("https://compass.app/guide", "compass.app"), null);
+  assert.equal(externalHost("https://www.compass.app/x", "compass.app"), null);
+  assert.equal(externalHost("https://t.me/chan", "compass.app"), "t.me");
+  assert.equal(externalHost("https://www.google.com/", "compass.app"), "google.com");
+  assert.equal(externalHost(null, "compass.app"), null);
+  assert.equal(externalHost("not a url", "compass.app"), null);
+});
+
+test("a missing user agent is a bot, and a real one is not", () => {
+  assert.equal(isBot(null), true);
+  assert.equal(isBot("Mozilla/5.0 (compatible; Googlebot/2.1)"), true);
+  assert.equal(isBot("HeadlessChrome/120"), true);
+  assert.equal(
+    isBot("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) AppleWebKit/605.1.15"),
+    false,
+  );
+});
+
+test("a client cannot claim an implausible amount of time on a page", () => {
+  assert.equal(cleanDwell(45_000), 45_000);
+  assert.equal(cleanDwell(-5), null);
+  assert.equal(cleanDwell("nope"), null);
+  // A tab left open all weekend must not become the median visit.
+  assert.equal(cleanDwell(9_999_999_999), 60 * 60 * 1000);
+});
+
+const T0 = Date.parse("2026-08-07T12:00:00.000Z");
+const view = (o: Partial<ViewRow> & { created_at: string }): ViewRow => ({
+  visitor_id: "v1",
+  session_id: "s1",
+  user_id: null,
+  path: "/",
+  referrer: null,
+  country: null,
+  device: "desktop",
+  dwell_ms: null,
+  ...o,
+});
+
+test("one page with a beacon is a real visit, not a zero-second one", () => {
+  // The whole reason dwell is measured: last-minus-first would call this 0.
+  const ms = visitDurationMs([
+    view({ created_at: new Date(T0).toISOString(), dwell_ms: 42_000 }),
+  ]);
+  assert.equal(ms, 42_000);
+});
+
+test("a visit includes reading time on its last page", () => {
+  const ms = visitDurationMs([
+    view({ created_at: new Date(T0).toISOString(), dwell_ms: 30_000 }),
+    view({ created_at: new Date(T0 + 30_000).toISOString(), dwell_ms: 60_000 }),
+  ]);
+  assert.equal(ms, 90_000);
+});
+
+test("a single view with no beacon is unknown, not zero", () => {
+  assert.equal(
+    visitDurationMs([view({ created_at: new Date(T0).toISOString() })]),
+    null,
+  );
+  assert.equal(visitDurationMs([]), null);
+});
+
+test("a visit of unknown length is left out of the median, not counted as 0s", () => {
+  const rows = [
+    view({ created_at: new Date(T0).toISOString(), dwell_ms: 120_000 }),
+    view({
+      session_id: "s2",
+      visitor_id: "v2",
+      created_at: new Date(T0).toISOString(),
+    }),
+  ];
+  const s = summarize(rows, T0 + 1000, 7);
+  assert.equal(s.totals.visits, 2);
+  assert.equal(s.totals.medianVisitSec, 120);
+  // One visit had a knowable length, and it did not bounce.
+  assert.equal(s.totals.bounceRate, 0);
+});
+
+test("returned means a second DAY, not a second click", () => {
+  const sameDay = [
+    view({ created_at: new Date(T0 - 5 * 3_600_000).toISOString() }),
+    view({ session_id: "s2", created_at: new Date(T0).toISOString() }),
+  ];
+  assert.equal(summarize(sameDay, T0 + 1000, 7).totals.returned, 0);
+
+  const twoDays = [
+    view({ created_at: new Date(T0 - 36 * 3_600_000).toISOString() }),
+    view({ session_id: "s2", created_at: new Date(T0).toISOString() }),
+  ];
+  const s = summarize(twoDays, T0 + 1000, 7);
+  assert.equal(s.totals.returned, 1);
+  assert.equal(s.totals.visitors, 1);
+});
+
+test("a visitor first seen in the comparison window is not counted as new", () => {
+  const rows = [
+    // 10 days ago — outside the displayed 7 days, inside the loaded 14.
+    view({ created_at: new Date(T0 - 10 * 86_400_000).toISOString() }),
+    view({ session_id: "s2", created_at: new Date(T0 - 3_600_000).toISOString() }),
+  ];
+  const s = summarize(rows, T0, 7);
+  const today = s.buckets[s.buckets.length - 1];
+  assert.equal(today.visitors, 1);
+  assert.equal(today.newVisitors, 0, "we had seen them before");
+  assert.equal(today.returningVisitors, 1);
+});
+
+test("the chart has one bucket per calendar slot, including the empty ones", () => {
+  const s = summarize([view({ created_at: new Date(T0).toISOString() })], T0, 30);
+  assert.equal(s.buckets.length, 30);
+  assert.equal(s.granularity, "day");
+  assert.equal(summarize([], T0, 1).buckets.length, 24);
+  assert.equal(summarize([], T0, 1).granularity, "hour");
+});
+
+test("a visit has one source — its first external referrer", () => {
+  const rows = [
+    view({ created_at: new Date(T0).toISOString(), referrer: "t.me" }),
+    view({ created_at: new Date(T0 + 60_000).toISOString() }),
+    view({ created_at: new Date(T0 + 120_000).toISOString() }),
+  ];
+  const s = summarize(rows, T0 + 200_000, 7);
+  assert.deepEqual(s.sources, [{ source: "t.me", visits: 1, visitors: 1 }]);
+});
+
+test("no referrer anywhere in a visit reads as Direct", () => {
+  const s = summarize(
+    [view({ created_at: new Date(T0).toISOString() })],
+    T0 + 1000,
+    7,
+  );
+  assert.equal(s.sources[0].source, "Direct");
+});
+
+test("entry pages count visits that started there, not views", () => {
+  const rows = [
+    view({ created_at: new Date(T0).toISOString(), path: "/" }),
+    view({ created_at: new Date(T0 + 10_000).toISOString(), path: "/opportunities" }),
+    view({ created_at: new Date(T0 + 20_000).toISOString(), path: "/" }),
+  ];
+  const s = summarize(rows, T0 + 30_000, 7);
+  const home = s.pages.find((p) => p.path === "/");
+  assert.equal(home?.views, 2);
+  assert.equal(home?.entries, 1);
+  assert.equal(s.pages.find((p) => p.path === "/opportunities")?.entries, 0);
+});
+
+test("summarize reads correctly at zero rather than dividing by it", () => {
+  const s = summarize([], T0, 7);
+  assert.equal(s.totals.visitors, 0);
+  assert.equal(s.totals.viewsPerVisit, 0);
+  assert.equal(s.totals.medianVisitSec, 0);
+  assert.equal(s.totals.bounceRate, null, "no visits means no rate, not 0%");
+  assert.equal(s.live.visitors, 0);
+  assert.equal(s.pages.length, 0);
+});
+
+test("durations are never shown as a bare number of seconds", () => {
+  assert.equal(formatDuration(0), "0s");
+  assert.equal(formatDuration(45), "45s");
+  assert.equal(formatDuration(200), "3m 20s");
+  assert.equal(formatDuration(180), "3m");
+  assert.equal(formatDuration(3_840), "1h 4m");
 });
