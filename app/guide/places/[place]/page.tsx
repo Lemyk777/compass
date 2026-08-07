@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "@/components/ui/Link";
 import {
@@ -26,7 +26,7 @@ import { pageMeta } from "@/lib/seo";
 // app/guide/layout.tsx now; this file is only the profile.
 
 // `notFound()` below is a real 404 again. It had not been one: a section-wide
-// `loading.tsx` flushed the response вЂ” status line included вЂ” before this page
+// `loading.tsx` flushed the response — status line included — before this page
 // ran, so `/guide/places/anything` answered 200 carrying a not-found page and
 // invited a crawler to index an address that does not exist. The boundary is
 // now scoped to the list routes; see app/guide/(index)/loading.tsx.
@@ -36,9 +36,9 @@ export async function generateMetadata({
   params: { place: string };
 }): Promise<Metadata> {
   const d = destinationById(params.place);
-  if (!d) return { title: "Not found вЂ” Compass" };
+  if (!d) return { title: "Not found — Compass" };
   return pageMeta({
-    title: `Studying in ${d.name} вЂ” the honest picture | Compass`,
+    title: `Studying in ${d.name} — the honest picture | Compass`,
     description: d.oneLine,
     path: `/guide/places/${d.id}`,
     type: "article",
@@ -73,13 +73,13 @@ function DestinationBody({
   const hubs = HUBS.filter((h) => d.hubs.includes(h.id));
   const others = STUDY_DESTINATIONS.filter((x) => x.id !== d.id);
 
-  // The page's skeleton, declared once and read twice вЂ” by the contents list at
+  // The page's skeleton, declared once and read twice — by the contents list at
   // the top and by the sections themselves. Two readers of one array is the
   // whole reason a part cannot appear in the map and be missing from the page.
   //
   // The grouping is the fix for "it is just a wall of text": nine equal boxes
   // gave a reader no way to tell what a page contained or where they were in
-  // it. These are the four questions in the order they get asked вЂ” what is the
+  // it. These are the four questions in the order they get asked — what is the
   // trade, what does it cost, how do I get in, what is it like there and after.
   const parts: { id: string; title: string; body: React.ReactNode }[] = [
     {
@@ -119,7 +119,7 @@ function DestinationBody({
           <Block title="What they weigh">{d.admissions}</Block>
           {/* Timing is the way a strong applicant most often loses a place, and
               unlike merit it is entirely preventable by knowing it early. */}
-          <Block title="The cycle вЂ” when things actually happen">
+          <Block title="The cycle — when things actually happen">
             {d.applicationCycle}
           </Block>
           <Block title="How an application is actually read here">
@@ -150,8 +150,8 @@ function DestinationBody({
   ];
 
   // The claim "checked against the organiser or the government that sets the
-  // rule" was unprovable while the guide linked to none of them вЂ” and the
-  // catalog next door has shipped "Official page в†—" on every row for months.
+  // rule" was unprovable while the guide linked to none of them — and the
+  // catalog next door has shipped "Official page ↗" on every row for months.
   // This is that pattern, applied to the layer that makes the bigger claims.
   parts.push({
     id: "sources",
@@ -259,8 +259,8 @@ function DestinationBody({
 
           {/* This panel used to be headed "Compare it with" and did not compare: the
               chips navigated to the other country's page, replacing the one you were
-              reading. It promised the guide's whole premise вЂ” nobody chooses a
-              country in isolation вЂ” and then threw away one of the two sides. Each
+              reading. It promised the guide's whole premise — nobody chooses a
+              country in isolation — and then threw away one of the two sides. Each
               chip now opens both countries next to each other on the same axes. */}
           <section className="rounded-2xl border border-line bg-card p-5 sm:p-6">
             <h2 className="text-sm font-semibold text-ink">
@@ -268,7 +268,7 @@ function DestinationBody({
             </h2>
             <p className="mt-1 text-sm text-ink-soft">
               Nobody chooses a country in isolation. Pick one and the two are laid
-              out side by side вЂ” money, admissions, what happens after you graduate,
+              out side by side — money, admissions, what happens after you graduate,
               and who each one is wrong for.
             </p>
             <ul className="mt-3 flex flex-wrap gap-2">
@@ -302,7 +302,7 @@ function DestinationBody({
       )}
 
       {/* The answer before the description. This pair used to close the page,
-          under seven blocks of prose вЂ” so the only two sentences addressed to
+          under seven blocks of prose — so the only two sentences addressed to
           the reader were the ones they were least likely to reach, and the
           profile read as an encyclopaedia entry rather than as guidance. */}
       <ForYou suits={d.suitsYou} avoid={d.notForYou} />
