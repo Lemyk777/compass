@@ -4,11 +4,21 @@
 // the tabs, the index cards and the "next step" footer on every page all read
 // it, so adding or renaming a step is one edit rather than four that drift.
 //
-// The order is a zoom, and it is the argument the guide makes: what kinds of
-// work a field opens → the cities that work sits in → the destinations in full
-// → and what you can enter from home without moving at all. The last step is
-// deliberately last and deliberately present; a guide that only says "leave" is
-// a bad guide for our students.
+// The order is a zoom IN, and getting it backwards was a real bug: cities came
+// before countries, so the guide asked a student to consider Berlin and then
+// zoomed out to Germany. A country contains cities, so it comes first.
+//
+// what kinds of work a field opens → the countries that host it → the cities
+// inside them → and what you can enter from home without moving at all. The
+// last step is deliberately last and deliberately present; a guide that only
+// says "leave" is a bad guide for our students.
+//
+// Cities remain their own step rather than living only inside country pages,
+// and that is not laziness: 9 of the 22 hubs sit in countries we do not profile
+// — including Almaty, Astana, Tashkent and Tbilisi, which is the entire home
+// region. Nesting them out of existence would delete our own students' cities
+// from the map. What changed is that the list is now grouped BY country, so the
+// containment is visible wherever it exists.
 //
 // Pure data, no imports — the tabs are a client island and this must stay free
 // to travel into that bundle.
@@ -39,22 +49,22 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       "Areas of work a field opens — not one prescribed job. Each one lists the actual titles people hold inside it and how you get there.",
   },
   {
-    id: "cities",
+    id: "places",
     step: 2,
-    href: "/guide/cities",
-    label: "Cities",
-    title: "The cities that work sits in",
+    href: "/guide/places",
+    label: "Countries",
+    title: "The countries, in full",
     blurb:
-      "Where each sphere actually clusters, home region first — with the honest catch and the real way in for every place.",
+      "The places students actually argue about: what only each one gives you, what it genuinely costs, what admissions weighs — and who should go somewhere else instead.",
   },
   {
-    id: "places",
+    id: "cities",
     step: 3,
-    href: "/guide/places",
-    label: "Destinations",
-    title: "The big destinations, in full",
+    href: "/guide/cities",
+    label: "Cities",
+    title: "The cities inside them",
     blurb:
-      "The countries students actually argue about: what only each one gives you, what it genuinely costs, and who should go somewhere else.",
+      "A country is not one job market. These are the cities the work actually clusters in — each with its honest catch and the real way in, including the ones at home.",
   },
   {
     id: "from-home",

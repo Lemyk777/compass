@@ -53,10 +53,10 @@ export default async function GuidePage({
           Where this can take you
         </h1>
         <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft">
-          A field is not a goal, and a job title is not a life. Four steps: what
-          kinds of work a field opens, the cities that work sits in, the big
-          destinations in full — and what you can enter from home this year
-          without moving anywhere.
+          A field is not a goal, and a job title is not a life. Four steps, each
+          one narrower than the last: what kinds of work a field opens, the
+          countries that host that work, the cities inside them — and what you
+          can enter from home this year without moving anywhere.
         </p>
       </header>
 

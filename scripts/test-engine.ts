@@ -39,6 +39,7 @@ import {
   careerAreaTitles,
 } from "@/lib/data/careers";
 import { HOME_ROUTES, homeRoutesForFaculties } from "@/lib/data/from-home";
+import { LEGACY_GUIDE_PLACE_IDS } from "@/lib/data/legacy-guide-urls";
 import {
   ALL_FIELDS,
   parseFieldsParam,
@@ -59,12 +60,14 @@ import {
 import {
   HUBS,
   REGION_ORDER,
+  hubsByCountry,
   hubsByRegion,
   hubsForFaculties,
 } from "@/lib/data/world";
 import {
   STUDY_DESTINATIONS,
   destinationById,
+  destinationForHub,
   destinationsForFaculties,
 } from "@/lib/data/study-destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
@@ -510,10 +513,105 @@ test("the guide's steps are a chain that ends", () => {
     assert.ok(s.href.startsWith("/guide/"), `${s.id} is not inside the guide`);
     assert.ok(s.blurb.trim().length > 40, `${s.id} has no real description`);
   }
-  assert.equal(nextGuideSection("work")?.id, "cities");
+  // The zoom goes IN: a country contains cities, so it comes first. The guide
+  // shipped with these the other way round, which asked a student to weigh
+  // Berlin and then zoomed out to Germany a step later.
+  assert.deepEqual(
+    GUIDE_SECTIONS.map((s) => s.id),
+    ["work", "places", "cities", "from-home"],
+  );
+  assert.equal(nextGuideSection("work")?.id, "places");
+  assert.equal(nextGuideSection("places")?.id, "cities");
   // The last step must not point onwards — that footer becomes the CTA into the
   // catalog instead, which is the whole point of ending on "from home".
   assert.equal(nextGuideSection("from-home"), undefined);
+});
+
+// Cities stayed a step of their own when they moved under countries, and this
+// is the reason: most of them are in countries we do not profile, and four of
+// those are the home region. If a future change nests cities strictly inside
+// country profiles, this test is the one that should stop it.
+test("cities in unprofiled countries stay reachable", () => {
+  const claimed = new Set(STUDY_DESTINATIONS.flatMap((d) => d.hubs));
+  const orphans = HUBS.filter((h) => !claimed.has(h.id));
+  assert.ok(
+    orphans.length > 0,
+    "if every hub has a profile this test can be deleted — check that first",
+  );
+  for (const home of ["almaty", "astana", "tashkent", "tbilisi"]) {
+    assert.ok(
+      orphans.some((h) => h.id === home),
+      `${home} is expected to be one of the unprofiled hubs`,
+    );
+  }
+  // Grouping by country must lose nobody: every hub still appears exactly once.
+  const grouped = hubsByCountry([]).flatMap((g) => g.hubs);
+  assert.equal(grouped.length, HUBS.length, "grouping by country dropped a hub");
+  assert.equal(new Set(grouped.map((h) => h.id)).size, HUBS.length);
+  for (const g of hubsByCountry([])) {
+    assert.ok(
+      g.hubs.every((h) => h.country === g.country),
+      `${g.country} group contains a hub from elsewhere`,
+    );
+  }
+});
+
+// The old `/guide/<country>` URLs are public and shared, and their redirect
+// lives in next.config.mjs — a file that cannot import TypeScript, so the list
+// is duplicated. This is what keeps the duplicate honest: add a country and the
+// test fails until its legacy URL is redirected too.
+test("every country's legacy URL is redirected, and no extra ones are", async () => {
+  const ids = [...STUDY_DESTINATIONS.map((d) => d.id)].sort();
+  assert.deepEqual(
+    [...LEGACY_GUIDE_PLACE_IDS].sort(),
+    ids,
+    "lib/data/legacy-guide-urls.ts has drifted from the destination registry",
+  );
+
+  // The config is what actually runs, so it is what gets asserted — the real
+  // redirect list, not the text of the file. An earlier version of this test
+  // grepped for a string and matched the explanatory COMMENT next to the code.
+  const config = (await import("../next.config.mjs")).default;
+  const redirects = await config.redirects!();
+  const guide = redirects.filter((r) => r.source.startsWith("/guide/"));
+
+  assert.deepEqual(
+    guide.map((r) => r.source).sort(),
+    ids.map((id) => `/guide/${id}`).sort(),
+    "the running redirect list does not match the destination registry",
+  );
+  for (const r of guide) {
+    assert.equal(
+      r.destination,
+      r.source.replace("/guide/", "/guide/places/"),
+      `${r.source} points somewhere unexpected`,
+    );
+    assert.equal(r.permanent, true, `${r.source} should be a 308, not a 307`);
+    // A pattern would run BEFORE routing and swallow the guide's own steps:
+    // `/guide/work` would be sent to `/guide/places/work`, which does not exist.
+    assert.ok(
+      !r.source.includes(":") && !r.source.includes("*"),
+      `${r.source} is a pattern and would capture the guide's step routes`,
+    );
+  }
+
+  // And the steps themselves must not be matched by any of it.
+  for (const s of GUIDE_SECTIONS) {
+    assert.ok(
+      !guide.some((r) => r.source === s.href),
+      `${s.href} is being redirected away`,
+    );
+  }
+});
+
+test("destinationForHub resolves both ways, and is undefined for orphans", () => {
+  for (const d of STUDY_DESTINATIONS) {
+    for (const hubId of d.hubs) {
+      assert.equal(destinationForHub(hubId)?.id, d.id);
+    }
+  }
+  assert.equal(destinationForHub("almaty"), undefined);
+  assert.equal(destinationForHub("not-a-hub"), undefined);
 });
 
 // Step 4 carries the same honesty rule as the world map: naming a route that

@@ -96,16 +96,34 @@ is its own route now:
 
 ```
 /guide                    index — the four steps, with counts
-/guide/work               1 · areas of work        → /guide/work/[area]
-/guide/cities             2 · where the work is    → /guide/cities/[hub]
-/guide/places             3 · destinations in full → /guide/places/[place]
+/guide/work               1 · areas of work      → /guide/work/[area]
+/guide/places             2 · countries in full  → /guide/places/[place]
+/guide/cities             3 · the cities in them → /guide/cities/[hub]
 /guide/from-home          4 · routes that need no move
+/guide/compare?a=&b=      two countries on the same axes
 ```
+
+- **The order is a zoom IN, and it shipped backwards once.** Cities came before
+  countries, so the guide asked a student to weigh Berlin and then zoomed out to
+  Germany a step later. A country contains cities; it comes first.
+- **Cities are still their own step, and must stay one.** 9 of the 22 hubs sit
+  in countries with no profile — including Almaty, Astana, Tashkent and Tbilisi,
+  the entire home region. Nesting cities strictly under country pages would
+  delete our own students' cities from the map. What expresses the containment
+  instead: the list is grouped BY country (`hubsByCountry`), a city's breadcrumb
+  is its country when we profile it (`destinationForHub`) and falls back to
+  Cities when we don't, and the country page lists the cities inside it. A unit
+  test pins the orphans so a future "tidy-up" can't quietly drop them.
+- **`/guide/compare` is a real comparison.** The country pages carried a panel
+  headed "Compare it with" that only navigated to the other country, throwing
+  away the side you had just read. Every axis is rendered for both, trade-offs
+  level with strengths. On mobile the columns stack, so each answer is labelled
+  with its country — an unlabelled stack is not a comparison.
 
 - **The steps live in one registry** ([lib/data/guide-sections.ts](lib/data/guide-sections.ts)) that the tabs, the index cards and the "next step" footer all read. Add or rename a step there, not in four places.
 - **One session read per request.** `guideView()`/`guideSession()` in [lib/guide/student-fields.ts](lib/guide/student-fields.ts) are `cache()`d, because the layout (picking a shell), the page (labelling the filter) and the filter's default each used to call `getSession()` — three `auth.getUser()` round trips and three `profiles` reads before a page drew anything. Ask through `guideView`, not `getSession`, inside the guide.
 - **The field filter is `?f=`, not state** ([lib/data/guide-fields.ts](lib/data/guide-fields.ts) + [lib/guide/student-fields.ts](lib/guide/student-fields.ts)). Three states, and the last two are NOT the same: absent = "not stated" (falls back to the student's own fields), `f=all` = the student deliberately widened it, `f=a,b` = those fields. Collapsing them re-applies the profile on every navigation. Every in-section link carries it via `withFields`.
-- **`/guide/[place]` still exists, and only to redirect** to `/guide/places/[place]` (308, validated against the registry). Country profiles used to sit in the root of the section, where every later sub-route name had to not-be-a-country.
+- **The old `/guide/<country>` URLs redirect from [next.config.mjs](next.config.mjs), not from a route.** A `redirect()` inside a page is only a real 308 if nothing has streamed yet, and this layout is `force-dynamic`; `redirects()` runs before routing and is a true 308 either way. It also let the `[place]` route be deleted, so an unknown `/guide/anything` is now a real 404 instead of a 200 carrying a "not found" page. **The list is enumerated, never `/guide/:place`** — a pattern runs before routing and would swallow `/guide/work` and every step name added later. It is duplicated in [lib/data/legacy-guide-urls.ts](lib/data/legacy-guide-urls.ts) because the config cannot import TypeScript, and a unit test asserts config, list and registry all agree.
 - **Detail pages, not sheets.** A modal has no URL: it cannot be sent to a parent, and Back closes it instead of leaving. `DetailShell`/`GuideBlock`/`GuideCard` in [components/guide/parts.tsx](components/guide/parts.tsx) are what make three levels of depth read as one section.
 - **Server-rendered except the two islands** — `FieldFilter` (writes the URL) and `WorkList` (the values refine reorders it from `localStorage`). `WorkList` takes its areas as **props**; importing `careers.ts` into a client component ships all 500 lines of it. Same rule as the catalog's bundle trap above.
 - A career area has no id — its slug is derived from its title (`areaSlug`), and a unit test pins that all 33 stay distinct.
