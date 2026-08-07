@@ -37,7 +37,9 @@ almost never a prompt change.
 | "What do you want out of work?" | `lib/data/values.ts` (3 questions + pure scoring) — may only REORDER the areas, never filter or change the fields |
 | Where in the world a sphere of work lives | `lib/data/world.ts` — hubs with a catch and a route in, both mandatory |
 | A full destination profile (US, UK, HK, …) | `lib/data/study-destinations.ts` → `/guide/places/[place]`; trade-offs must outnumber strengths, `notForYou` is mandatory, no prices or rankings |
-| What you can do without leaving home | `lib/data/from-home.ts` — every route carries its catch and a first move; no URLs (the catalog owns those) |
+| What you can do without leaving home | `lib/data/from-home.ts` — every route carries its catch, a first move, what it costs in time and what it proves; no URLs (the catalog owns those) |
+| Sphere names for anything running in the BROWSER | `lib/data/career-titles.ts` — never import `careers.ts` into a client component; it is ~1,100 lines of prose |
+| One content container for the student's section | `components/ui/Shell.tsx` — 1024 → 1440; width buys columns, never line length |
 | The guide's steps, and what the tabs read | `lib/data/guide-sections.ts` — one registry behind the tabs, the index cards and the "next step" footer |
 | The guide's field filter | `lib/data/guide-fields.ts` (pure, `?f=`) + `lib/guide/student-fields.ts` (the profile default) — "not stated" and "explicitly everything" are different states |
 | The student's own shell (Opportunities + Guide) | `components/student/StudentShell.tsx`; the guide adds its own frame in `app/guide/layout.tsx`; the report keeps `components/dashboard/DashboardShell.tsx` |
