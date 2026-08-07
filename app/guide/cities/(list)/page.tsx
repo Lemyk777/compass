@@ -7,6 +7,7 @@ import { guideMorph, guideSection } from "@/lib/data/guide-sections";
 import { hubsByCountry, REGION_LABEL } from "@/lib/data/world";
 import { destinationForHub } from "@/lib/data/study-destinations";
 import { guideView } from "@/lib/guide/student-fields";
+import { pageMeta } from "@/lib/seo";
 
 // Step 3: the cities inside the countries — grouped BY country, because they are
 // inside them. The guide used to run cities before countries, which asked a
@@ -23,10 +24,11 @@ import { guideView } from "@/lib/guide/student-fields";
 
 const SECTION = guideSection("cities");
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "The cities the work sits in — Compass",
   description: SECTION.blurb,
-};
+  path: SECTION.href,
+});
 
 export default async function GuideCitiesPage({
   searchParams,

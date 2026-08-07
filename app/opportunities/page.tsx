@@ -9,6 +9,7 @@ import { COMPETITIONS, type Competition } from "@/lib/data/key-dates";
 import { getSession } from "@/lib/auth/session";
 import { fetchLivePool } from "@/lib/partners/queries";
 import { loadStudentContext } from "@/lib/dashboard/load";
+import { pageMeta } from "@/lib/seo";
 
 // Opportunities — the front door, at its own address, for BOTH states.
 //
@@ -24,11 +25,12 @@ import { loadStudentContext } from "@/lib/dashboard/load";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "What can you enter this year? — Compass",
   description:
     "Competitions, olympiads and programmes open to school students worldwide, filtered to the ones you can actually enter at your age. Free, no account needed.",
-};
+  path: "/opportunities",
+});
 
 export default async function OpportunitiesPage() {
   const session = await getSession();

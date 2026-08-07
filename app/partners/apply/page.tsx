@@ -6,14 +6,16 @@ import { ButtonLink } from "@/components/ui/Button";
 import { getSession } from "@/lib/auth/session";
 import { getPartnerForUser } from "@/lib/partners/queries";
 import { ApplyForm } from "@/components/partners/ApplyForm";
+import { pageMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Post your competitions on Compass",
   description:
     "Organisations running competitions, olympiads and programmes for school students can post them on Compass under their own name.",
-};
+  path: "/partners/apply",
+});
 
 export default async function PartnerApplyPage() {
   const session = await getSession();
