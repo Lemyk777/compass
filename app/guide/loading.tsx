@@ -20,7 +20,7 @@ export default function GuideLoading() {
 
       <div className="h-[46px] animate-pulse rounded-2xl border border-line bg-card" />
 
-      <ul className="grid gap-2.5 sm:grid-cols-2">
+      <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <li
             key={i}

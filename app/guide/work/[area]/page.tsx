@@ -59,6 +59,49 @@ export default function GuideAreaPage({
       transitionName={guideMorph("area", params.area)}
       sub={FACULTY_LABEL[faculty]}
       lead={area.what}
+      aside={
+        <>
+          {cities.length > 0 && (
+            <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
+              <h2 className="text-sm font-semibold text-ink">
+                Where this work sits
+              </h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                Each one states its catch as well as its appeal.
+              </p>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {cities.map((h) => (
+                  <li key={h.id}>
+                    <Link
+                      href={withFields(`/guide/cities/${h.id}`, stated)}
+                      className="inline-flex h-11 items-center rounded-full border border-line bg-surface px-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring"
+                    >
+                      {h.city}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <Link
+            href="/opportunities"
+            className="flex items-start justify-between gap-3 rounded-2xl bg-ink p-5 text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+          >
+            <span>
+              <span className="text-sm font-semibold">
+                The first step towards this, this year
+              </span>
+              <span className="mt-0.5 block text-sm text-white/70">
+                What you can actually enter now, at your age.
+              </span>
+            </span>
+            <span aria-hidden className="shrink-0">
+              &rarr;
+            </span>
+          </Link>
+        </>
+      }
     >
       <div className="space-y-3">
         <GuideBlock label="The jobs inside this area">
@@ -90,47 +133,6 @@ export default function GuideAreaPage({
         </GuideBlock>
       </div>
 
-      {cities.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-ink">
-            Where this work sits
-          </h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            Each one states its catch as well as its appeal.
-          </p>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {cities.map((h) => (
-              <li key={h.id}>
-                <Link
-                  href={withFields(`/guide/cities/${h.id}`, stated)}
-                  className="inline-flex h-11 items-center rounded-full border border-line bg-card px-4 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring"
-                >
-                  {h.city}
-                  <span className="ml-1.5 text-ink-faint">{h.country}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <Link
-        href="/opportunities"
-        className="flex items-center justify-between gap-3 rounded-2xl bg-ink p-5 text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
-      >
-        <span>
-          <span className="text-sm font-semibold">
-            The first step towards this, this year
-          </span>
-          <span className="mt-0.5 block text-sm text-white/70">
-            What you can actually enter now, at your age — competitions, courses
-            and programmes.
-          </span>
-        </span>
-        <span aria-hidden className="shrink-0">
-          &rarr;
-        </span>
-      </Link>
     </DetailShell>
   );
 }

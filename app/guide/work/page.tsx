@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { FieldFilter } from "@/components/guide/FieldFilter";
-import { NextStep, SectionIntro } from "@/components/guide/parts";
+import { ListHead, NextStep, SectionIntro } from "@/components/guide/parts";
 import { WorkList } from "@/components/guide/WorkList";
 import { areaSlug, careerAreasForFaculties } from "@/lib/data/careers";
 import { FACULTY_LABEL, FACULTY_VALUES } from "@/lib/data/faculties";
@@ -46,16 +46,17 @@ export default async function GuideWorkPage({
 
   return (
     <div className="space-y-6">
-      <SectionIntro
-        step={SECTION.step}
-        title={SECTION.title}
-        blurb={SECTION.blurb}
-        count={`${total} areas across ${groups.length} ${
-          groups.length === 1 ? "field" : "fields"
-        }. Open any one for the actual job titles inside it and the path in.`}
+      <ListHead
+        intro={<SectionIntro
+          step={SECTION.step}
+          title={SECTION.title}
+          blurb={SECTION.blurb}
+          count={`${total} areas across ${groups.length} ${
+            groups.length === 1 ? "field" : "fields"
+          }. Open any one for the actual job titles inside it and the path in.`}
+        />}
+        aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
       />
-
-      <FieldFilter defaultFields={defaults} signedIn={signedIn} />
 
       <WorkList groups={groups} />
 

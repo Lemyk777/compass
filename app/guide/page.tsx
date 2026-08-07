@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "@/components/ui/Link";
 import { FieldFilter } from "@/components/guide/FieldFilter";
+import { ListHead } from "@/components/guide/parts";
 import { withFields } from "@/lib/data/guide-fields";
 import { GUIDE_SECTIONS } from "@/lib/data/guide-sections";
 import { careerAreasForFaculties } from "@/lib/data/careers";
@@ -48,21 +49,24 @@ export default async function GuidePage({
 
   return (
     <div className="space-y-7">
-      <header>
-        <h1 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          Where this can take you
-        </h1>
-        <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft">
-          A field is not a goal, and a job title is not a life. Four steps, each
-          one narrower than the last: what kinds of work a field opens, the
-          countries that host that work, the cities inside them — and what you
-          can enter from home this year without moving anywhere.
-        </p>
-      </header>
+      <ListHead
+        intro={
+          <header>
+            <h1 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+              Where this can take you
+            </h1>
+            <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft">
+              A field is not a goal, and a job title is not a life. Four steps,
+              each one narrower than the last: what kinds of work a field opens,
+              the countries that host that work, the cities inside them — and
+              what you can enter from home this year without moving anywhere.
+            </p>
+          </header>
+        }
+        aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
+      />
 
-      <FieldFilter defaultFields={defaults} signedIn={signedIn} />
-
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {GUIDE_SECTIONS.map((s) => (
           <li key={s.id}>
             <Link

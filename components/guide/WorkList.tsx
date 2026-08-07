@@ -79,7 +79,7 @@ export function WorkList({ groups }: { groups: WorkGroup[] }) {
             <h2 className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
               {g.label}
             </h2>
-            <ul className="grid gap-2.5 sm:grid-cols-2">
+            <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {ranked.map((r) => {
                 const row = byTitle.get(r.area.title);
                 return (

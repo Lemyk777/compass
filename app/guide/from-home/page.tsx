@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { FieldFilter } from "@/components/guide/FieldFilter";
-import { NextStep, SectionIntro } from "@/components/guide/parts";
+import { ListHead, NextStep, SectionIntro } from "@/components/guide/parts";
 import { guideSection } from "@/lib/data/guide-sections";
 import { homeRoutesForFaculties } from "@/lib/data/from-home";
 import { guideView } from "@/lib/guide/student-fields";
@@ -34,16 +34,17 @@ export default async function GuideFromHomePage({
 
   return (
     <div className="space-y-6">
-      <SectionIntro
-        step={SECTION.step}
-        title={SECTION.title}
-        blurb={SECTION.blurb}
-        count={`${routes.length} routes that judge the work, not the address it came from.`}
+      <ListHead
+        intro={<SectionIntro
+          step={SECTION.step}
+          title={SECTION.title}
+          blurb={SECTION.blurb}
+          count={`${routes.length} routes that judge the work, not the address it came from.`}
+        />}
+        aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
       />
 
-      <FieldFilter defaultFields={defaults} signedIn={signedIn} />
-
-      <ul className="space-y-3">
+      <ul className="grid gap-3 xl:grid-cols-2">
         {routes.map((r) => (
           <li
             key={r.id}

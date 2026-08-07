@@ -130,6 +130,36 @@ is its own route now:
 - **One motion per view, and it is the morph.** A card's title and the `<h1>` of the page it opens share a `view-transition-name` (`guideMorph`, tested for validity and uniqueness), so the browser morphs one into the other and the transition answers "where did this page come from?". A staggered card entrance was tried and removed for two reasons worth not rediscovering: a fade-up holds the card at `opacity: 0` until the animation runs, which makes the page's actual content depend on an animation finishing; and it fights the morph, because a view transition snapshots the incoming page while those cards are still sliding. Everything else is `transition`-based (hover lift, press scale) so the resting state is always visible.
 - The global reduced-motion guard in [app/globals.css](app/globals.css) zeroes `animation-delay`/`transition-delay` as well as the durations. Without that, any `fill-mode: both` entrance leaves a reduced-motion reader staring at invisible content for the length of the delay.
 - `app/guide/loading.tsx` covers the gap routes created: every step is now a server round trip, and its skeleton mirrors the real layout so nothing jumps when content lands.
+
+## Layout: width buys columns, never line length
+
+[components/ui/Shell.tsx](components/ui/Shell.tsx) is the one content container
+for the student's section (1024 → 1152 → 1280 → **1440**, gutters growing with
+it). It replaced a `max-w-5xl` set independently in three files, which on a
+1920px display spent ~900px on empty gutter and turned every page's content into
+HEIGHT instead.
+
+The rule in the file's name is the one that matters, and breaking it is the
+obvious-looking mistake: **a wider container must be answered with more cards
+per row, or a side rail moved up beside the content — never with longer text.**
+Widening alone took the country page to 131 characters per line against a
+readable measure of 60–75. Long-form prose therefore carries its own cap
+(`max-w-[60ch]`) regardless of how wide the shell is.
+
+Two things learned by measuring, worth not rediscovering:
+
+- **`ch` is the width of a zero, not of an average letter.** `68ch` rendered as
+  ~82 real characters in this font; `60ch` lands at ~72. Set the cap by
+  measuring, not by reading the number as characters.
+- **Density has to be applied at the level that actually repeats.** Making the
+  city cards 4-up cut the page by 2%, because the list is grouped by country and
+  15 of the 19 groups hold a single city. Flowing the *groups* into columns cut
+  it from 4487px to 2047px. Look at what repeats before adding `grid-cols`.
+
+`DetailShell`'s `aside` is the same idea at page level: below `lg` the onward
+links follow the content as before, from `lg` they become a sticky rail in the
+column that was empty anyway. It is pinned at `top-20` because StudentNav is
+sticky and ~57px tall.
 - Step 4 obeys the world-map rule: every route in [lib/data/from-home.ts](lib/data/from-home.ts) carries its catch and a first move, test-enforced. **No URLs in that file** — the catalog owns links, because `test:links` checks those.
 
 ## Partner organisations (Astana Hub, Shymkent Hub, …)

@@ -574,7 +574,7 @@ function Shortlist({
           </p>
         )}
       </div>
-      <ul className="mt-4 space-y-2.5">
+      <ul className="mt-4 grid gap-2.5 2xl:grid-cols-2">
         {rows.map((o, i) => (
           <li
             key={o.id}
@@ -810,7 +810,7 @@ function FitSection({
         </h2>
         <p className="text-xs text-ink-faint">{hint}</p>
       </div>
-      <ul className="mt-3 space-y-2.5">
+      <ul className="mt-3 grid gap-2.5 2xl:grid-cols-2">
         {page.map((o, i) => (
           <li
             key={o.id}

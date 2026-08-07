@@ -59,6 +59,50 @@ export default function GuideHubPage({
       transitionName={guideMorph("hub", hub.id)}
       sub={`${hub.country} · ${REGION_LABEL[hub.region]}`}
       lead={hub.what}
+      aside={
+        <>
+          {/* If this city sits in a country we profile in full, that page is the
+              next question the student will have. */}
+          {country && (
+            <Link
+              href={withFields(`/guide/places/${country.id}`, stated)}
+              className="flex items-start justify-between gap-3 rounded-2xl border border-accent/40 bg-accent-soft/25 p-5 transition-colors hover:border-accent focus-visible:focus-ring"
+            >
+              <span>
+                <span className="text-sm font-semibold text-ink">
+                  Everything about {country.name}
+                </span>
+                <span className="mt-0.5 block text-sm text-ink-soft">
+                  {country.oneLine}
+                </span>
+              </span>
+              <span aria-hidden className="shrink-0 text-ink-faint">
+                &rarr;
+              </span>
+            </Link>
+          )}
+
+          {nearby.length > 0 && (
+            <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
+              <h2 className="text-sm font-semibold text-ink">
+                Others in {REGION_LABEL[hub.region]}
+              </h2>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {nearby.map((h) => (
+                  <li key={h.id}>
+                    <Link
+                      href={withFields(`/guide/cities/${h.id}`, stated)}
+                      className="inline-flex h-11 items-center rounded-full border border-line bg-surface px-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring"
+                    >
+                      {h.city}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
+      }
     >
       <div className="space-y-3">
         <GuideBlock label="The catch" tone="warn">
@@ -71,47 +115,6 @@ export default function GuideHubPage({
           {hub.fields.map((f) => FACULTY_LABEL[f]).join(" · ")}
         </GuideBlock>
       </div>
-
-      {/* If this city sits in a country we profile in full, that page is the
-          next question the student will have. */}
-      {country && (
-        <Link
-          href={withFields(`/guide/places/${country.id}`, stated)}
-          className="flex items-center justify-between gap-3 rounded-2xl border border-accent/40 bg-accent-soft/25 p-5 transition-colors hover:border-accent focus-visible:focus-ring"
-        >
-          <span>
-            <span className="text-sm font-semibold text-ink">
-              Everything about {country.name}
-            </span>
-            <span className="mt-0.5 block text-sm text-ink-soft">
-              {country.oneLine}
-            </span>
-          </span>
-          <span aria-hidden className="shrink-0 text-ink-faint">
-            &rarr;
-          </span>
-        </Link>
-      )}
-
-      {nearby.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-ink">
-            Others in {REGION_LABEL[hub.region]}
-          </h2>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {nearby.map((h) => (
-              <li key={h.id}>
-                <Link
-                  href={withFields(`/guide/cities/${h.id}`, stated)}
-                  className="inline-flex h-11 items-center rounded-full border border-line bg-card px-4 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring"
-                >
-                  {h.city}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </DetailShell>
   );
 }

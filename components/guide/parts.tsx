@@ -13,6 +13,31 @@ import {
 // Nothing here is a client component. The guide is curated data and links; the
 // only interactive control in the whole section is the field chips.
 
+/**
+ * The band every list page opens with: the step's heading on the left, the
+ * field filter on the right once there is room for it.
+ *
+ * Stacked, those were two full-width rows before a single card appeared. Side
+ * by side they cost one row, which is most of the reason a wide screen now
+ * shows content where it used to show scrollbar. `items-start` keeps the filter
+ * from stretching to the heading's height, and its own column is capped so
+ * expanding the chips cannot drag the layout around.
+ */
+export function ListHead({
+  intro,
+  aside,
+}: {
+  intro: React.ReactNode;
+  aside?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+      <div className="min-w-0 flex-1">{intro}</div>
+      {aside && <div className="lg:w-[24rem] lg:shrink-0">{aside}</div>}
+    </div>
+  );
+}
+
 /** A list-page heading: what this step is, and what it will not pretend to be. */
 export function SectionIntro({
   step,
@@ -172,6 +197,17 @@ export function DetailShell({
   lead,
   /** The other half of the card→page morph. Must match the card's exactly. */
   transitionName,
+  /**
+   * The onward links — where else to go from this subject. Below `lg` it simply
+   * follows the content, as it always did. From `lg` it becomes a rail beside
+   * it, which is the single biggest cut to the scroll on a wide screen: the
+   * "where next" material stops being three more screens of height and becomes
+   * the empty column that was there anyway.
+   *
+   * Sticky at `top-20` rather than `top-6` because StudentNav is itself sticky
+   * and about 57px tall — a rail pinned higher slides underneath it.
+   */
+  aside,
   children,
 }: {
   crumb: string;
@@ -180,6 +216,7 @@ export function DetailShell({
   sub?: string;
   lead?: string;
   transitionName?: string;
+  aside?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -223,7 +260,14 @@ export function DetailShell({
           </p>
         )}
       </div>
-      {children}
+      {aside ? (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start lg:gap-8">
+          <div className="min-w-0 space-y-4">{children}</div>
+          <aside className="space-y-3 lg:sticky lg:top-20">{aside}</aside>
+        </div>
+      ) : (
+        <div className="space-y-4">{children}</div>
+      )}
     </div>
   );
 }
@@ -249,7 +293,10 @@ export function GuideBlock({
       <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
         {label}
       </h2>
-      <div className="mt-1.5 text-sm leading-relaxed text-ink-soft">
+      {/* Capped independently of the container: widening the shell must buy
+          more columns, never longer lines. Unbounded, these ran to 131
+          characters on a 1900px screen — nearly double the readable measure. */}
+      <div className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
         {children}
       </div>
     </section>
