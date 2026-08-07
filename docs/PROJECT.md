@@ -10,6 +10,11 @@
 > - **Opportunities is the front door now**, not the admission report. New
 >   signups land on `/dashboard/opportunities` and answer two inline questions;
 >   the intake wizard and the analysis are opt-in.
+> - **The student's section is `/opportunities` + `/guide/*`**, in its own shell
+>   (`StudentShell`), not inside the report's sidebar. The guide is a section of
+>   routes — work · countries · cities · from home, plus `/guide/compare` — with
+>   66 subject pages. See [OPPORTUNITIES_PLAN.md](OPPORTUNITIES_PLAN.md) for the
+>   current state and the current goal.
 > - **Five destinations**, not "US and Italy": US · Italy · Hong Kong · UAE · Korea.
 > - **The site is English-only.** The RU dictionary and the EN/RU toggle were
 >   removed; §9 and the "AI report in Russian" note no longer apply.

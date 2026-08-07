@@ -13,7 +13,13 @@
 | | |
 | --- | --- |
 | [OPPORTUNITIES_RESEARCH.md](OPPORTUNITIES_RESEARCH.md) | **Read first.** Why it is built as an eligibility verdict rather than a catalog, from randomized trials and meta-analyses |
-| [OPPORTUNITIES_PLAN.md](OPPORTUNITIES_PLAN.md) | Live working notes — status, ordered next steps, traps worth remembering |
+| [OPPORTUNITIES_PLAN.md](OPPORTUNITIES_PLAN.md) | Live working notes — status, **the current goal**, ordered next steps, traps worth remembering |
+
+## What changed, and when
+
+| | |
+| --- | --- |
+| [../CHANGELOG.md](../CHANGELOG.md) | What went to production, in plain English — what a student notices, what changed underneath, and anything needing a manual step |
 
 ## Research and calibration
 
