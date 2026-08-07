@@ -533,6 +533,18 @@ export function destinationById(id: string): StudyDestination | undefined {
   return STUDY_DESTINATIONS.find((d) => d.id === id);
 }
 
+/**
+ * The country profile a city sits in, if we have one.
+ *
+ * Usually we do not: 9 of the 22 hubs are in countries with no profile, and
+ * four of those are the home region. So every caller has to handle `undefined`
+ * as an ordinary case, not an error — a city without a full country write-up is
+ * still a real place a student can work in, and Almaty is the proof.
+ */
+export function destinationForHub(hubId: string): StudyDestination | undefined {
+  return STUDY_DESTINATIONS.find((d) => d.hubs.includes(hubId));
+}
+
 /** Profiles matching any of the chosen fields; empty in ⇒ all of them. */
 export function destinationsForFaculties(
   faculties: FacultyValue[],

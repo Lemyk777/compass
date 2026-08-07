@@ -6,7 +6,7 @@ import { FACULTY_LABEL } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
 import { guideMorph } from "@/lib/data/guide-sections";
 import { HUBS, REGION_LABEL } from "@/lib/data/world";
-import { STUDY_DESTINATIONS } from "@/lib/data/study-destinations";
+import { destinationForHub } from "@/lib/data/study-destinations";
 import { statedGuideFields } from "@/lib/guide/student-fields";
 
 // One city, in full. Same three facts as everywhere in world.ts and in the same
@@ -38,17 +38,23 @@ export default function GuideHubPage({
   if (!hub) notFound();
 
   const stated = statedGuideFields(searchParams);
-  const destinations = STUDY_DESTINATIONS.filter((d) =>
-    d.hubs.includes(hub.id),
-  );
+  const country = destinationForHub(hub.id);
   const nearby = HUBS.filter(
     (h) => h.region === hub.region && h.id !== hub.id,
   ).slice(0, 5);
 
   return (
     <DetailShell
-      crumb="Cities"
-      crumbHref={withFields("/guide/cities", stated)}
+      // A city is inside a country, so when we have that country's profile the
+      // crumb IS the country — the trail then reads Guide / Germany / Berlin,
+      // which is the containment stated rather than implied. Where there is no
+      // profile (Almaty, Tashkent, Tbilisi and six more) the crumb falls back to
+      // the full list, which is why that list still exists.
+      crumb={country ? country.name : "Cities"}
+      crumbHref={withFields(
+        country ? `/guide/places/${country.id}` : "/guide/cities",
+        stated,
+      )}
       title={hub.city}
       transitionName={guideMorph("hub", hub.id)}
       sub={`${hub.country} · ${REGION_LABEL[hub.region]}`}
@@ -68,25 +74,24 @@ export default function GuideHubPage({
 
       {/* If this city sits in a country we profile in full, that page is the
           next question the student will have. */}
-      {destinations.map((d) => (
+      {country && (
         <Link
-          key={d.id}
-          href={withFields(`/guide/places/${d.id}`, stated)}
+          href={withFields(`/guide/places/${country.id}`, stated)}
           className="flex items-center justify-between gap-3 rounded-2xl border border-accent/40 bg-accent-soft/25 p-5 transition-colors hover:border-accent focus-visible:focus-ring"
         >
           <span>
             <span className="text-sm font-semibold text-ink">
-              Everything about {d.name}
+              Everything about {country.name}
             </span>
             <span className="mt-0.5 block text-sm text-ink-soft">
-              {d.oneLine}
+              {country.oneLine}
             </span>
           </span>
           <span aria-hidden className="shrink-0 text-ink-faint">
             &rarr;
           </span>
         </Link>
-      ))}
+      )}
 
       {nearby.length > 0 && (
         <section>

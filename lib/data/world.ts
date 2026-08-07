@@ -310,3 +310,30 @@ export function hubsByRegion(
     hubs: matched.filter((h) => h.region === region),
   })).filter((g) => g.hubs.length > 0);
 }
+
+/**
+ * Grouped by COUNTRY, still in curated region order (so the home region leads).
+ *
+ * This is how the cities step is displayed, because a city is inside a country
+ * and the guide used to present the two as siblings — it offered Berlin and
+ * then, a step later, zoomed out to Germany. Grouping by country makes the
+ * containment visible even for the countries we have no full profile of.
+ */
+export function hubsByCountry(
+  faculties: FacultyValue[],
+): { country: string; region: RegionKey; hubs: Hub[] }[] {
+  const matched = hubsForFaculties(faculties);
+  const groups: { country: string; region: RegionKey; hubs: Hub[] }[] = [];
+  for (const region of REGION_ORDER) {
+    // Curated order within a region is the order of HUBS itself, so the first
+    // time a country appears is where its group goes.
+    for (const hub of matched.filter((h) => h.region === region)) {
+      const existing = groups.find(
+        (g) => g.country === hub.country && g.region === region,
+      );
+      if (existing) existing.hubs.push(hub);
+      else groups.push({ country: hub.country, region, hubs: [hub] });
+    }
+  }
+  return groups;
+}

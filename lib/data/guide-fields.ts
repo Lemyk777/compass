@@ -68,3 +68,14 @@ export function withFields(href: string, fields: FacultyValue[] | null): string 
   if (fields === null) return href;
   return `${href}?${FIELDS_PARAM}=${serializeFields(fields)}`;
 }
+
+/**
+ * The same thing for an href that already carries a query string — the compare
+ * view, whose two countries are themselves parameters. Separate function rather
+ * than string-surgery on `withFields` at each call site, because "replace the
+ * ? with &" is the kind of line that is wrong exactly once and silently.
+ */
+export function fieldsSuffix(fields: FacultyValue[] | null): string {
+  if (fields === null) return "";
+  return `&${FIELDS_PARAM}=${serializeFields(fields)}`;
+}
