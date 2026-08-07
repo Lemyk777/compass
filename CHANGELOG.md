@@ -29,6 +29,15 @@ record.
   steps: finding anything meant scrolling past 33 areas of work, 22 cities and
   11 country profiles. There are now five list pages and 66 subject pages, so
   `/guide/cities/berlin` is a link you can send to a parent.
+- **Cities sit inside countries now.** The guide used to offer Berlin as step 2
+  and Germany as step 3, which is a zoom outwards. Countries come first, the
+  city list is grouped by country, and a city's trail reads Guide → Germany →
+  Berlin. Cities in countries we don't profile — Almaty, Astana, Tashkent,
+  Tbilisi among them — keep their place in the list rather than disappearing.
+- **"Compare it with" actually compares.** It was a row of chips that navigated
+  to the other country, replacing the one you were reading. It now opens both
+  side by side on the same axes: money, admissions, what happens after you
+  graduate, and who each one is wrong for.
 - **Detail opens as a page, not a pop-up.** Opening a city or a sphere of work
   used to be a modal with no URL — you could not bookmark it, and the Back
   button closed it instead of leaving the page. Back now returns to the list at
@@ -49,8 +58,11 @@ record.
 
 - Country profiles moved from `/guide/[place]` to `/guide/places/[place]`. A
   dynamic segment in the root of the section meant every sub-route added later
-  was a name that had to not-be-a-country. **Old links still work** — the old
-  path is a validated 308 redirect.
+  was a name that had to not-be-a-country. **Old links still work** — the eleven
+  old paths are enumerated 308s in `next.config.mjs`, which runs before routing
+  and so is a true redirect regardless of how the page streams. With the old
+  route deleted, an unknown `/guide/anything` is a real 404 rather than a 200
+  serving a "not found" page.
 - The guide is server-rendered except two client islands (the field chips and
   the areas list, which the optional values refine reorders from
   `localStorage`). `/guide` was 22.3 kB of route JS and 124 kB first load; the

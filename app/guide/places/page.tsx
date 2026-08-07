@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { FieldFilter } from "@/components/guide/FieldFilter";
 import { GuideCard, NextStep, SectionIntro } from "@/components/guide/parts";
-import { withFields } from "@/lib/data/guide-fields";
+import Link from "@/components/ui/Link";
+import { fieldsSuffix, withFields } from "@/lib/data/guide-fields";
 import { guideMorph, guideSection } from "@/lib/data/guide-sections";
 import { destinationsForFaculties } from "@/lib/data/study-destinations";
 import { guideView } from "@/lib/guide/student-fields";
 
-// Step 3: the countries, each with its own page.
+// Step 2: the countries, each with its own page — and the step the cities now
+// hang under, because a country contains cities and the guide used to present
+// the two the other way round.
 //
 // These already had their own routes when the rest of the guide did not — the
 // profiles are long enough to deserve one. What changed is the address: they
@@ -41,6 +44,27 @@ export default async function GuidePlacesPage({
 
       <FieldFilter defaultFields={defaults} signedIn={signedIn} />
 
+      {/* The comparison is a first-class door, not only something you find at
+          the bottom of one country's page — choosing between two is the
+          question students actually arrive with. */}
+      <Link
+        href={`/guide/compare?${fieldsSuffix(stated).slice(1)}`}
+        className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-card p-4 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent hover:shadow-card focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none"
+      >
+        <span>
+          <span className="text-sm font-semibold text-ink">
+            Put two of them side by side
+          </span>
+          <span className="mt-0.5 block text-sm text-ink-soft">
+            The same questions asked of both — money, admissions, after you
+            graduate, and who each one is wrong for.
+          </span>
+        </span>
+        <span aria-hidden className="shrink-0 text-ink-faint">
+          &rarr;
+        </span>
+      </Link>
+
       <ul className="grid gap-2.5 sm:grid-cols-2">
         {destinations.map((d) => (
           <li key={d.id}>
@@ -51,7 +75,11 @@ export default async function GuidePlacesPage({
               meta={d.where}
               line={d.oneLine}
               badge={d.modelled ? "Odds modelled" : undefined}
-              cta="Money, admissions, after you graduate"
+              cta={
+                d.hubs.length === 1
+                  ? "Money, admissions, and 1 city inside"
+                  : `Money, admissions, and ${d.hubs.length} cities inside`
+              }
             />
           </li>
         ))}

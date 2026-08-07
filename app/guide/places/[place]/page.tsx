@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "@/components/ui/Link";
 import { DetailShell } from "@/components/guide/parts";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
-import { withFields } from "@/lib/data/guide-fields";
+import { fieldsSuffix, withFields } from "@/lib/data/guide-fields";
 import { guideMorph } from "@/lib/data/guide-sections";
 import { HUBS } from "@/lib/data/world";
 import {
@@ -62,7 +62,7 @@ function DestinationBody({
 
   return (
     <DetailShell
-      crumb="Destinations"
+      crumb="Countries"
       crumbHref={withFields("/guide/places", stated)}
       title={d.name}
       transitionName={guideMorph("place", d.id)}
@@ -137,11 +137,11 @@ function DestinationBody({
       {hubs.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold text-ink">
-            The cities, and the work that sits in them
+            The cities inside it
           </h2>
           <p className="mt-1 text-sm text-ink-soft">
-            Each opens its own page — what clusters there, the catch, and the
-            door in.
+            A country is not one job market. Each city opens its own page — what
+            clusters there, the catch, and the door in.
           </p>
           <ul className="mt-3 grid gap-2.5 sm:grid-cols-2">
             {hubs.map((h) => (
@@ -180,18 +180,26 @@ function DestinationBody({
         </section>
       )}
 
+      {/* This panel used to be headed "Compare it with" and did not compare: the
+          chips navigated to the other country's page, replacing the one you were
+          reading. It promised the guide's whole premise — nobody chooses a
+          country in isolation — and then threw away one of the two sides. Each
+          chip now opens both countries next to each other on the same axes. */}
       <section className="rounded-2xl border border-line bg-card p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-ink">Compare it with</h2>
+        <h2 className="text-lg font-semibold text-ink">
+          Compare {d.name} with&hellip;
+        </h2>
         <p className="mt-1 text-sm text-ink-soft">
-          Nobody chooses a country in isolation. These are the ones students
-          weigh against it.
+          Nobody chooses a country in isolation. Pick one and the two are laid
+          out side by side — money, admissions, what happens after you graduate,
+          and who each one is wrong for.
         </p>
         <ul className="mt-3 flex flex-wrap gap-2">
           {others.map((o) => (
             <li key={o.id}>
               <Link
-                href={withFields(`/guide/places/${o.id}`, stated)}
-                className="inline-flex h-11 items-center rounded-full border border-line bg-surface px-4 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring"
+                href={`/guide/compare?a=${d.id}&b=${o.id}${fieldsSuffix(stated)}`}
+                className="inline-flex h-11 items-center rounded-full border border-line bg-surface px-4 text-sm font-medium text-ink-soft transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-accent hover:text-ink active:scale-[0.96] active:duration-75 focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none"
               >
                 {o.name}
               </Link>
