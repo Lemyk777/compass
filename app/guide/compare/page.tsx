@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "@/components/ui/Link";
 import { DetailExit } from "@/components/guide/DetailExit";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
@@ -16,8 +16,8 @@ import { pageMeta } from "@/lib/seo";
 // The country pages have carried a panel headed "Compare it with" since they
 // were written, and it never compared anything: it was a row of chips that
 // navigated to the other country's page, replacing what you were reading. The
-// label promised the one thing the guide is for вЂ” "nobody chooses a country in
-// isolation" вЂ” and the control did the opposite, throwing away the side you had
+// label promised the one thing the guide is for — "nobody chooses a country in
+// isolation" — and the control did the opposite, throwing away the side you had
 // just read. This page is the promise, delivered.
 //
 // Deliberately at /guide/compare and not /guide/places/compare: a static
@@ -25,15 +25,15 @@ import { pageMeta } from "@/lib/seo";
 // which is the exact trap the profiles were moved out of the section root to
 // escape.
 //
-// Same data, same order, same honesty rules as a single profile вЂ” including
+// Same data, same order, same honesty rules as a single profile — including
 // that the trade-offs column sits level with the strengths column, so a
 // comparison cannot be read as a recommendation.
 
 // The one page in the guide whose subject is its query string, so its metadata
 // has to be built per request.
 //
-// The pair is symmetric вЂ” `?a=germany&b=italy` and `?a=italy&b=germany` render
-// the same comparison вЂ” so the canonical sorts the two ids. Without that, every
+// The pair is symmetric — `?a=germany&b=italy` and `?a=italy&b=germany` render
+// the same comparison — so the canonical sorts the two ids. Without that, every
 // pair is two URLs with identical content competing with each other, and the
 // country pages link both ways round.
 export async function generateMetadata({
@@ -48,7 +48,7 @@ export async function generateMetadata({
 
   if (!a || !b) {
     return pageMeta({
-      title: "Compare two destinations вЂ” Compass",
+      title: "Compare two destinations — Compass",
       description:
         "Two countries side by side on the same axes: what each gives you, what it costs, what admissions weighs, what happens after you graduate, and who each is wrong for.",
       path: "/guide/compare",
@@ -57,7 +57,7 @@ export async function generateMetadata({
 
   const [first, second] = [a.id, b.id].sort();
   return pageMeta({
-    title: `${a.name} or ${b.name}? вЂ” the honest comparison | Compass`,
+    title: `${a.name} or ${b.name}? — the honest comparison | Compass`,
     description: `${a.name} and ${b.name} side by side on the same axes: money, admissions, what happens after you graduate, and who each one is wrong for.`,
     path: `/guide/compare?a=${first}&b=${second}`,
     type: "article",
@@ -87,8 +87,8 @@ export default function GuideComparePage({
     <div className="space-y-6">
       <header>
         {/* Same pairing as every other sub-page: where you are, and an explicit
-            way out that survives the scroll. This one runs longer than most вЂ”
-            eleven axes, both sides вЂ” so it is exactly where the browser's own
+            way out that survives the scroll. This one runs longer than most —
+            eleven axes, both sides — so it is exactly where the browser's own
             back button was the only exit left. */}
         <div className="flex items-center justify-between gap-3">
           <nav aria-label="Breadcrumb" className="min-w-0 text-sm">
@@ -120,7 +120,7 @@ export default function GuideComparePage({
         <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft">
           The same questions asked of both, in the same order, with what each one
           costs you level with what it gives you. Neither column is a
-          recommendation вЂ” the last row is the one to read twice.
+          recommendation — the last row is the one to read twice.
         </p>
       </header>
 
@@ -150,7 +150,7 @@ export default function GuideComparePage({
         <>
           {/* The names once, at the top of the columns, on the screens wide
               enough to keep two columns. Narrower than that, each answer labels
-              itself вЂ” see `Side`. */}
+              itself — see `Side`. */}
           <div
             aria-hidden
             className="hidden gap-3 px-5 sm:grid sm:grid-cols-2"
@@ -184,14 +184,14 @@ export default function GuideComparePage({
             b={b.tradeoffs}
           />
           <Row
-            label="Money вЂ” how paying for it works"
+            label="Money — how paying for it works"
             aName={a.name}
             bName={b.name}
             a={a.money}
             b={b.money}
           />
           <Row
-            label="Getting in вЂ” what they weigh"
+            label="Getting in — what they weigh"
             aName={a.name}
             bName={b.name}
             a={a.admissions}
@@ -214,7 +214,7 @@ export default function GuideComparePage({
             inline
           />
           <Row
-            label="This suits you ifвЂ¦"
+            label="This suits you if…"
             aName={a.name}
             bName={b.name}
             a={a.suitsYou}
@@ -222,7 +222,7 @@ export default function GuideComparePage({
             tone="good"
           />
           <Row
-            label="Look elsewhere ifвЂ¦"
+            label="Look elsewhere if…"
             aName={a.name}
             bName={b.name}
             a={a.notForYou}
@@ -302,7 +302,7 @@ function Picker({
 /**
  * The country name above each answer, shown only where the two halves are
  * stacked. Below `sm` the grid becomes one column, and a stacked comparison
- * with unlabelled halves is not a comparison вЂ” it is two paragraphs and a guess
+ * with unlabelled halves is not a comparison — it is two paragraphs and a guess
  * about which country you are reading.
  */
 function Side({ name }: { name: string }) {
