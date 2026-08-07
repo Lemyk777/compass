@@ -7,6 +7,7 @@ import { FACULTY_LABEL, FACULTY_VALUES } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
 import { guideMorph, guideSection } from "@/lib/data/guide-sections";
 import { guideView } from "@/lib/guide/student-fields";
+import { pageMeta } from "@/lib/seo";
 
 // Step 1: the areas of work a field opens.
 //
@@ -17,10 +18,11 @@ import { guideView } from "@/lib/guide/student-fields";
 
 const SECTION = guideSection("work");
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Kinds of work a field opens — Compass",
   description: SECTION.blurb,
-};
+  path: SECTION.href,
+});
 
 export default async function GuideWorkPage({
   searchParams,

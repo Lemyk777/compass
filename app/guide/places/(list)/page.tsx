@@ -6,6 +6,7 @@ import { fieldsSuffix, withFields } from "@/lib/data/guide-fields";
 import { guideMorph, guideSection } from "@/lib/data/guide-sections";
 import { destinationsForFaculties } from "@/lib/data/study-destinations";
 import { guideView } from "@/lib/guide/student-fields";
+import { pageMeta } from "@/lib/seo";
 
 // Step 2: the countries, each with its own page — and the step the cities now
 // hang under, because a country contains cities and the guide used to present
@@ -20,10 +21,11 @@ import { guideView } from "@/lib/guide/student-fields";
 
 const SECTION = guideSection("places");
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "The big study destinations, in full — Compass",
   description: SECTION.blurb,
-};
+  path: SECTION.href,
+});
 
 export default async function GuidePlacesPage({
   searchParams,

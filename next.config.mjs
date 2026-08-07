@@ -1,4 +1,4 @@
-// The country profiles' old addresses, kept alive as real 308s.
+// The short address of every country profile, `/guide/<country>`, as a real 308.
 //
 // Duplicated from lib/data/legacy-guide-urls.ts, which this file cannot import
 // (next.config is loaded before any TypeScript is compiled). A unit test in
@@ -10,6 +10,14 @@
 // would swallow `/guide/work`, `/guide/cities` and every step name added later,
 // sending them to `/guide/places/work` and a 404.
 const LEGACY_GUIDE_PLACE_IDS = [
+  "kazakhstan",
+  "uzbekistan",
+  "georgia",
+  "poland",
+  "turkiye",
+  "china",
+  "japan",
+  "india",
   "united-states",
   "united-kingdom",
   "hong-kong",

@@ -13,6 +13,7 @@
     "test:scrape": "node --import tsx scripts/test-scrape-pages.ts",
     "diag:dates": "node --import tsx scripts/diag-date-ceiling.ts",
     "test:links": "node --import tsx scripts/test-links.ts",
+    "test:guide-links": "node --import tsx scripts/test-guide-links.ts",
     "trace:reasoning": "node --env-file=.env.local --import tsx scripts/trace-reasoning.ts",
     "test:onboarding": "node --experimental-test-module-mocks --import tsx --test scripts/test-onboarding.ts",
     "test:unit": "node --import tsx --test scripts/test-engine.ts",

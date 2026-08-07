@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "@/components/ui/Link";
-import { DetailShell, GuideBlock } from "@/components/guide/parts";
+import {
+  DetailShell,
+  ForYou,
+  GuideBlock,
+  GuidePart,
+  PageContents,
+} from "@/components/guide/parts";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
 import { guideMorph } from "@/lib/data/guide-sections";
 import { HUBS, REGION_LABEL } from "@/lib/data/world";
 import { destinationForHub } from "@/lib/data/study-destinations";
 import { statedGuideFields } from "@/lib/guide/student-fields";
+import { pageMeta } from "@/lib/seo";
 
 // One city, in full. Same three facts as everywhere in world.ts and in the same
 // order every time: what it is, what the catch is, how someone who is not from
@@ -21,10 +28,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const hub = HUBS.find((h) => h.id === params.hub);
   if (!hub) return { title: "Not found — Compass" };
-  return {
+  return pageMeta({
     title: `Working in ${hub.city} — the catch and the way in | Compass`,
     description: hub.what,
-  };
+    path: `/guide/cities/${hub.id}`,
+    type: "article",
+  });
 }
 
 export default function GuideHubPage({
@@ -42,6 +51,60 @@ export default function GuideHubPage({
   const nearby = HUBS.filter(
     (h) => h.region === hub.region && h.id !== hub.id,
   ).slice(0, 5);
+
+  // Seven equal boxes in a column told a reader nothing about what the page
+  // held. Three named parts do, and the order is the order the questions come:
+  // can I even get in and what does it cost me, what are the years there like,
+  // and what work is actually here. The catch still opens the page — the rule
+  // this whole layer is built on.
+  const parts: { id: string; title: string; body: React.ReactNode }[] = [
+    {
+      id: "in",
+      title: "The catch, and the way in",
+      body: (
+        <>
+          <GuideBlock label="The catch" tone="warn">
+            {hub.catch}
+          </GuideBlock>
+          <GuideBlock label="The way in" tone="good">
+            {hub.route}
+          </GuideBlock>
+        </>
+      ),
+    },
+    {
+      id: "living",
+      title: "Living there",
+      body: (
+        <>
+          <GuideBlock label="What living here is actually like">
+            {hub.dayHere}
+          </GuideBlock>
+          <GuideBlock label="How the money works">
+            {hub.money}
+            <span className="mt-1.5 block max-w-[60ch] text-xs text-ink-faint">
+              Described in shape rather than figures on purpose: rents and
+              salaries move every year and we cannot keep numbers true, but what
+              is expensive and what quietly eats income stays true for far
+              longer.
+            </span>
+          </GuideBlock>
+          <GuideBlock label="The language you actually need">
+            {hub.language}
+          </GuideBlock>
+        </>
+      ),
+    },
+    {
+      id: "work",
+      title: "The work that clusters here",
+      body: (
+        <GuideBlock label="Fields with a real market in this city">
+          {hub.fields.map((f) => FACULTY_LABEL[f]).join(" · ")}
+        </GuideBlock>
+      ),
+    },
+  ];
 
   return (
     <DetailShell
@@ -104,39 +167,21 @@ export default function GuideHubPage({
         </>
       }
     >
-      <div className="space-y-3">
-        {/* The catch stays first, before anything attractive — the rule this
-            whole layer is built on. Then the four questions a student actually
-            has about a place they might spend years in: what it is like to live
-            there, what the money does, what language it demands, and whether it
-            is for them at all. */}
-        <GuideBlock label="The catch" tone="warn">
-          {hub.catch}
-        </GuideBlock>
-        <GuideBlock label="The way in" tone="good">
-          {hub.route}
-        </GuideBlock>
-        <GuideBlock label="What living here is actually like">
-          {hub.dayHere}
-        </GuideBlock>
-        <GuideBlock label="How the money works">
-          {hub.money}
-          <span className="mt-1.5 block max-w-[60ch] text-xs text-ink-faint">
-            Described in shape rather than figures on purpose: rents and salaries
-            move every year and we cannot keep numbers true, but what is
-            expensive and what quietly eats income stays true for far longer.
-          </span>
-        </GuideBlock>
-        <GuideBlock label="The language you actually need">
-          {hub.language}
-        </GuideBlock>
-        <GuideBlock label="Who this suits, and who it doesn’t">
-          {hub.whoThrives}
-        </GuideBlock>
-        <GuideBlock label="The work that clusters here">
-          {hub.fields.map((f) => FACULTY_LABEL[f]).join(" · ")}
-        </GuideBlock>
-      </div>
+      {/* Who it is for, before the description of it — the same reordering the
+          country profiles got. On a city this is one field rather than two, so
+          it renders as one full-width answer. */}
+      <ForYou
+        suits={hub.whoThrives}
+        suitsLabel="Who this suits, and who it doesn’t"
+      />
+
+      <PageContents parts={parts} />
+
+      {parts.map((part) => (
+        <GuidePart key={part.id} id={part.id} title={part.title}>
+          {part.body}
+        </GuidePart>
+      ))}
     </DetailShell>
   );
 }

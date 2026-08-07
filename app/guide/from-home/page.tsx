@@ -4,6 +4,7 @@ import { ListHead, NextStep, SectionIntro } from "@/components/guide/parts";
 import { guideSection } from "@/lib/data/guide-sections";
 import { homeRoutesForFaculties } from "@/lib/data/from-home";
 import { guideView } from "@/lib/guide/student-fields";
+import { pageMeta } from "@/lib/seo";
 
 // Step 4, and the one the guide would be dishonest without.
 //
@@ -19,10 +20,11 @@ import { guideView } from "@/lib/guide/student-fields";
 
 const SECTION = guideSection("from-home");
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "What you can do without leaving — Compass",
   description: SECTION.blurb,
-};
+  path: SECTION.href,
+});
 
 export default async function GuideFromHomePage({
   searchParams,

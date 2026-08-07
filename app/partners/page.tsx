@@ -6,14 +6,16 @@ import { listActivePartners, partnerPostCounts } from "@/lib/partners/queries";
 import { partnerPath } from "@/lib/data/partners";
 import { PartnerLogo, VerifiedTick } from "@/components/partners/PartnerBadge";
 import { regionLabel } from "@/lib/data/geo";
+import { pageMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Partner organisations — Compass",
   description:
     "The organisations that post their competitions, olympiads and programmes on Compass under their own name.",
-};
+  path: "/partners",
+});
 
 // The public list of organisations posting with us.
 //

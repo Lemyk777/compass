@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "@/components/ui/Link";
-import { DetailShell, GuideBlock } from "@/components/guide/parts";
+import {
+  DetailShell,
+  GuideBlock,
+  GuidePart,
+  PageContents,
+} from "@/components/guide/parts";
 import { areaBySlug, areaSlug } from "@/lib/data/careers";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
@@ -9,6 +14,7 @@ import { guideMorph } from "@/lib/data/guide-sections";
 import { VALUE_LABEL } from "@/lib/data/values";
 import { hubsByRegion } from "@/lib/data/world";
 import { statedGuideFields } from "@/lib/guide/student-fields";
+import { pageMeta } from "@/lib/seo";
 
 // One area of work, in full. This was a modal sheet, which meant it had no URL:
 // a student could not send it to a parent, could not bookmark it, and pressing
@@ -21,10 +27,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const found = areaBySlug(params.area);
   if (!found) return { title: "Not found — Compass" };
-  return {
+  return pageMeta({
     title: `${found.area.title} — what the work is, and how you get in | Compass`,
     description: found.area.what,
-  };
+    path: `/guide/work/${params.area}`,
+    type: "article",
+  });
 }
 
 export default function GuideAreaPage({
@@ -55,6 +63,115 @@ export default function GuideAreaPage({
   const neighbours = area.adjacent
     .map((title) => ({ title, slug: areaSlug(title) }))
     .filter((n) => Boolean(areaBySlug(n.slug)));
+
+  // Three parts, in the order a student asks the questions: what is this work
+  // actually like and what does it cost me, how do people get there, and what
+  // can I do about it this month. Eight boxes in one column answered the same
+  // things and looked like one undifferentiated wall.
+  //
+  // The route part opens with the one-line version and then breaks it into
+  // stages — a summary before its own detail, which is the shape every other
+  // level of the guide already uses.
+  const parts: { id: string; title: string; body: React.ReactNode }[] = [
+    {
+      id: "what-it-is",
+      title: "What the work actually is",
+      body: (
+        <>
+          <GuideBlock label="What the work is actually like">
+            {area.dayToDay}
+          </GuideBlock>
+
+          <GuideBlock label="The catch" tone="warn">
+            {area.catch}
+          </GuideBlock>
+
+          <GuideBlock label="What people get wrong about it">
+            {area.misconception}
+          </GuideBlock>
+
+          <GuideBlock label="The jobs inside this area">
+            <ul className="flex flex-wrap gap-1.5">
+              {area.roles.map((role) => (
+                <li
+                  key={role}
+                  className="rounded-lg border border-line bg-surface px-2.5 py-1 text-xs text-ink-soft"
+                >
+                  {role}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-ink-faint">
+              A list, not a recommendation — you narrow it, we don&rsquo;t.
+            </p>
+          </GuideBlock>
+
+          <GuideBlock label="What this kind of work usually offers">
+            {area.values.map((v) => VALUE_LABEL[v]).join(" · ")}
+            <span className="mt-1 block text-xs text-ink-faint">
+              A generalisation about the sphere, not a promise about a salary.
+              Pay and security vary enormously by country and employer.
+            </span>
+          </GuideBlock>
+        </>
+      ),
+    },
+    {
+      id: "route",
+      title: "How you get there",
+      body: (
+        <>
+          <GuideBlock label="The one-line version">{area.path}</GuideBlock>
+
+          {/* Three stages rather than one sentence, because "study engineering"
+              hides every decision that actually matters — when to specialise,
+              what the degree is like, and what the first job is really doing. */}
+          <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+              Stage by stage
+            </h3>
+            <ol className="mt-3 space-y-3">
+              {(
+                [
+                  ["While you are still at school", area.stages.school],
+                  ["What you study", area.stages.study],
+                  ["How the first years actually go", area.stages.first],
+                ] as const
+              ).map(([label, body], i) => (
+                <li key={label} className="flex gap-3">
+                  <span
+                    data-num
+                    aria-hidden
+                    className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white"
+                  >
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-ink">{label}</p>
+                    <p className="mt-0.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+                      {body}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </>
+      ),
+    },
+    {
+      // Its own part rather than the seventh box down, because it is the only
+      // thing on the page a reader can act on today, and a page that ends in
+      // reading is where a student leaves.
+      id: "try-it",
+      title: "Test it this month",
+      body: (
+        <GuideBlock label="Free, and finishable in a few evenings" tone="good">
+          {area.tryItNow}
+        </GuideBlock>
+      ),
+    },
+  ];
 
   return (
     <DetailShell
@@ -137,90 +254,13 @@ export default function GuideAreaPage({
         </>
       }
     >
-      <div className="space-y-3">
-        {/* The order is the order a student asks the questions in: what is the
-            work actually like, what does it cost me, what am I probably getting
-            wrong — and only then the route in. Leading with the route would be
-            answering "how" before they know whether they want it. */}
-        <GuideBlock label="What the work is actually like">
-          {area.dayToDay}
-        </GuideBlock>
+      <PageContents parts={parts} />
 
-        <GuideBlock label="The catch" tone="warn">
-          {area.catch}
-        </GuideBlock>
-
-        <GuideBlock label="What people get wrong about it">
-          {area.misconception}
-        </GuideBlock>
-
-        <GuideBlock label="The jobs inside this area">
-          <ul className="flex flex-wrap gap-1.5">
-            {area.roles.map((role) => (
-              <li
-                key={role}
-                className="rounded-lg border border-line bg-surface px-2.5 py-1 text-xs text-ink-soft"
-              >
-                {role}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-xs text-ink-faint">
-            A list, not a recommendation — you narrow it, we don&rsquo;t.
-          </p>
-        </GuideBlock>
-
-        {/* Three stages rather than one sentence, because "study engineering"
-            hides every decision that actually matters — when to specialise,
-            what the degree is like, and what the first job is really doing. */}
-        <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
-            The route in, stage by stage
-          </h2>
-          <ol className="mt-3 space-y-3">
-            {(
-              [
-                ["While you are still at school", area.stages.school],
-                ["What you study", area.stages.study],
-                ["How the first years actually go", area.stages.first],
-              ] as const
-            ).map(([label, body], i) => (
-              <li key={label} className="flex gap-3">
-                <span
-                  data-num
-                  aria-hidden
-                  className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white"
-                >
-                  {i + 1}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-ink">{label}</p>
-                  <p className="mt-0.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
-                    {body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <GuideBlock label="Test it this month, for nothing" tone="good">
-          {area.tryItNow}
-        </GuideBlock>
-
-        <GuideBlock label="The one-line version of the route" tone="good">
-          {area.path}
-        </GuideBlock>
-
-        <GuideBlock label="What this kind of work usually offers">
-          {area.values.map((v) => VALUE_LABEL[v]).join(" · ")}
-          <span className="mt-1 block text-xs text-ink-faint">
-            A generalisation about the sphere, not a promise about a salary. Pay
-            and security vary enormously by country and employer.
-          </span>
-        </GuideBlock>
-      </div>
-
+      {parts.map((part) => (
+        <GuidePart key={part.id} id={part.id} title={part.title}>
+          {part.body}
+        </GuidePart>
+      ))}
     </DetailShell>
   );
 }

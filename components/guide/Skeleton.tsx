@@ -1,15 +1,17 @@
-// Shown while a guide route resolves.
+// The wait, drawn — shared by every guide LIST route's loading.tsx.
 //
-// Splitting the guide into routes created a gap that a single page did not
-// have: every step is now a server round trip, and without this the student
-// pressed a tab and watched nothing happen. A skeleton that matches the real
-// layout also reserves the space the content will take, so nothing jumps when
-// it arrives.
+// Splitting the guide into routes created a gap a single page did not have:
+// each step is a server round trip, and for a signed-in student that includes
+// an auth read, so without this they pressed a tab and watched nothing happen.
+// The skeleton mirrors the real layout, so nothing jumps when content lands.
 //
-// The tabs and the shell live in layout.tsx and stay on screen throughout — only
-// the page below them is replaced, which is the whole reason the tabs are in the
-// layout rather than in each page.
-export default function GuideLoading() {
+// It is deliberately NOT mounted over the subject pages (a city, a country, an
+// area of work), and that is not an oversight — see the note in
+// app/guide/(index)/loading.tsx. Those pages render from static data with no
+// session read, so there is no wait to draw; and a fallback there would cost us
+// two things that matter more, a real 404 status for an unknown id and the
+// card-to-heading morph.
+export function GuideSkeleton() {
   return (
     <div className="space-y-6" role="status" aria-label="Loading">
       <div className="space-y-2.5">
