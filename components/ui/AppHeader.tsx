@@ -9,9 +9,12 @@ type NavLink = { href: string; label: string };
 export function AppHeader({
   links = [],
   admin = false,
+  wide = false,
 }: {
   links?: NavLink[];
   admin?: boolean;
+  /** Match a wider page body (tables that don't fit the default column). */
+  wide?: boolean;
 }) {
   const t = getT();
   return (
@@ -19,7 +22,11 @@ export function AppHeader({
       className="sticky top-0 z-10 border-b border-line bg-surface/85 backdrop-blur"
       style={{ viewTransitionName: "header" }}
     >
-      <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-y-2 px-5 py-3">
+      <div
+        className={`mx-auto flex flex-wrap items-center justify-between gap-y-2 px-5 py-3 ${
+          wide ? "max-w-5xl" : "max-w-2xl"
+        }`}
+      >
         <Link href="/dashboard" className="rounded focus-visible:focus-ring flex items-center min-h-11">
           <Logo
             className="text-ink"
