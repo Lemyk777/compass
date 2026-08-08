@@ -6,8 +6,8 @@
 // Override defaults with env vars, e.g.:
 //   TEST_EMAIL=foo@bar.com TEST_PASSWORD=secret123 TEST_ROLE=admin npm run create:test-user
 //
-// Roles: "student" lands on /onboarding (the questionnaire), "admin" → /admin,
-// "ambassador" → /ambassador.
+// Roles: "student" lands on /opportunities (the questionnaire is opt-in),
+// "admin" → /admin, "ambassador" → /ambassador.
 
 import { createClient, type User } from "@supabase/supabase-js";
 
@@ -74,7 +74,7 @@ async function main() {
   console.log(
     "Role:     " +
       ROLE +
-      (ROLE === "student" ? "  → lands on /onboarding (the questionnaire)" : ""),
+      (ROLE === "student" ? "  → lands on /opportunities" : ""),
   );
 }
 

@@ -66,6 +66,20 @@ Everything here is **deterministic** — no model call — and the design rules 
 
 - **The default intake is two inline questions**, both on the Opportunities view: school year (`YearPrompt` → `saveGraduationYear`) then field (`FieldPrompt` → `saveFaculties`, both in [app/dashboard/actions.ts](app/dashboard/actions.ts)). A student who can't answer the second takes the optional **interest quiz** ([lib/data/interest-quiz.ts](lib/data/interest-quiz.ts) — fixed per-option weights, pure scoring). **The full analysis questionnaire is opt-in** — new signups land on `/dashboard/opportunities`, not `/onboarding`. Don't re-add a mandatory intake gate.
 - **Empty faculties is a valid answer** meaning "show everything", not "show nothing". Unknown facts never exclude.
+- **The filter panel is pure, and its rules are the product's rules**
+  ([lib/data/opportunity-filter.ts](lib/data/opportunity-filter.ts), rendered by
+  [components/opportunities/FilterBar.tsx](components/opportunities/FilterBar.tsx)):
+  a search box plus money / when / level / "only what I can enter now", every
+  option carrying its own count. Three things not to "improve": groups are
+  **ANDed, options inside a group ORed** — the only combination a person
+  predicts; **"Free" never includes a cost we have not verified**, so `unknown`
+  and `varies` belong to no money bucket (a filter must not do what a card is
+  forbidden from doing); and **any active filter opens the full list on its
+  own**, because a search that returned the same five recommendations reads as
+  broken. Kind stays on the sticky tabs — one criterion, one control — and the
+  counts on each control are computed with that control's own selection lifted.
+  The module type-imports key-dates only (see the bundle rule below), and the
+  rules are unit-tested in [scripts/test-engine.ts](scripts/test-engine.ts).
 - **The catalog is split by concern**: entries live in [lib/data/competitions-data.ts](lib/data/competitions-data.ts), matching logic in [lib/data/key-dates.ts](lib/data/key-dates.ts) (which re-exports the data, so existing imports still work), and the careers layer in [lib/data/careers.ts](lib/data/careers.ts). The careers
   layer moved to **the guide** — a section of routes, not a page (see below),
   which runs interest → field → sphere of work → the cities that work lives in

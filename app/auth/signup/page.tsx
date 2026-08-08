@@ -23,7 +23,16 @@ export default function SignupPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-ink">
             {t("auth.buildTitle")}
           </h1>
-          <p className="mb-6 mt-1 text-sm text-ink-soft">{t("auth.signupSub")}</p>
+          <p className="mt-1 text-sm text-ink-soft">{t("auth.signupSub")}</p>
+          {/* Said before they commit, not discovered after. The old page led
+              with the scorecard, so "create an account" read as "start a
+              five-step form" — and the one thing we know about this cohort is
+              that 44% of them filled in nothing. It sits ABOVE the form on
+              purpose: a reassurance printed under the submit button arrives
+              after the decision it was meant to help with. */}
+          <p className="mb-6 mt-2.5 text-pretty text-sm leading-relaxed text-ink-soft">
+            {t("auth.signupNoForm")}
+          </p>
           {ref && (
             <p className="mb-4 inline-flex items-center gap-2 self-start rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent-ink">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />

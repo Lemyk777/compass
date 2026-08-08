@@ -34,6 +34,17 @@ import {
   topFacultiesFromQuiz,
 } from "@/lib/data/interest-quiz";
 import { buildExtracurriculars, strengthBand } from "@/lib/data/key-dates";
+import type { CompetitionLevel, Opportunity } from "@/lib/data/key-dates";
+import {
+  NO_FILTERS,
+  activeChips,
+  activeFilterCount,
+  filterOpportunities,
+  opportunityFacets,
+  withoutChip,
+  type CostBucket,
+  type TimingBucket,
+} from "@/lib/data/opportunity-filter";
 import { emptyProfile } from "@/lib/types";
 import {
   CAREER_AREAS_BY_FACULTY,
@@ -95,6 +106,16 @@ import {
   visitDurationMs,
   type ViewRow,
 } from "@/lib/traffic/summarize";
+import {
+  buildRegistryIndex,
+  nameSimilarity,
+  normalizeUrl,
+  screenDedup,
+  screenEligibility,
+  screenHost,
+  screenPage,
+  shouldDrop,
+} from "@/lib/discovery/screen";
 
 // A fixed "today" in the second half of the year → academic year end rolls to
 // the next year (June rollover), so a Class of 2027 student is in grade 12.
@@ -262,6 +283,169 @@ test("buildExtracurriculars: a chosen field never widens the list", () => {
   });
   assert.ok(cs.items.length <= all.items.length);
   assert.ok(cs.items.length > 0);
+});
+
+// ── The Opportunities filter ─────────────────────────────────────────────────
+// The panel behind the "Filters" button. Pure rules, so they are pinned here
+// rather than eyeballed in the UI — and one of them (money) is a promise, not
+// a convenience: filtering to "free" must never surface a row whose cost we
+// have not verified.
+
+/** Minimal matched row — only the fields the filter actually reads. */
+function opp(over: Partial<Opportunity> & { id: string }): Opportunity {
+  return {
+    name: over.id,
+    fields: "all",
+    deadline: "2026-12-01",
+    window: "December",
+    level: "national",
+    url: "https://example.org",
+    blurb: "",
+    daysToDeadline: 100,
+    tierResolved: "selective",
+    categoryResolved: "competition",
+    fit: "recommended",
+    ...over,
+  };
+}
+
+const FILTER_POOL: Opportunity[] = [
+  opp({ id: "free-intl", cost: "free", level: "international", dateConfirmed: true, daysToDeadline: 10 }),
+  opp({ id: "funded-natl", cost: "funded", level: "national", alwaysOpen: true }),
+  opp({ id: "cert-paid", cost: "free_cert_paid", level: "national", dateConfirmed: true, daysToDeadline: 200 }),
+  opp({ id: "fee", cost: "one_time", level: "regional", dateConfirmed: true, daysToDeadline: 5 }),
+  opp({ id: "unverified", level: "regional" }), // no cost, no date → unknown/TBA
+  opp({ id: "too-young", cost: "free", level: "international", notYetEligible: "from year 11" }),
+];
+
+const ids = (items: Opportunity[]) => items.map((o) => o.id).sort();
+
+test("no filters is the identity — the default render pays nothing", () => {
+  assert.equal(filterOpportunities(FILTER_POOL, NO_FILTERS), FILTER_POOL);
+  assert.equal(activeFilterCount(NO_FILTERS), 0);
+});
+
+test("filtering to free never includes a cost we haven't verified", () => {
+  // The rule the whole money layer rests on: `unknown` and `varies` belong to
+  // NO bucket. A filter that quietly lumps "we haven't checked" in with "free"
+  // is the same lie as a card that does it.
+  const free = filterOpportunities(FILTER_POOL, { ...NO_FILTERS, cost: ["free"] });
+  assert.deepEqual(ids(free), ["free-intl", "funded-natl", "too-young"]);
+  assert.ok(!ids(free).includes("unverified"));
+  // "Free to learn, paid certificate" is not free either — it is its own bucket.
+  assert.ok(!ids(free).includes("cert-paid"));
+  assert.deepEqual(
+    ids(filterOpportunities(FILTER_POOL, { ...NO_FILTERS, cost: ["free_start"] })),
+    ["cert-paid"],
+  );
+  // Every bucket together still leaves the unverified row out.
+  const everyBucket = filterOpportunities(FILTER_POOL, {
+    ...NO_FILTERS,
+    cost: ["free", "funded", "free_start", "paid"],
+  });
+  assert.ok(!ids(everyBucket).includes("unverified"));
+});
+
+test("groups are ANDed, options inside a group are ORed", () => {
+  // Two levels → either. A level plus a cost → both.
+  assert.deepEqual(
+    ids(filterOpportunities(FILTER_POOL, { ...NO_FILTERS, levels: ["international", "regional"] })),
+    ["fee", "free-intl", "too-young", "unverified"],
+  );
+  assert.deepEqual(
+    ids(
+      filterOpportunities(FILTER_POOL, {
+        ...NO_FILTERS,
+        levels: ["international", "regional"],
+        cost: ["paid"],
+      }),
+    ),
+    ["fee"],
+  );
+});
+
+test("timing buckets say only what we can stand behind", () => {
+  const t = (b: TimingBucket) => ids(filterOpportunities(FILTER_POOL, { ...NO_FILTERS, timing: [b] }));
+  assert.deepEqual(t("closing"), ["fee", "free-intl"]); // confirmed and ≤ 30 days
+  assert.deepEqual(t("open"), ["funded-natl"]); // no deadline to miss
+  // TBA is the honest third state: no confirmed date and nothing to start today.
+  assert.deepEqual(t("tba"), ["too-young", "unverified"]);
+  assert.deepEqual(t("dated"), ["cert-paid", "fee", "free-intl"]);
+});
+
+test("search takes all terms, in any order, over name and blurb", () => {
+  const pool = [
+    opp({ id: "a", name: "International Robotics Olympiad", blurb: "Build a robot." }),
+    opp({ id: "b", name: "Essay Prize", blurb: "Write about robotics in society." }),
+    opp({ id: "c", name: "Maths Challenge", blurb: "Ten problems." }),
+  ];
+  const q = (query: string) => ids(filterOpportunities(pool, { ...NO_FILTERS, query }));
+  assert.deepEqual(q("robot"), ["a", "b"]); // matches the blurb too
+  assert.deepEqual(q("olympiad robotics"), ["a"]); // both terms, order irrelevant
+  assert.deepEqual(q("  "), ["a", "b", "c"]); // whitespace is not a filter
+  assert.equal(activeFilterCount({ ...NO_FILTERS, query: "   " }), 0);
+});
+
+test("only-what-I-can-enter-now drops the not-yet-eligible rows", () => {
+  const now = filterOpportunities(FILTER_POOL, { ...NO_FILTERS, openOnly: true });
+  assert.ok(!ids(now).includes("too-young"));
+  assert.equal(now.length, FILTER_POOL.length - 1);
+});
+
+test("facet counts lift their own group and keep the others", () => {
+  const f = { ...NO_FILTERS, cost: ["free"] as const, levels: ["international"] as const };
+  const facets = opportunityFacets(FILTER_POOL, { ...NO_FILTERS, cost: [...f.cost], levels: [...f.levels] });
+  // Money counts ignore the money selection (what happens if I pick this
+  // instead) but still respect the level one — only the two international rows
+  // are in play, and both are free.
+  assert.equal(facets.cost.free, 2);
+  assert.equal(facets.cost.paid, 0);
+  // Level counts ignore the level selection but keep the money one: three rows
+  // are free/funded, spread across international and national.
+  assert.equal(facets.levels.international, 2);
+  assert.equal(facets.levels.national, 1);
+  assert.equal(facets.levels.regional, 0);
+  // And the eligibility toggle says what it would leave.
+  assert.equal(facets.openNow, 1);
+});
+
+test("the chips and the badge can never disagree", () => {
+  const f = {
+    query: "robotics",
+    cost: ["free", "paid"] as CostBucket[],
+    timing: ["closing"] as TimingBucket[],
+    levels: ["national"] as CompetitionLevel[],
+    openOnly: true,
+  };
+  const chips = activeChips(f);
+  assert.equal(chips.length, activeFilterCount(f));
+  assert.equal(new Set(chips.map((c) => c.id)).size, chips.length, "chip keys must be unique");
+  // Dismissing one chip removes exactly that one.
+  for (const chip of chips) {
+    assert.equal(activeFilterCount(withoutChip(f, chip)), chips.length - 1);
+  }
+  // Clearing everything is the neutral state, not a half-cleared one.
+  assert.deepEqual(
+    chips.reduce((acc, c) => withoutChip(acc, c), f),
+    NO_FILTERS,
+  );
+});
+
+test("no filter combination can widen the student's matched list", () => {
+  // Run against the REAL catalog: the filter narrows what buildExtracurriculars
+  // already decided this student may enter, and may never add to it.
+  const plan = buildExtracurriculars({ today: TODAY, faculties: [], factors: [] });
+  const matched = new Set(plan.items.map((o) => o.id));
+  for (const filters of [
+    { ...NO_FILTERS, cost: ["free"] as CostBucket[] },
+    { ...NO_FILTERS, timing: ["closing"] as TimingBucket[] },
+    { ...NO_FILTERS, openOnly: true },
+    { ...NO_FILTERS, query: "olympiad" },
+  ]) {
+    const out = filterOpportunities(plan.items, filters);
+    assert.ok(out.length <= plan.items.length);
+    for (const o of out) assert.ok(matched.has(o.id), `${o.id} was not in the matched set`);
+  }
 });
 
 // ── Careers layer ────────────────────────────────────────────────────────────
@@ -1410,4 +1594,147 @@ test("robots.txt does not block anything the sitemap advertises", () => {
       `${priv} is crawlable`
     );
   }
+});
+
+// ── Discovery screening ──────────────────────────────────────────────────────
+// The step that decides whether a discovered candidate is worth a human's
+// attention. Every case below is a failure that actually shipped, or the fix
+// for one: a live link to a dead programme, a whole platform made
+// undiscoverable by a blunt host rule, an eligibility sentence no student
+// passes. These run with no key and no network — the screening is deliberately
+// deterministic so it can be pinned here.
+
+const SCREEN_REGISTRY = buildRegistryIndex([
+  { id: "john-locke", name: "John Locke Essay Prize", url: "https://www.johnlockeinstitute.com/essay-competition" },
+  { id: "cs50-ai", name: "CS50 AI", url: "https://cs50.harvard.edu/ai/" },
+  { id: "amc", name: "AMC 10/12 (math)", url: "https://maa.org/maa-invitational-competitions/" },
+]);
+
+test("a URL differing only by www, trailing slash or query is the same page", () => {
+  assert.equal(
+    normalizeUrl("https://www.johnlockeinstitute.com/essay-competition/"),
+    normalizeUrl("https://johnlockeinstitute.com/essay-competition?utm_source=x"),
+  );
+  assert.notEqual(
+    normalizeUrl("https://cs50.harvard.edu/ai/"),
+    normalizeUrl("https://cs50.harvard.edu/web/"),
+  );
+});
+
+test("a renamed duplicate is caught; a sibling programme on the same host is not", () => {
+  // Same programme, padded name — containment catches what Jaccard misses.
+  assert.ok(nameSimilarity("John Locke Essay Prize", "John Locke Institute Essay Competition") >= 0.75);
+
+  const dup = screenDedup(
+    { id: "john-locke-institute-essay-competition", name: "John Locke Institute Essay Competition", url: "https://www.johnlockeinstitute.com/apply" },
+    SCREEN_REGISTRY,
+  );
+  assert.ok(shouldDrop(dup), "a renamed duplicate must not reach the queue");
+
+  // The old rule dropped anything sharing a HOST with the catalog, which made
+  // every further course on a platform we already list undiscoverable.
+  const sibling = screenDedup(
+    { id: "cs50-cybersecurity", name: "CS50 Cybersecurity", url: "https://cs50.harvard.edu/cybersecurity/" },
+    SCREEN_REGISTRY,
+  );
+  assert.ok(!shouldDrop(sibling), "a different programme on a known host must survive");
+  assert.ok(
+    sibling.some((w) => w.code === "same_site"),
+    "…but the reviewer is told it shares a site",
+  );
+});
+
+test("a one-token overlap is not a duplicate", () => {
+  // "Informatics Olympiad" vs "Informatics Olympiad Kazakhstan": the generic
+  // words are stripped, so a single surviving token would collapse a global
+  // contest and a national one into each other.
+  const index = buildRegistryIndex([
+    { id: "ioi", name: "International Olympiad in Informatics", url: "https://ioinformatics.org/" },
+  ]);
+  const res = screenDedup(
+    { id: "kazakh-informatics-olympiad", name: "Kazakhstan Informatics Olympiad", url: "https://olymp.kz/" },
+    index,
+  );
+  assert.ok(!shouldDrop(res));
+});
+
+test("a listing site is dropped; a social page depends on scope", () => {
+  assert.ok(shouldDrop(screenHost("https://opportunitydesk.org/2026/03/01/some-contest/", null)));
+  assert.ok(shouldDrop(screenHost("https://medium.com/@someone/top-10-contests", null)));
+
+  // A global programme with nothing but an Instagram page is not one we can
+  // stand behind; a city hackathon in Almaty announced there is.
+  assert.ok(shouldDrop(screenHost("https://www.instagram.com/some_contest/", null)));
+  const local = screenHost("https://www.instagram.com/almaty_hack/", "KZ");
+  assert.ok(!shouldDrop(local));
+  assert.ok(local.some((w) => w.code === "social_only"));
+
+  assert.equal(screenHost("https://ioinformatics.org/", null).length, 0);
+});
+
+test("a page that says the programme has ended is flagged with the sentence", () => {
+  // The Goi Peace trap: HTTP 200, and the page itself says it is over.
+  // test:links cannot see this, and it shipped in the catalog once.
+  const text =
+    "The International Essay Contest for Young People concluded with the 2024 edition. " +
+    "Thank you to everyone who took part over the years. ".repeat(6);
+  const warnings = screenPage(
+    { name: "International Essay Contest for Young People", url: "https://example.org/essay" },
+    text,
+  );
+  const ended = warnings.find((w) => w.code === "discontinued");
+  assert.ok(ended, "an ended programme must be flagged");
+  assert.match(ended!.detail, /concluded with the 2024/);
+});
+
+test("a healthy competition page is not read as discontinued", () => {
+  // "Registration is closed" is the normal state of a healthy contest for most
+  // of the year. Reading it as death would empty the queue.
+  const text =
+    "Registration for the 2027 cycle is closed. Applications reopen in September. " +
+    "The Foo Challenge runs every year for students aged 13 to 18. ".repeat(6);
+  const warnings = screenPage({ name: "Foo Challenge", url: "https://example.org/foo" }, text);
+  assert.ok(!warnings.some((w) => w.code === "discontinued"));
+});
+
+test("screening quotes money instead of guessing a price", () => {
+  const text =
+    "The Bar Prize is open to students worldwide. There is a $25 entry fee, waived on request. " +
+    "Submissions are judged by a panel. ".repeat(8);
+  const money = screenPage({ name: "Bar Prize", url: "https://example.org/bar" }, text)
+    .find((w) => w.code === "cost_signal");
+  assert.ok(money, "a fee on the page must reach the reviewer");
+  assert.match(money!.detail, /\$25/);
+});
+
+test("a US-only page is flagged rather than silently recommended abroad", () => {
+  const text =
+    "The contest is open only to US citizens enrolled in a high school. " +
+    "Entries are judged in three rounds. ".repeat(10);
+  const warnings = screenPage({ name: "Baz Contest", url: "https://example.org/baz" }, text);
+  assert.ok(warnings.some((w) => w.code === "country_locked"));
+});
+
+test("a page that never names the programme is flagged", () => {
+  const text = "We are a foundation supporting education across the region. ".repeat(12);
+  const warnings = screenPage(
+    { name: "Quux Robotics Challenge", url: "https://example.org/" },
+    text,
+  );
+  assert.ok(warnings.some((w) => w.code === "name_absent"));
+});
+
+test("an eligibility sentence no student passes is flagged, not queued as normal", () => {
+  // The AMC trap: two brackets in one sentence, the parser takes the first,
+  // and the entry becomes unreachable for everyone it was written for.
+  assert.ok(
+    screenEligibility("Undergraduate students only, ages 19–25").some(
+      (w) => w.code === "unreachable_gate",
+    ),
+  );
+  // A normal school-age rule passes clean.
+  assert.equal(screenEligibility("Ages 13–18, any country").length, 0);
+  // Silence about eligibility is itself a finding — it is the first question a
+  // student asks.
+  assert.ok(screenEligibility(null).some((w) => w.code === "gate_unstated"));
 });

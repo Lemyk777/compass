@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Honor an explicit return target; otherwise route by role
-  // (admin → /admin, ambassador → /ambassador, student → /onboarding).
+  // (admin → /admin, ambassador → /ambassador, student → /opportunities).
   let target = explicitNext;
   if (!target) {
     const { data: profile } = await supabase

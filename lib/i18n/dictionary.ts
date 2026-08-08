@@ -35,11 +35,20 @@ const en: Dict = {
 
   // auth
   "auth.welcomeBack": "Welcome back",
-  "auth.loginSub": "Log in to see your standing and pick up where you left off.",
+  "auth.loginSub": "Log in to pick up your list where you left off.",
   "auth.newHere": "New here?",
   "auth.createAccount": "Create an account",
-  "auth.buildTitle": "Build your scorecard",
-  "auth.signupSub": "Create an account to assess your profile and get a plan.",
+  // Signing up is an account and nothing else. The page used to be headed
+  // "Build your scorecard" and sold the admission report, which told a student
+  // that creating an account meant sitting down to a five-step questionnaire —
+  // the exact wall the product removed when signups started landing on
+  // Opportunities. The words have to match the flow, or the flow is judged by
+  // the words.
+  "auth.buildTitle": "Create your account",
+  "auth.signupSub":
+    "One tap with Google, or an email and a password. That is the whole sign-up.",
+  "auth.signupNoForm":
+    "No questionnaire. Afterwards we ask one thing — what year you are in — and your list is there. Grades, activities and awards are optional, and only needed for the admission report.",
   "auth.haveAccount": "Already have an account?",
   "auth.referredBy": "Referred by",
   "auth.continueGoogle": "Continue with Google",
@@ -68,17 +77,24 @@ const en: Dict = {
   "auth.googleOnlyBody":
     "You created this account with Google, so it doesn't have a password. Use the button below to sign in.",
   "auth.googleOnlyBtn": "Continue with Google",
-  "auth.asideTitle": "Your study-abroad journey starts here",
-  "auth.asideBullet1": "An honest competitiveness score",
-  "auth.asideBullet2": "Admission odds for every school on your list",
-  "auth.asideBullet3": "A concrete plan to raise your chances",
+  // What the account actually gets you, in the product's own order:
+  // opportunities first, the report second and optional. The three promises
+  // here used to be score / odds / plan — all report, all of it behind the
+  // questionnaire, none of it what a new student sees first.
+  "auth.asideTitle": "Everything you can enter, in one place",
+  "auth.asideBullet1": "Competitions, olympiads and programmes open to your year",
+  "auth.asideBullet2": "Honest dates and costs — checked, never guessed",
+  "auth.asideBullet3": "Saved to your account, with the deadlines for your calendar",
   "auth.asideBadge": "Built for international applicants",
-  "auth.asideSample": "Sample report",
+  // The card below the bullets is the admission report — worth showing, but it
+  // is the opt-in half of the product and the badge has to say so, or the
+  // picture re-promises the questionnaire the copy just took away.
+  "auth.asideSample": "Optional · sample report",
   "auth.asideBenchmark": "Benchmarked against top universities worldwide",
   "auth.asideRadar": "Profile fingerprint",
   "auth.asideStat1": "50+ universities",
   "auth.asideStat2": "7 scored factors",
-  "auth.asideStat3": "US · Italy · Hong Kong",
+  "auth.asideStat3": "US · Italy · Hong Kong · UAE · Korea",
 
   // mini scorecard
   "mini.academics": "Academics",
