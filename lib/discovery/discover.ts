@@ -9,14 +9,19 @@
 //
 // Pipeline per faculty:
 //   1. Haiku + the web_search server tool finds candidates (name, official
-//      URL, claimed deadline, eligibility).
-//   2. Dedup against the code registry + already-known DB rows.
-//   3. DATE VERIFICATION: we fetch the candidate's own official page and
-//      independently re-extract the deadline with the existing
-//      scrapeCompetitionDeadline() guardrail pattern. Only a page-sourced,
-//      future, in-range date is marked date_confirmed — a date the model
-//      merely claimed from search results never is. Unconfirmed dates render
-//      as "Dates not yet announced" in the UI, never a countdown.
+//      URL, claimed deadline, eligibility). The search runs at an ANGLE that
+//      rotates — see SEARCH_ANGLES — because asking one broad question about a
+//      field returns the same famous six names however often you ask it.
+//   2. Dedup + screening (lib/discovery/screen.ts) against the code registry
+//      and known DB rows, then against the candidate's own page: a listing
+//      site, a programme whose page says it ended, an eligibility rule no
+//      student passes. This is the step that makes review cheap — a candidate
+//      arrives with the page already read and the evidence quoted.
+//   3. DATE VERIFICATION: we re-extract the deadline from that same official
+//      page with the existing scrapeCompetitionDeadline() guardrail pattern.
+//      Only a page-sourced, future, in-range date is marked date_confirmed — a
+//      date the model merely claimed from search results never is. Unconfirmed
+//      dates render as "Dates not yet announced", never a countdown.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { FACULTY_LABEL, FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
@@ -28,6 +33,16 @@ import {
   type CompetitionTier,
 } from "@/lib/data/key-dates";
 import {
+  buildRegistryIndex,
+  dropReason,
+  screenCandidate,
+  shouldDrop,
+  type RegistryEntry,
+  type RegistryIndex,
+  type ScreenWarning,
+} from "@/lib/discovery/screen";
+import {
+  fetchPageText,
   isValidISODate,
   parseJsonLoose,
   scrapeCompetitionDeadline,
@@ -51,6 +66,15 @@ export type CandidateRow = {
   // Geographic scope: null = global, ISO-2 code = local to that country.
   region: string | null;
   city: string | null;
+  /** What screening found on the candidate's own page — see screen.ts. */
+  warnings: ScreenWarning[];
+};
+
+/** What one search + verification pass produced, for the run report. */
+export type VerifyOutcome = {
+  rows: CandidateRow[];
+  /** Candidates that never reached the queue, and why — never a silent skip. */
+  dropped: { name: string; reason: string }[];
 };
 
 let _client: Anthropic | null = null;
@@ -85,20 +109,6 @@ export function slugify(name: string): string {
     .slice(0, 60);
 }
 
-/** Hostname without www — the dedup key for "same competition, same site". */
-function urlHost(url: string): string | null {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
-}
-
-/** Loose name key: lowercase alphanumerics only. */
-function nameKey(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
 const LEVELS: CompetitionLevel[] = ["international", "national", "regional"];
 const TIERS: CompetitionTier[] = ["accessible", "selective", "elite"];
 const CATEGORIES: CompetitionCategory[] = [
@@ -112,6 +122,71 @@ const CATEGORIES: CompetitionCategory[] = [
 function daysFromToday(iso: string): number {
   const ms = new Date(iso + "T00:00:00Z").getTime() - Date.now();
   return Math.round(ms / 86_400_000);
+}
+
+// ---------------------------------------------------------------------------
+// Search angles
+// ---------------------------------------------------------------------------
+
+// One broad question per field ("find engineering opportunities for
+// international high-school students") returns the same famous half-dozen every
+// time it is asked, and after the first run they are all in the known list, so
+// the second run returns almost nothing. The fix is not a bigger prompt: it is
+// asking a NARROWER question each time. An angle is that question — a slice of
+// the field the search has to stay inside, which forces the model past the
+// obvious names and into the part of the web where the accessible, online,
+// free-or-aided things our students can actually enter are announced.
+//
+// Rotating these is also what makes a repeat run on the SAME faculty worth
+// paying for, which is what the admin's "run it now" button needs to be true.
+export type SearchAngle = {
+  key: string;
+  /** What the admin picks it by. */
+  label: string;
+  /** The constraint appended to the system prompt. */
+  hint: string;
+};
+
+export const SEARCH_ANGLES: SearchAngle[] = [
+  {
+    key: "open_worldwide",
+    label: "Online, open worldwide, free or aided",
+    hint: "Restrict yourself to things a student can enter ONLINE from any country, where entry is free or a fee waiver / financial aid exists. This is the highest-value slice for our students and the hardest to find, so look past the famous names.",
+  },
+  {
+    key: "olympiad_open",
+    label: "Olympiads with open individual registration",
+    hint: "Restrict yourself to subject olympiads and exams a student can register for INDIVIDUALLY, without being picked for a national team first. State in `eligibility` whether national selection is required — if it is, leave the item out.",
+  },
+  {
+    key: "research",
+    label: "Research, mentorship and student journals",
+    hint: "Restrict yourself to research programmes, mentorship schemes and peer-reviewed journals that accept school-age researchers, including remote ones.",
+  },
+  {
+    key: "writing",
+    label: "Essay, writing, debate and policy prizes",
+    hint: "Restrict yourself to essay prizes, writing contests, debate and policy competitions open to school students — the accessible end of the humanities, law and economics, which the catalog is thinnest in.",
+  },
+  {
+    key: "summer_aided",
+    label: "Summer schools with aid or full funding",
+    hint: "Restrict yourself to summer schools, camps and academies that are FREE, fully funded, or offer need-based aid to international students. A programme that costs several thousand dollars with no aid is not for this audience — leave it out.",
+  },
+  {
+    key: "build",
+    label: "Hackathons, design and maker challenges",
+    hint: "Restrict yourself to hackathons, engineering/design challenges, robotics and maker competitions teenagers can enter as individuals or self-formed teams (not only through a school chapter).",
+  },
+];
+
+export function angleByKey(key: string | null | undefined): SearchAngle | null {
+  return SEARCH_ANGLES.find((a) => a.key === key) ?? null;
+}
+
+/** Deterministic rotation, so successive scheduled runs ask different questions. */
+export function angleForRun(n: number): SearchAngle {
+  return SEARCH_ANGLES[((n % SEARCH_ANGLES.length) + SEARCH_ANGLES.length) % SEARCH_ANGLES.length];
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +237,7 @@ async function runSearch(
   const stream = anthropic.messages.stream({
     model: "claude-haiku-4-5",
     max_tokens: 4000,
-    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
+    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6 }],
     system,
     messages: [{ role: "user", content: userContent }],
   });
@@ -217,31 +292,37 @@ async function runSearch(
 export async function searchCandidates(
   faculty: FacultyValue,
   knownNames: string[],
+  angle: SearchAngle = SEARCH_ANGLES[0],
 ): Promise<{ candidates: RawCandidate[]; query: string }> {
   const label = FACULTY_LABEL[faculty];
-  const query = `discover: ${label} opportunities for international high school students`;
+  const query = `discover: ${label} · ${angle.label}`;
 
   const system = [
     `You are a research assistant for a university-admissions guidance tool.`,
     `Task: find real, currently-running academic competitions, olympiads, essay prizes, research fairs, summer programs or challenges in the field of ${label} that INTERNATIONAL high-school students (outside the US) can enter.`,
     ``,
+    `THIS SEARCH'S ANGLE — ${angle.label}. ${angle.hint}`,
+    ``,
+    `Who this is for: school students in Kazakhstan, Uzbekistan, the wider CIS and other countries with no first-tier network. A student in London or Boston is already drowning in options; the point is the student who has to hunt. An opportunity that requires being at a US school, having a teacher-coordinator, or paying several thousand dollars is not useful to them.`,
+    ``,
     `Hard requirements — exclude anything that:`,
     `- is restricted to citizens/residents of one country (e.g. "US citizens only"),`,
     `- is a pay-to-win award mill, vanity award, or has no real selection,`,
     `- is for university students or adults only,`,
+    `- has ended: check the page says the NEXT edition is running, not that the last one was in 2024,`,
     `- is already in this known list: ${knownNames.join("; ")}.`,
     ``,
-    `Use web search to verify each item has a real official website. Prefer the organizer's own domain as "url" (never an aggregator/blog link).`,
+    `Use web search to verify each item has a real official website. "url" must be the organizer's own domain — never an aggregator, listing site or blog (opportunitydesk, youthop, scholarships.com, Medium and the like are not acceptable, even when they are the top search result).`,
     ``,
     ...jsonContract([`  "city": null`]),
     ``,
-    `Quality over quantity: return at most 6 items you are confident are real and international-friendly. If unsure about an item, leave it out.`,
+    `Quality over quantity: return at most 8 items you are confident are real and international-friendly. If unsure about an item, leave it out.`,
   ].join("\n");
 
   const candidates = await runSearch(
     system,
-    `Find ${label} opportunities open to international high-school students for the upcoming admissions cycle.`,
-    faculty,
+    `Find ${label} opportunities open to international high-school students for the upcoming admissions cycle. Angle: ${angle.label}.`,
+    `${faculty}/${angle.key}`,
   );
   return { candidates, query };
 }
@@ -255,13 +336,15 @@ export async function searchCandidates(
 export async function searchLocalCandidates(
   target: LocalTarget,
   knownNames: string[],
+  angle: SearchAngle | null = null,
 ): Promise<{ candidates: RawCandidate[]; query: string }> {
-  const query = `discover-local: school-student opportunities in ${target.name}`;
+  const query = `discover-local: ${target.name}${angle ? ` · ${angle.label}` : ""}`;
 
   const system = [
     `You are a research assistant for a university-admissions guidance tool used by school students in ${target.name}.`,
     `Task: find real, currently-running opportunities INSIDE ${target.name} that school students there can join: national olympiads and their stages, local competitions and hackathons, summer schools, research programs, university-run courses/circles for schoolchildren.`,
     `Search in ${target.searchLanguages} — local opportunities are announced in local languages. Include city-level events in: ${target.cities.join(", ")}.`,
+    ...(angle ? [``, `THIS SEARCH'S ANGLE — ${angle.label}. ${angle.hint}`] : []),
     ``,
     `Hard requirements — exclude anything that:`,
     `- is a pay-to-win award mill, vanity award, or has no real selection or substance,`,
@@ -281,8 +364,8 @@ export async function searchLocalCandidates(
 
   const candidates = await runSearch(
     system,
-    `Find current competitions, olympiads, summer schools and programs for school students in ${target.name} (country-wide and in ${target.cities.join(", ")}).`,
-    `local:${target.code}`,
+    `Find current competitions, olympiads, summer schools and programs for school students in ${target.name} (country-wide and in ${target.cities.join(", ")}).${angle ? ` Angle: ${angle.label}.` : ""}`,
+    `local:${target.code}${angle ? `/${angle.key}` : ""}`,
   );
   return { candidates, query };
 }
@@ -291,54 +374,46 @@ export async function searchLocalCandidates(
 // Step 2+3 — dedup, sanitize, verify dates
 // ---------------------------------------------------------------------------
 
-/** Registry dedup keys, computed once. */
-function registryKeys(): { hosts: Set<string>; names: Set<string>; ids: Set<string> } {
-  const hosts = new Set<string>();
-  const names = new Set<string>();
-  const ids = new Set<string>();
-  for (const c of COMPETITIONS) {
-    const h = urlHost(c.url);
-    if (h) hosts.add(h);
-    names.add(nameKey(c.name));
-    ids.add(c.id);
-  }
-  return { hosts, names, ids };
+/**
+ * Everything we already carry, as dedup input: the curated catalog plus
+ * whatever rows the caller read out of the DB (live opportunities AND every
+ * candidate ever queued, approved or rejected).
+ */
+export function discoveryIndex(dbRows: RegistryEntry[] = []): RegistryIndex {
+  return buildRegistryIndex([
+    ...COMPETITIONS.map((c) => ({ id: c.id, name: c.name, url: c.url })),
+    ...dbRows,
+  ]);
 }
 
 /**
- * Turn raw search output into verified candidate rows.
+ * Turn raw search output into verified, screened candidate rows.
  *
- * `knownIds` = ids already present in competition_deadlines or
- * competition_candidates (any status), so re-runs never re-surface something
- * the admin already rejected.
+ * Two things happen to every candidate here, and the order matters: it is
+ * screened (dedup, host, page, eligibility — see screen.ts), and only then is
+ * its deadline re-extracted from the page we already fetched. A dropped
+ * candidate is reported with its reason rather than skipped in silence: "found
+ * 6, kept 0" with no explanation is indistinguishable from a broken pipeline,
+ * and that ambiguity is what let discovery sit unexamined for a month.
  */
 export async function verifyCandidates(
   raw: RawCandidate[],
-  knownIds: Set<string>,
+  index: RegistryIndex,
   source: string,
   // ISO-2 code for local batches ("KZ"); null/omitted for global discovery.
   region: string | null = null,
-): Promise<CandidateRow[]> {
-  const reg = registryKeys();
+): Promise<VerifyOutcome> {
   const out: CandidateRow[] = [];
+  const dropped: { name: string; reason: string }[] = [];
   const seenThisRun = new Set<string>();
 
   for (const c of raw) {
     const id = slugify(c.name);
-    if (!id) continue;
-    const host = urlHost(c.url);
-    if (!host) continue;
-
-    // Dedup: registry (id, host, name), DB rows, and this batch.
-    if (
-      reg.ids.has(id) ||
-      reg.hosts.has(host) ||
-      reg.names.has(nameKey(c.name)) ||
-      knownIds.has(id) ||
-      seenThisRun.has(id)
-    ) {
+    if (!id) {
+      dropped.push({ name: c.name, reason: "name yields no usable id" });
       continue;
     }
+    if (seenThisRun.has(id)) continue; // the same item twice in one reply
     seenThisRun.add(id);
 
     // Sanitize enums.
@@ -351,22 +426,29 @@ export async function verifyCandidates(
       c.fields === "all"
         ? ("all" as const)
         : (c.fields.filter((f) => (FACULTY_VALUES as string[]).includes(f)) as FacultyValue[]);
-    if (fields !== "all" && fields.length === 0) continue;
-
-    // URL alive check — a dead official site disqualifies the candidate.
-    let alive = false;
-    try {
-      const res = await fetch(c.url, {
-        method: "GET",
-        redirect: "follow",
-        signal: AbortSignal.timeout(10_000),
-      });
-      alive = res.ok;
-    } catch {
-      alive = false;
+    if (fields !== "all" && fields.length === 0) {
+      dropped.push({ name: c.name, reason: "no recognised field of study" });
+      continue;
     }
-    if (!alive) {
-      console.warn(`[discover] dropping ${id}: official URL not reachable (${c.url})`);
+
+    // Fetch the official page ONCE: it is the alive check, and its text is what
+    // screening reads. (scrapeCompetitionDeadline fetches again for the date —
+    // it follows to "key dates"/"apply" pages, which is a different job.)
+    const page = await fetchPageText(c.url);
+    if (!page.ok) {
+      dropped.push({ name: c.name, reason: `official URL not reachable — ${page.detail} (${c.url})` });
+      continue;
+    }
+
+    // Screening. A `drop` never reaches the queue; a `flag` is queued with its
+    // quote so the reviewer decides in seconds instead of opening the page.
+    const warnings = screenCandidate(
+      { id, name: c.name, url: c.url, eligibility: c.eligibility, region },
+      index,
+      page.text,
+    );
+    if (shouldDrop(warnings)) {
+      dropped.push({ name: c.name, reason: dropReason(warnings) ?? "screened out" });
       continue;
     }
 
@@ -418,10 +500,11 @@ export async function verifyCandidates(
       source,
       region,
       city: region ? c.city : null, // a city only makes sense on a local row
+      warnings,
     });
   }
 
-  return out;
+  return { rows: out, dropped };
 }
 
 /** All names the search prompt should treat as already known. */

@@ -150,6 +150,27 @@ export function findDatePages(html: string, baseUrl: string, limit = 2): string[
     .map(([url]) => url);
 }
 
+/**
+ * Fetch one page as cleaned text, keeping the reason when it fails.
+ *
+ * Discovery needs both halves — "is this URL alive?" and "what does the page
+ * say?" — and used to answer them with two separate fetches, the first of which
+ * threw the body away. It also used the default agent, which many official
+ * sites answer with a 403; the browser UA above is why the scraper sees pages
+ * at all, so anything checking a candidate's site has to use the same one.
+ */
+export async function fetchPageText(
+  url: string,
+): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
+  try {
+    const res = await fetch(url, { ...fetchInit(), redirect: "follow" });
+    if (!res.ok) return { ok: false, detail: `HTTP ${res.status} ${res.statusText}` };
+    return { ok: true, text: cleanHtml(await res.text()) };
+  } catch (err) {
+    return { ok: false, detail: err instanceof Error ? err.message : "fetch failed" };
+  }
+}
+
 /** Fetch + clean one page, or null on any failure. Never throws. */
 async function fetchClean(url: string, budget: number): Promise<string | null> {
   try {
