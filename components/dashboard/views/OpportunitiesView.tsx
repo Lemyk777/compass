@@ -19,10 +19,17 @@ import { InterestQuiz } from "@/components/opportunities/InterestQuiz";
 import { DirectionSummary } from "@/components/opportunities/DirectionSummary";
 import Link from "@/components/ui/Link";
 import { OpportunityRow } from "@/components/opportunities/CommitRow";
+import { FilterBar } from "@/components/opportunities/FilterBar";
+import {
+  NO_FILTERS,
+  activeFilterCount,
+  filterOpportunities,
+  type CategoryFilter,
+  type OpportunityFilters,
+} from "@/lib/data/opportunity-filter";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import type {
-  CompetitionCategory,
   ExtracurricularsPlan,
   Opportunity,
   OpportunityFit,
@@ -79,8 +86,6 @@ const FIT_GROUPS: { fit: OpportunityFit; title: string; hint: string }[] = [
   },
 ];
 
-type CategoryFilter = "all" | CompetitionCategory;
-
 // How many to put in front of the student by default.
 //
 // This view used to open with the whole matched catalog split into three fit
@@ -110,6 +115,10 @@ export function OpportunitiesView() {
   useEffect(() => setToday(new Date()), []);
 
   const [category, setCategory] = useState<CategoryFilter>("all");
+  // Everything the filter panel owns (search text, money, timing, level,
+  // eligibility). Kind stays its own state above because the sticky tabs are
+  // its control — one criterion, one place to set it.
+  const [filters, setFilters] = useState<OpportunityFilters>(NO_FILTERS);
   // The full grouped catalog is now opt-in. See SHOWN below for why.
   const [showAll, setShowAll] = useState(false);
   // A year answered inline this session, before the server round-trip lands.
@@ -190,24 +199,53 @@ export function OpportunitiesView() {
     liveDates.competitions,
   ]);
 
-  const visible =
-    plan?.items.filter(
-      (o) => category === "all" || o.categoryResolved === category
-    ) ?? [];
+  // Two half-filtered sets, on purpose — each control's counts have to be
+  // honest about what the OTHER controls have already done:
+  //   filtered   = the panel applied, kind ignored → the tab numbers
+  //   inCategory = the kind applied, panel ignored → the panel's own counts
+  //   visible    = both → what actually renders
+  // Memoised for its IDENTITY, not its cost: a fresh `[]` on every render
+  // would invalidate every memo below it, including the facet counts the
+  // filter panel recomputes.
+  const items = useMemo(() => plan?.items ?? [], [plan]);
+  const filtered = useMemo(
+    () => filterOpportunities(items, filters),
+    [items, filters]
+  );
+  const inCategory = useMemo(
+    () =>
+      category === "all"
+        ? items
+        : items.filter((o) => o.categoryResolved === category),
+    [items, category]
+  );
+  const visible = useMemo(
+    () =>
+      category === "all"
+        ? filtered
+        : filtered.filter((o) => o.categoryResolved === category),
+    [filtered, category]
+  );
+
+  // Any active filter is an explicit request to browse, so it opens the full
+  // list on its own: a student who searches "robotics" and gets the same five
+  // recommendations back would reasonably conclude the search is broken.
+  const filtering = activeFilterCount(filters) > 0;
+  const browsing = showAll || filtering;
 
   // How many sit behind each tab. Showing the number turns the filter from a
   // guess ("is there anything under Courses?") into a decision.
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: plan?.items.length ?? 0 };
-    for (const o of plan?.items ?? []) {
+    const counts: Record<string, number> = { all: filtered.length };
+    for (const o of filtered) {
       counts[o.categoryResolved] = (counts[o.categoryResolved] ?? 0) + 1;
     }
     return counts;
-  }, [plan]);
+  }, [filtered]);
 
   // What to act on now: eligible today, in the order buildExtracurriculars
   // already put them (matched to strength first, then datable, then soonest).
-  const openNow = plan?.items.filter((o) => !o.notYetEligible) ?? [];
+  const openNow = items.filter((o) => !o.notYetEligible);
   const shortlist = openNow.slice(0, SHOWN);
   const nearest = shortlist
     .filter((o) => o.dateConfirmed)
@@ -302,13 +340,28 @@ export function OpportunitiesView() {
 
           {plan.items.length > 0 ? (
             <>
-              <Shortlist
-                rows={shortlist}
-                total={openNow.length}
-                nearestDays={nearest?.daysToDeadline}
+              {/* Search and criteria. Above the shortlist because "I know what
+                  I'm looking for" has to be answerable without scrolling past
+                  five recommendations first. */}
+              <FilterBar
+                items={inCategory}
+                value={filters}
+                onChange={setFilters}
+                resultCount={visible.length}
               />
 
-              {!showAll ? (
+              {/* The shortlist is the answer to "what should I do next", which
+                  a filtered list is not — so it steps aside while filtering
+                  rather than sitting above unrelated results. */}
+              {!filtering && (
+                <Shortlist
+                  rows={shortlist}
+                  total={openNow.length}
+                  nearestDays={nearest?.daysToDeadline}
+                />
+              )}
+
+              {!browsing ? (
                 <button
                   type="button"
                   onClick={() => setShowAll(true)}
@@ -346,11 +399,28 @@ export function OpportunitiesView() {
                   })}
                   {visible.length === 0 && (
                     <Card>
-                      <p className="text-sm text-ink-soft">
-                        Nothing in this category matches your profile yet. Try
-                        another tab — everything we track for you is still in
-                        &ldquo;All&rdquo;.
-                      </p>
+                      {filtering ? (
+                        <>
+                          <p className="text-sm text-ink-soft">
+                            Nothing matches all of that. The narrowest filter is
+                            usually the money one — try dropping a criterion
+                            rather than starting over.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setFilters(NO_FILTERS)}
+                            className="mt-3 inline-flex h-9 items-center rounded-lg border border-line px-3 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
+                          >
+                            Clear the filters
+                          </button>
+                        </>
+                      ) : (
+                        <p className="text-sm text-ink-soft">
+                          Nothing in this category matches your profile yet. Try
+                          another tab — everything we track for you is still in
+                          &ldquo;All&rdquo;.
+                        </p>
+                      )}
                     </Card>
                   )}
                 </>
@@ -756,7 +826,11 @@ function CategoryTabs({
       {tabs.map((t) => {
         const on = t.key === active;
         const n = counts[t.key] ?? 0;
-        if (n === 0 && t.key !== "all") return null;
+        // An empty tab is noise — except the one you are standing on. The
+        // counts now move with the filter panel, so hiding a zeroed tab
+        // unconditionally would delete the selected tab out from under a
+        // student mid-search and leave the row with nothing highlighted.
+        if (n === 0 && t.key !== "all" && !on) return null;
         return (
           <button
             key={t.key}
