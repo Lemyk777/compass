@@ -4,6 +4,7 @@ import { useTransitionRouter } from "@/components/ui/ViewTransitions";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/ui/Logo";
+import Link from "@/components/ui/Link";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import type { StudentProfileInput } from "@/lib/types";
 import { logOnboardingStep } from "@/app/onboarding/actions";
@@ -137,6 +138,22 @@ function Wizard({
 
       <div className="mx-auto max-w-6xl px-6 py-8">
         <h1 className="text-4xl font-semibold tracking-tight text-ink">Build Your Profile</h1>
+        {/* What this is, said at the top of it. Signing up does not come here
+            any more — this is the admission report's intake, reached on
+            purpose — but a five-step form with no explanation still reads as
+            "finish setting up your account", which is the wall we removed. */}
+        <p className="mt-2 max-w-[60ch] text-pretty text-sm leading-relaxed text-ink-soft">
+          This is the intake for the <span className="font-medium text-ink">admission
+          report</span> — the scores, the per-school odds and the benchmarks. It is
+          optional: your Opportunities work without any of it, and you can leave
+          half-answered and come back.{" "}
+          <Link
+            href="/opportunities"
+            className="font-medium text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+          >
+            Back to Opportunities
+          </Link>
+        </p>
 
         {/* Step pills */}
         <div className="mt-6 flex flex-wrap gap-3 border-b border-line pb-6">

@@ -49,12 +49,21 @@ export async function requireSession(next = "/dashboard"): Promise<SessionProfil
   return session;
 }
 
-/** Where a user lands right after signing in, based on their role. */
+/**
+ * Where a user lands right after signing in, based on their role.
+ *
+ * A student lands in Opportunities, NOT the questionnaire. This used to return
+ * `/onboarding`, and while the auth callback had already been special-cased to
+ * route new students past it, leaving the default here meant the next caller to
+ * use this function would quietly re-erect the wall. The questionnaire is the
+ * admission report's intake — it is opt-in, and nothing routes into it
+ * automatically.
+ */
 export function landingPathForRole(role: Role): string {
   if (role === "admin") return "/admin";
   if (role === "ambassador") return "/ambassador";
   if (role === "partner") return "/partner";
-  return "/onboarding";
+  return "/opportunities";
 }
 
 /** Requires a specific role; redirects elsewhere if the user lacks it. */
