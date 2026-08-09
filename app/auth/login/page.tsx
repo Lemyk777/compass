@@ -1,4 +1,5 @@
 import Link from "@/components/ui/Link";
+import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { Logo } from "@/components/ui/Logo";
 
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -12,32 +13,45 @@ export default function LoginPage({
 }) {
   const t = getT();
   return (
-    <main className="grid min-h-dvh lg:grid-cols-2">
+    // `main` wraps the form column only. It used to wrap the banner and the
+    // decorative aside as well, so the "jump to main" landmark landed on the
+    // logo — see app/guide/layout.tsx for the same repair.
+    <div className="grid min-h-dvh lg:grid-cols-2">
+      <SkipLink />
       <div className="flex flex-col bg-surface">
         <header className="mx-auto flex w-full max-w-md items-center justify-between px-5 py-6">
           <Link href="/" className="rounded focus-visible:focus-ring">
-            <Logo className="text-ink" style={{ viewTransitionName: "brand-logo" }} />
+            <Logo
+              className="text-ink"
+              style={{ viewTransitionName: "brand-logo" }}
+            />
           </Link>
         </header>
-        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 pb-16">
+        <main
+          id={SKIP_TARGET}
+          tabIndex={-1}
+          className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 pb-16"
+        >
           <h1 className="text-2xl font-semibold tracking-tight text-ink">
             {t("auth.welcomeBack")}
           </h1>
-          <p className="mb-6 mt-1 text-sm text-ink-soft">{t("auth.loginSub")}</p>
+          <p className="mb-6 mt-1 text-sm text-ink-soft">
+            {t("auth.loginSub")}
+          </p>
           <AuthForm mode="login" initialError={searchParams.error} />
           <p className="mt-5 text-center text-sm text-ink-soft">
             {t("auth.newHere")}{" "}
             <Link
               href="/auth/signup"
-              className="font-medium text-accent hover:underline"
+              className="font-medium text-accent-ink hover:underline"
             >
               {t("auth.createAccount")}
             </Link>
           </p>
-        </div>
+        </main>
       </div>
 
       <AuthAside t={t} />
-    </main>
+    </div>
   );
 }

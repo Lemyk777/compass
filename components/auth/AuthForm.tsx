@@ -21,6 +21,7 @@ export function AuthForm({
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState<"email" | "google" | null>(null);
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [checkEmail, setCheckEmail] = useState(false);
@@ -215,16 +216,37 @@ export function AuthForm({
           htmlFor="password"
           hint={mode === "signup" ? t("auth.passwordHint") : undefined}
         >
-          <Input
-            id="password"
-            type="password"
-            autoComplete={mode === "signup" ? "new-password" : "current-password"}
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-          />
+          {/* Show/hide, because typing a password blind on a phone keyboard is
+              how people get locked out of an account they own — and this
+              product's own data says a wrong password here is already a common
+              dead end. The control sits inside the field rather than beside it
+              so it cannot be mistaken for a form action, and it is a real
+              button: `aria-pressed` tells a screen reader which state it is in,
+              and the label changes with it. */}
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete={
+                mode === "signup" ? "new-password" : "current-password"
+              }
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="pr-20"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              aria-pressed={showPassword}
+              aria-controls="password"
+              className="absolute inset-y-0 right-0 inline-flex items-center rounded-r-xl px-3 text-xs font-medium text-ink-faint transition-colors hover:text-ink focus-visible:focus-ring"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
         </Field>
 
         {error && (

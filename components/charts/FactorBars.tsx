@@ -45,16 +45,23 @@ export function FactorBars({
                 style={{ transform: `scaleX(${shown / 10})` }}
               />
             </div>
-            
+
             {/* Accordion for reasoning and tier */}
             <details className="mt-2 group">
               <summary className="text-xs font-medium text-accent cursor-pointer select-none list-none hover:opacity-80 transition-opacity">
                 <span className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100">
-                  <svg 
-                    className="w-3 h-3 transition-transform duration-200 group-open:rotate-90" 
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  <svg
+                    className="w-3 h-3 transition-transform duration-200 group-open:rotate-90"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                   Score details
                 </span>
@@ -68,7 +75,10 @@ export function FactorBars({
                 {f.reasoning && f.reasoning.length > 0 && (
                   <ul className="list-none space-y-1.5">
                     {f.reasoning.map((r, idx) => (
-                      <li key={idx} className="text-xs text-ink-faint flex items-start gap-2">
+                      <li
+                        key={idx}
+                        className="text-xs text-ink-faint flex items-start gap-2"
+                      >
                         <span className="text-accent/50 mt-0.5">•</span>
                         <span>{r}</span>
                       </li>

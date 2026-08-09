@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
+import { MotionSafe } from "@/components/ui/MotionSafe";
 import { FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 
 // The "boarding pass": a compact line that fills in as the student answers the
@@ -52,68 +53,77 @@ export function DirectionSummary({
         : `${faculties.length} fields`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: EASE }}
-      className="overflow-hidden rounded-2xl border border-ivy/20 bg-gradient-to-br from-ivy-soft/70 via-card to-accent-soft/40 p-4 sm:p-5"
-    >
-      <p className="text-[0.7rem] font-medium uppercase tracking-[0.14em] text-ivy-ink/70">
-        Your direction, so far
-      </p>
+    // The spring and the stagger are the most obviously moving thing on the
+    // page a signed-in student lands on, so this is the first place the
+    // reduced-motion setting has to be honoured. See MotionSafe: framer does not
+    // read that setting on its own, and the CSS guard cannot reach it.
+    <MotionSafe>
       <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: EASE }}
+        className="overflow-hidden rounded-2xl border border-ivy/20 bg-gradient-to-br from-ivy-soft/70 via-card to-accent-soft/40 p-4 sm:p-5"
       >
-        {/* Both answers are editable from here. They used to be dead text: the
+        <p className="text-[0.7rem] font-medium uppercase tracking-[0.14em] text-ivy-ink/70">
+          Your direction, so far
+        </p>
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm"
+        >
+          {/* Both answers are editable from here. They used to be dead text: the
             questions only ever rendered while an answer was MISSING, so once a
             student answered, there was no way back to change it — and the
             interest quiz, which lives inside the field question, became
             unreachable forever. The answer you can see is the answer you can
             change. */}
-        <Segment done={grade != null} onEdit={onEditYear} label="Change your school year">
-          {grade != null ? (
+          <Segment
+            done={grade != null}
+            onEdit={onEditYear}
+            label="Change your school year"
+          >
+            {grade != null ? (
+              <>
+                Year <span data-num>{grade}</span>
+              </>
+            ) : (
+              "add your year"
+            )}
+          </Segment>
+          <Arrow />
+          <Segment
+            done={fieldLabel != null}
+            onEdit={onEditFields}
+            label="Change your fields, or take the interest quiz"
+          >
+            {fieldLabel ?? "pick a field"}
+          </Segment>
+          {nearest && (
             <>
-              Year <span data-num>{grade}</span>
+              <Arrow />
+              <Segment done accent>
+                next: {nearest.name} · <span data-num>{nearest.days}</span>d
+              </Segment>
             </>
-          ) : (
-            "add your year"
           )}
-        </Segment>
-        <Arrow />
-        <Segment
-          done={fieldLabel != null}
-          onEdit={onEditFields}
-          label="Change your fields, or take the interest quiz"
-        >
-          {fieldLabel ?? "pick a field"}
-        </Segment>
-        {nearest && (
-          <>
-            <Arrow />
-            <Segment done accent>
-              next: {nearest.name} ·{" "}
-              <span data-num>{nearest.days}</span>d
-            </Segment>
-          </>
+        </motion.div>
+        {grade != null && totalOpen > 0 && (
+          <motion.p
+            variants={segment}
+            initial="hidden"
+            animate="show"
+            className="mt-2.5 text-xs text-ink-soft"
+          >
+            <span data-num className="font-semibold text-ink">
+              {totalOpen}
+            </span>{" "}
+            open to you right now.
+          </motion.p>
         )}
       </motion.div>
-      {grade != null && totalOpen > 0 && (
-        <motion.p
-          variants={segment}
-          initial="hidden"
-          animate="show"
-          className="mt-2.5 text-xs text-ink-soft"
-        >
-          <span data-num className="font-semibold text-ink">
-            {totalOpen}
-          </span>{" "}
-          open to you right now.
-        </motion.p>
-      )}
-    </motion.div>
+    </MotionSafe>
   );
 }
 

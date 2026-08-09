@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { Factor } from "@/lib/ai/schema";
+import { ChartFigure } from "@/components/charts/ChartFigure";
 import { ACCENT } from "@/lib/tiers";
 import {
   factorMattersForCountry,
@@ -61,30 +62,40 @@ export function RadarScorecard({
     : shown.map((f) => ({ factor: shortLabel(f.label), score: f.score }));
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <RadarChart data={data} outerRadius="72%">
-        <PolarGrid stroke="var(--line)" />
-        <PolarAngleAxis
-          dataKey="factor"
-          tick={{ fill: "var(--ink-soft)", fontSize: 11 }}
-        />
-        <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
-        <Radar
-          dataKey="score"
-          stroke={ACCENT}
-          fill={ACCENT}
-          fillOpacity={0.22}
-          strokeWidth={2}
-          isAnimationActive={false}
-        />
-      </RadarChart>
-    </ResponsiveContainer>
+    // These scores appear nowhere else on the panel, so without the list below
+    // the whole scorecard is silent to a screen reader.
+    <ChartFigure
+      label="Your scorecard, each factor out of 10."
+      rows={data.map((d) => ({
+        name: d.factor,
+        value: `${d.score} out of 10`,
+      }))}
+    >
+      <ResponsiveContainer width="100%" height={260}>
+        <RadarChart data={data} outerRadius="72%">
+          <PolarGrid stroke="var(--line)" />
+          <PolarAngleAxis
+            dataKey="factor"
+            tick={{ fill: "var(--ink-soft)", fontSize: 11 }}
+          />
+          <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
+          <Radar
+            dataKey="score"
+            stroke={ACCENT}
+            fill={ACCENT}
+            fillOpacity={0.22}
+            strokeWidth={2}
+            isAnimationActive={false}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
+    </ChartFigure>
   );
 }
 
 function buildItalyRadarData(
   factors: Factor[],
-  financialFitScore: number
+  financialFitScore: number,
 ): { factor: string; score: number }[] {
   const byKey = new Map(factors.map((f) => [f.key, f.score]));
   return [

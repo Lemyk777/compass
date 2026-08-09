@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { MotionSafe } from "@/components/ui/MotionSafe";
 import { OutlineMap, topoUrlForCountry } from "./OutlineMap";
 import { COUNTRIES } from "@/lib/data/map-markers";
 
@@ -10,7 +11,13 @@ const FLIGHT_MS = 1300;
 
 function Chevron({ dir }: { dir: "left" | "right" }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d={dir === "left" ? "M15 18l-6-6 6-6" : "M9 18l6-6-6-6"}
         stroke="currentColor"
@@ -26,7 +33,14 @@ function Chevron({ dir }: { dir: "left" | "right" }) {
 function MiniGlobe() {
   return (
     <svg width="132" height="132" viewBox="0 0 100 100" aria-hidden="true">
-      <circle cx="50" cy="50" r="44" fill="#F7F8FA" stroke="#0E7B57" strokeWidth="1.6" />
+      <circle
+        cx="50"
+        cy="50"
+        r="44"
+        fill="#F7F8FA"
+        stroke="#0E7B57"
+        strokeWidth="1.6"
+      />
       <g fill="none" stroke="rgba(15,23,42,0.18)" strokeWidth="1">
         <ellipse cx="50" cy="50" rx="44" ry="15" />
         <ellipse cx="50" cy="50" rx="30" ry="44" />
@@ -57,8 +71,16 @@ function Clouds({ dir }: { dir: number }) {
           className="absolute rounded-full bg-white blur-2xl"
           style={{ top: b.top, width: b.size, height: b.size }}
           initial={{ left: `${from}%`, opacity: 0 }}
-          animate={{ left: [`${from}%`, `${(from + to) / 2}%`, `${to}%`], opacity: [0, 0.95, 0] }}
-          transition={{ duration: FLIGHT_MS / 1000, ease: "easeInOut", delay: b.delay, times: [0, 0.5, 1] }}
+          animate={{
+            left: [`${from}%`, `${(from + to) / 2}%`, `${to}%`],
+            opacity: [0, 0.95, 0],
+          }}
+          transition={{
+            duration: FLIGHT_MS / 1000,
+            ease: "easeInOut",
+            delay: b.delay,
+            times: [0, 0.5, 1],
+          }}
         />
       ))}
     </div>
@@ -96,14 +118,22 @@ export default function MapView({ className }: { className?: string }) {
       const img = new window.Image();
       img.src = topoUrlForCountry(at(index + 1));
     };
-    const ric = (window as typeof window & {
-      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
-    }).requestIdleCallback;
+    const ric = (
+      window as typeof window & {
+        requestIdleCallback?: (
+          cb: () => void,
+          o?: { timeout: number },
+        ) => number;
+      }
+    ).requestIdleCallback;
     if (ric) {
       const id = ric(warm, { timeout: 2000 });
-      return () => (window as typeof window & {
-        cancelIdleCallback?: (h: number) => void;
-      }).cancelIdleCallback?.(id);
+      return () =>
+        (
+          window as typeof window & {
+            cancelIdleCallback?: (h: number) => void;
+          }
+        ).cancelIdleCallback?.(id);
     }
     const id = window.setTimeout(warm, 800);
     return () => window.clearTimeout(id);
@@ -123,86 +153,111 @@ export default function MapView({ className }: { className?: string }) {
     }, FLIGHT_MS);
   }, []);
 
+  // The heaviest motion in the product by a distance: a country silhouette that
+  // scales, translates and blurs while cloud blobs fly across it. Zoom plus
+  // parallax-like travel is the combination most likely to make a reader with
+  // vestibular sensitivity feel ill, and it sits on the landing page, which is
+  // the one page nobody chose to open. MotionSafe drops the scale and the travel
+  // for anyone who has asked their system for less; the crossfade survives, so
+  // switching country still reads as a change.
   return (
-    <div className={className}>
-      <div className="w-full">
-        {/* Map stage — the country's own aspect ratio, so it fills the width with
+    <MotionSafe>
+      <div className={className}>
+        <div className="w-full">
+          {/* Map stage — the country's own aspect ratio, so it fills the width with
             no vertical dead space and the silhouette shows instantly. */}
-        <div className="relative aspect-[1000/640] w-full">
-          {/* Country silhouette — zooms out to space and the next one flies in */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={country.code}
-              className="absolute inset-0"
-              initial={{ scale: 0.28, opacity: 0, y: 30, filter: "blur(6px)" }}
-              animate={{ scale: 1, opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ scale: 0.28, opacity: 0, y: -30, filter: "blur(6px)" }}
-              transition={{ duration: 0.6, ease: EASE }}
-            >
-              <OutlineMap country={country} />
-            </motion.div>
-          </AnimatePresence>
+          <div className="relative aspect-[1000/640] w-full">
+            {/* Country silhouette — zooms out to space and the next one flies in */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={country.code}
+                className="absolute inset-0"
+                initial={{
+                  scale: 0.28,
+                  opacity: 0,
+                  y: 30,
+                  filter: "blur(6px)",
+                }}
+                animate={{ scale: 1, opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ scale: 0.28, opacity: 0, y: -30, filter: "blur(6px)" }}
+                transition={{ duration: 0.6, ease: EASE }}
+              >
+                <OutlineMap country={country} />
+              </motion.div>
+            </AnimatePresence>
 
-          {/* Flight overlay: clouds + a glimpse of the planet */}
-          <AnimatePresence>
-            {flying && (
-              <div key={flightKey} className="pointer-events-none absolute inset-0 z-20">
-                <Clouds dir={dir} />
-                <motion.div
-                  className="absolute inset-0 z-30 flex items-center justify-center"
-                  initial={{ scale: 0.2, opacity: 0 }}
-                  animate={{ scale: [0.2, 1, 1, 0.4], opacity: [0, 1, 1, 0] }}
-                  transition={{ duration: FLIGHT_MS / 1000, ease: "easeInOut", times: [0, 0.35, 0.6, 1] }}
+            {/* Flight overlay: clouds + a glimpse of the planet */}
+            <AnimatePresence>
+              {flying && (
+                <div
+                  key={flightKey}
+                  className="pointer-events-none absolute inset-0 z-20"
                 >
-                  <MiniGlobe />
-                </motion.div>
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Pager controls — directly under the map, no floating gap */}
-        <div className="mt-5 flex flex-col items-center">
-          <div className="flex items-center gap-4 rounded-full border border-black/5 bg-white/70 px-3 py-2 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-md">
-            <button
-              type="button"
-              onClick={() => go(-1)}
-              aria-label="Previous country"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-ink/70 transition-colors hover:bg-[#0E7B57]/10 hover:text-[#0E7B57]"
-            >
-              <Chevron dir="left" />
-            </button>
-
-            <div className="min-w-[148px] text-center">
-              <div className="text-sm font-semibold leading-tight text-ink">{country.label}</div>
-              <div className="text-[11px] leading-tight text-ink-faint">{country.blurb}</div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => go(1)}
-              aria-label="Next country"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-ink/70 transition-colors hover:bg-[#0E7B57]/10 hover:text-[#0E7B57]"
-            >
-              <Chevron dir="right" />
-            </button>
+                  <Clouds dir={dir} />
+                  <motion.div
+                    className="absolute inset-0 z-30 flex items-center justify-center"
+                    initial={{ scale: 0.2, opacity: 0 }}
+                    animate={{ scale: [0.2, 1, 1, 0.4], opacity: [0, 1, 1, 0] }}
+                    transition={{
+                      duration: FLIGHT_MS / 1000,
+                      ease: "easeInOut",
+                      times: [0, 0.35, 0.6, 1],
+                    }}
+                  >
+                    <MiniGlobe />
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="mt-3 flex items-center justify-center gap-1.5">
-            {COUNTRIES.map((c) => {
-              const active = c.code === country.code;
-              return (
-                <span
-                  key={c.code}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    active ? "w-5 bg-[#0E7B57]" : "w-1.5 bg-ink/20"
-                  }`}
-                />
-              );
-            })}
+          {/* Pager controls — directly under the map, no floating gap */}
+          <div className="mt-5 flex flex-col items-center">
+            <div className="flex items-center gap-4 rounded-full border border-black/5 bg-white/70 px-3 py-2 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                aria-label="Previous country"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-ink/70 transition-colors hover:bg-[#0E7B57]/10 hover:text-[#0E7B57]"
+              >
+                <Chevron dir="left" />
+              </button>
+
+              <div className="min-w-[148px] text-center">
+                <div className="text-sm font-semibold leading-tight text-ink">
+                  {country.label}
+                </div>
+                <div className="text-[11px] leading-tight text-ink-faint">
+                  {country.blurb}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => go(1)}
+                aria-label="Next country"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-ink/70 transition-colors hover:bg-[#0E7B57]/10 hover:text-[#0E7B57]"
+              >
+                <Chevron dir="right" />
+              </button>
+            </div>
+
+            <div className="mt-3 flex items-center justify-center gap-1.5">
+              {COUNTRIES.map((c) => {
+                const active = c.code === country.code;
+                return (
+                  <span
+                    key={c.code}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      active ? "w-5 bg-[#0E7B57]" : "w-1.5 bg-ink/20"
+                    }`}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </MotionSafe>
   );
 }

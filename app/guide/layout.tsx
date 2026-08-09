@@ -2,6 +2,7 @@ import { Logo } from "@/components/ui/Logo";
 import { Shell } from "@/components/ui/Shell";
 import { ButtonLink } from "@/components/ui/Button";
 import { StudentShell } from "@/components/student/StudentShell";
+import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { GuideTabs } from "@/components/guide/GuideTabs";
 import { NavTrail } from "@/components/guide/NavTrail";
 import { guideSession } from "@/lib/guide/student-fields";
@@ -52,8 +53,14 @@ export default async function GuideLayout({
     );
   }
 
+  // `<main>` wraps the CONTENT and nothing else. It used to wrap the header too,
+  // which put the banner and the whole guide nav inside the main landmark — so a
+  // screen-reader user jumping to "main" landed on the logo and the sign-in
+  // button, and the one navigation shortcut that exists for skipping chrome
+  // delivered them straight back into it.
   return (
-    <main className="min-h-dvh bg-surface text-ink">
+    <div className="min-h-dvh bg-surface text-ink">
+      <SkipLink />
       <header className="border-b border-line/70">
         <Shell className="flex items-center justify-between gap-3 py-5">
           <Logo className="shrink-0 text-ink" />
@@ -68,7 +75,9 @@ export default async function GuideLayout({
         </Shell>
       </header>
 
-      <Shell className="py-8">{inner}</Shell>
-    </main>
+      <Shell as="main" id={SKIP_TARGET} tabIndex={-1} className="py-8">
+        {inner}
+      </Shell>
+    </div>
   );
 }

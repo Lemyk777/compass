@@ -22,13 +22,21 @@ export function Shell({
   children,
   className = "",
   as: Tag = "div",
+  id,
+  tabIndex,
 }: {
   children: React.ReactNode;
   className?: string;
   as?: "div" | "main" | "header";
+  /** Anchor for the skip link when this is the `main` landmark. */
+  id?: string;
+  /** `-1` so the skip link can move focus here, not just scroll to it. */
+  tabIndex?: number;
 }) {
   return (
     <Tag
+      id={id}
+      tabIndex={tabIndex}
       className={`mx-auto w-full max-w-5xl px-4 sm:px-6 lg:max-w-6xl xl:max-w-7xl xl:px-8 2xl:max-w-[90rem] ${className}`}
     >
       {children}

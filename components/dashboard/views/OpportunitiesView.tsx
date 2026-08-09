@@ -30,6 +30,7 @@ import {
 } from "@/lib/data/opportunity-filter";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { MotionSafe } from "@/components/ui/MotionSafe";
 import type {
   ExtracurricularsPlan,
   Opportunity,
@@ -549,14 +550,20 @@ function GuideLink({ faculties }: { faculties: FacultyValue[] }) {
  *  when one answer swaps in the next (year → field → quiz). */
 function PromptSwap({ children }: { children: React.ReactNode }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
+    // `MotionSafe` because the y-offset here is real movement, and framer reads
+    // `prefers-reduced-motion` only when asked. With it, a reader who opted out
+    // still gets the cross-fade — so one question replacing another still reads
+    // as a replacement rather than a jump-cut — but nothing slides.
+    <MotionSafe>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {children}
+      </motion.div>
+    </MotionSafe>
   );
 }
 

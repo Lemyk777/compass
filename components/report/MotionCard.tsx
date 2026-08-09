@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import React from "react";
 
@@ -20,15 +20,25 @@ export function MotionCard({
   children: React.ReactNode;
   className?: string;
 }) {
+  // The one framer feature this file exists for is the layout FLIP, and it is
+  // pure movement — precisely what a reader who has asked for reduced motion is
+  // asking not to be shown. The CSS guard in globals.css cannot switch it off:
+  // framer drives inline transforms from JavaScript, so a rule about CSS
+  // animation durations never reaches it.
+  //
+  // `useReducedMotion` here rather than the `MotionSafe` provider used
+  // elsewhere, because this renders once per card — dozens of times on the
+  // opportunities list — and that would be one context provider per card.
+  const reduceMotion = useReducedMotion();
   return (
     <motion.div
-      layout="position"
+      layout={reduceMotion ? false : "position"}
       className={cn(
         // No hover lift — see the note on Card in Section.tsx. These two must
         // not drift apart: they are the same surface, and a reader cannot be
         // expected to learn that one kind of panel reacts and the other doesn't.
         "rounded-2xl border border-line/70 bg-card p-5 shadow-sm",
-        className
+        className,
       )}
     >
       {children}
