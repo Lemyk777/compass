@@ -32,7 +32,7 @@ export function LikelihoodGauge({
   // Only show deadlines that haven't passed for this cycle, soonest first.
   const deadlines = today
     ? resolveSchoolDeadlines(school.name, today, graduationYear).filter(
-        (d) => !d.passed
+        (d) => !d.passed,
       )
     : [];
 

@@ -28,31 +28,37 @@ export function OverallGauge({ score }: { score: number }) {
 
   return (
     <div className="relative mx-auto aspect-square w-[180px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <RadialBarChart
-          innerRadius="76%"
-          outerRadius="100%"
-          barSize={14}
-          data={data}
-          startAngle={225}
-          endAngle={-45}
-        >
-          <PolarAngleAxis
-            type="number"
-            domain={[0, 100]}
-            angleAxisId={0}
-            tick={false}
-          />
-          <RadialBar
-            background={{ fill: "var(--line)" }}
-            dataKey="value"
-            cornerRadius={8}
-            angleAxisId={0}
-            isAnimationActive
-            animationDuration={900}
-          />
-        </RadialBarChart>
-      </ResponsiveContainer>
+      {/* `aria-hidden` and no text alternative, deliberately: the score and the
+          band are printed as real text in the middle of the dial below, so a
+          label here would make a screen reader announce the same number twice.
+          The graphic is a second rendering of text that is already present. */}
+      <div aria-hidden className="h-full w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadialBarChart
+            innerRadius="76%"
+            outerRadius="100%"
+            barSize={14}
+            data={data}
+            startAngle={225}
+            endAngle={-45}
+          >
+            <PolarAngleAxis
+              type="number"
+              domain={[0, 100]}
+              angleAxisId={0}
+              tick={false}
+            />
+            <RadialBar
+              background={{ fill: "var(--line)" }}
+              dataKey="value"
+              cornerRadius={8}
+              angleAxisId={0}
+              isAnimationActive
+              animationDuration={900}
+            />
+          </RadialBarChart>
+        </ResponsiveContainer>
+      </div>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
         <span
           data-num

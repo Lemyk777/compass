@@ -168,6 +168,20 @@ is its own route now:
 - **`careers.ts` is server-only in practice.** It is ~1,100 lines of prose, and the interest quiz is a CLIENT component that needs eight labels from it — so the titles live in [lib/data/career-titles.ts](lib/data/career-titles.ts), duplicated and pinned to the registry by a test. Import labels from there, never the registry, in anything that runs in the browser.
 - **One motion per view, and it is the morph.** A card's title and the `<h1>` of the page it opens share a `view-transition-name` (`guideMorph`, tested for validity and uniqueness), so the browser morphs one into the other and the transition answers "where did this page come from?". A staggered card entrance was tried and removed for two reasons worth not rediscovering: a fade-up holds the card at `opacity: 0` until the animation runs, which makes the page's actual content depend on an animation finishing; and it fights the morph, because a view transition snapshots the incoming page while those cards are still sliding. Everything else is `transition`-based (hover lift, press scale) so the resting state is always visible.
 - The global reduced-motion guard in [app/globals.css](app/globals.css) zeroes `animation-delay`/`transition-delay` as well as the durations. Without that, any `fill-mode: both` entrance leaves a reduced-motion reader staring at invisible content for the length of the delay.
+- **That CSS guard does not reach framer-motion, and nothing else did either.**
+  It zeroes CSS animation and transition durations; framer drives inline
+  `transform`/`opacity` from JavaScript, so the rule is invisible to it — and for
+  a long time every framer animation in the product ran at full strength for a
+  reader who had asked their system for less. The five components that actually
+  render `motion.*` are the whole surface: `DirectionSummary`, `PromptSwap` in
+  `OpportunitiesView`, `MotionCard`, `Onboarding` and the landing `MapView`. Four
+  wrap their motion subtree in [MotionSafe](components/ui/MotionSafe.tsx)
+  (`MotionConfig reducedMotion="user"` — drops movement, keeps the crossfade);
+  `MotionCard` uses `useReducedMotion()` directly to switch off its layout FLIP,
+  because it renders once per card and would otherwise mean a context provider
+  per card. **Mount `MotionSafe` inside a component that already imports framer,
+  never in a shell** — hoisting it would drag framer into the guide's route
+  bundles, which are server-rendered apart from two islands.
 - **The loading skeleton is on the LIST routes only, and that is load-bearing.** A `loading.tsx` is a Suspense boundary, and a boundary lets the server flush the response — status line included — before the page under it renders. One section-wide `app/guide/loading.tsx` therefore made every unknown id answer **200** carrying a not-found page. The skeleton (`components/guide/Skeleton.tsx`) now sits in six scoped files, which is why `/guide`, `/guide/work`, `/guide/places` and `/guide/cities` each live in a `(index)`/`(list)` route group — a group adds nothing to the URL but stops the subject pages inheriting the boundary. It is also where the wait actually is: a list page resolves the session (`guideView`), a subject page reads static data. Don't "tidy" the groups away or hoist the file back up.
 
 ## Being findable is a feature (`sitemap.ts`, `robots.ts`, canonicals)

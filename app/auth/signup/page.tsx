@@ -1,4 +1,5 @@
 import Link from "@/components/ui/Link";
+import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { cookies } from "next/headers";
 import { Logo } from "@/components/ui/Logo";
 
@@ -12,14 +13,23 @@ export default function SignupPage() {
   const t = getT();
 
   return (
-    <main className="grid min-h-dvh lg:grid-cols-2">
+    // `main` wraps the form column only — see the note in the login page.
+    <div className="grid min-h-dvh lg:grid-cols-2">
+      <SkipLink />
       <div className="flex flex-col bg-surface">
         <header className="mx-auto flex w-full max-w-md items-center justify-between px-5 py-6">
           <Link href="/" className="rounded focus-visible:focus-ring">
-            <Logo className="text-ink" style={{ viewTransitionName: "brand-logo" }} />
+            <Logo
+              className="text-ink"
+              style={{ viewTransitionName: "brand-logo" }}
+            />
           </Link>
         </header>
-        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 pb-16">
+        <main
+          id={SKIP_TARGET}
+          tabIndex={-1}
+          className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 pb-16"
+        >
           <h1 className="text-2xl font-semibold tracking-tight text-ink">
             {t("auth.buildTitle")}
           </h1>
@@ -44,15 +54,15 @@ export default function SignupPage() {
             {t("auth.haveAccount")}{" "}
             <Link
               href="/auth/login"
-              className="font-medium text-accent hover:underline"
+              className="font-medium text-accent-ink hover:underline"
             >
               {t("common.logIn")}
             </Link>
           </p>
-        </div>
+        </main>
       </div>
 
       <AuthAside t={t} />
-    </main>
+    </div>
   );
 }

@@ -19,7 +19,15 @@ const config: Config = {
         surface: "#F7F8FA",
         card: "#FFFFFF",
         line: "#E6E2DA",
-        // The single accent — reserved for the user's own scores/highlights
+        // The single accent — reserved for the user's own scores/highlights.
+        //
+        // Same three roles as the tiers below, and the same trap: DEFAULT is
+        // 4.55:1 on `card` — a pass by four hundredths — and **4.28:1 on
+        // `surface`, which is a fail**. So `text-accent` is safe on white and
+        // not safe on the page background, which is not a distinction anyone
+        // will hold in their head while writing a component. `ink` is 7.35 and
+        // 6.92 on the two, and is what coloured TEXT should use; keep DEFAULT
+        // for fills and for icons, which only owe 3:1.
         accent: {
           DEFAULT: "#2F6FED",
           soft: "#E4ECFD",

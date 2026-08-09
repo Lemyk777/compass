@@ -1,5 +1,6 @@
 import Link from "@/components/ui/Link";
 import { Logo } from "@/components/ui/Logo";
+import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 
 /**
  * Shared chrome for the static legal pages (Privacy Policy, Terms of Use).
@@ -16,7 +17,11 @@ export function LegalPage({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-[#F7F8FA] text-ink">
+    // Banner and footer are siblings of `main`, not children of it — the same
+    // repair as the marketing page. Here the `<article>` IS the main content, so
+    // it becomes the landmark rather than gaining a wrapper.
+    <div className="min-h-screen bg-[#F7F8FA] text-ink">
+      <SkipLink />
       <header className="border-b border-black/10">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-6">
           <Link href="/" aria-label="Compass home">
@@ -31,7 +36,11 @@ export function LegalPage({
         </div>
       </header>
 
-      <article className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
+      <main
+        id={SKIP_TARGET}
+        tabIndex={-1}
+        className="mx-auto max-w-3xl px-6 py-12 sm:py-16"
+      >
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
           {title}
         </h1>
@@ -40,7 +49,7 @@ export function LegalPage({
         <div className="legal-prose mt-10 space-y-8 text-[0.975rem] leading-relaxed text-ink/80">
           {children}
         </div>
-      </article>
+      </main>
 
       <footer className="border-t border-black/10">
         <div className="mx-auto flex max-w-3xl flex-col items-start justify-between gap-3 px-6 py-8 text-sm font-light text-ink-faint sm:flex-row sm:items-center">
@@ -55,7 +64,7 @@ export function LegalPage({
           </nav>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }
 

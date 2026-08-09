@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Logo } from "@/components/ui/Logo";
+import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { ButtonLink } from "@/components/ui/Button";
 import { EligibilityChecker } from "@/components/opportunities/EligibilityChecker";
 import { OpportunitiesView } from "@/components/dashboard/views/OpportunitiesView";
@@ -79,11 +80,18 @@ export default async function OpportunitiesPage() {
   try {
     live = await fetchLivePool();
   } catch (e) {
-    console.error("[opportunities] live pool unavailable, serving the catalog only:", e);
+    console.error(
+      "[opportunities] live pool unavailable, serving the catalog only:",
+      e,
+    );
   }
 
+  // Header outside the main landmark, and a skip link ahead of both — see the
+  // note in app/guide/layout.tsx. This is the page a stranger meets first, so it
+  // is the last one where the keyboard route in should be the long way round.
   return (
-    <main className="min-h-dvh bg-surface text-ink">
+    <div className="min-h-dvh bg-surface text-ink">
+      <SkipLink />
       <header className="border-b border-line/70">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-5 sm:px-6">
           <Logo className="shrink-0 text-ink" />
@@ -93,41 +101,43 @@ export default async function OpportunitiesPage() {
         </div>
       </header>
 
-      <EligibilityChecker live={live} />
+      <main id={SKIP_TARGET} tabIndex={-1}>
+        <EligibilityChecker live={live} />
 
-      {/* The account ask comes last, and only after something useful has already
+        {/* The account ask comes last, and only after something useful has already
           been handed over. Note what is NOT being sold: Compass is free either
           way, so the trade on offer is information, not money. */}
-      <section className="border-t border-line/70 bg-card">
-        <div className="mx-auto max-w-3xl px-5 py-14 sm:px-6">
-          <h2 className="text-balance text-2xl font-semibold tracking-tight text-ink">
-            So far we only know one thing about you: your year at school.
-          </h2>
-          <p className="mt-3 max-w-xl text-pretty text-base leading-relaxed text-ink-soft">
-            Tell us a bit more — what you like, what you&rsquo;ve already done —
-            and we can say which of these suit you best, which one to start
-            with, and what to do this month. We keep track of all{" "}
-            <span data-num className="font-semibold text-ink">
-              {COMPETITIONS.length}
-            </span>{" "}
-            of them and check every link and date ourselves.
-          </p>
-          <p className="mt-3 max-w-xl text-base leading-relaxed text-ink-soft">
-            It doesn&rsquo;t cost anything. Compass is free, all of it.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <ButtonLink href="/auth/signup" variant="primary" size="md">
-              Make an account
-            </ButtonLink>
-            <ButtonLink href="/guide" variant="tonal" size="md">
-              Where can this lead?
-            </ButtonLink>
-            <ButtonLink href="/demo" variant="subtle" size="md">
-              See an example first
-            </ButtonLink>
+        <section className="border-t border-line/70 bg-card">
+          <div className="mx-auto max-w-3xl px-5 py-14 sm:px-6">
+            <h2 className="text-balance text-2xl font-semibold tracking-tight text-ink">
+              So far we only know one thing about you: your year at school.
+            </h2>
+            <p className="mt-3 max-w-xl text-pretty text-base leading-relaxed text-ink-soft">
+              Tell us a bit more — what you like, what you&rsquo;ve already done
+              — and we can say which of these suit you best, which one to start
+              with, and what to do this month. We keep track of all{" "}
+              <span data-num className="font-semibold text-ink">
+                {COMPETITIONS.length}
+              </span>{" "}
+              of them and check every link and date ourselves.
+            </p>
+            <p className="mt-3 max-w-xl text-base leading-relaxed text-ink-soft">
+              It doesn&rsquo;t cost anything. Compass is free, all of it.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <ButtonLink href="/auth/signup" variant="primary" size="md">
+                Make an account
+              </ButtonLink>
+              <ButtonLink href="/guide" variant="tonal" size="md">
+                Where can this lead?
+              </ButtonLink>
+              <ButtonLink href="/demo" variant="subtle" size="md">
+                See an example first
+              </ButtonLink>
+            </div>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </div>
   );
 }

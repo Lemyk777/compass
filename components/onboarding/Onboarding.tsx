@@ -1,15 +1,20 @@
 "use client";
 
 import { useTransitionRouter } from "@/components/ui/ViewTransitions";
+import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { MotionSafe } from "@/components/ui/MotionSafe";
 import { Logo } from "@/components/ui/Logo";
 import Link from "@/components/ui/Link";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import type { StudentProfileInput } from "@/lib/types";
 import { logOnboardingStep } from "@/app/onboarding/actions";
 
-import { OnboardingContextProvider, useOnboardingContext } from "./context/OnboardingContext";
+import {
+  OnboardingContextProvider,
+  useOnboardingContext,
+} from "./context/OnboardingContext";
 import { FirstWin } from "./FirstWin";
 import {
   GeneralSection,
@@ -123,12 +128,25 @@ function Wizard({
   };
 
   return (
-    <main className="min-h-dvh bg-surface">
+    <div className="min-h-dvh bg-surface">
+      {/* Banner outside the main landmark, and the skip link ahead of both. */}
+      <SkipLink />
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <Logo className="text-ink" style={{ viewTransitionName: "brand-logo" }} />
+          <Logo
+            className="text-ink"
+            style={{ viewTransitionName: "brand-logo" }}
+          />
           <ButtonLink href={basePath} variant="ghost" size="sm">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="m15 18-6-6 6-6" />
             </svg>
             Dashboard
@@ -136,114 +154,152 @@ function Wizard({
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        <h1 className="text-4xl font-semibold tracking-tight text-ink">Build Your Profile</h1>
-        {/* What this is, said at the top of it. Signing up does not come here
+      <main id={SKIP_TARGET} tabIndex={-1}>
+        <div className="mx-auto max-w-6xl px-6 py-8">
+          <h1 className="text-4xl font-semibold tracking-tight text-ink">
+            Build Your Profile
+          </h1>
+          {/* What this is, said at the top of it. Signing up does not come here
             any more — this is the admission report's intake, reached on
             purpose — but a five-step form with no explanation still reads as
             "finish setting up your account", which is the wall we removed. */}
-        <p className="mt-2 max-w-[60ch] text-pretty text-sm leading-relaxed text-ink-soft">
-          This is the intake for the <span className="font-medium text-ink">admission
-          report</span> — the scores, the per-school odds and the benchmarks. It is
-          optional: your Opportunities work without any of it, and you can leave
-          half-answered and come back.{" "}
-          <Link
-            href="/opportunities"
-            className="font-medium text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
-          >
-            Back to Opportunities
-          </Link>
-        </p>
+          <p className="mt-2 max-w-[60ch] text-pretty text-sm leading-relaxed text-ink-soft">
+            This is the intake for the{" "}
+            <span className="font-medium text-ink">admission report</span> — the
+            scores, the per-school odds and the benchmarks. It is optional: your
+            Opportunities work without any of it, and you can leave
+            half-answered and come back.{" "}
+            <Link
+              href="/opportunities"
+              className="font-medium text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+            >
+              Back to Opportunities
+            </Link>
+          </p>
 
-        {/* Step pills */}
-        <div className="mt-6 flex flex-wrap gap-3 border-b border-line pb-6">
-          {SECTIONS.map((s, i) => {
-            const active = i === index;
-            const done = filled[s.key] === true;
-            return (
-              <button
-                key={s.key}
-                type="button"
-                onClick={() => go(i)}
-                className={`flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                  active
-                    ? "border-accent bg-accent-soft text-accent-ink"
-                    : "border-line bg-card text-ink-soft hover:border-ink/20"
-                }`}
-              >
-                <span
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+          {/* Step pills */}
+          <div className="mt-6 flex flex-wrap gap-3 border-b border-line pb-6">
+            {SECTIONS.map((s, i) => {
+              const active = i === index;
+              const done = filled[s.key] === true;
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => go(i)}
+                  className={`flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                     active
-                      ? "bg-accent text-white"
-                      : done
-                        ? "bg-accent/15 text-accent"
-                        : "bg-line text-ink-faint"
+                      ? "border-accent bg-accent-soft text-accent-ink"
+                      : "border-line bg-card text-ink-soft hover:border-ink/20"
                   }`}
                 >
-                  {i + 1}
-                </span>
-                {s.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Body: form (left) + "why this matters" aside (right) */}
-        <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_300px]">
-          <div className="min-w-0">
-            <h2 className="text-2xl font-semibold tracking-tight text-ink">{section.title}</h2>
-            <p className="mb-7 mt-1 text-sm text-ink-soft">{section.sub}</p>
-            <motion.div
-              key={section.key}
-              initial={{ opacity: 0, x: dir * 16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-            >
-              <section.Component />
-            </motion.div>
-            {/* Pay before asking again. Only on the first screen: this is the
-                point where the student has given us enough to say something
-                specific, and the point where 44% of them used to leave. */}
-            {isFirst && <FirstWin />}
+                  <span
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                      active
+                        ? "bg-accent text-white"
+                        : done
+                          ? "bg-accent/15 text-accent"
+                          : "bg-line text-ink-faint"
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
+                  {s.label}
+                </button>
+              );
+            })}
           </div>
 
-          <aside className="hidden lg:block lg:border-l lg:border-line lg:pl-8">
-            <WhyIllustration />
-            <h3 className="mt-6 text-lg font-semibold tracking-tight text-ink">
-              Why this matters?
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-ink-soft">{section.why}</p>
-          </aside>
-        </div>
+          {/* Body: form (left) + "why this matters" aside (right) */}
+          <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_300px]">
+            <div className="min-w-0">
+              <h2 className="text-2xl font-semibold tracking-tight text-ink">
+                {section.title}
+              </h2>
+              <p className="mb-7 mt-1 text-sm text-ink-soft">{section.sub}</p>
+              {/* The step slide is directional on purpose — it says which way you
+                are travelling through the form — but direction is exactly the
+                cue a reduced-motion reader asked not to receive. MotionSafe
+                keeps the cross-fade and drops the travel; framer needs telling,
+                because the CSS guard cannot see a JS-driven transform. */}
+              <MotionSafe>
+                <motion.div
+                  key={section.key}
+                  initial={{ opacity: 0, x: dir * 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                >
+                  <section.Component />
+                </motion.div>
+              </MotionSafe>
+              {/* Pay before asking again. Only on the first screen: this is the
+                point where the student has given us enough to say something
+                specific, and the point where 44% of them used to leave. */}
+              {isFirst && <FirstWin />}
+            </div>
 
-        {errors?.global && (
-          <p role="alert" className="mt-6 max-w-xl rounded-lg bg-reach-soft px-3 py-2 text-sm text-reach-ink">
-            {errors.global}
-          </p>
-        )}
+            <aside className="hidden lg:block lg:border-l lg:border-line lg:pl-8">
+              <WhyIllustration />
+              <h3 className="mt-6 text-lg font-semibold tracking-tight text-ink">
+                Why this matters?
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                {section.why}
+              </p>
+            </aside>
+          </div>
 
-        {/* Nav */}
-        <div className="mt-10 flex gap-3">
-          {!isFirst && (
-            <Button variant="subtle" size="lg" onClick={() => go(index - 1)} disabled={isSaving}>
-              Back
-            </Button>
+          {errors?.global && (
+            <p
+              role="alert"
+              className="mt-6 max-w-xl rounded-lg bg-reach-soft px-3 py-2 text-sm text-reach-ink"
+            >
+              {errors.global}
+            </p>
           )}
-          {!isLast ? (
-            <Button size="lg" onClick={() => go(index + 1)}>
-              Continue
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </Button>
-          ) : (
-            <Button size="lg" onClick={handleSubmit} disabled={isSaving}>
-              {isSaving ? "Saving…" : preview ? "Submit" : hasAnalysis ? "Save & re-analyze" : "See my standing"}
-            </Button>
-          )}
+
+          {/* Nav */}
+          <div className="mt-10 flex gap-3">
+            {!isFirst && (
+              <Button
+                variant="subtle"
+                size="lg"
+                onClick={() => go(index - 1)}
+                disabled={isSaving}
+              >
+                Back
+              </Button>
+            )}
+            {!isLast ? (
+              <Button size="lg" onClick={() => go(index + 1)}>
+                Continue
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </Button>
+            ) : (
+              <Button size="lg" onClick={handleSubmit} disabled={isSaving}>
+                {isSaving
+                  ? "Saving…"
+                  : preview
+                    ? "Submit"
+                    : hasAnalysis
+                      ? "Save & re-analyze"
+                      : "See my standing"}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
 
@@ -259,13 +315,14 @@ function useSectionsFilled(): Record<string, boolean> {
   return {
     general: Boolean(
       data.graduation_year ||
-        (Array.isArray(data.faculties) && data.faculties.length > 0) ||
-        (Array.isArray(data.destinations) && data.destinations.length > 0)
+      (Array.isArray(data.faculties) && data.faculties.length > 0) ||
+      (Array.isArray(data.destinations) && data.destinations.length > 0),
     ),
     academics: Boolean(
       data.curriculum ||
-        (grades && Object.values(grades).some((v) => v !== "" && v != null)) ||
-        (data.tests && Object.values(data.tests).some((v) => v !== "" && v != null))
+      (grades && Object.values(grades).some((v) => v !== "" && v != null)) ||
+      (data.tests &&
+        Object.values(data.tests).some((v) => v !== "" && v != null)),
     ),
     activities: Array.isArray(data.activities) && data.activities.length > 0,
     awards: Array.isArray(data.honors) && data.honors.length > 0,
@@ -275,17 +332,88 @@ function useSectionsFilled(): Record<string, boolean> {
 
 function WhyIllustration() {
   return (
-    <svg viewBox="0 0 200 150" className="w-full max-w-[220px]" fill="none" aria-hidden="true">
-      <rect x="58" y="22" width="84" height="106" rx="10" fill="var(--accent-soft)" />
-      <rect x="58" y="22" width="84" height="106" rx="10" stroke="var(--accent)" strokeOpacity="0.3" />
-      <rect x="84" y="14" width="32" height="16" rx="6" fill="var(--card)" stroke="var(--accent)" strokeOpacity="0.4" />
-      <circle cx="100" cy="55" r="11" fill="var(--card)" stroke="var(--accent)" strokeWidth="2" />
+    <svg
+      viewBox="0 0 200 150"
+      className="w-full max-w-[220px]"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="58"
+        y="22"
+        width="84"
+        height="106"
+        rx="10"
+        fill="var(--accent-soft)"
+      />
+      <rect
+        x="58"
+        y="22"
+        width="84"
+        height="106"
+        rx="10"
+        stroke="var(--accent)"
+        strokeOpacity="0.3"
+      />
+      <rect
+        x="84"
+        y="14"
+        width="32"
+        height="16"
+        rx="6"
+        fill="var(--card)"
+        stroke="var(--accent)"
+        strokeOpacity="0.4"
+      />
+      <circle
+        cx="100"
+        cy="55"
+        r="11"
+        fill="var(--card)"
+        stroke="var(--accent)"
+        strokeWidth="2"
+      />
       <circle cx="100" cy="51" r="4" fill="var(--accent)" />
-      <path d="M92 62c2-3 14-3 16 0" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
-      <rect x="72" y="82" width="56" height="6" rx="3" fill="var(--accent)" fillOpacity="0.35" />
-      <rect x="72" y="96" width="40" height="6" rx="3" fill="var(--accent)" fillOpacity="0.25" />
-      <rect x="72" y="110" width="48" height="6" rx="3" fill="var(--accent)" fillOpacity="0.25" />
-      <path d="M150 96l24 24m-24 0 24-24" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" transform="translate(2 -6) rotate(45 162 108)" />
+      <path
+        d="M92 62c2-3 14-3 16 0"
+        stroke="var(--accent)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <rect
+        x="72"
+        y="82"
+        width="56"
+        height="6"
+        rx="3"
+        fill="var(--accent)"
+        fillOpacity="0.35"
+      />
+      <rect
+        x="72"
+        y="96"
+        width="40"
+        height="6"
+        rx="3"
+        fill="var(--accent)"
+        fillOpacity="0.25"
+      />
+      <rect
+        x="72"
+        y="110"
+        width="48"
+        height="6"
+        rx="3"
+        fill="var(--accent)"
+        fillOpacity="0.25"
+      />
+      <path
+        d="M150 96l24 24m-24 0 24-24"
+        stroke="var(--accent)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        transform="translate(2 -6) rotate(45 162 108)"
+      />
     </svg>
   );
 }

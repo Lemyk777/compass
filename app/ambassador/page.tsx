@@ -1,4 +1,5 @@
 import { requireSession } from "@/lib/auth/session";
+import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { AmbassadorClient } from "@/components/ambassador/AmbassadorClient";
@@ -30,59 +31,67 @@ export default async function AmbassadorPage() {
   }
 
   return (
-    <main className="min-h-dvh bg-surface">
+    <div className="min-h-dvh bg-surface">
+      <SkipLink />
       <AppHeader
         admin={session.role === "admin"}
         links={[{ href: "/dashboard", label: t("common.dashboard") }]}
       />
-      <div className="mx-auto max-w-2xl px-5 py-6">
-        {!amb ? (
-          <AmbassadorPending />
-        ) : (
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-ink">
-                {t("amb.hubTitle")}
-              </h1>
-              <p className="text-sm text-ink-soft">{t("amb.hubSub")}</p>
+      <main id={SKIP_TARGET} tabIndex={-1}>
+        <div className="mx-auto max-w-2xl px-5 py-6">
+          {!amb ? (
+            <AmbassadorPending />
+          ) : (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight text-ink">
+                  {t("amb.hubTitle")}
+                </h1>
+                <p className="text-sm text-ink-soft">{t("amb.hubSub")}</p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Card className="flex flex-col justify-center text-center">
+                  <span
+                    data-num
+                    className="font-display text-5xl font-semibold text-accent"
+                  >
+                    {liveSignups}
+                  </span>
+                  <span className="mt-1 text-sm text-ink-soft">
+                    {liveSignups === 1
+                      ? t("amb.signedUpOne")
+                      : t("amb.signedUpMany")}
+                  </span>
+                </Card>
+                <Card className="flex flex-col justify-center text-center">
+                  <span className="font-display text-2xl font-semibold text-ink">
+                    {amb.code}
+                  </span>
+                  <span className="mt-1 text-sm text-ink-soft">
+                    {t("amb.yourCode")} · {amb.country ?? "—"}
+                  </span>
+                  <span
+                    className={`mx-auto mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      amb.status === "active"
+                        ? "bg-likely-soft text-likely-ink"
+                        : "bg-line text-ink-soft"
+                    }`}
+                  >
+                    {amb.status}
+                  </span>
+                </Card>
+              </div>
+
+              <AmbassadorClient code={amb.code} />
+
+              <p className="text-center text-xs text-ink-faint">
+                {t("amb.note")}
+              </p>
             </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Card className="flex flex-col justify-center text-center">
-                <span data-num className="font-display text-5xl font-semibold text-accent">
-                  {liveSignups}
-                </span>
-                <span className="mt-1 text-sm text-ink-soft">
-                  {liveSignups === 1
-                    ? t("amb.signedUpOne")
-                    : t("amb.signedUpMany")}
-                </span>
-              </Card>
-              <Card className="flex flex-col justify-center text-center">
-                <span className="font-display text-2xl font-semibold text-ink">
-                  {amb.code}
-                </span>
-                <span className="mt-1 text-sm text-ink-soft">
-                  {t("amb.yourCode")} · {amb.country ?? "—"}
-                </span>
-                <span
-                  className={`mx-auto mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    amb.status === "active"
-                      ? "bg-likely-soft text-likely-ink"
-                      : "bg-line text-ink-soft"
-                  }`}
-                >
-                  {amb.status}
-                </span>
-              </Card>
-            </div>
-
-            <AmbassadorClient code={amb.code} />
-
-            <p className="text-center text-xs text-ink-faint">{t("amb.note")}</p>
-          </div>
-        )}
-      </div>
-    </main>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }
