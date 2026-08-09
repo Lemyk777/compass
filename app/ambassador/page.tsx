@@ -68,7 +68,7 @@ export default async function AmbassadorPage() {
                 <span
                   className={`mx-auto mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     amb.status === "active"
-                      ? "bg-likely-soft text-[#2C6B4D]"
+                      ? "bg-likely-soft text-likely-ink"
                       : "bg-line text-ink-soft"
                   }`}
                 >

@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "@/components/ui/Link";
 import { FieldFilter } from "@/components/guide/FieldFilter";
-import { GuideCard, ListHead, NextStep, SectionIntro } from "@/components/guide/parts";
+import {
+  GuideCard,
+  ListHead,
+  NextStep,
+  SectionIntro,
+} from "@/components/guide/parts";
 import { withFields } from "@/lib/data/guide-fields";
 import { guideMorph, guideSection } from "@/lib/data/guide-sections";
 import { hubsByCountry, REGION_LABEL } from "@/lib/data/world";
@@ -43,12 +48,14 @@ export default async function GuideCitiesPage({
   return (
     <div className="space-y-6">
       <ListHead
-        intro={<SectionIntro
-          step={SECTION.step}
-          title={SECTION.title}
-          blurb={SECTION.blurb}
-          count={`${total} cities in ${groups.length} countries, home region first. A city with only good news listed would be an advert, so every one of these carries its catch.`}
-        />}
+        intro={
+          <SectionIntro
+            step={SECTION.step}
+            title={SECTION.title}
+            blurb={SECTION.blurb}
+            count={`${total} cities in ${groups.length} countries, home region first. A city with only good news listed would be an advert, so every one of these carries its catch.`}
+          />
+        }
         aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
       />
 
@@ -68,17 +75,28 @@ export default async function GuideCitiesPage({
             .map((h) => destinationForHub(h.id))
             .find(Boolean);
           return (
-            <section key={`${g.region}-${g.country}`} className="space-y-2.5">
+            // The rule is what makes a country read as the header of the cities
+            // under it. These groups flow into columns, so without one the
+            // country name is just the first line of a run of cards, and a
+            // reader scanning down a column cannot tell where Germany ends and
+            // Korea begins. Same treatment as the field groups on step 1.
+            <section
+              key={`${g.region}-${g.country}`}
+              className="space-y-2.5 border-t border-line pt-4"
+            >
               {/* The country name IS the link to its profile, rather than a
                   separate "full profile →" chip beside it. That chip was a 16px
                   tap target — a third of the 44px minimum — and this is both
                   bigger and more obvious: the heading of a group of cities in
                   Germany should go to Germany. */}
               <div className="flex flex-wrap items-center gap-x-3">
-                <h2 className="text-sm font-semibold text-ink">
+                <h2 className="text-base font-semibold tracking-tight text-ink">
                   {destination ? (
                     <Link
-                      href={withFields(`/guide/places/${destination.id}`, stated)}
+                      href={withFields(
+                        `/guide/places/${destination.id}`,
+                        stated,
+                      )}
                       className="group inline-flex min-h-11 items-center gap-1.5 transition-colors hover:text-accent focus-visible:focus-ring"
                     >
                       {g.country}

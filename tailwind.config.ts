@@ -31,10 +31,33 @@ const config: Config = {
           ink: "#0A5C41",
           soft: "#E7F2EC",
         },
-        // Semantic tier scale — used identically everywhere (gauges, chips, bars)
-        reach: { DEFAULT: "#E0664F", soft: "#FBE7E2" },
-        target: { DEFAULT: "#D98A2B", soft: "#FaEEDB" },
-        likely: { DEFAULT: "#3F9B6E", soft: "#E1F1E9" },
+        // Semantic tier scale — used identically everywhere (gauges, chips, bars).
+        //
+        // Each tier has THREE roles and they are not interchangeable:
+        //   DEFAULT — a FILL. A gauge arc, a bar, a dot. Graphics need 3:1.
+        //   soft    — a tinted background behind text.
+        //   ink     — TEXT. Nothing else. Needs 4.5:1 on white AND on `soft`.
+        //
+        // `ink` is new and the omission was a real accessibility failure, not a
+        // stylistic gap: with no ink to reach for, every component that needed
+        // coloured text wrote `text-reach` and got the FILL — 3.40:1 on white
+        // and 2.85:1 on its own chip, both under AA. That included every
+        // `role="alert"` error message in the product, which is the last text
+        // that should be hard to read. `text-target` was worse at 2.76:1, under
+        // even the 3:1 bar for graphics, so the trophy glyph failed too.
+        //
+        // The values are NOT new. They are the ones `TIER_META[tier].text` in
+        // lib/tiers.ts has been carrying all along — the file already knew the
+        // fills were unreadable as text. Six components had independently
+        // hand-copied that hex inline (`text-[#2C6B4D]`, `text-[#8A5410]`),
+        // which is the "raw hex in a component" smell pointing straight at a
+        // missing token. Duplicated here rather than imported because a Tailwind
+        // config cannot pull in lib/ai/schema's types; scripts/test-engine.ts
+        // pins the two lists together, the same arrangement as
+        // legacy-guide-urls.ts and next.config.mjs.
+        reach: { DEFAULT: "#E0664F", soft: "#FBE7E2", ink: "#A93B2A" },
+        target: { DEFAULT: "#D98A2B", soft: "#FaEEDB", ink: "#8A5410" },
+        likely: { DEFAULT: "#3F9B6E", soft: "#E1F1E9", ink: "#2C6B4D" },
       },
       fontFamily: {
         display: ["var(--font-display)", "ui-sans-serif", "system-ui"],

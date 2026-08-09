@@ -238,9 +238,9 @@ export function OfficialSources({
 
 export function StatusPill({ status }: { status: ProgramStatus }) {
   const config = {
-    likely: { label: "Likely", className: "bg-likely-soft text-likely" },
-    target: { label: "Target", className: "bg-target-soft text-target" },
-    reach: { label: "Reach", className: "bg-reach-soft text-reach" },
+    likely: { label: "Likely", className: "bg-likely-soft text-likely-ink" },
+    target: { label: "Target", className: "bg-target-soft text-target-ink" },
+    reach: { label: "Reach", className: "bg-reach-soft text-reach-ink" },
   };
   const c = config[status];
   return (
@@ -256,7 +256,7 @@ export function OfferTypeBadge({ conditional }: { conditional: boolean }) {
       Conditional Offer
     </span>
   ) : (
-    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[10px] font-medium text-likely">
+    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[10px] font-medium text-likely-ink">
       Direct Offer
     </span>
   );
@@ -264,8 +264,8 @@ export function OfferTypeBadge({ conditional }: { conditional: boolean }) {
 
 export function ScholarshipBadge({ status }: { status: ScholarshipStatus }) {
   const config = {
-    likely_full: { label: "Likely Full Scholarship", className: "text-likely bg-likely-soft" },
-    likely_partial: { label: "Likely Partial Scholarship", className: "text-likely bg-likely-soft" },
+    likely_full: { label: "Likely Full Scholarship", className: "text-likely-ink bg-likely-soft" },
+    likely_partial: { label: "Likely Partial Scholarship", className: "text-likely-ink bg-likely-soft" },
     unlikely: { label: "Scholarship Unlikely", className: "text-ink-faint bg-line" },
     unknown: { label: "Scholarship Unknown", className: "text-ink-faint bg-line" },
   };

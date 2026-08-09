@@ -160,12 +160,12 @@ function FocusCallout({
       <p className="text-pretty text-sm leading-relaxed text-ink">
         <span className="font-semibold">{focus.label}</span> is your weakest
         dimension here at{" "}
-        <span data-num className="font-semibold text-accent">
+        <span data-num className="font-semibold text-accent-ink">
           {focus.score}/10
         </span>
         . The top {focus.topK}{" "}
         {focus.topK === 1 ? "student averages" : "students average"}{" "}
-        <span data-num className="font-semibold text-accent">
+        <span data-num className="font-semibold text-accent-ink">
           {focus.topAvg}/10
         </span>{" "}
         — closing this gap is the fastest path up the board.
@@ -342,7 +342,7 @@ function StandingBadge({
       </div>
       <div className="h-9 w-px bg-line" />
       <div className="text-right">
-        <span className="inline-block rounded-full bg-likely-soft px-2 py-0.5 text-[11px] font-semibold text-[#2C6B4D]">
+        <span className="inline-block rounded-full bg-likely-soft px-2 py-0.5 text-[11px] font-semibold text-likely-ink">
           Top {standing.topPct}%
         </span>
         <p className="mt-1 text-xs text-ink-soft">
@@ -487,7 +487,7 @@ function TargetIcon() {
 function TrophyIcon({ small = false }: { small?: boolean }) {
   return (
     <svg
-      className={small ? "h-4 w-4" : "h-5 w-5 text-target"}
+      className={small ? "h-4 w-4" : "h-5 w-5 text-target-ink"}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

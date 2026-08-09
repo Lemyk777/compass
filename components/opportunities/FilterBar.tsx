@@ -155,7 +155,17 @@ export function FilterBar({
         id={panelId}
         className="mt-2.5 divide-y divide-line border-t border-line pt-1"
       >
-        <Group label="Money">
+        <Group
+          label="Money"
+          // The rule this group runs on, stated where it is applied. It used to
+          // live ONLY in a `title` attribute — which does not exist on a
+          // touchscreen, is not reliably announced by a screen reader, and is
+          // unreachable from the keyboard. So the product's single most
+          // load-bearing piece of honesty ("free" never covers a cost we have
+          // not verified) was legible to a mouse and invisible to everyone else,
+          // on the surface most likely to be opened on a phone.
+          note="“Free” means free the whole way through. Anything whose cost we have not verified is in no money bucket at all — so widening this filter is how you see those."
+        >
           {COST_OPTIONS.map((o) => (
             <Toggle
               key={o.id}
@@ -199,7 +209,10 @@ export function FilterBar({
         {/* The not-yet-eligible rows stay in the list by default — a younger
               student should be able to see what they are aiming at. This is the
               switch for the other mood: only what I can act on today. */}
-        <Group label="Entry">
+        <Group
+          label="Entry"
+          note="Off, the list also shows what you are not old enough for yet — on purpose, so you can see what you are aiming at."
+        >
           <Toggle
             on={value.openOnly}
             count={facets.openNow}
@@ -216,9 +229,20 @@ export function FilterBar({
 
 function Group({
   label,
+  note,
   children,
 }: {
   label: string;
+  /**
+   * The rule this group applies, always on screen.
+   *
+   * Not a tooltip. `title` survives only where a pointer does, and this panel
+   * is opened on a phone more often than anywhere else — so a hint delivered
+   * that way is a hint most students never receive. It stays on the individual
+   * chips for the per-option detail, but anything a person needs in order to
+   * trust the result belongs in the layout.
+   */
+  note?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -226,7 +250,14 @@ function Group({
       <p className="w-16 shrink-0 pt-1 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-ink-faint">
         {label}
       </p>
-      <div className="flex flex-wrap gap-1.5">{children}</div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap gap-1.5">{children}</div>
+        {note && (
+          <p className="mt-1.5 max-w-[60ch] text-xs leading-relaxed text-ink-faint">
+            {note}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

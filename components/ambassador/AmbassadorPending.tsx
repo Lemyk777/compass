@@ -26,7 +26,7 @@ export function AmbassadorPending() {
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-target-soft text-[#8A5410]">
+      <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-target-soft text-target-ink">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
           <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -38,7 +38,7 @@ export function AmbassadorPending() {
       <p className="mt-2 max-w-sm text-sm text-ink-soft">{t("amb.pendBody")}</p>
 
       {checkedOnce && !checking && (
-        <p className="mt-4 rounded-lg bg-target-soft px-3 py-2 text-sm text-[#8A5410]">
+        <p className="mt-4 rounded-lg bg-target-soft px-3 py-2 text-sm text-target-ink">
           {t("amb.stillPending")}
         </p>
       )}

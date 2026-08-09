@@ -255,10 +255,10 @@ export function Countdown({
 }) {
   const tone =
     days <= 14
-      ? "bg-reach-soft text-reach"
+      ? "bg-reach-soft text-reach-ink"
       : days <= 30
-        ? "bg-target-soft text-target"
-        : "bg-likely-soft text-[#2C6B4D]";
+        ? "bg-target-soft text-target-ink"
+        : "bg-likely-soft text-likely-ink";
   const text = days <= 0 ? "closes today" : days === 1 ? "1 day left" : `${days} days left`;
   return (
     <span
@@ -279,7 +279,7 @@ export function Countdown({
 export function OpenNowPill({ compact = false }: { compact?: boolean }) {
   return (
     <span
-      className={`whitespace-nowrap rounded-full bg-likely-soft font-semibold text-[#2C6B4D] ${
+      className={`whitespace-nowrap rounded-full bg-likely-soft font-semibold text-likely-ink ${
         compact ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm"
       }`}
     >

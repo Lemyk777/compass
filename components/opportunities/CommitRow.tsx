@@ -114,7 +114,7 @@ function CommitRow({ o }: { o: Opportunity }) {
           Undo
         </button>
         {error && (
-          <p role="alert" className="w-full text-xs text-reach">
+          <p role="alert" className="w-full text-xs text-reach-ink">
             {error}
           </p>
         )}
@@ -176,7 +176,7 @@ function CommitRow({ o }: { o: Opportunity }) {
         />
       </label>
       {error && (
-        <p role="alert" className="mt-2 text-xs text-reach">
+        <p role="alert" className="mt-2 text-xs text-reach-ink">
           {error}
         </p>
       )}

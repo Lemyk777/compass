@@ -117,10 +117,10 @@ export function RoadmapView() {
 }
 
 const REGIME_ACCENT: Record<Regime, string> = {
-  building: "bg-likely-soft text-[#2C6B4D]",
+  building: "bg-likely-soft text-likely-ink",
   focusing: "bg-accent-soft text-accent-ink",
-  sprinting: "bg-target-soft text-[#8A5410]",
-  submitting: "bg-reach-soft text-[#A93B2A]",
+  sprinting: "bg-target-soft text-target-ink",
+  submitting: "bg-reach-soft text-reach-ink",
   unknown: "bg-surface text-ink-soft",
 };
 
@@ -298,7 +298,7 @@ function ActionRow({ action, muted }: { action: RoadmapAction; muted?: boolean }
           <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
             {action.text}
             {action.tag && (
-              <span className="rounded-full bg-target-soft px-2 py-0.5 text-[11px] font-semibold text-target">
+              <span className="rounded-full bg-target-soft px-2 py-0.5 text-[11px] font-semibold text-target-ink">
                 {action.tag}
               </span>
             )}
@@ -333,10 +333,10 @@ function ActionRow({ action, muted }: { action: RoadmapAction; muted?: boolean }
 function Countdown({ days }: { days: number }) {
   const tone =
     days <= 14
-      ? "bg-reach-soft text-reach"
+      ? "bg-reach-soft text-reach-ink"
       : days <= 30
-        ? "bg-target-soft text-target"
-        : "bg-likely-soft text-[#2C6B4D]";
+        ? "bg-target-soft text-target-ink"
+        : "bg-likely-soft text-likely-ink";
   const text =
     days <= 0 ? "due today" : days === 1 ? "1 day left" : `${days} days left`;
   return (

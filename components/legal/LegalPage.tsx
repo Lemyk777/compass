@@ -35,7 +35,7 @@ export function LegalPage({
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
           {title}
         </h1>
-        <p className="mt-3 text-sm text-ink/50">Last updated: {updated}</p>
+        <p className="mt-3 text-sm text-ink-faint">Last updated: {updated}</p>
 
         <div className="legal-prose mt-10 space-y-8 text-[0.975rem] leading-relaxed text-ink/80">
           {children}
@@ -43,7 +43,7 @@ export function LegalPage({
       </article>
 
       <footer className="border-t border-black/10">
-        <div className="mx-auto flex max-w-3xl flex-col items-start justify-between gap-3 px-6 py-8 text-sm font-light text-ink/40 sm:flex-row sm:items-center">
+        <div className="mx-auto flex max-w-3xl flex-col items-start justify-between gap-3 px-6 py-8 text-sm font-light text-ink-faint sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} Compass. Guidance, not guarantees.</p>
           <nav className="flex items-center gap-5">
             <Link href="/privacy" className="transition hover:text-ink/70">

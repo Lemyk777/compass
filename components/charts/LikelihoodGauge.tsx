@@ -96,7 +96,7 @@ export function LikelihoodGauge({
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span className="font-medium text-ink">{d.short}</span>
                   {d.binding && (
-                    <span className="shrink-0 rounded bg-reach-soft px-1.5 py-0.5 text-[10px] font-semibold text-reach">
+                    <span className="shrink-0 rounded bg-reach-soft px-1.5 py-0.5 text-[10px] font-semibold text-reach-ink">
                       Binding
                     </span>
                   )}
@@ -143,10 +143,10 @@ function BranchCampusPanel({ branch }: { branch: BranchCampus }) {
 function DeadlinePill({ days }: { days: number }) {
   const tone =
     days <= 14
-      ? "bg-reach-soft text-reach"
+      ? "bg-reach-soft text-reach-ink"
       : days <= 30
-        ? "bg-target-soft text-target"
-        : "bg-likely-soft text-[#2C6B4D]";
+        ? "bg-target-soft text-target-ink"
+        : "bg-likely-soft text-likely-ink";
   const text = days === 0 ? "today" : days === 1 ? "1 day" : `${days} days`;
   return (
     <span

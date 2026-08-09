@@ -231,7 +231,7 @@ export function ActivitiesSection() {
               <button
                 type="button"
                 onClick={() => remove(i)}
-                className="text-sm text-ink-faint hover:text-reach"
+                className="text-sm text-ink-faint hover:text-reach-ink"
               >
                 Remove
               </button>
@@ -323,7 +323,7 @@ export function AwardsSection() {
             <button
               type="button"
               onClick={() => remove(i)}
-              className="text-sm text-ink-faint hover:text-reach"
+              className="text-sm text-ink-faint hover:text-reach-ink"
             >
               Remove
             </button>

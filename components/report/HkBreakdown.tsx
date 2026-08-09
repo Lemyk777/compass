@@ -164,7 +164,7 @@ function HkScoreBar({ program: p }: { program: HkProgramAnalysis }) {
 
 function InterviewBadge({ required }: { required: boolean }) {
   return required ? (
-    <span className="rounded bg-target-soft px-1.5 py-0.5 text-[10px] font-medium text-target">
+    <span className="rounded bg-target-soft px-1.5 py-0.5 text-[10px] font-medium text-target-ink">
       Interview Compulsory
     </span>
   ) : (
@@ -176,8 +176,8 @@ function InterviewBadge({ required }: { required: boolean }) {
 
 function EnglishBadge({ status }: { status: HkProgramAnalysis["english"] }) {
   const config = {
-    meets: { label: "English Met ✓", className: "bg-likely-soft text-likely" },
-    below: { label: "English Below Bar ⚠", className: "bg-reach-soft text-reach" },
+    meets: { label: "English Met ✓", className: "bg-likely-soft text-likely-ink" },
+    below: { label: "English Below Bar ⚠", className: "bg-reach-soft text-reach-ink" },
     unknown: { label: "English Unknown", className: "bg-line text-ink-soft" },
   };
   const c = config[status];

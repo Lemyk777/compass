@@ -14,6 +14,7 @@
 import { test } from "node:test";
 import type { NextRequest } from "next/server";
 import { denyUnlessCronAuthorized } from "@/lib/cron/auth";
+import { TIER_META } from "@/lib/tiers";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
@@ -696,6 +697,39 @@ test("every area of work states its catch, and the rest of the depth", () => {
   }
 });
 
+// The other half of the honesty rule, and the reason the area pages used to open
+// with a table of contents instead of an answer. A country states suitsYou and
+// notForYou, a city states whoThrives with "look elsewhere" inside it — areas of
+// work stated neither, so the one part of a subject page written TO the reader
+// was missing from the layer a student reaches first.
+//
+// Distinctness is checked as well as length, because thirty-three hand-written
+// pairs is exactly the size at which one sentence gets pasted across a whole
+// field and nobody notices; an identical answer for two different kinds of work
+// is not an answer.
+test("every area of work says who it suits AND who should look elsewhere", () => {
+  const suits = new Set<string>();
+  const avoid = new Set<string>();
+  for (const { faculty, area } of allCareerAreas()) {
+    const where = `${faculty}/${area.title}`;
+    assert.ok(
+      area.suitsYou.trim().length > 100,
+      `${where} does not say who this work actually suits`,
+    );
+    // The longer bar is deliberate: this is the half that does the work, and a
+    // one-line brush-off here is how a page goes back to reading as an advert.
+    assert.ok(
+      area.notForYou.trim().length > 140,
+      `${where} does not name who should look somewhere else instead`,
+    );
+    suits.add(area.suitsYou.trim());
+    avoid.add(area.notForYou.trim());
+  }
+  const n = allCareerAreas().length;
+  assert.equal(suits.size, n, "two areas claim to suit exactly the same person");
+  assert.equal(avoid.size, n, "two areas warn off exactly the same person");
+});
+
 // `adjacent` holds titles, not ids, so a typo would render a dead link with no
 // error anywhere. This is what makes that impossible.
 test("every adjacent area resolves, and none points at itself", () => {
@@ -1064,6 +1098,105 @@ test("every destination states its cycle, its reading, and its teaching", () => 
       `${d.id} names nothing applicants from this region get wrong`,
     );
   }
+});
+
+// ── The semantic tier scale is three roles, not one colour ───────────────────
+//
+// Every tier had a DEFAULT (a fill) and a `soft` (a tint) and no text colour, so
+// a component needing coloured text reached for the fill and got 3.40:1 on white
+// and 2.85:1 on its own chip — under WCAG AA, and it was the colour of every
+// `role="alert"` error message in the product. `text-target` was 2.76:1, under
+// even the 3:1 bar that applies to graphics, so the trophy glyph failed as an
+// icon too.
+//
+// What makes this worth a test rather than a commit is that the codebase already
+// knew: lib/tiers.ts has carried readable `text` values the whole time, and six
+// components had hand-copied that hex inline rather than reach for a token that
+// did not exist. So the two lists must not drift apart again, and the ratios are
+// asserted rather than trusted — a future tweak to a brand colour cannot quietly
+// drop below AA.
+const relativeLuminance = (hex: string) => {
+  const v = parseInt(hex.slice(1), 16);
+  const channel = (c: number) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return (
+    0.2126 * channel((v >> 16) & 255) +
+    0.7152 * channel((v >> 8) & 255) +
+    0.0722 * channel(v & 255)
+  );
+};
+const contrast = (a: string, b: string) => {
+  const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort(
+    (x, y) => y - x,
+  );
+  return (hi + 0.05) / (lo + 0.05);
+};
+
+test("every tier's ink is readable on white and on its own tint", () => {
+  const config = readFileSync(
+    path.join(process.cwd(), "tailwind.config.ts"),
+    "utf8",
+  );
+  const CARD = "#FFFFFF";
+  for (const tier of ["reach", "target", "likely"] as const) {
+    const block = new RegExp(`\\b${tier}: \\{([^}]*)\\}`).exec(config)?.[1];
+    assert.ok(block, `${tier} is missing from the Tailwind palette`);
+    const pick = (role: string) =>
+      new RegExp(`${role}: "(#[0-9A-Fa-f]{6})"`).exec(block!)?.[1];
+    const ink = pick("ink");
+    const soft = pick("soft");
+    assert.ok(ink, `${tier} has no ink — coloured text will fall back to the fill`);
+    assert.ok(soft, `${tier} has no soft tint`);
+
+    // Text, so AA is 4.5:1 — on the page and on the chip it sits in.
+    assert.ok(
+      contrast(ink!, CARD) >= 4.5,
+      `${tier}.ink is ${contrast(ink!, CARD).toFixed(2)}:1 on white — under AA`,
+    );
+    assert.ok(
+      contrast(ink!, soft!) >= 4.5,
+      `${tier}.ink is ${contrast(ink!, soft!).toFixed(2)}:1 on ${tier}-soft — under AA`,
+    );
+    // And it must still BE the tier's colour: lib/tiers.ts is what the charts
+    // read, so a divergence would put two different reds on one screen.
+    assert.equal(
+      ink!.toUpperCase(),
+      TIER_META[tier].text.toUpperCase(),
+      `${tier}.ink and TIER_META.${tier}.text have drifted apart`,
+    );
+  }
+});
+
+// The fill is not a foreground colour. `text-*` sets `color`, which reaches text
+// and every currentColor icon — so there is no legitimate `text-reach`, and
+// naming the whole class of mistake is cheaper than re-auditing 88 call sites.
+test("no component paints text with a tier fill instead of its ink", () => {
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return walk(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+
+  const offenders: string[] = [];
+  for (const root of ["app", "components"]) {
+    for (const file of walk(path.join(process.cwd(), root))) {
+      readFileSync(file, "utf8")
+        .split("\n")
+        .forEach((line, i) => {
+          if (/text-(reach|target|likely)(?![-\w])/.test(line)) {
+            offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
+          }
+        });
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `use text-<tier>-ink for foreground colour; the bare token is the fill:\n${offenders.join("\n")}`,
+  );
 });
 
 // Text that reached production reading "TГјrkiye" and "KrakГіw".

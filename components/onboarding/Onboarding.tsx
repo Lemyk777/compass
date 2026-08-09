@@ -217,7 +217,7 @@ function Wizard({
         </div>
 
         {errors?.global && (
-          <p role="alert" className="mt-6 max-w-xl rounded-lg bg-reach-soft px-3 py-2 text-sm text-reach">
+          <p role="alert" className="mt-6 max-w-xl rounded-lg bg-reach-soft px-3 py-2 text-sm text-reach-ink">
             {errors.global}
           </p>
         )}

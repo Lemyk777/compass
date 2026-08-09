@@ -396,7 +396,7 @@ function BigStat({
         {change != null && change !== 0 && (
           <span
             data-num
-            className={`text-xs font-medium ${good ? "text-likely" : "text-reach"}`}
+            className={`text-xs font-medium ${good ? "text-likely-ink" : "text-reach-ink"}`}
             title="vs the previous period of the same length"
           >
             {change > 0 ? "+" : ""}

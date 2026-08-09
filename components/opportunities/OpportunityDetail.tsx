@@ -30,18 +30,18 @@ import { PartnerBadge, VerifiedExplainer } from "@/components/partners/PartnerBa
 const TONE: Record<CostTone, { panel: string; pill: string; icon: string }> = {
   free: {
     panel: "border-ivy/30 bg-ivy-soft/50",
-    pill: "bg-likely-soft text-[#2C6B4D]",
+    pill: "bg-likely-soft text-likely-ink",
     icon: "text-ivy",
   },
   partial: {
     panel: "border-target/30 bg-target-soft/60",
-    pill: "bg-target-soft text-target",
-    icon: "text-target",
+    pill: "bg-target-soft text-target-ink",
+    icon: "text-target-ink",
   },
   paid: {
     panel: "border-reach/30 bg-reach-soft/50",
-    pill: "bg-reach-soft text-reach",
-    icon: "text-reach",
+    pill: "bg-reach-soft text-reach-ink",
+    icon: "text-reach-ink",
   },
   unknown: {
     panel: "border-line bg-surface",

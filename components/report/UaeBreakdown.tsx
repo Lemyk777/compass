@@ -150,7 +150,7 @@ function InterviewBadge({ required, needBlind }: { required: boolean; needBlind:
     );
   }
   return (
-    <span className="rounded bg-target-soft px-1.5 py-0.5 text-[10px] font-medium text-target">
+    <span className="rounded bg-target-soft px-1.5 py-0.5 text-[10px] font-medium text-target-ink">
       {needBlind ? "Candidate Weekend" : "Interview Required"}
     </span>
   );
@@ -158,8 +158,8 @@ function InterviewBadge({ required, needBlind }: { required: boolean; needBlind:
 
 function EnglishBadge({ status }: { status: UaeProgramAnalysis["english"] }) {
   const config = {
-    meets: { label: "English Met ✓", className: "bg-likely-soft text-likely" },
-    below: { label: "English Below Bar ⚠", className: "bg-reach-soft text-reach" },
+    meets: { label: "English Met ✓", className: "bg-likely-soft text-likely-ink" },
+    below: { label: "English Below Bar ⚠", className: "bg-reach-soft text-reach-ink" },
     unknown: { label: "English Unknown", className: "bg-line text-ink-soft" },
   };
   const c = config[status];
@@ -172,7 +172,7 @@ function EnglishBadge({ status }: { status: UaeProgramAnalysis["english"] }) {
 
 function NeedBlindBadge() {
   return (
-    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[10px] font-medium text-likely">
+    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[10px] font-medium text-likely-ink">
       Need-Blind · Full Need Met
     </span>
   );
