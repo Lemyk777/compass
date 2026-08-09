@@ -103,8 +103,8 @@ function SectionHeader({
         <span
           className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${
             badgeColor === "likely"
-              ? "bg-likely-soft text-likely"
-              : "bg-reach-soft text-reach"
+              ? "bg-likely-soft text-likely-ink"
+              : "bg-reach-soft text-reach-ink"
           }`}
         >
           {badge}
@@ -220,7 +220,7 @@ function GraduatoriaCard({ program: p }: { program: ItalyProgramAnalysis }) {
             ) : (
               <p
                 className={`text-base font-bold tabular-nums ${
-                  diff >= 0 ? "text-likely" : "text-reach"
+                  diff >= 0 ? "text-likely-ink" : "text-reach-ink"
                 }`}
               >
                 {diff >= 0 ? "+" : ""}
@@ -334,11 +334,11 @@ function StatusPill({ status }: { status: ItalyProgramAnalysis["status"] }) {
   > = {
     guaranteed: {
       label: "Threshold cleared",
-      className: "bg-likely-soft text-likely",
+      className: "bg-likely-soft text-likely-ink",
     },
-    likely: { label: "Likely", className: "bg-likely-soft text-likely" },
-    target: { label: "Target", className: "bg-target-soft text-target" },
-    reach: { label: "Reach", className: "bg-reach-soft text-reach" },
+    likely: { label: "Likely", className: "bg-likely-soft text-likely-ink" },
+    target: { label: "Target", className: "bg-target-soft text-target-ink" },
+    reach: { label: "Reach", className: "bg-reach-soft text-reach-ink" },
   };
   const c = config[status];
   return (
@@ -472,9 +472,9 @@ function VolatilityBadge({
   quota: number;
 }) {
   const config = {
-    stable: { label: "Stable odds", className: "text-likely bg-likely-soft" },
-    moderate: { label: "Some variance", className: "text-target bg-target-soft" },
-    high: { label: "High volatility", className: "text-reach bg-reach-soft" },
+    stable: { label: "Stable odds", className: "text-likely-ink bg-likely-soft" },
+    moderate: { label: "Some variance", className: "text-target-ink bg-target-soft" },
+    high: { label: "High volatility", className: "text-reach-ink bg-reach-soft" },
   };
   const c = config[volatility];
   return (
@@ -512,9 +512,9 @@ function DSUBadge({
     not_applicable: "",
   };
   const colors: Record<ItalyDSUFit, string> = {
-    strong: "text-likely bg-likely-soft",
-    moderate: "text-target bg-target-soft",
-    partial: "text-target bg-target-soft",
+    strong: "text-likely-ink bg-likely-soft",
+    moderate: "text-target-ink bg-target-soft",
+    partial: "text-target-ink bg-target-soft",
     unlikely: "text-ink-faint bg-line",
     unknown: "text-ink-faint bg-line",
     not_applicable: "",

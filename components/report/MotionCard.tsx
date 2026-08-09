@@ -24,7 +24,10 @@ export function MotionCard({
     <motion.div
       layout="position"
       className={cn(
-        "rounded-2xl border border-line/70 bg-card p-5 shadow-sm transition-shadow hover:shadow-md",
+        // No hover lift — see the note on Card in Section.tsx. These two must
+        // not drift apart: they are the same surface, and a reader cannot be
+        // expected to learn that one kind of panel reacts and the other doesn't.
+        "rounded-2xl border border-line/70 bg-card p-5 shadow-sm",
         className
       )}
     >

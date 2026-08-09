@@ -160,7 +160,7 @@ export function PartnerAdmin({
         )}
 
         {error && (
-          <p role="alert" className="text-sm text-reach">
+          <p role="alert" className="text-sm text-reach-ink">
             {error}
           </p>
         )}
@@ -292,7 +292,7 @@ function EditPanel({ partner }: { partner: Partner }) {
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-reach">
+        <p role="alert" className="text-sm text-reach-ink">
           {error}
         </p>
       )}
@@ -304,10 +304,10 @@ function EditPanel({ partner }: { partner: Partner }) {
 function StatusPill({ status }: { status: Partner["status"] }) {
   const tone =
     status === "active"
-      ? "bg-likely-soft text-[#2C6B4D]"
+      ? "bg-likely-soft text-likely-ink"
       : status === "pending"
-        ? "bg-target-soft text-target"
-        : "bg-reach-soft text-reach";
+        ? "bg-target-soft text-target-ink"
+        : "bg-reach-soft text-reach-ink";
   return (
     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tone}`}>
       {status}

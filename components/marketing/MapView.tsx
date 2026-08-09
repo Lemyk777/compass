@@ -175,7 +175,7 @@ export default function MapView({ className }: { className?: string }) {
 
             <div className="min-w-[148px] text-center">
               <div className="text-sm font-semibold leading-tight text-ink">{country.label}</div>
-              <div className="text-[11px] leading-tight text-ink/50">{country.blurb}</div>
+              <div className="text-[11px] leading-tight text-ink-faint">{country.blurb}</div>
             </div>
 
             <button

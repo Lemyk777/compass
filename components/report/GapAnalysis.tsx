@@ -4,9 +4,9 @@ import type { GapItem } from "@/lib/ai/schema";
 import { useT } from "@/lib/i18n/client";
 
 const EFFORT_CLS: Record<GapItem["effort"], string> = {
-  low: "bg-likely-soft text-[#2C6B4D]",
-  medium: "bg-target-soft text-[#8A5410]",
-  high: "bg-reach-soft text-[#A93B2A]",
+  low: "bg-likely-soft text-likely-ink",
+  medium: "bg-target-soft text-target-ink",
+  high: "bg-reach-soft text-reach-ink",
 };
 
 // Prioritized, specific actions — the part the student can actually act on.

@@ -128,7 +128,7 @@ export function StickyActionBar({
       <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:px-8">
         <div className="min-w-0">
           {error ? (
-            <p className="truncate text-sm text-reach">{error}</p>
+            <p className="truncate text-sm text-reach-ink">{error}</p>
           ) : (
             <p className="truncate text-sm text-ink-soft">{message}</p>
           )}

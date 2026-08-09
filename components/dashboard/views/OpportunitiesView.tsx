@@ -6,15 +6,16 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { MotionCard as Card } from "@/components/report/MotionCard";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { PageHeader } from "@/components/dashboard/states";
-import {
-  saveFaculties,
-  saveGraduationYear,
-} from "@/app/dashboard/actions";
+import { saveFaculties, saveGraduationYear } from "@/app/dashboard/actions";
 import {
   graduationYearFromGrade,
   gradeFromGraduationYear,
 } from "@/lib/data/eligibility";
-import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
+import {
+  FACULTIES,
+  FACULTY_LABEL,
+  type FacultyValue,
+} from "@/lib/data/faculties";
 import { InterestQuiz } from "@/components/opportunities/InterestQuiz";
 import { DirectionSummary } from "@/components/opportunities/DirectionSummary";
 import Link from "@/components/ui/Link";
@@ -48,17 +49,17 @@ const BAND_COPY: Record<
 > = {
   emerging: {
     label: "Building your record",
-    tone: "bg-reach-soft text-reach",
+    tone: "bg-reach-soft text-reach-ink",
     line: "Start with accessible, beginner-friendly events to get wins on the board. Volume and momentum matter more than prestige right now.",
   },
   developing: {
     label: "Gaining traction",
-    tone: "bg-target-soft text-target",
+    tone: "bg-target-soft text-target-ink",
     line: "You have a base — now step up to national-calibre competitions while keeping a couple of accessible wins for breadth.",
   },
   competitive: {
     label: "Sharpening your spike",
-    tone: "bg-likely-soft text-[#2C6B4D]",
+    tone: "bg-likely-soft text-likely-ink",
     line: "You're competitive. Focus on selective and elite events that produce a standout, verifiable result — depth over volume.",
   },
   elite: {
@@ -103,7 +104,8 @@ const SHOWN = 5;
 const PAGE = 8;
 
 export function OpportunitiesView() {
-  const { analysis, hasProfile, profileMeta, liveDates, basePath } = useDashboard();
+  const { analysis, hasProfile, profileMeta, liveDates, basePath } =
+    useDashboard();
   // Derived, not configured: this view is the dedicated section when it IS the
   // dedicated section. A flag threaded through the provider was one more thing
   // to wire correctly at every call site, and one more way to be wrong.
@@ -143,7 +145,8 @@ export function OpportunitiesView() {
   // the interest quiz, which is reached from inside the field question, became
   // unreachable the moment a field existed.
   const [editing, setEditing] = useState<"year" | "fields" | null>(null);
-  const faculties = (facultiesOverride ?? profileMeta.faculties) as FacultyValue[];
+  const faculties = (facultiesOverride ??
+    profileMeta.faculties) as FacultyValue[];
   const [, startFacSave] = useTransition();
 
   // Apply a chosen field set from either the manual picker or the quiz: filter
@@ -210,21 +213,21 @@ export function OpportunitiesView() {
   const items = useMemo(() => plan?.items ?? [], [plan]);
   const filtered = useMemo(
     () => filterOpportunities(items, filters),
-    [items, filters]
+    [items, filters],
   );
   const inCategory = useMemo(
     () =>
       category === "all"
         ? items
         : items.filter((o) => o.categoryResolved === category),
-    [items, category]
+    [items, category],
   );
   const visible = useMemo(
     () =>
       category === "all"
         ? filtered
         : filtered.filter((o) => o.categoryResolved === category),
-    [filtered, category]
+    [filtered, category],
   );
 
   // Any active filter is an explicit request to browse, so it opens the full
@@ -250,12 +253,27 @@ export function OpportunitiesView() {
   const nearest = shortlist
     .filter((o) => o.dateConfirmed)
     .reduce<Opportunity | null>(
-      (best, o) => (best == null || o.daysToDeadline < best.daysToDeadline ? o : best),
-      null
+      (best, o) =>
+        best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
+      null,
     );
 
   return (
-    <div className="space-y-5">
+    // Three zones, and the rules between them are the whole change.
+    //
+    // This was one `space-y-5` holding nine blocks: header, the door across, the
+    // summary of your answers, your strength band, the door to the guide, the
+    // filter, the shortlist, the browse button, a footnote — every one of them a
+    // 20px-radius panel, every gap between them identical, so the page had no
+    // grain at all and the first opportunity started 726px down behind five
+    // boxes of preamble. Nothing here is cut. It is grouped by what a block is
+    // FOR, and the three groups are: who you are, what to enter, where it leads.
+    // Inside a group 16px; between groups 64px and a hairline.
+    //
+    // The guide link moved to the end for the same reason `NextStep` sits at the
+    // foot of every guide page: "where could this lead" is the question you have
+    // AFTER you have seen the list, not instead of it.
+    <div>
       <PageHeader
         title="Opportunities"
         hint="Competitions and olympiads we recommend for you — matched to your field and strength. These are our suggestions to enter next, not your own activities."
@@ -264,182 +282,205 @@ export function OpportunitiesView() {
       {/* Inside the report, this panel is a summary of a section that is bigger
           than a panel. The door across is the first thing on the page and is
           deliberately loud: everything built around Opportunities — the
-          questionnaires, the careers guide, the map — lives over there. */}
-      {!standalone && <SectionDoor />}
+          questionnaires, the careers guide, the map — lives over there. It sits
+          with the header rather than in a zone because it is navigation, not
+          part of the answer. */}
+      {!standalone && (
+        <div className="mb-8">
+          <SectionDoor />
+        </div>
+      )}
 
       {plan ? (
         <>
-          <DirectionSummary
-            grade={grade}
-            faculties={faculties}
-            nearest={
-              nearest ? { name: nearest.name, days: nearest.daysToDeadline } : null
-            }
-            totalOpen={openNow.length}
-            onEditYear={() => {
-              setShowQuiz(false);
-              setEditing("year");
-            }}
-            onEditFields={() => {
-              setShowQuiz(false);
-              setFieldsDismissed(false);
-              setEditing("fields");
-            }}
-          />
+          {/* ── Zone 1 · who you are ─────────────────────────────────────── */}
+          <section className="space-y-4">
+            <DirectionSummary
+              grade={grade}
+              faculties={faculties}
+              nearest={
+                nearest
+                  ? { name: nearest.name, days: nearest.daysToDeadline }
+                  : null
+              }
+              totalOpen={openNow.length}
+              onEditYear={() => {
+                setShowQuiz(false);
+                setEditing("year");
+              }}
+              onEditFields={() => {
+                setShowQuiz(false);
+                setFieldsDismissed(false);
+                setEditing("fields");
+              }}
+            />
 
-          {analysis ? (
-            <StrengthBanner band={plan.band} strength={plan.strength} />
-          ) : (
-            <StarterBanner basePath={basePath} hasProfile={hasProfile} />
-          )}
+            {analysis ? (
+              <StrengthBanner band={plan.band} strength={plan.strength} />
+            ) : (
+              <StarterBanner basePath={basePath} hasProfile={hasProfile} />
+            )}
 
-          {/* The two default questions, in order: grade, then field. A student
+            {/* The two default questions, in order: grade, then field. A student
               who doesn't know their field can take the optional interest quiz
               instead. The full analysis questionnaire stays opt-in. Each swap
               animates so the surface feels like one flow, not a jump-cut. */}
-          <AnimatePresence mode="wait" initial={false}>
-            {graduationYear == null || editing === "year" ? (
-              <PromptSwap key="year">
-                <YearPrompt
-                  onPick={(year) => {
-                    setYearOverride(year);
-                    setEditing(null);
-                  }}
-                />
-              </PromptSwap>
-            ) : (faculties.length === 0 && !fieldsDismissed) ||
-              editing === "fields" ? (
-              showQuiz ? (
-                <PromptSwap key="quiz">
-                  <InterestQuiz
-                    onComplete={applyFaculties}
-                    onCancel={() => setShowQuiz(false)}
-                  />
-                </PromptSwap>
-              ) : (
-                <PromptSwap key="field">
-                  <FieldPrompt
-                    initial={faculties}
-                    onChoose={applyFaculties}
-                    onSkip={() => {
-                      setFieldsDismissed(true);
+            <AnimatePresence mode="wait" initial={false}>
+              {graduationYear == null || editing === "year" ? (
+                <PromptSwap key="year">
+                  <YearPrompt
+                    onPick={(year) => {
+                      setYearOverride(year);
                       setEditing(null);
                     }}
-                    onQuiz={() => setShowQuiz(true)}
                   />
                 </PromptSwap>
-              )
-            ) : null}
-          </AnimatePresence>
+              ) : (faculties.length === 0 && !fieldsDismissed) ||
+                editing === "fields" ? (
+                showQuiz ? (
+                  <PromptSwap key="quiz">
+                    <InterestQuiz
+                      onComplete={applyFaculties}
+                      onCancel={() => setShowQuiz(false)}
+                    />
+                  </PromptSwap>
+                ) : (
+                  <PromptSwap key="field">
+                    <FieldPrompt
+                      initial={faculties}
+                      onChoose={applyFaculties}
+                      onSkip={() => {
+                        setFieldsDismissed(true);
+                        setEditing(null);
+                      }}
+                      onQuiz={() => setShowQuiz(true)}
+                    />
+                  </PromptSwap>
+                )
+              ) : null}
+            </AnimatePresence>
+          </section>
 
-          {/* Where the chosen field can lead. The careers layer itself moved to
-              /guide — the whole "kinds of work → where in the world → the way
-              in" story needs a page, not a drawer on the page you came to for
-              deadlines. What stays here is the door to it. */}
-          {faculties.length > 0 && <GuideLink faculties={faculties} />}
-
-          {plan.items.length > 0 ? (
-            <>
-              {/* Search and criteria. Above the shortlist because "I know what
+          {/* ── Zone 2 · what to enter ───────────────────────────────────── */}
+          <section className="mt-8 space-y-4 border-t border-line pt-8">
+            {plan.items.length > 0 ? (
+              <>
+                {/* Search and criteria. Above the shortlist because "I know what
                   I'm looking for" has to be answerable without scrolling past
                   five recommendations first. */}
-              <FilterBar
-                items={inCategory}
-                value={filters}
-                onChange={setFilters}
-                resultCount={visible.length}
-              />
+                <FilterBar
+                  items={inCategory}
+                  value={filters}
+                  onChange={setFilters}
+                  resultCount={visible.length}
+                />
 
-              {/* The shortlist is the answer to "what should I do next", which
+                {/* The shortlist is the answer to "what should I do next", which
                   a filtered list is not — so it steps aside while filtering
                   rather than sitting above unrelated results. */}
-              {!filtering && (
-                <Shortlist
-                  rows={shortlist}
-                  total={openNow.length}
-                  nearestDays={nearest?.daysToDeadline}
-                />
-              )}
+                {!filtering && (
+                  <Shortlist
+                    rows={shortlist}
+                    total={openNow.length}
+                    nearestDays={nearest?.daysToDeadline}
+                  />
+                )}
 
-              {!browsing ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAll(true)}
-                  className="w-full rounded-2xl border border-dashed border-line bg-card py-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-ink/25 hover:text-ink focus-visible:focus-ring"
-                >
-                  Show everything we track for you{" "}
-                  <span data-num className="text-ink-faint">
-                    ({plan.items.length})
-                  </span>
-                </button>
-              ) : (
-                <>
-                  {/* The tabs stay reachable while you scroll a hundred cards —
+                {!browsing ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAll(true)}
+                    className="w-full rounded-2xl border border-dashed border-line bg-card py-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-ink/25 hover:text-ink focus-visible:focus-ring"
+                  >
+                    Show everything we track for you{" "}
+                    <span data-num className="text-ink-faint">
+                      ({plan.items.length})
+                    </span>
+                  </button>
+                ) : (
+                  <>
+                    {/* The tabs stay reachable while you scroll a hundred cards —
                       having to scroll back up to change filter is the thing
                       that makes a long list feel like work. */}
-                  <div className="sticky top-2 z-20 -mx-1 px-1 py-1">
-                    <CategoryTabs
-                      active={category}
-                      onChange={setCategory}
-                      counts={categoryCounts}
-                    />
-                  </div>
-                  {FIT_GROUPS.map((g) => {
-                    const rows = visible.filter((o) => o.fit === g.fit);
-                    if (rows.length === 0) return null;
-                    return (
-                      <FitSection
-                        key={`${g.fit}-${category}`}
-                        title={g.title}
-                        hint={g.hint}
-                        count={rows.length}
-                        rows={rows}
+                    <div className="sticky top-2 z-20 -mx-1 px-1 py-1">
+                      <CategoryTabs
+                        active={category}
+                        onChange={setCategory}
+                        counts={categoryCounts}
                       />
-                    );
-                  })}
-                  {visible.length === 0 && (
-                    <Card>
-                      {filtering ? (
-                        <>
+                    </div>
+                    {FIT_GROUPS.map((g) => {
+                      const rows = visible.filter((o) => o.fit === g.fit);
+                      if (rows.length === 0) return null;
+                      return (
+                        <FitSection
+                          key={`${g.fit}-${category}`}
+                          title={g.title}
+                          hint={g.hint}
+                          count={rows.length}
+                          rows={rows}
+                        />
+                      );
+                    })}
+                    {visible.length === 0 && (
+                      <Card>
+                        {filtering ? (
+                          <>
+                            <p className="text-sm text-ink-soft">
+                              Nothing matches all of that. The narrowest filter
+                              is usually the money one — try dropping a
+                              criterion rather than starting over.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setFilters(NO_FILTERS)}
+                              className="mt-3 inline-flex h-9 items-center rounded-lg border border-line px-3 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
+                            >
+                              Clear the filters
+                            </button>
+                          </>
+                        ) : (
                           <p className="text-sm text-ink-soft">
-                            Nothing matches all of that. The narrowest filter is
-                            usually the money one — try dropping a criterion
-                            rather than starting over.
+                            Nothing in this category matches your profile yet.
+                            Try another tab — everything we track for you is
+                            still in &ldquo;All&rdquo;.
                           </p>
-                          <button
-                            type="button"
-                            onClick={() => setFilters(NO_FILTERS)}
-                            className="mt-3 inline-flex h-9 items-center rounded-lg border border-line px-3 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
-                          >
-                            Clear the filters
-                          </button>
-                        </>
-                      ) : (
-                        <p className="text-sm text-ink-soft">
-                          Nothing in this category matches your profile yet. Try
-                          another tab — everything we track for you is still in
-                          &ldquo;All&rdquo;.
-                        </p>
-                      )}
-                    </Card>
-                  )}
-                </>
-              )}
+                        )}
+                      </Card>
+                    )}
+                  </>
+                )}
 
-              <p className="text-center text-xs text-ink-faint">
-                Dates are indicative — always confirm on the official site before
-                you rely on them.
-              </p>
-            </>
-          ) : (
-            <Card>
-              <p className="text-sm text-ink-soft">
-                <span className="font-medium text-ink">
-                  Add a field of study
-                </span>{" "}
-                in your profile to see competitions and olympiads matched to it.
-              </p>
-            </Card>
+                <p className="text-center text-xs text-ink-faint">
+                  Dates are indicative — always confirm on the official site
+                  before you rely on them.
+                </p>
+              </>
+            ) : (
+              <Card>
+                <p className="text-sm text-ink-soft">
+                  <span className="font-medium text-ink">
+                    Add a field of study
+                  </span>{" "}
+                  in your profile to see competitions and olympiads matched to
+                  it.
+                </p>
+              </Card>
+            )}
+          </section>
+
+          {/* ── Zone 3 · where it leads ──────────────────────────────────── */}
+          {/* The careers layer itself moved to /guide — the whole "kinds of work
+              → where in the world → the way in" story needs a page, not a drawer
+              on the page you came to for deadlines. What stays here is the door
+              to it, and it stands at the foot of the page rather than fourth
+              from the top: it used to sit between the student's answers and the
+              list, which put a link OUT of the section in the way of the thing
+              the section is for. */}
+          {faculties.length > 0 && (
+            <section className="mt-8 border-t border-line pt-8">
+              <GuideLink faculties={faculties} />
+            </section>
           )}
         </>
       ) : (
@@ -464,9 +505,10 @@ function SectionDoor() {
           </p>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-soft">
             Its own space, built around this instead of around your profile
-            score: the short questions that sharpen the match, the interest quiz,
-            what each field leads to, and the cities where that work actually is.
-            This panel stays here — nothing moves out of your report.
+            score: the short questions that sharpen the match, the interest
+            quiz, what each field leads to, and the cities where that work
+            actually is. This panel stays here — nothing moves out of your
+            report.
           </p>
         </div>
         <span className="text-xs font-medium uppercase tracking-wide text-accent-ink">
@@ -651,7 +693,10 @@ function Shortlist({
             className="animate-fade-up"
             // Same 45ms stagger as the public page — the two lists should feel
             // like the same product.
-            style={{ animationDelay: `${i * 45}ms`, animationFillMode: "backwards" }}
+            style={{
+              animationDelay: `${i * 45}ms`,
+              animationFillMode: "backwards",
+            }}
           >
             <OpportunityRow o={o} commit />
           </li>
@@ -710,7 +755,7 @@ function YearPrompt({ onPick }: { onPick: (year: number) => void }) {
         Your last year of school counts as 12, even if your school ends at 11.
       </p>
       {error && (
-        <p role="alert" className="mt-2 text-xs text-reach">
+        <p role="alert" className="mt-2 text-xs text-reach-ink">
           {error} Your list is filtered for this visit either way.
         </p>
       )}
@@ -838,7 +883,9 @@ function CategoryTabs({
             aria-pressed={on}
             onClick={() => onChange(t.key)}
             className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-200 focus-visible:focus-ring ${
-              on ? "bg-accent text-white" : "text-ink-soft hover:bg-surface hover:text-ink"
+              on
+                ? "bg-accent text-white"
+                : "text-ink-soft hover:bg-surface hover:text-ink"
             }`}
           >
             {t.label}
@@ -890,7 +937,9 @@ function FitSection({
             key={o.id}
             // Only the newly revealed rows animate in — re-animating the whole
             // group on every "show more" would read as a flicker.
-            className={i >= limit - PAGE && limit > PAGE ? "animate-fade-up" : undefined}
+            className={
+              i >= limit - PAGE && limit > PAGE ? "animate-fade-up" : undefined
+            }
           >
             <OpportunityRow o={o} />
           </li>
@@ -903,7 +952,10 @@ function FitSection({
           className="mt-3 w-full rounded-xl border border-dashed border-line py-2.5 text-sm font-medium text-ink-soft transition-colors hover:border-ink/25 hover:text-ink focus-visible:focus-ring"
         >
           Show <span data-num>{Math.min(rest, PAGE)}</span> more
-          <span data-num className="text-ink-faint"> ({rest} left)</span>
+          <span data-num className="text-ink-faint">
+            {" "}
+            ({rest} left)
+          </span>
         </button>
       )}
     </Card>

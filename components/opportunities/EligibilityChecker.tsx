@@ -106,8 +106,22 @@ export function EligibilityChecker({
   function pickGrade(g: number) {
     setGrade(g);
     // Let the results paint, then bring them into view.
+    //
+    // The reduced-motion check has to be here, in JS, and that is the whole
+    // point of the line. globals.css sets `scroll-behavior: auto !important`
+    // under the media query, and it does nothing to this call: an explicit
+    // `behavior` in the options wins over the CSS property by spec. So the one
+    // scripted movement in the product was the one piece of motion ignoring the
+    // guard every animation respects — on the public front door, where a
+    // stranger meets us first, and for the reader who has told the operating
+    // system that moving content makes them unwell.
     requestAnimationFrame(() =>
-      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      resultsRef.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      }),
     );
   }
 
@@ -344,7 +358,12 @@ function PageSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-10">
+    // The rule is new; the 40px was always here. This page had the best rhythm
+    // of the three student surfaces already — it is where the pattern the guide
+    // and the signed-in view have now adopted came from — but it drew no lines,
+    // and a stranger meeting the product for the first time is exactly who
+    // should not have to infer where one answer ends and the next begins.
+    <section className="mt-10 border-t border-line pt-9">
       <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h3 className="flex items-baseline gap-2 text-base font-semibold tracking-tight text-ink">
           {title}

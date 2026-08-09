@@ -75,8 +75,17 @@ export function WorkList({ groups }: { groups: WorkGroup[] }) {
           scores,
         );
         return (
-          <section key={g.faculty} className="space-y-2.5">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
+          // A group label used to be 12px and `ink-faint` — smaller and paler
+          // than the 14px body inside the very cards it was labelling, which is
+          // a label the eye finds after the content instead of before it. It is
+          // the heading of eight sections in a 39-card list, so it gets a rule
+          // and a size above what it groups: 48px and a hairline between fields,
+          // 10px between cards inside one.
+          <section
+            key={g.faculty}
+            className="space-y-3 border-t border-line pt-6"
+          >
+            <h2 className="text-base font-semibold tracking-tight text-ink">
               {g.label}
             </h2>
             <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

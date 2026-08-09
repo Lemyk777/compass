@@ -138,7 +138,7 @@ function PostRow({
           <p className="flex flex-wrap items-center gap-2">
             <span className="text-base font-semibold text-ink">{post.name}</span>
             {post.published ? (
-              <span className="rounded-full bg-likely-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2C6B4D]">
+              <span className="rounded-full bg-likely-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-likely-ink">
                 Live
               </span>
             ) : (
@@ -183,7 +183,7 @@ function PostRow({
         </div>
       </div>
       {error && (
-        <p role="alert" className="mt-2 text-xs text-reach">
+        <p role="alert" className="mt-2 text-xs text-reach-ink">
           {error}
         </p>
       )}
@@ -253,7 +253,7 @@ function ProfileForm({ partner }: { partner: Partner }) {
       </p>
 
       {error && (
-        <p role="alert" className="text-sm text-reach">
+        <p role="alert" className="text-sm text-reach-ink">
           {error}
         </p>
       )}

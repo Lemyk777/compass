@@ -180,7 +180,7 @@ export default async function LandingPage() {
             </div>
 
             <p
-              className="rise-in mt-5 text-sm text-ink/45"
+              className="rise-in mt-5 text-sm text-ink-faint"
               style={{ animationDelay: "0.24s" }}
             >
               Free, all of it. Applying to university too?{" "}
@@ -261,7 +261,12 @@ export default async function LandingPage() {
                 key={p.n}
                 className="rounded-2xl border border-white/10 bg-white/[0.04] p-6"
               >
-                <span data-num className="font-display text-sm font-semibold text-white/30">
+                {/* white/50, not white/30. At 30% these ordinals sat at 2.69:1
+                    against the tinted card on the dark band — they read as a
+                    smudge rather than as "this is the first of three", which is
+                    the only job they have. 50% is 5.0:1 and still clearly
+                    subordinate to the heading beside it. */}
+                <span data-num className="font-display text-sm font-semibold text-white/50">
                   {p.n}
                 </span>
                 <h3 className="mt-3 text-lg font-semibold tracking-tight text-white">
@@ -407,7 +412,7 @@ export default async function LandingPage() {
 
       <section className="w-full border-y border-black/5 bg-card py-16">
         <div className="w-full px-6 md:px-12 lg:px-20">
-          <p className="mb-10 text-center text-xs font-semibold uppercase tracking-widest text-ink/40">
+          <p className="mb-10 text-center text-xs font-semibold uppercase tracking-widest text-ink-faint">
             Schools the report benchmarks you against
           </p>
           <UniversityLogos logos={universityLogos} />
@@ -443,7 +448,7 @@ export default async function LandingPage() {
 
       <FinalCTA signedIn={!!session} />
 
-      <footer className="mx-auto max-w-6xl px-6 py-10 text-sm font-light text-ink/40">
+      <footer className="mx-auto max-w-6xl px-6 py-10 text-sm font-light text-ink-faint">
         <div className="flex flex-col items-start justify-between gap-4 border-t border-black/10 pt-8 sm:flex-row sm:items-center">
           <Logo className="text-ink/80" />
           <nav className="flex flex-wrap items-center gap-5">
@@ -490,7 +495,7 @@ function Stat({
         {value}
       </p>
       <p className="mt-2 text-sm font-medium text-ink">{label}</p>
-      <p className="mt-1.5 text-pretty text-sm font-light leading-relaxed text-ink/55">
+      <p className="mt-1.5 text-pretty text-sm font-light leading-relaxed text-ink-faint">
         {note}
       </p>
     </div>

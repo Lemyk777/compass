@@ -177,8 +177,8 @@ export default function GuideHubPage({
 
       <PageContents parts={parts} />
 
-      {parts.map((part) => (
-        <GuidePart key={part.id} id={part.id} title={part.title}>
+      {parts.map((part, i) => (
+        <GuidePart key={part.id} id={part.id} step={i + 1} title={part.title}>
           {part.body}
         </GuidePart>
       ))}

@@ -248,7 +248,7 @@ function ShieldGlyph() {
 // Coral-tinted so the destructive action reads as distinct even before hover.
 function LogoutGlyph() {
   return (
-    <svg className={`${glyphCls} text-reach`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg className={`${glyphCls} text-reach-ink`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3" />
       <path d="M10 17 5 12l5-5" />
       <path d="M5 12h11" />

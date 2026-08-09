@@ -104,7 +104,7 @@ function KoreaProgramCard({ program: p }: { program: KoreaProgramAnalysis }) {
         <div className="flex flex-wrap gap-1.5">
           <LanguageBadge program={p} />
           {p.interview_required && (
-            <span className="rounded bg-target-soft px-1.5 py-0.5 text-[10px] font-medium text-target">
+            <span className="rounded bg-target-soft px-1.5 py-0.5 text-[10px] font-medium text-target-ink">
               Interview Stage
             </span>
           )}
@@ -142,15 +142,15 @@ function LanguageBadge({ program: p }: { program: KoreaProgramAnalysis }) {
   const config = {
     meets: {
       label: `${bar} · Met ✓`,
-      className: "bg-likely-soft text-likely",
+      className: "bg-likely-soft text-likely-ink",
     },
     below: {
       label: `${bar} · Below Bar ⚠`,
-      className: "bg-reach-soft text-reach",
+      className: "bg-reach-soft text-reach-ink",
     },
     unknown: {
       label: p.topik_required != null ? `${bar} · Needed` : "English Score Needed",
-      className: "bg-target-soft text-target",
+      className: "bg-target-soft text-target-ink",
     },
   };
   const c = config[p.language];
@@ -163,7 +163,7 @@ function LanguageBadge({ program: p }: { program: KoreaProgramAnalysis }) {
 
 function AutoScholarshipBadge() {
   return (
-    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[10px] font-medium text-likely">
+    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[10px] font-medium text-likely-ink">
       Full Ride for Every Admit
     </span>
   );

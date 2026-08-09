@@ -4,6 +4,7 @@ import Link from "@/components/ui/Link";
 import {
   DetailShell,
   ForYou,
+  GuideBlock,
   GuidePart,
   PageContents,
 } from "@/components/guide/parts";
@@ -88,7 +89,7 @@ function DestinationBody({
       body: (
         <>
           <section className="rounded-2xl border border-ivy/25 bg-ivy-soft/40 p-5 sm:p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.1em] text-ivy-ink/80">
+            <h3 className="text-sm font-semibold text-ivy-ink">
               What only this place gives you
             </h3>
             <p className="mt-2 max-w-[60ch] text-base leading-relaxed text-ink">
@@ -109,25 +110,25 @@ function DestinationBody({
     {
       id: "money",
       title: "Money",
-      body: <Block title="How paying for it works">{d.money}</Block>,
+      body: <GuideBlock label="How paying for it works">{d.money}</GuideBlock>,
     },
     {
       id: "getting-in",
       title: "Getting in",
       body: (
         <>
-          <Block title="What they weigh">{d.admissions}</Block>
+          <GuideBlock label="What they weigh">{d.admissions}</GuideBlock>
           {/* Timing is the way a strong applicant most often loses a place, and
               unlike merit it is entirely preventable by knowing it early. */}
-          <Block title="The cycle — when things actually happen">
+          <GuideBlock label="The cycle — when things actually happen">
             {d.applicationCycle}
-          </Block>
-          <Block title="How an application is actually read here">
+          </GuideBlock>
+          <GuideBlock label="How an application is actually read here">
             {d.howTheyRead}
-          </Block>
-          <Block title="What applicants from this region get wrong">
+          </GuideBlock>
+          <GuideBlock label="What applicants from this region get wrong">
             {d.commonMistake}
-          </Block>
+          </GuideBlock>
         </>
       ),
     },
@@ -136,14 +137,16 @@ function DestinationBody({
       title: "Living there, and after",
       body: (
         <>
-          <Block title="What studying there is like">{d.studyingThere}</Block>
-          <Block title="After you graduate">
+          <GuideBlock label="What studying there is like">
+            {d.studyingThere}
+          </GuideBlock>
+          <GuideBlock label="After you graduate">
             {d.afterStudy}
             <span className="mt-1.5 block text-xs text-ink-faint">
               Post-study work rules are set by politics and change. Check the
               rule for your own graduation year before you plan around it.
             </span>
-          </Block>
+          </GuideBlock>
         </>
       ),
     },
@@ -221,7 +224,9 @@ function DestinationBody({
                     {h.what}
                   </span>
                   <span className="mt-2 line-clamp-2 text-xs leading-relaxed text-ink-faint">
-                    <span className="font-medium text-ink-soft">The catch:</span>{" "}
+                    <span className="font-medium text-ink-soft">
+                      The catch:
+                    </span>{" "}
                     {h.catch}
                   </span>
                 </Link>
@@ -244,7 +249,9 @@ function DestinationBody({
       aside={
         <>
           <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-ink">Strongest fields here</h2>
+            <h2 className="text-sm font-semibold text-ink">
+              Strongest fields here
+            </h2>
             <ul className="mt-2 flex flex-wrap gap-1.5">
               {d.fields.map((f) => (
                 <li
@@ -267,9 +274,9 @@ function DestinationBody({
               Compare {d.name} with&hellip;
             </h2>
             <p className="mt-1 text-sm text-ink-soft">
-              Nobody chooses a country in isolation. Pick one and the two are laid
-              out side by side — money, admissions, what happens after you graduate,
-              and who each one is wrong for.
+              Nobody chooses a country in isolation. Pick one and the two are
+              laid out side by side — money, admissions, what happens after you
+              graduate, and who each one is wrong for.
             </p>
             <ul className="mt-3 flex flex-wrap gap-2">
               {others.map((o) => (
@@ -309,8 +316,8 @@ function DestinationBody({
 
       <PageContents parts={parts} />
 
-      {parts.map((part) => (
-        <GuidePart key={part.id} id={part.id} title={part.title}>
+      {parts.map((part, i) => (
+        <GuidePart key={part.id} id={part.id} step={i + 1} title={part.title}>
           {part.body}
         </GuidePart>
       ))}
@@ -318,6 +325,14 @@ function DestinationBody({
   );
 }
 
+/**
+ * One half of the honesty pair. Both halves are tinted, and tinted equally: the
+ * two used to be a white card beside a `bg-surface/60` card, which is the same
+ * card twice as far as a reader is concerned — the one comparison the page
+ * exists to make was the least visible thing on it. Equal weight is the rule
+ * (five upsides and one caveat is a brochure); equal weight at zero contrast is
+ * just a rule nobody can see being followed.
+ */
 function Column({
   title,
   items,
@@ -330,7 +345,9 @@ function Column({
   return (
     <div
       className={`rounded-2xl border p-5 ${
-        tone === "good" ? "border-line bg-card" : "border-line bg-surface/60"
+        tone === "good"
+          ? "border-accent/35 bg-accent-soft/25"
+          : "border-reach/30 bg-reach-soft/30"
       }`}
     >
       <h3 className="text-sm font-semibold text-ink">{title}</h3>
@@ -350,23 +367,6 @@ function Column({
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-function Block({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-line bg-card p-5">
-      <h3 className="text-sm font-semibold text-ink">{title}</h3>
-      <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
-        {children}
-      </p>
     </div>
   );
 }

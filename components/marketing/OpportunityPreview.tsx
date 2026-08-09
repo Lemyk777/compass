@@ -134,9 +134,9 @@ function Row({ o, today }: { o: Competition; today: Date }) {
               data-num
               className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${
                 days <= 14
-                  ? "bg-reach-soft text-reach"
+                  ? "bg-reach-soft text-reach-ink"
                   : days <= 30
-                    ? "bg-target-soft text-target"
+                    ? "bg-target-soft text-target-ink"
                     : "bg-likely-soft text-ivy-ink"
               }`}
             >
@@ -178,9 +178,9 @@ function CostChip({ tone, label }: { tone: string; label: string }) {
     tone === "free"
       ? "bg-ivy-soft text-ivy-ink"
       : tone === "partial"
-        ? "bg-target-soft text-target"
+        ? "bg-target-soft text-target-ink"
         : tone === "paid"
-          ? "bg-reach-soft text-reach"
+          ? "bg-reach-soft text-reach-ink"
           : "bg-card text-ink-faint";
   return (
     <span

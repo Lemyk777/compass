@@ -422,7 +422,7 @@ function Funnel({
               <span data-num className="text-ink-soft">
                 {r.count}
                 {i > 0 && drop > 0 && (
-                  <span className="ml-2 text-xs text-reach">−{drop}%</span>
+                  <span className="ml-2 text-xs text-reach-ink">−{drop}%</span>
                 )}
               </span>
             </div>

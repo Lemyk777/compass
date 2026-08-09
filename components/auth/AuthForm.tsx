@@ -230,7 +230,7 @@ export function AuthForm({
         {error && (
           <p
             role="alert"
-            className="rounded-lg bg-reach-soft px-3 py-2 text-sm text-reach"
+            className="rounded-lg bg-reach-soft px-3 py-2 text-sm text-reach-ink"
           >
             {error}
           </p>

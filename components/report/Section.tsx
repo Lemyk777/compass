@@ -34,6 +34,13 @@ export function Section({
   );
 }
 
+// No hover lift, and this is not a nitpick. A card that rises under the cursor
+// is making a promise — "I am one thing, and clicking me does something" — and
+// almost none of these are clickable. Every panel on Opportunities and in the
+// report lifted identically to the ones that really are links, so the one
+// affordance the product had for "this leads somewhere" meant nothing. Links
+// keep their own hover (border-accent, a half-step translate); a container that
+// merely holds content stays still.
 export function Card({
   children,
   className = "",
@@ -44,7 +51,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-line/70 bg-card p-5 shadow-sm transition-shadow hover:shadow-md",
+        "rounded-2xl border border-line/70 bg-card p-5 shadow-sm",
         className
       )}
     >

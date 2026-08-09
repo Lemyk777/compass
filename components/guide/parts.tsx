@@ -146,7 +146,11 @@ export function GuideCard({
         <span className="min-w-0">
           <span
             className="text-sm font-semibold text-ink"
-            style={transitionName ? { viewTransitionName: transitionName } : undefined}
+            style={
+              transitionName
+                ? { viewTransitionName: transitionName }
+                : undefined
+            }
           >
             {title}
           </span>
@@ -171,9 +175,7 @@ export function GuideCard({
       {badge && (
         <span
           className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-            emphasis
-              ? "bg-accent text-white"
-              : "bg-accent-soft text-accent-ink"
+            emphasis ? "bg-accent text-white" : "bg-accent-soft text-accent-ink"
           }`}
         >
           {badge}
@@ -271,13 +273,20 @@ export function DetailShell({
           </p>
         )}
       </div>
+      {/* `space-y-8` and not `space-y-4`, and it is half of the page's rhythm.
+          The other half is the rule `GuidePart` carries: 32px here plus its own
+          32px of top padding puts 64px and a hairline between two topics —
+          balanced, half above the line and half below — against 20px between
+          two blocks inside one. It used to be 16px against 12px: a 1.33:1
+          ratio, which is proximity switched off, and it is why nineteen boxes
+          read as one flat list rather than as six answers to six questions. */}
       {aside ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start lg:gap-8">
-          <div className="min-w-0 space-y-4">{children}</div>
+          <div className="min-w-0 space-y-8">{children}</div>
           <aside className="space-y-3 lg:sticky lg:top-20">{aside}</aside>
         </div>
       ) : (
-        <div className="space-y-4">{children}</div>
+        <div className="space-y-8">{children}</div>
       )}
     </div>
   );
@@ -297,17 +306,41 @@ export function DetailShell({
  */
 export function GuidePart({
   id,
+  step,
   title,
   children,
 }: {
   id: string;
+  /**
+   * Its place in the page's own map. `PageContents` has numbered the parts 1..n
+   * at the top of every subject page for as long as it has existed, and the
+   * sections themselves carried no number — so the map promised a structure the
+   * page then refused to confirm. Passed from the same array both of them read.
+   */
+  step?: number;
   title: string;
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-24">
-      <h2 className="text-lg font-semibold text-ink">{title}</h2>
-      <div className="mt-2.5 space-y-3">{children}</div>
+    // The rule is the point. A topic change used to be announced by 16px of air
+    // and an 18px heading — 4px larger than the headings of its own children —
+    // which on a phone is a 2%-of-a-screen signal for "a new subject starts
+    // here". Now: a hairline the full width of the column, 32px before the
+    // heading, the number the contents list promised, and 22px of type.
+    <section id={id} className="scroll-mt-24 border-t border-line pt-8">
+      <h2 className="flex items-center gap-2.5 text-xl font-semibold tracking-tight text-ink sm:text-[1.375rem]">
+        {step != null && (
+          <span
+            data-num
+            aria-hidden
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white"
+          >
+            {step}
+          </span>
+        )}
+        {title}
+      </h2>
+      <div className="mt-4 space-y-5">{children}</div>
     </section>
   );
 }
@@ -405,6 +438,18 @@ export function ForYou({
  * Its label is an `h3`: these sit inside a `GuidePart`, and a page whose
  * headings all claim the same level is a wall to a screen reader even when it
  * looks structured on screen.
+ *
+ * **A plain block is bare, and that is the fix for "wall of cards".** A country
+ * profile drew nineteen bordered boxes, fifteen of them pixel-identical — same
+ * white, same `#E6E2DA`, same 20px radius, same padding — spending a fifth of
+ * the page's height on card chrome and telling a reader nothing, because a
+ * surface that means everything means nothing. Prose is not an object; it does
+ * not need a container. Only a block that makes a CLAIM about the reader keeps
+ * a tint, which is what makes the catch visible at a glance instead of uniform.
+ *
+ * Hierarchy inside a bare block therefore comes from weight and colour rather
+ * than size — 14px/600 on `ink` over 14px/400 on `ink-soft`. Size is spent one
+ * level up, where `GuidePart` now has 22px, a number and a rule to itself.
  */
 export function GuideBlock({
   label,
@@ -415,23 +460,35 @@ export function GuideBlock({
   tone?: "plain" | "warn" | "good";
   children: React.ReactNode;
 }) {
-  const cls =
-    tone === "warn"
-      ? "border-reach/30 bg-reach-soft/40"
-      : tone === "good"
-        ? "border-accent/35 bg-accent-soft/25"
-        : "border-line bg-card";
+  const heading = <h3 className="text-sm font-semibold text-ink">{label}</h3>;
+  // Capped independently of the container: widening the shell must buy more
+  // columns, never longer lines. Unbounded, these ran to 131 characters on a
+  // 1900px screen — nearly double the readable measure.
+  const body = (
+    <div className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+      {children}
+    </div>
+  );
+
+  if (tone === "plain") {
+    return (
+      <section>
+        {heading}
+        {body}
+      </section>
+    );
+  }
+
   return (
-    <section className={`rounded-2xl border p-4 sm:p-5 ${cls}`}>
-      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
-        {label}
-      </h3>
-      {/* Capped independently of the container: widening the shell must buy
-          more columns, never longer lines. Unbounded, these ran to 131
-          characters on a 1900px screen — nearly double the readable measure. */}
-      <div className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
-        {children}
-      </div>
+    <section
+      className={`rounded-2xl border p-4 sm:p-5 ${
+        tone === "warn"
+          ? "border-reach/30 bg-reach-soft/40"
+          : "border-accent/35 bg-accent-soft/25"
+      }`}
+    >
+      {heading}
+      {body}
     </section>
   );
 }

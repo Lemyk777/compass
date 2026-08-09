@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "@/components/ui/Link";
 import {
   DetailShell,
+  ForYou,
   GuideBlock,
   GuidePart,
   PageContents,
@@ -127,9 +128,7 @@ export default function GuideAreaPage({
               hides every decision that actually matters — when to specialise,
               what the degree is like, and what the first job is really doing. */}
           <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
-              Stage by stage
-            </h3>
+            <h3 className="text-sm font-semibold text-ink">Stage by stage</h3>
             <ol className="mt-3 space-y-3">
               {(
                 [
@@ -254,10 +253,18 @@ export default function GuideAreaPage({
         </>
       }
     >
+      {/* The answer before the map, which is the shape every other subject page
+          in the guide already had. This one opened on its table of contents:
+          a country tells you who it suits and who should look elsewhere, a city
+          tells you who thrives there, and an area of work told you neither — so
+          the only part of the page addressed to the reader was missing from
+          precisely the layer a student meets first. */}
+      <ForYou suits={area.suitsYou} avoid={area.notForYou} />
+
       <PageContents parts={parts} />
 
-      {parts.map((part) => (
-        <GuidePart key={part.id} id={part.id} title={part.title}>
+      {parts.map((part, i) => (
+        <GuidePart key={part.id} id={part.id} step={i + 1} title={part.title}>
           {part.body}
         </GuidePart>
       ))}
