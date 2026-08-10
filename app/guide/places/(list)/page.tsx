@@ -4,7 +4,16 @@ import { GuideCard, ListHead, NextStep, SectionIntro } from "@/components/guide/
 import Link from "@/components/ui/Link";
 import { fieldsSuffix, withFields } from "@/lib/data/guide-fields";
 import { guideMorph, guideSection } from "@/lib/data/guide-sections";
+import { FACULTY_LABEL } from "@/lib/data/faculties";
 import { destinationsForFaculties } from "@/lib/data/study-destinations";
+import { HUBS } from "@/lib/data/world";
+import { GuideFilterBar } from "@/components/guide/GuideFilterBar";
+import {
+  filterGuideRows,
+  guideFacets,
+  parseGuideFilters,
+  type GuideRow,
+} from "@/lib/data/guide-filter";
 import { guideView } from "@/lib/guide/student-fields";
 import { pageMeta } from "@/lib/seo";
 
@@ -33,7 +42,45 @@ export default async function GuidePlacesPage({
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const { signedIn, fields, stated, defaults } = await guideView(searchParams);
-  const destinations = destinationsForFaculties(fields);
+
+  // Two narrowings, and they are not the same thing. `?f=` is the section-wide
+  // subject filter and it applies first — it is what the student carries
+  // between steps. The panel below narrows THIS LIST only, so its counts have
+  // to be computed over what the field filter already left.
+  const byField = destinationsForFaculties(fields);
+  const regionOf = new Map(HUBS.map((h) => [h.id, h.region]));
+  const rows: GuideRow[] = byField.map((d) => ({
+    id: d.id,
+    // Every destination profiles at least one city, and a test enforces that
+    // each hub is claimed by exactly one country — so the first hub's region is
+    // the country's region.
+    region: regionOf.get(d.hubs[0]) ?? "europe",
+    // Searched over the page's CONTENT, not just its card front — which is
+    // where this differs from the opportunities search on purpose. There the
+    // rule is "only what is on the card", because the card is the whole
+    // product. Here the complaint being answered is "I had to open all
+    // seventeen to find out", so "free", "medicine" or "scholarship" has to
+    // reach the sentence inside the page that actually says it.
+    text: [
+      d.name,
+      d.where,
+      d.oneLine,
+      d.unique,
+      d.money,
+      d.suitsYou,
+      d.notForYou,
+      ...d.strengths,
+      ...d.tradeoffs,
+      ...d.fields.map((f) => FACULTY_LABEL[f]),
+    ]
+      .join(" ")
+      .toLowerCase(),
+    modelled: d.modelled,
+  }));
+  const filters = parseGuideFilters(searchParams);
+  const facets = guideFacets(rows, filters);
+  const keep = new Set(filterGuideRows(rows, filters).map((r) => r.id));
+  const destinations = byField.filter((d) => keep.has(d.id));
 
   return (
     <div className="space-y-6">
@@ -42,7 +89,7 @@ export default async function GuidePlacesPage({
           step={SECTION.step}
           title={SECTION.title}
           blurb={SECTION.blurb}
-          count={`${destinations.length} countries. Each page states what it costs you before what it gives you, and names who should go somewhere else instead.`}
+          count={`${byField.length} countries. Each page states what it costs you before what it gives you, and names who should go somewhere else instead.`}
         />}
         aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
       />
@@ -67,6 +114,14 @@ export default async function GuidePlacesPage({
           &rarr;
         </span>
       </Link>
+
+      <GuideFilterBar
+        facets={facets}
+        noun="countries"
+        nounOne="country"
+        offerModelled
+        total={destinations.length}
+      />
 
       <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {destinations.map((d) => (

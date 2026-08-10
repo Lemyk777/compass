@@ -369,12 +369,21 @@ export function PageContents({
       <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
         On this page
       </h2>
-      <ol className="mt-2 flex flex-wrap gap-1.5">
+      {/* One scrolling row on a phone, wrapping from `sm`.
+          Wrapping, these chips carry long titles ("Research and writing that
+          publishes you"), so each one took a row of its own: six parts made a
+          344px map on an 812px screen — 42% of the viewport spent telling a
+          reader what was below it, which pushed the first actual section past
+          the fold. Same treatment the section tabs and the category tabs
+          already use, and for the same reason. The chips keep their 44px.
+          `-mx-1 px-1` so a focus ring on the first chip is not clipped by the
+          scroll container. */}
+      <ol className="-mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {parts.map((part, i) => (
-          <li key={part.id}>
+          <li key={part.id} className="shrink-0">
             <a
               href={`#${part.id}`}
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring"
+              className="inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface px-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring sm:whitespace-normal"
             >
               <span aria-hidden className="text-xs text-ink-faint">
                 {i + 1}
@@ -510,17 +519,26 @@ export function NextStep({
     return (
       <Link
         href="/opportunities"
-        className="flex items-center justify-between gap-3 rounded-2xl bg-ink p-5 text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+        // `bg-accent`, not `bg-ink`. `ink` is nearly white in dark mode, so a
+        // p-5 slab of it was a 336×106 white block on a dark page — the classic
+        // inversion trap, and at CARD size it reads as broken rather than as a
+        // primary button. The rule that came out of it: `bg-ink text-surface` is
+        // fine for a control (a pill, a badge, an h-10 button), never for a
+        // surface. Anything that fills an area uses the accent, which themes.
+        className="group flex items-center justify-between gap-3 rounded-2xl bg-accent p-5 text-on-fill transition-[background-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lift focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none"
       >
         <span>
           <span className="text-sm font-semibold">
             See what you can enter this year
           </span>
-          <span className="mt-0.5 block text-sm text-surface/70">
+          <span className="mt-0.5 block text-sm text-on-fill/75">
             The catalog, filtered to your age and your fields.
           </span>
         </span>
-        <span aria-hidden className="shrink-0">
+        <span
+          aria-hidden
+          className="shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
+        >
           &rarr;
         </span>
       </Link>

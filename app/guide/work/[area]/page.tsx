@@ -236,17 +236,20 @@ export default function GuideAreaPage({
 
           <Link
             href="/opportunities"
-            className="flex items-start justify-between gap-3 rounded-2xl bg-ink p-5 text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+            className="group flex items-start justify-between gap-3 rounded-2xl bg-accent p-5 text-on-fill transition-[background-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lift focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none"
           >
             <span>
               <span className="text-sm font-semibold">
                 The first step towards this, this year
               </span>
-              <span className="mt-0.5 block text-sm text-surface/70">
+              <span className="mt-0.5 block text-sm text-on-fill/75">
                 What you can actually enter now, at your age.
               </span>
             </span>
-            <span aria-hidden className="shrink-0">
+            <span
+              aria-hidden
+              className="shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
+            >
               &rarr;
             </span>
           </Link>

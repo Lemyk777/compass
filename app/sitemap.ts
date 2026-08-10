@@ -4,6 +4,7 @@ import { allCareerAreas, areaSlug } from "@/lib/data/careers";
 import { GUIDE_SECTIONS } from "@/lib/data/guide-sections";
 import { STUDY_DESTINATIONS } from "@/lib/data/study-destinations";
 import { HUBS } from "@/lib/data/world";
+import { COMPETITIONS } from "@/lib/data/competitions-data";
 
 // Every public page, listed for crawlers.
 //
@@ -45,6 +46,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // The front door, and the product it opens on.
     "/",
     "/opportunities",
+
+    // Every opportunity at its own address. These are the pages students
+    // actually send each other, and each one answers a query someone types
+    // ("who can enter the AMC", "is Kaggle free") — which the list page,
+    // being one document, cannot rank for.
+    //
+    // The CURATED catalog only. A partner's live post also has a page, but
+    // reading those here would turn a static sitemap into a per-request query
+    // against Supabase — the same reason `/partners/[id]` is absent. They are
+    // linked from the list and from the partner's own profile.
+    ...COMPETITIONS.map((c) => `/opportunities/${c.id}`),
 
     // The guide: its index, its four steps, then every subject inside them.
     "/guide",

@@ -12,6 +12,7 @@ import { FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { regionLabel } from "@/lib/data/geo";
 import { downloadIcs } from "@/lib/calendar/ics";
 import { PartnerBadge, VerifiedExplainer } from "@/components/partners/PartnerBadge";
+import { ShareLink } from "@/components/opportunities/ShareLink";
 
 // The detail panel behind every opportunity card.
 //
@@ -315,6 +316,23 @@ export function OpportunityDetail({
               Add the deadline to my calendar
             </button>
           )}
+          {/* Shares OUR page for this opportunity, not the organiser's link.
+              The organiser's page does not say who can enter, what it costs or
+              when it closes — those four facts are the thing worth sending, and
+              they are what the shared card unfurls into. */}
+          <ShareLink path={`/opportunities/${o.id}`} />
+        </div>
+        {/* The modal's own address, so this panel is not a dead end. A sheet
+            cannot be sent, bookmarked, or reached by Back — the guide turned
+            its sheets into pages for exactly this reason, and this is the door
+            through to the same page here. */}
+        <div className="border-t border-line px-5 py-3 sm:px-6">
+          <a
+            href={`/opportunities/${o.id}`}
+            className="inline-flex min-h-11 items-center text-xs font-medium text-ink-faint underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+          >
+            Open this on its own page
+          </a>
         </div>
       </div>
     </div>

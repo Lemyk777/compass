@@ -7,10 +7,18 @@ import {
   NextStep,
   SectionIntro,
 } from "@/components/guide/parts";
+import { FACULTY_LABEL } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
 import { guideMorph, guideSection } from "@/lib/data/guide-sections";
 import { hubsByCountry, REGION_LABEL } from "@/lib/data/world";
 import { destinationForHub } from "@/lib/data/study-destinations";
+import { GuideFilterBar } from "@/components/guide/GuideFilterBar";
+import {
+  filterGuideRows,
+  guideFacets,
+  parseGuideFilters,
+  type GuideRow,
+} from "@/lib/data/guide-filter";
 import { guideView } from "@/lib/guide/student-fields";
 import { pageMeta } from "@/lib/seo";
 
@@ -19,13 +27,12 @@ import { pageMeta } from "@/lib/seo";
 // student to weigh Berlin and then zoomed out to Germany a step later.
 //
 // The step survived that reordering rather than being folded into the country
-// pages, and the reason is in the data: 9 of the 22 hubs sit in countries we do
-// not profile, and four of those — Almaty, Astana, Tashkent, Tbilisi — are the
-// home region. Nesting cities strictly under country profiles would have
-// deleted our own students' cities from the map.
+// pages, because "which country" and "which city inside it" are different
+// questions and a student asks them in that order. Containment is expressed by
+// the grouping, not by deleting the step.
 //
-// Pure server rendering: this list has no interactive state at all now that the
-// filter lives in the URL.
+// Pure server rendering: both filters — the section-wide `?f=` and this list's
+// own panel — live in the URL, so the page has no interactive state at all.
 
 const SECTION = guideSection("cities");
 
@@ -42,7 +49,40 @@ export default async function GuideCitiesPage({
 }) {
   const { signedIn, fields, stated, defaults } = await guideView(searchParams);
 
-  const groups = hubsByCountry(fields);
+  const allGroups = hubsByCountry(fields);
+  const totalAll = allGroups.reduce((n, g) => n + g.hubs.length, 0);
+
+  // Filter the cities, then rebuild the grouping around what survived — a
+  // country whose only city was filtered out must not stay behind as an empty
+  // heading. `?f=` has already been applied by `hubsByCountry`.
+  const rows: GuideRow[] = allGroups.flatMap((g) =>
+    g.hubs.map((h) => ({
+      id: h.id,
+      region: h.region,
+      // The page's content, not just the card front — see the note on the
+      // countries list. "chips", "housing" or "scholarship" should find the
+      // city whose page says it.
+      text: [
+        h.city,
+        h.country,
+        h.what,
+        h.catch,
+        h.route,
+        h.money,
+        h.language,
+        h.whoThrives,
+        ...h.fields.map((f) => FACULTY_LABEL[f]),
+      ]
+        .join(" ")
+        .toLowerCase(),
+    })),
+  );
+  const filters = parseGuideFilters(searchParams);
+  const facets = guideFacets(rows, filters);
+  const keep = new Set(filterGuideRows(rows, filters).map((r) => r.id));
+  const groups = allGroups
+    .map((g) => ({ ...g, hubs: g.hubs.filter((h) => keep.has(h.id)) }))
+    .filter((g) => g.hubs.length > 0);
   const total = groups.reduce((n, g) => n + g.hubs.length, 0);
 
   return (
@@ -53,19 +93,27 @@ export default async function GuideCitiesPage({
             step={SECTION.step}
             title={SECTION.title}
             blurb={SECTION.blurb}
-            count={`${total} cities in ${groups.length} countries, home region first. A city with only good news listed would be an advert, so every one of these carries its catch.`}
+            count={`${totalAll} cities in ${allGroups.length} countries, home region first. A city with only good news listed would be an advert, so every one of these carries its catch.`}
           />
         }
         aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
       />
 
+      <GuideFilterBar
+        facets={facets}
+        noun="cities"
+        nounOne="city"
+        total={total}
+      />
+
       {/* The GROUPS are what flows into columns here, not the cards inside them.
-          Grouping by country is right — a city is inside one — but it cut 22
-          cities into 19 groups, and 15 of those hold a single city. Laying the
-          cards out three-up therefore did nothing at all: each group was one
-          card on its own row, and the page just got taller and more repetitive
-          the wider the screen was. Flowing the groups themselves means a wide
-          screen shows five countries where it used to show one. */}
+          Grouping by country is right — a city is inside one — but it cuts the
+          cities into as many groups as there are countries, and most of those
+          hold a single city. Laying the cards out three-up therefore did
+          nothing at all: each group was one card on its own row, and the page
+          just got taller and more repetitive the wider the screen was. Flowing
+          the groups themselves means a wide screen shows five countries where
+          it used to show one. */}
       <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {groups.map((g) => {
           // The country's own profile, where one exists. Plenty of these have
