@@ -185,8 +185,8 @@ export function OpportunityCard({
           onClick={() => setDetail(true)}
           className={
             compact
-              ? "inline-flex h-9 items-center rounded-lg bg-ink px-3 text-xs font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
-              : "inline-flex h-11 items-center rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+              ? "inline-flex h-9 items-center rounded-lg bg-ink px-3 text-xs font-medium text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+              : "inline-flex h-11 items-center rounded-xl bg-ink px-4 text-sm font-medium text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
           }
         >
           What it is, and what it costs

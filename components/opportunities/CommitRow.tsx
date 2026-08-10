@@ -133,7 +133,7 @@ function CommitRow({ o }: { o: Opportunity }) {
         <button
           type="button"
           onClick={() => setAsking(true)}
-          className="rounded-lg bg-ink px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+          className="rounded-lg bg-ink px-3 py-1.5 text-xs font-medium text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
         >
           I&rsquo;m doing this
         </button>

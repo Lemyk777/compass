@@ -136,7 +136,7 @@ function CountryToggle({
             aria-pressed={on}
             onClick={() => onChange(code)}
             className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus-visible:focus-ring ${
-              on ? "bg-accent text-white" : "text-ink-soft hover:text-ink"
+              on ? "bg-accent text-on-fill" : "text-ink-soft hover:text-ink"
             }`}
           >
             <Flag code={code} />
@@ -285,7 +285,7 @@ function RowItem({
           <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink">
             {r.name}
             {me && (
-              <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-white">
+              <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-on-fill">
                 You
               </span>
             )}
@@ -438,7 +438,7 @@ function Avatar({ name, highlight }: { name: string; highlight?: boolean }) {
   return (
     <span
       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-        highlight ? "bg-accent text-white" : "bg-accent-soft text-accent-ink"
+        highlight ? "bg-accent text-on-fill" : "bg-accent-soft text-accent-ink"
       }`}
     >
       {initials || "?"}

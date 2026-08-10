@@ -26,9 +26,12 @@ import { ACCENT } from "@/lib/tiers";
  * read a lot is visibly different from a day where many people read one page.
  */
 
+// Series colours go through the palette so the chart follows the theme. `NEW`
+// was a fixed pale blue that vanished into a light card and `VIEWS` was the
+// light theme's ink-faint, which on a dark chart is barely above the surface.
 const RETURNING = ACCENT;
-const NEW = "#9DBBF7";
-const VIEWS = "#525D73";
+const NEW = "rgb(var(--accent) / 0.55)";
+const VIEWS = "rgb(var(--ink-faint))";
 
 export type ChartRow = {
   label: string;
@@ -38,7 +41,7 @@ export type ChartRow = {
 };
 
 const AXIS = {
-  tick: { fill: "var(--ink-faint)", fontSize: 10 },
+  tick: { fill: "rgb(var(--ink-faint))", fontSize: 10 },
   tickLine: false,
   axisLine: false,
 } as const;
@@ -50,7 +53,7 @@ export function TrafficChart({ data }: { data: ChartRow[] }) {
   return (
     <ResponsiveContainer width="100%" height={240}>
       <ComposedChart data={data} margin={{ left: -22, right: -18, top: 8, bottom: 0 }}>
-        <CartesianGrid stroke="var(--line)" vertical={false} />
+        <CartesianGrid stroke="rgb(var(--line))" vertical={false} />
         <XAxis dataKey="label" {...AXIS} interval={every} minTickGap={4} />
         <YAxis allowDecimals={false} width={34} {...AXIS} />
         <YAxis
@@ -64,7 +67,7 @@ export function TrafficChart({ data }: { data: ChartRow[] }) {
           cursor={{ fill: "rgba(16,25,43,0.04)" }}
           contentStyle={{
             borderRadius: 12,
-            border: "1px solid var(--line)",
+            border: "1px solid rgb(var(--line))",
             fontSize: 12,
           }}
         />
@@ -73,7 +76,7 @@ export function TrafficChart({ data }: { data: ChartRow[] }) {
           height={28}
           iconType="circle"
           iconSize={8}
-          wrapperStyle={{ fontSize: 11, color: "var(--ink-soft)" }}
+          wrapperStyle={{ fontSize: 11, color: "rgb(var(--ink-soft))" }}
         />
         <Bar
           dataKey="returningVisitors"

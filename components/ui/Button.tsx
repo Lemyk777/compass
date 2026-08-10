@@ -13,7 +13,7 @@ const sizes = {
 };
 
 const variants: Record<Variant, string> = {
-  primary: "bg-ink text-white hover:bg-ink/90 shadow-card",
+  primary: "bg-ink text-surface hover:bg-ink/90 shadow-card",
   ghost: "bg-transparent text-ink hover:bg-ink/5",
   subtle: "bg-card text-ink border border-line hover:border-ink/30 shadow-card",
   // Filled secondary action with real affordance — reads clearly as a button on

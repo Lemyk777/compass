@@ -339,7 +339,7 @@ function RangeTabs({ active }: { active: number }) {
             href={`/admin/traffic?d=${r.days}`}
             aria-current={on ? "page" : undefined}
             className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:focus-ring ${
-              on ? "bg-ink text-white" : "text-ink-soft hover:text-ink"
+              on ? "bg-ink text-surface" : "text-ink-soft hover:text-ink"
             }`}
           >
             {r.label}

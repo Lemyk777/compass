@@ -3,10 +3,10 @@
 // modal). Pure decoration — never real data.
 
 const FAUX_SCHOOLS = [
-  { name: "Northwestern University", tier: "Reach", color: "var(--reach)", lo: 18, hi: 64 },
-  { name: "University of Michigan", tier: "Target", color: "var(--target)", lo: 38, hi: 78 },
-  { name: "Boston University", tier: "Likely", color: "var(--likely)", lo: 58, hi: 86 },
-  { name: "University of Rochester", tier: "Target", color: "var(--target)", lo: 34, hi: 70 },
+  { name: "Northwestern University", tier: "Reach", color: "rgb(var(--reach))", lo: 18, hi: 64 },
+  { name: "University of Michigan", tier: "Target", color: "rgb(var(--target))", lo: 38, hi: 78 },
+  { name: "Boston University", tier: "Likely", color: "rgb(var(--likely))", lo: 58, hi: 86 },
+  { name: "University of Rochester", tier: "Target", color: "rgb(var(--target))", lo: 34, hi: 70 },
 ];
 
 function FauxOddsCard({ s }: { s: (typeof FAUX_SCHOOLS)[number] }) {

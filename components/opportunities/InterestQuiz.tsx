@@ -145,7 +145,7 @@ function QuizResults({
           <button
             type="button"
             onClick={onCancel}
-            className="h-10 rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+            className="h-10 rounded-xl bg-ink px-4 text-sm font-medium text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
           >
             Pick by hand
           </button>
@@ -217,7 +217,7 @@ function QuizResults({
           type="button"
           disabled={selected.length === 0}
           onClick={() => onComplete(selected)}
-          className="h-10 rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring disabled:opacity-40"
+          className="h-10 rounded-xl bg-ink px-4 text-sm font-medium text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring disabled:opacity-40"
         >
           Show what I can enter &rarr;
         </button>

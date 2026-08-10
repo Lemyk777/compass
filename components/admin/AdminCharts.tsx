@@ -22,21 +22,21 @@ export function SignupsOverTime({
       <BarChart data={data} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
         <XAxis
           dataKey="day"
-          tick={{ fill: "var(--ink-faint)", fontSize: 10 }}
+          tick={{ fill: "rgb(var(--ink-faint))", fontSize: 10 }}
           tickLine={false}
           axisLine={false}
           interval="preserveStartEnd"
         />
         <YAxis
           allowDecimals={false}
-          tick={{ fill: "var(--ink-faint)", fontSize: 10 }}
+          tick={{ fill: "rgb(var(--ink-faint))", fontSize: 10 }}
           tickLine={false}
           axisLine={false}
           width={28}
         />
         <Tooltip
           cursor={{ fill: "rgba(16,25,43,0.04)" }}
-          contentStyle={{ borderRadius: 12, border: "1px solid var(--line)", fontSize: 12 }}
+          contentStyle={{ borderRadius: 12, border: "1px solid rgb(var(--line))", fontSize: 12 }}
         />
         <Bar dataKey="count" fill={ACCENT} radius={[4, 4, 0, 0]} isAnimationActive={false} />
       </BarChart>
@@ -63,7 +63,7 @@ export function SignupsByCountry({
         <XAxis
           type="number"
           allowDecimals={false}
-          tick={{ fill: "var(--ink-faint)", fontSize: 10 }}
+          tick={{ fill: "rgb(var(--ink-faint))", fontSize: 10 }}
           tickLine={false}
           axisLine={false}
         />
@@ -71,13 +71,13 @@ export function SignupsByCountry({
           type="category"
           dataKey="country"
           width={110}
-          tick={{ fill: "var(--ink-soft)", fontSize: 11 }}
+          tick={{ fill: "rgb(var(--ink-soft))", fontSize: 11 }}
           tickLine={false}
           axisLine={false}
         />
         <Tooltip
           cursor={{ fill: "rgba(16,25,43,0.04)" }}
-          contentStyle={{ borderRadius: 12, border: "1px solid var(--line)", fontSize: 12 }}
+          contentStyle={{ borderRadius: 12, border: "1px solid rgb(var(--line))", fontSize: 12 }}
         />
         <Bar dataKey="count" radius={[0, 4, 4, 0]} isAnimationActive={false}>
           {data.map((_, i) => (

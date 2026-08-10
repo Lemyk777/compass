@@ -98,14 +98,14 @@ export function AuthAside({ t }: { t: TFunc }) {
               <circle
                 pathLength={100}
                 cx="60" cy="60" r="50" fill="none"
-                stroke="var(--line)" strokeWidth="11" strokeLinecap="round"
+                stroke="rgb(var(--line))" strokeWidth="11" strokeLinecap="round"
                 strokeDasharray="75 100" transform="rotate(135 60 60)"
               />
               <circle
                 className="aside-gauge"
                 pathLength={100}
                 cx="60" cy="60" r="50" fill="none"
-                stroke="var(--accent)" strokeWidth="11" strokeLinecap="round"
+                stroke="rgb(var(--accent))" strokeWidth="11" strokeLinecap="round"
                 strokeDasharray="61.5 100" transform="rotate(135 60 60)"
               />
             </svg>
@@ -122,23 +122,23 @@ export function AuthAside({ t }: { t: TFunc }) {
             <p className="mb-1 text-[11px] font-medium text-ink-faint">{t("auth.asideRadar")}</p>
             <svg viewBox="0 0 120 120" className="h-[96px] w-full" role="img" aria-label={t("auth.asideRadar")}>
               {[1, 0.66, 0.33].map((s) => (
-                <polygon key={s} points={polygon(s)} fill="none" stroke="var(--line)" strokeWidth="1" />
+                <polygon key={s} points={polygon(s)} fill="none" stroke="rgb(var(--line))" strokeWidth="1" />
               ))}
               {RADAR_AXES.map((_, i) => {
                 const [x, y] = point(i, R);
-                return <line key={i} x1={CX} y1={CY} x2={x} y2={y} stroke="var(--line)" strokeWidth="1" />;
+                return <line key={i} x1={CX} y1={CY} x2={x} y2={y} stroke="rgb(var(--line))" strokeWidth="1" />;
               })}
               <polygon
                 className="aside-svg-pop"
                 points={RADAR_SHAPE}
                 fill="rgba(47,111,237,0.18)"
-                stroke="var(--accent)"
+                stroke="rgb(var(--accent))"
                 strokeWidth="2"
                 strokeLinejoin="round"
               />
               {RADAR_VALS.map((v, i) => {
                 const [x, y] = point(i, R * v);
-                return <circle key={i} cx={x} cy={y} r="2.4" fill="var(--accent)" />;
+                return <circle key={i} cx={x} cy={y} r="2.4" fill="rgb(var(--accent))" />;
               })}
             </svg>
           </div>
@@ -147,9 +147,9 @@ export function AuthAside({ t }: { t: TFunc }) {
         {/* tier chips */}
         <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
           {[
-            { label: t("tier.reach"), c: "var(--reach)", s: "var(--reach-soft, #FBE7E2)" },
-            { label: t("tier.target"), c: "var(--target)", s: "var(--target-soft, #FaEEDB)" },
-            { label: t("tier.likely"), c: "var(--likely)", s: "var(--likely-soft, #E1F1E9)" },
+            { label: t("tier.reach"), c: "rgb(var(--reach))", s: "rgb(var(--reach-soft))" },
+            { label: t("tier.target"), c: "rgb(var(--target))", s: "rgb(var(--target-soft))" },
+            { label: t("tier.likely"), c: "rgb(var(--likely))", s: "rgb(var(--likely-soft))" },
           ].map((chip) => (
             <span
               key={chip.label}

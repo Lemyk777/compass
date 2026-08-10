@@ -159,7 +159,7 @@ export function EligibilityChecker({
                   aria-label={`Year ${g}`}
                   className={`h-12 min-w-[3.25rem] rounded-xl border px-4 text-base font-semibold transition-[background-color,border-color,color,transform] duration-200 focus-visible:focus-ring active:scale-[0.97] ${
                     on
-                      ? "border-ink bg-ink text-white"
+                      ? "border-ink bg-ink text-surface"
                       : "border-line bg-card text-ink hover:border-ink/30"
                   }`}
                 >
@@ -404,7 +404,7 @@ function CalendarCta({ items }: { items: Opportunity[] }) {
       <button
         type="button"
         onClick={() => downloadIcs(datable)}
-        className="mt-4 inline-flex h-12 items-center rounded-xl bg-ivy px-5 text-[0.95rem] font-medium text-white transition-colors hover:bg-ivy-ink focus-visible:focus-ring"
+        className="mt-4 inline-flex h-12 items-center rounded-xl bg-ivy px-5 text-[0.95rem] font-medium text-on-fill transition-colors hover:bg-ivy-ink focus-visible:focus-ring"
       >
         Download the calendar file
       </button>

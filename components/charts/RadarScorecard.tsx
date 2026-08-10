@@ -73,10 +73,10 @@ export function RadarScorecard({
     >
       <ResponsiveContainer width="100%" height={260}>
         <RadarChart data={data} outerRadius="72%">
-          <PolarGrid stroke="var(--line)" />
+          <PolarGrid stroke="rgb(var(--line))" />
           <PolarAngleAxis
             dataKey="factor"
-            tick={{ fill: "var(--ink-soft)", fontSize: 11 }}
+            tick={{ fill: "rgb(var(--ink-soft))", fontSize: 11 }}
           />
           <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
           <Radar

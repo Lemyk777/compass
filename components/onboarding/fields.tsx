@@ -231,7 +231,7 @@ export function MultiSelectField({
                 >
                   <span
                     className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border ${
-                      on ? "border-accent bg-accent text-white" : "border-line"
+                      on ? "border-accent bg-accent text-on-fill" : "border-line"
                     }`}
                   >
                     {on && (
@@ -298,7 +298,7 @@ export function OptionGrid({
                 aria-hidden="true"
                 className={`absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full border transition-colors ${
                   on
-                    ? "border-accent bg-accent text-white"
+                    ? "border-accent bg-accent text-on-fill"
                     : "border-line bg-transparent text-transparent"
                 }`}
                 style={{ width: 18, height: 18 }}

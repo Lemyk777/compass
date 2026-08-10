@@ -142,7 +142,7 @@ function Segment({
 }) {
   const cls = `inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium transition-colors ${
     accent
-      ? "bg-ivy text-white"
+      ? "bg-ivy text-on-fill"
       : done
         ? "bg-card text-ink shadow-sm ring-1 ring-line/60"
         : "border border-dashed border-ink/25 text-ink-faint"

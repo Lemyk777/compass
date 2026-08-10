@@ -37,8 +37,8 @@ function MiniGlobe() {
         cx="50"
         cy="50"
         r="44"
-        fill="#F7F8FA"
-        stroke="#0E7B57"
+        fill="rgb(var(--surface))"
+        stroke="rgb(var(--ivy))"
         strokeWidth="1.6"
       />
       <g fill="none" stroke="rgba(15,23,42,0.18)" strokeWidth="1">
@@ -47,7 +47,7 @@ function MiniGlobe() {
         <ellipse cx="50" cy="50" rx="13" ry="44" />
         <line x1="6" y1="50" x2="94" y2="50" />
       </g>
-      <circle cx="62" cy="38" r="3" fill="#0E7B57" />
+      <circle cx="62" cy="38" r="3" fill="rgb(var(--ivy))" />
     </svg>
   );
 }

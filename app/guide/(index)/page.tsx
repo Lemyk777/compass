@@ -79,7 +79,7 @@ export default async function GuidePage({
               <span className="flex items-center gap-2.5">
                 <span
                   data-num
-                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white"
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-surface"
                 >
                   {s.step}
                 </span>

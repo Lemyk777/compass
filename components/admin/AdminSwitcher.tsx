@@ -42,7 +42,7 @@ export function AdminSwitcher({ className = "" }: { className?: string }) {
             aria-current={active ? "page" : undefined}
             className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:focus-ring ${
               active
-                ? "bg-ink text-white"
+                ? "bg-ink text-surface"
                 : "text-ink-soft hover:text-ink"
             }`}
           >

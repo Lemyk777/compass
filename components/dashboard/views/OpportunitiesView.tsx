@@ -604,7 +604,7 @@ function StarterBanner({
       <div className="mt-3.5">
         <a
           href={href}
-          className="inline-flex h-10 items-center rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+          className="inline-flex h-10 items-center rounded-xl bg-ink px-4 text-sm font-medium text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
         >
           {cta} &rarr;
         </a>
@@ -830,7 +830,7 @@ function FieldPrompt({
           type="button"
           disabled={sel.length === 0}
           onClick={() => onChoose(sel)}
-          className="h-10 rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring disabled:opacity-40"
+          className="h-10 rounded-xl bg-ink px-4 text-sm font-medium text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring disabled:opacity-40"
         >
           Show these{sel.length > 0 && <span data-num> ({sel.length})</span>}
         </button>
@@ -891,7 +891,7 @@ function CategoryTabs({
             onClick={() => onChange(t.key)}
             className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-200 focus-visible:focus-ring ${
               on
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-fill"
                 : "text-ink-soft hover:bg-surface hover:text-ink"
             }`}
           >

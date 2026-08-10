@@ -20,7 +20,7 @@ export function LegalPage({
     // Banner and footer are siblings of `main`, not children of it — the same
     // repair as the marketing page. Here the `<article>` IS the main content, so
     // it becomes the landmark rather than gaining a wrapper.
-    <div className="min-h-screen bg-[#F7F8FA] text-ink">
+    <div className="min-h-screen bg-surface text-ink">
       <SkipLink />
       <header className="border-b border-black/10">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-6">
