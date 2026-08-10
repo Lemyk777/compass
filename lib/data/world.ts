@@ -120,24 +120,6 @@ export const HUBS: Hub[] = [
       "Suits you if you want proximity to government, state industry and the national startup programmes, or a place at an English-taught university without leaving the country. Look elsewhere if you want creative industries or a dense product scene — that is Almaty.",
   },
   {
-    id: "tashkent",
-    city: "Tashkent",
-    country: "Uzbekistan",
-    region: "central_asia",
-    fields: ["computer_science", "business_economics", "medicine_health"],
-    what: "The fastest-growing market in Central Asia, with IT Park giving tax breaks to software companies and a large outsourcing sector.",
-    catch: "Wages lag the region's leaders and English is still uncommon outside the IT sector.",
-    route: "IT Park's own courses and residency, then remote contracts — the sector was built on serving clients abroad.",
-    dayHere:
-      "A large, green, low-rise city with a metro, hot summers and mild winters, and food and family culture at the centre of daily life. It is changing quickly — new construction, new businesses, more foreign companies — which means opportunity and also that plans shift. Living costs are among the lowest of any city on this list.",
-    money:
-      "Your money goes furthest here of anywhere on the map, which is exactly why the outsourcing sector exists. The IT Park tax regime is a real structural advantage for people working through it. The gap is upward: local salary ceilings arrive sooner than in bigger markets, so the ambitious route is foreign clients rather than local promotion.",
-    language:
-      "Uzbek for daily life, with Russian widely understood, especially in Tashkent and in business. English is concentrated in IT and international companies and is the clearest lever on income.",
-    whoThrives:
-      "Suits you if you want to build a technical career from inside a fast-growing market with low costs and serve clients abroad. Look elsewhere if you need an established research ecosystem or deep specialist roles — those are thin here for now.",
-  },
-  {
     id: "tbilisi",
     city: "Tbilisi",
     country: "Georgia",
@@ -315,27 +297,27 @@ export const HUBS: Hub[] = [
     money:
       "Non-EU tuition is real money rather than a formality, and the system is at least transparent about it: you pay the institutional rate and scholarships are limited and competitive. Living costs are driven by rent, the tightest market in this guide. Part-time work is allowed with a permit and the wage floor is decent, which makes a student job worth having rather than symbolic.",
     language:
-      "The country runs on English more comfortably than anywhere else non-anglophone on this map: degrees, workplaces and daily life are navigable without Dutch. Dutch still decides the deeper social circle, public-sector and healthcare work, and staying long term.",
+      "As far as a degree and a technology job go, this is the most English-functional country on the map — you will not be held back in either. Where it stops is the paperwork: the tax office, the municipality, your health insurer and the water board write to you in Dutch only, and every long-term route through immigration expects Dutch eventually. Plan on learning it if you intend to stay, and not if you don't.",
     whoThrives:
       "Suits you if you want an English-taught European degree with a real route into work afterwards and can fund the tuition. Look elsewhere if cost is the binding constraint, or if you cannot handle the risk of arriving without a room.",
   },
   {
     id: "eindhoven",
-    city: "Amsterdam & Eindhoven",
+    city: "Eindhoven",
     country: "Netherlands",
     region: "europe",
     fields: ["engineering", "computer_science", "business_economics"],
-    what: "English is used everywhere, and the Eindhoven region is the heart of Europe's semiconductor and precision-engineering supply chain.",
-    catch: "Non-EU tuition is real money, and the student housing shortage is severe enough to plan around.",
-    route: "English-taught bachelor's degrees are standard here, and a graduate can stay on an 'orientation year' permit to look for work.",
+    what: "The Brainport region — the heart of Europe's semiconductor and precision-engineering supply chain, with the equipment makers, chip designers and their suppliers inside half an hour of each other.",
+    catch: "A one-industry town: if you leave hardware, the local market thins out fast, and it is far quieter socially than Amsterdam.",
+    route: "English-taught engineering degrees at TU Eindhoven, paid internships with the industry attached, and an 'orientation year' permit to stay and look for work after graduating.",
     dayHere:
-      "Life runs on a bicycle, in flat terrain, in wind and rain — that is not a joke about the weather but a daily reality. Dutch directness is real and takes adjusting to; people say what they think and consider it respectful. Amsterdam is dense and international; Eindhoven is smaller, quieter and organised around technology employers.",
+      "Life runs on a bicycle, in flat terrain, in wind and rain — that is not a joke about the weather but a daily reality. Eindhoven is small, modern and organised around its technology employers rather than around tourism: quieter evenings, shorter commutes, and a campus that sits inside the industry instead of beside it. Dutch directness is real and takes adjusting to; people say what they think and consider it respectful.",
     money:
-      "Non-EU tuition is substantial and is the main cost, unlike Germany. The housing shortage is severe enough that universities warn applicants directly, and arriving without accommodation arranged is a genuine risk rather than an inconvenience — start that search the day you are admitted. Part-time work is permitted within limits and is common.",
+      "Non-EU tuition is substantial and is the main cost, unlike Germany — but housing is markedly easier and cheaper here than in Amsterdam, which is the single biggest practical argument for the south. Paid internships in the semiconductor industry are a normal part of an engineering degree rather than a prize.",
     language:
-      "The most English-functional country in continental Europe: English-taught bachelor's degrees are standard, workplaces in tech and research run in English, and daily life is navigable without Dutch. Dutch still matters for long-term integration and for many non-technical employers.",
+      "English carries the degree and the technology workplaces completely — the industry here is international by necessity. Dutch matters less than in Amsterdam for work and more for social life, because the city is smaller and its non-industry side runs in Dutch.",
     whoThrives:
-      "Suits you if you want an English-taught European degree with a clear post-study work permit and a strong engineering industry attached. Look elsewhere if tuition costs are the binding constraint — Germany is the cheaper door into the same continent.",
+      "Suits you if you are aiming at hardware, chips or precision engineering specifically and want to study inside that industry. Look elsewhere if you want a big international city, a broad choice of employers, or a non-engineering direction — Amsterdam does all three better.",
   },
   {
     id: "london",
@@ -541,17 +523,17 @@ export const HUBS: Hub[] = [
   },
   {
     id: "shenzhen",
-    city: "Shenzhen & Shanghai",
+    city: "Shenzhen",
     country: "China",
     region: "asia_pacific",
     fields: ["engineering", "computer_science", "business_economics"],
-    what: "Shenzhen is the hardware capital of the world — a prototype that takes months elsewhere takes days there; Shanghai holds the finance and corporate side.",
+    what: "The hardware capital of the world — a prototype that takes months elsewhere takes days here, because every supplier, component market and small factory you need sits in the same city.",
     catch: "Mandarin, and a different software and internet environment than you are used to building on.",
     route: "The Chinese Government Scholarship (CSC) covers tuition and a stipend, and many programmes are taught in English.",
     dayHere:
-      "Daily life runs almost entirely through domestic apps — payments, transport, food, messaging — and setting those up with a foreign phone number and bank account is the first real task on arrival. Once working, the convenience is remarkable. Shenzhen is young, fast and built for manufacturing; Shanghai is the cosmopolitan, corporate half. Expect a different software environment than you are used to building on.",
+      "Daily life runs almost entirely through domestic apps — payments, transport, food, messaging — and setting those up with a foreign phone number and bank account is the first real task on arrival. Once working, the convenience is remarkable. The city is young by any standard, built in living memory and organised around making things: fast, informal, and far less historic than the rest of the country. Expect a different software environment than you are used to building on.",
     money:
-      "Living costs are moderate and the CSC scholarship covers tuition plus a stipend, which makes this one of the more financially accessible serious options. Hardware prototyping in Shenzhen is cheaper and faster than anywhere on earth — for an engineer that is the real economic argument for being there rather than the salary.",
+      "Living costs are moderate and the CSC scholarship covers tuition plus a stipend, which makes this one of the more financially accessible serious options. Hardware prototyping here is cheaper and faster than anywhere on earth — for an engineer that is the real economic argument for being here rather than the salary.",
     language:
       "Mandarin is the language of work and life, and scholarship programmes typically include language study. English-taught degrees exist and are growing, but the industrial ecosystem — the suppliers, the factories, the markets — operates in Chinese, and that is the part you came for.",
     whoThrives:
@@ -593,44 +575,8 @@ export const HUBS: Hub[] = [
     whoThrives:
       "Suits you if you want business, finance or technology in Asia's largest market and the softest landing into China. Look elsewhere if cost matters more than exposure, or if your work needs an open internet and a Western regulatory environment.",
   },
-  {
-    id: "bangalore",
-    city: "Bengaluru",
-    country: "India",
-    region: "asia_pacific",
-    fields: ["computer_science", "business_economics", "engineering"],
-    what: "The largest software and startup cluster in South Asia, and the place a huge share of the world's engineering work is actually done.",
-    catch: "Competition is enormous and local pay is low against Western scales — for a student from Central Asia this is a market to work WITH, not usually one to move to.",
-    route: "Open-source and remote collaboration is the honest route here: the ecosystem is reachable from your desk.",
-    dayHere:
-      "A mild climate by Indian standards and a young, technical population — the density of engineers is the city's defining feature. Traffic and infrastructure strain are the standing complaints, and commute times shape where people choose to live and work. The startup and open-source community is unusually open to newcomers, including remote ones.",
-    money:
-      "Costs are low and salaries are low against Western scales, so this is not a market to move to for income — the value here is the ecosystem, not the pay packet. That is why the honest route we give is collaboration rather than relocation: you can join the community, and much of it, from your own desk.",
-    language:
-      "The technology industry runs in English throughout, so professional participation needs nothing else. Kannada and Hindi shape daily life locally, but for the remote collaboration route that this hub is really about, English is sufficient.",
-    whoThrives:
-      "Suits you if you want to plug into a huge open-source and product community and learn from its pace — mostly remotely. Look elsewhere if you are choosing a place to physically move for salary or immigration; this hub is on the map as a market to work WITH.",
-  },
 
   // ── North America ─────────────────────────────────────────────────────────
-  {
-    id: "hyderabad",
-    city: "Hyderabad",
-    country: "India",
-    region: "asia_pacific",
-    fields: ["computer_science", "medicine_health", "engineering", "business_economics"],
-    what: "India's second technology centre and the heart of its pharmaceutical industry — global software and drug companies run some of their largest sites here.",
-    catch: "Entry to the strongest public institutes runs through exams almost nobody outside India prepares for, and the pre-monsoon heat is severe.",
-    route: "Private universities and international programmes admit directly on school results, and the technology and pharmaceutical sectors run internships a student can realistically get.",
-    dayHere:
-      "Spread out and car-dependent, with a planned technology district that feels like a separate city from the old one around it. It is calmer and cheaper than Bangalore or Delhi, professional life runs in English, and the food is a reason to be here on its own. The heat before the monsoon is the hardest stretch of the year.",
-    money:
-      "The cheapest route into a serious technology or pharmaceutical career on this map: tuition at private universities is modest by international standards and living costs are low, so a whole degree comes to a fraction of Europe's. The trade is salary — local starting pay is low, and what you are buying is the experience and the employer's name rather than what it pays at first.",
-    language:
-      "Higher education, technology work and business all run in English, which is why graduates here move so easily into global companies. Hindi and Telugu carry daily life outside the office, but you can study and work here without them — true of almost nowhere else on this map.",
-    whoThrives:
-      "Suits you if you want technology or pharmaceutical experience in English at the lowest cost here, aiming at a global employer rather than a local salary. Look elsewhere if you intend to stay and earn locally, or need the campus infrastructure of a Western university.",
-  },
   {
     id: "boston",
     city: "Boston",
