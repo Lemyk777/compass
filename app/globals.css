@@ -75,6 +75,23 @@
      light page, the page's own deep navy on a dark one. */
   --on-fill: 255 255 255;
 
+  /* The INVERTED BAND — a full-bleed section that breaks the page's rhythm on
+     purpose ("The problem" on the landing page).
+
+     It cannot be `ink`, and that was the bug: an inverted band painted with
+     `bg-ink text-surface` is a deep navy slab on a light page and a
+     SCREEN-WIDE WHITE SLAB on a dark one, because `ink` is near-white in dark
+     mode. Inversion is not a colour, it is a relationship, and it does not
+     survive being flipped.
+
+     So the band is its own token and it does NOT invert: it stays dark in both
+     themes. In light mode it is the contrast it always was; in dark mode it
+     lifts just clear of `surface` (11 17 28) so it still reads as a distinct
+     band rather than dissolving into the page. Same precedent as AuthAside,
+     which paints its own fixed dark gradient for exactly this reason. */
+  --band: 16 25 43;
+  --band-ink: 247 248 250;
+
   --shadow-card:
     0 1px 2px rgba(16, 25, 43, 0.04), 0 8px 24px -12px rgba(16, 25, 43, 0.12);
   --shadow-lift:
@@ -124,6 +141,11 @@
 
     --on-fill: 11 17 28;
 
+    /* Stays dark, and lifts just clear of `surface` so the band still reads as
+       a band. See the note on --band in the light block above. */
+    --band: 20 29 46;
+    --band-ink: 241 244 249;
+
     /* Pure black at 40–80%, not the navy at 4–22% the light theme uses. A
        translucent shade of the surface's own colour cannot darken that surface;
        under a dark card it simply is not there. */
@@ -167,6 +189,9 @@
   --hero-ink: 159 184 232;
 
   --on-fill: 11 17 28;
+
+  --band: 20 29 46;
+  --band-ink: 241 244 249;
 
   --shadow-card:
     0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
