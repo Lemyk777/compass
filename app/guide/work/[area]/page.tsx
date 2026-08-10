@@ -141,7 +141,7 @@ export default function GuideAreaPage({
                   <span
                     data-num
                     aria-hidden
-                    className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white"
+                    className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-surface"
                   >
                     {i + 1}
                   </span>
@@ -236,13 +236,13 @@ export default function GuideAreaPage({
 
           <Link
             href="/opportunities"
-            className="flex items-start justify-between gap-3 rounded-2xl bg-ink p-5 text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+            className="flex items-start justify-between gap-3 rounded-2xl bg-ink p-5 text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
           >
             <span>
               <span className="text-sm font-semibold">
                 The first step towards this, this year
               </span>
-              <span className="mt-0.5 block text-sm text-white/70">
+              <span className="mt-0.5 block text-sm text-surface/70">
                 What you can actually enter now, at your age.
               </span>
             </span>

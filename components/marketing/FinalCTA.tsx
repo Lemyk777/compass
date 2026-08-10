@@ -30,7 +30,7 @@ export function FinalCTA({ signedIn = false }: { signedIn?: boolean }) {
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/opportunities"
-            className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-base font-medium text-white transition-all hover:bg-ink/90 hover:shadow-lift"
+            className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-base font-medium text-surface transition-all hover:bg-ink/90 hover:shadow-lift"
           >
             {signedIn ? "Open my opportunities" : "See what you can enter"}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">

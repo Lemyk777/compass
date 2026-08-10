@@ -175,7 +175,7 @@ export function OutlineMap({ country }: { country: CountryView }) {
         .map((p) => (
           <g key={`lead-${p.name}`}>
             <line x1={p.x} y1={p.y} x2={p.cx} y2={p.cy} stroke="rgba(255,255,255,0.9)" strokeWidth={2.4} />
-            <line x1={p.x} y1={p.y} x2={p.cx} y2={p.cy} stroke="#0E7B57" strokeWidth={1.1} />
+            <line x1={p.x} y1={p.y} x2={p.cx} y2={p.cy} stroke="rgb(var(--ivy))" strokeWidth={1.1} />
             <circle cx={p.x} cy={p.y} r={3} fill="#0E7B57" stroke="#fff" strokeWidth={1.4} />
           </g>
         ))}
@@ -204,7 +204,7 @@ export function OutlineMap({ country }: { country: CountryView }) {
             {isHovered && <circle r={r + 7} fill="#0E7B57" opacity={0.18} />}
 
             <g filter="url(#chip-lift)">
-              <circle r={r} fill="#ffffff" stroke="#0E7B57" strokeWidth={isHovered ? 2 : 1.4} />
+              <circle r={r} fill="#ffffff" stroke="rgb(var(--ivy))" strokeWidth={isHovered ? 2 : 1.4} />
               {p.logo ? (
                 <>
                   <clipPath id={chipClip}>

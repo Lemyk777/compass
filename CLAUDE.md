@@ -371,6 +371,40 @@ Spans [lib/ai/prompt.ts](lib/ai/prompt.ts), [lib/ai/analyze.ts](lib/ai/analyze.t
 - **Robustness:** the call is **streamed** (`messages.stream().finalMessage()`), `maxRetries` lets the SDK back off on 429/5xx, and a parse failure retries once. A reply cut off by the token cap (`stop_reason === "max_tokens"`) fails fast with an actionable error. `app/api/analyze/route.ts` sets `maxDuration = 60` and rate-limits to 5 analyses/hour/user.
 - The dashboard re-validates the stored analysis with the full `analysisSchema` and renders charts from the JSON — the model never draws.
 
+## Colour is themed: two palettes, one set of tokens
+
+The product follows the reader's operating system — there is no toggle and no
+`dark:` variant anywhere. [app/globals.css](app/globals.css) holds every colour
+**once per theme**, and [tailwind.config.ts](tailwind.config.ts) holds none: it
+names roles and reads `rgb(var(--token) / <alpha-value>)`.
+
+- **Values are CHANNEL TRIPLETS (`16 25 43`), never hex.** That form is what
+  keeps Tailwind's opacity modifiers working, and the product has 256 of them
+  (`bg-accent-soft/25`, `text-ink/60`). Hex here breaks every one silently.
+- **Anything read outside Tailwind must be `rgb(var(--x))`**, not the bare
+  variable — a raw triplet is not a colour. That covers Recharts fills,
+  `lib/tiers.ts`, and inline `style`.
+- **Three roles per colour, and they are not interchangeable:** `DEFAULT` is a
+  FILL (graphics, 3:1), `soft` is a tinted background, `ink` is TEXT (4.5:1 on
+  the page, on a card, and on its own tint). `text-reach` is always wrong; use
+  `text-reach-ink`. A unit test enforces both the ratios and the usage, **in
+  both themes**.
+- **`text-on-fill`, not `text-white`, for text on a saturated fill.** A fill has
+  to get lighter in dark mode to stay visible, so white on it is 2.69:1. And
+  `bg-ink text-white` is the classic inversion trap — `ink` is nearly white in
+  dark mode, so that button became white on white. Use `text-surface` there.
+- **Shadows theme too** (`--shadow-card`/`--shadow-lift`): a translucent navy
+  cannot darken a dark surface, so the dark values are pure black at 40–80%.
+- **What must NOT theme:** national flags, the Google logo, and the ambassador's
+  QR code (a themed QR can stop scanning). `AuthAside` paints its own fixed dark
+  gradient, so white text there is correct in both.
+- `:root[data-theme="dark"]` / `:not([data-theme="light"])` are already wired
+  alongside the media query, so adding a toggle later is one component, not a
+  refactor. **Note the measuring trap:** flipping that attribute at runtime does
+  not repaint `var()`-derived colours in a throttled/hidden browser pane — the
+  custom property updates and `color` does not. Audit a theme by loading the
+  page under that OS setting, not by toggling the attribute.
+
 ## Tailwind classes are linted against the config
 
 `eslint-plugin-tailwindcss` runs inside `next build` with

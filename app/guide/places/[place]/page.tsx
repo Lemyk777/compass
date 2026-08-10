@@ -293,7 +293,7 @@ function DestinationBody({
             <div className="mt-5">
               <Link
                 href="/opportunities"
-                className="inline-flex h-11 items-center rounded-xl bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+                className="inline-flex h-11 items-center rounded-xl bg-ink px-5 text-sm font-medium text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
               >
                 What you can enter from home this year &rarr;
               </Link>

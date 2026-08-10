@@ -96,7 +96,7 @@ export function FilterBar({
           {active > 0 && (
             <span
               data-num
-              className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold tabular-nums text-white"
+              className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold tabular-nums text-on-fill"
             >
               {active}
             </span>

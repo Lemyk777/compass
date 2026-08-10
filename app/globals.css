@@ -2,27 +2,178 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── The palette. One source of truth, and now two themes. ──────────────────
+ *
+ * These are CHANNEL TRIPLETS, not hex, and that is the load-bearing detail.
+ * tailwind.config.ts reads each one as `rgb(var(--x) / <alpha-value>)`, which
+ * is the only form that keeps opacity modifiers working — and the product uses
+ * 256 of them (`bg-accent-soft/25`, `text-ink/60`, `border-ivy/20`). Storing
+ * hex here would have silently broken every one.
+ *
+ * This block used to be a partial MIRROR of the Tailwind config, kept in sync
+ * by hand, and it had already drifted: three `-soft` values differed between
+ * the two files, `--ink-faint` was never defined at all (five chart axes asked
+ * for it and silently fell back to black), and `--accent-ink` here was a
+ * different colour from `accent.ink` there — a name collision rather than
+ * drift, since this one is the hero headline's deep navy. It is `--hero-ink`
+ * now, and the config no longer holds any literal colour.
+ *
+ * Dark values are authored, not inverted: lighter, less saturated accents on a
+ * deep navy, each pair contrast-checked rather than eyeballed. In dark mode a
+ * RAISED surface is lighter, so `card` sits above `surface` — and because that
+ * step is necessarily small, the border does the real separating work
+ * (`line` is 1.5:1 against `card`, where in light mode it is a whisper).
+ */
 :root {
-  /* Mirror of Tailwind tokens for use in inline styles / Recharts */
-  --ink: #10192b;
-  --ink-soft: #3a4661;
-  --surface: #f7f8fa;
-  --card: #ffffff;
-  --line: #e6e2da;
-  --accent: #2f6fed;
-  --accent-soft: #e4ecfd;
-  /* Deep, muted navy for the hero headline — the "serious" 10% accent against
-     the black-on-off-white composition (not the brighter UI/brand --accent). */
-  --accent-ink: #22427d;
-  --ivy: #0e7b57;
-  --ivy-ink: #0a5c41;
-  --ivy-soft: #e7f2ec;
-  --reach: #e0664f;
-  --reach-soft: #f8e3dd;
-  --target: #d98a2b;
-  --target-soft: #f7ecd6;
-  --likely: #3f9b6e;
-  --likely-soft: #ddefe6;
+  --ink: 16 25 43;
+  --ink-soft: 58 70 97;
+  --ink-faint: 82 93 115;
+  --surface: 247 248 250;
+  --card: 255 255 255;
+  /* 221 217 209, a shade down from the old 230 226 218. That measured 1.22:1
+     against the page background — a hairline you had to already know was there.
+     It stopped being decorative when the section rules started carrying the
+     guide's hierarchy, so it now clears the same 1.3 bar the dark theme's
+     divider does. */
+  --line: 221 217 209;
+
+  --accent: 47 111 237;
+  --accent-soft: 228 236 253;
+  --accent-ink: 27 79 184;
+
+  --ivy: 14 123 87;
+  --ivy-ink: 10 92 65;
+  --ivy-soft: 231 242 236;
+
+  --reach: 224 102 79;
+  --reach-soft: 251 231 226;
+  --reach-ink: 169 59 42;
+
+  /* 197 126 39, not the 217 138 43 this was for years: the old amber measured
+     2.76:1 on a card, under even the 3:1 that applies to a GRAPHIC, so the
+     gauge arc and the trophy failed as shapes and not only as text. Darkened to
+     the least that clears 3:1 on the page background as well (3.09), which is
+     the surface it actually sits on more often. */
+  --target: 197 126 39;
+  --target-soft: 250 238 219;
+  --target-ink: 138 84 16;
+
+  --likely: 63 155 110;
+  --likely-soft: 225 241 233;
+  --likely-ink: 44 107 77;
+
+  /* The hero headline's "serious" 10% accent — deliberately deeper and more
+     muted than the brand --accent, and NOT the same thing as --accent-ink. */
+  --hero-ink: 34 66 125;
+
+  /* Text that sits ON a saturated fill — a primary button, a selected tab, a
+     badge. It cannot be `white`, and that is the single most common way a dark
+     theme breaks: a fill has to get LIGHTER in dark mode to stay visible as a
+     graphic, and white text on a light-blue button is 2.69:1. It cannot be
+     `surface` either, because in light mode that is off-white and lands at
+     4.28:1 on the accent. So it is its own token, and it flips: near-white on a
+     light page, the page's own deep navy on a dark one. */
+  --on-fill: 255 255 255;
+
+  --shadow-card:
+    0 1px 2px rgba(16, 25, 43, 0.04), 0 8px 24px -12px rgba(16, 25, 43, 0.12);
+  --shadow-lift:
+    0 4px 12px rgba(16, 25, 43, 0.06), 0 24px 48px -20px rgba(16, 25, 43, 0.22);
+
+  color-scheme: light;
+}
+
+/* The dark values live in one place and are applied by two selectors.
+ *
+ * The media query is today's mechanism: the theme follows the operating system,
+ * so there is nothing to click, nothing to persist and no flash of the wrong
+ * theme on first paint. The `[data-theme]` selectors cost twenty lines now and
+ * make a future toggle a one-component change rather than a refactor: setting
+ * `data-theme` on <html> is all it would take, and `:not([data-theme="light"])`
+ * is what lets that choice override the system rather than fight it. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: 241 244 249;
+    --ink-soft: 185 194 208;
+    --ink-faint: 142 153 171;
+    --surface: 11 17 28;
+    --card: 26 35 51;
+    --line: 51 62 82;
+
+    --accent: 110 155 255;
+    --accent-soft: 28 42 69;
+    --accent-ink: 169 198 255;
+
+    --ivy: 53 169 124;
+    --ivy-ink: 116 214 172;
+    --ivy-soft: 16 44 34;
+
+    --reach: 233 134 111;
+    --reach-soft: 51 32 28;
+    --reach-ink: 245 172 154;
+
+    --target: 224 162 79;
+    --target-soft: 50 39 24;
+    --target-ink: 242 198 138;
+
+    --likely: 82 187 140;
+    --likely-soft: 18 45 34;
+    --likely-ink: 131 220 177;
+
+    --hero-ink: 159 184 232;
+
+    --on-fill: 11 17 28;
+
+    /* Pure black at 40–80%, not the navy at 4–22% the light theme uses. A
+       translucent shade of the surface's own colour cannot darken that surface;
+       under a dark card it simply is not there. */
+    --shadow-card:
+      0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+    --shadow-lift:
+      0 4px 12px rgba(0, 0, 0, 0.45), 0 24px 48px -20px rgba(0, 0, 0, 0.8);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ink: 241 244 249;
+  --ink-soft: 185 194 208;
+  --ink-faint: 142 153 171;
+  --surface: 11 17 28;
+  --card: 26 35 51;
+  --line: 51 62 82;
+
+  --accent: 110 155 255;
+  --accent-soft: 28 42 69;
+  --accent-ink: 169 198 255;
+
+  --ivy: 53 169 124;
+  --ivy-ink: 116 214 172;
+  --ivy-soft: 16 44 34;
+
+  --reach: 233 134 111;
+  --reach-soft: 51 32 28;
+  --reach-ink: 245 172 154;
+
+  --target: 224 162 79;
+  --target-soft: 50 39 24;
+  --target-ink: 242 198 138;
+
+  --likely: 82 187 140;
+  --likely-soft: 18 45 34;
+  --likely-ink: 131 220 177;
+
+  --hero-ink: 159 184 232;
+
+  --on-fill: 11 17 28;
+
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+  --shadow-lift:
+    0 4px 12px rgba(0, 0, 0, 0.45), 0 24px 48px -20px rgba(0, 0, 0, 0.8);
+
+  color-scheme: dark;
 }
 
 @layer base {
@@ -34,7 +185,10 @@
     @apply bg-surface text-ink font-body antialiased;
     text-rendering: optimizeLegibility;
   }
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     @apply font-display tracking-tight;
   }
   /* Numbers product: tabular figures everywhere by default */
@@ -112,7 +266,10 @@
    composition serious and is the 10% accent. prefers-reduced-motion (global guard
    below) makes the swap instant and holds the first phrase. */
 .roll-word {
-  color: var(--accent-ink);
+  /* --hero-ink, not --accent-ink. These were the same NAME and different
+     colours until now: this is the hero's deep navy, the brand accent is
+     brighter. Renaming it is what let the config stop carrying two of them. */
+  color: rgb(var(--hero-ink));
   /* `will-change` is scoped to the two properties that actually animate.
      It used to list `filter` too, and the keyframes below used to blur the
      phrase from 5px to 0 on every swap — which meant the browser re-rasterised
@@ -218,7 +375,11 @@ summary::-webkit-details-marker {
 .hero-grid {
   background-image: radial-gradient(
     circle at 1px 1px,
-    rgba(16, 25, 43, 0.05) 1px,
+    /* The ink token, so the dots invert with the theme: a faint dark speckle on
+       a light hero, a faint light one on a dark hero. Frozen, they simply
+       disappeared. (The `#000` in the mask below is a mask stop, not a colour —
+       masks read luminance, so it must stay black.) */
+    rgb(var(--ink) / 0.05) 1px,
     transparent 0
   );
   background-size: 26px 26px;
@@ -236,55 +397,111 @@ summary::-webkit-details-marker {
 
 /* ---- Auth aside: ambient + entrance animations ---------------------------- */
 @keyframes aside-float {
-  0%, 100% { transform: translateY(0) }
-  50% { transform: translateY(-10px) }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 @keyframes aside-glow {
-  0%, 100% { opacity: 0.28; transform: scale(1) }
-  50% { opacity: 0.5; transform: scale(1.12) }
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.12);
+  }
 }
 @keyframes aside-rise {
-  from { opacity: 0; transform: translateY(14px) }
-  to { opacity: 1; transform: translateY(0) }
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes aside-pop {
-  0% { opacity: 0; transform: scale(0.9) }
-  60% { transform: scale(1.04) }
-  100% { opacity: 1; transform: scale(1) }
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 @keyframes aside-grow {
-  from { transform: scaleX(0) }
-  to { transform: scaleX(1) }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 @keyframes aside-draw {
-  to { stroke-dashoffset: 0 }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 @keyframes aside-sheen {
-  0% { transform: translateX(-120%) }
-  60%, 100% { transform: translateX(220%) }
+  0% {
+    transform: translateX(-120%);
+  }
+  60%,
+  100% {
+    transform: translateX(220%);
+  }
 }
 
-.aside-glow { animation: aside-glow 9s ease-in-out infinite }
-.aside-float { animation: aside-float 7s ease-in-out infinite }
-.aside-rise { opacity: 0; animation: aside-rise 0.7s cubic-bezier(.21,.7,.35,1) forwards }
-.aside-pop { opacity: 0; animation: aside-pop 0.7s cubic-bezier(.21,.7,.35,1) forwards }
-.aside-bar { transform-origin: left center; animation: aside-grow 1.1s cubic-bezier(.21,.7,.35,1) both }
+.aside-glow {
+  animation: aside-glow 9s ease-in-out infinite;
+}
+.aside-float {
+  animation: aside-float 7s ease-in-out infinite;
+}
+.aside-rise {
+  opacity: 0;
+  animation: aside-rise 0.7s cubic-bezier(0.21, 0.7, 0.35, 1) forwards;
+}
+.aside-pop {
+  opacity: 0;
+  animation: aside-pop 0.7s cubic-bezier(0.21, 0.7, 0.35, 1) forwards;
+}
+.aside-bar {
+  transform-origin: left center;
+  animation: aside-grow 1.1s cubic-bezier(0.21, 0.7, 0.35, 1) both;
+}
 .aside-draw {
   stroke-dasharray: var(--len, 1000);
   stroke-dashoffset: var(--len, 1000);
-  animation: aside-draw 1.4s cubic-bezier(.21,.7,.35,1) 0.25s forwards;
+  animation: aside-draw 1.4s cubic-bezier(0.21, 0.7, 0.35, 1) 0.25s forwards;
 }
-.aside-sheen { animation: aside-sheen 4.5s ease-in-out 1s infinite }
-@keyframes aside-gauge { to { stroke-dashoffset: 0 } }
+.aside-sheen {
+  animation: aside-sheen 4.5s ease-in-out 1s infinite;
+}
+@keyframes aside-gauge {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
 .aside-gauge {
   stroke-dashoffset: 61.5;
-  animation: aside-gauge 1.5s cubic-bezier(.21,.7,.35,1) 0.35s forwards;
+  animation: aside-gauge 1.5s cubic-bezier(0.21, 0.7, 0.35, 1) 0.35s forwards;
 }
 .aside-svg-pop {
   transform-box: fill-box;
   transform-origin: center;
   opacity: 0;
-  animation: aside-pop 0.9s cubic-bezier(.21,.7,.35,1) 0.45s forwards;
+  animation: aside-pop 0.9s cubic-bezier(0.21, 0.7, 0.35, 1) 0.45s forwards;
 }
 
 /* Honor reduced-motion */
@@ -314,18 +531,32 @@ summary::-webkit-details-marker {
 }
 
 /* ── Legal pages (Privacy, Terms) — lightweight prose, no typography plugin ── */
-.legal-prose p { margin: 0; }
+.legal-prose p {
+  margin: 0;
+}
 .legal-prose a {
-  color: #1B4FB8;
+  /* Was the light theme's accent-ink frozen as hex, which on a dark page is
+     2.57:1 — and the only links on these pages are the contact address and the
+     regulator, i.e. the two things a reader comes here to act on. */
+  color: rgb(var(--accent-ink));
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.legal-prose a:hover { opacity: 0.8; }
-.legal-prose strong { font-weight: 600; color: var(--ink, #10192b); }
+.legal-prose a:hover {
+  opacity: 0.8;
+}
+.legal-prose strong {
+  font-weight: 600;
+  color: rgb(var(--ink));
+}
 .legal-prose ul {
   margin: 0;
   padding-left: 1.25rem;
   list-style: disc;
 }
-.legal-prose ul li { margin-top: 0.4rem; }
-.legal-prose ul li::marker { color: rgba(16, 25, 43, 0.35); }
+.legal-prose ul li {
+  margin-top: 0.4rem;
+}
+.legal-prose ul li::marker {
+  color: rgb(var(--ink) / 0.45);
+}

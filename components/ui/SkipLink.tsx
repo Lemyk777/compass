@@ -27,7 +27,7 @@ export function SkipLink() {
   return (
     <Link
       href={`#${SKIP_TARGET}`}
-      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:inline-flex focus:h-11 focus:items-center focus:rounded-xl focus:bg-ink focus:px-4 focus:text-sm focus:font-medium focus:text-white focus-visible:focus-ring"
+      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:inline-flex focus:h-11 focus:items-center focus:rounded-xl focus:bg-ink focus:px-4 focus:text-sm focus:font-medium focus:text-surface focus-visible:focus-ring"
     >
       Skip to the content
     </Link>

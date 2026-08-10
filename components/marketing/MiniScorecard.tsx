@@ -16,9 +16,9 @@ export function MiniScorecard({
     { label: t("mini.activities"), v: 6 },
   ];
   const chips = [
-    { label: t("tier.reach"), color: "var(--reach)", soft: "var(--reach-soft)" },
-    { label: t("tier.target"), color: "var(--target)", soft: "var(--target-soft)" },
-    { label: t("tier.likely"), color: "var(--likely)", soft: "var(--likely-soft)" },
+    { label: t("tier.reach"), color: "rgb(var(--reach))", soft: "rgb(var(--reach-soft))" },
+    { label: t("tier.target"), color: "rgb(var(--target))", soft: "rgb(var(--target-soft))" },
+    { label: t("tier.likely"), color: "rgb(var(--likely))", soft: "rgb(var(--likely-soft))" },
   ];
   return (
     <div
@@ -69,7 +69,7 @@ export function MiniScorecard({
           <span
             key={c.label}
             className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
-            style={{ backgroundColor: c.soft, color: "var(--ink)" }}
+            style={{ backgroundColor: c.soft, color: "rgb(var(--ink))" }}
           >
             <span
               className="h-2 w-2 rounded-full"

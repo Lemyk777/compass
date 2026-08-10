@@ -58,7 +58,7 @@ export function SectionIntro({
       <div className="flex items-center gap-2.5">
         <span
           data-num
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white"
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-surface"
         >
           {step}
         </span>
@@ -175,7 +175,7 @@ export function GuideCard({
       {badge && (
         <span
           className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-            emphasis ? "bg-accent text-white" : "bg-accent-soft text-accent-ink"
+            emphasis ? "bg-accent text-on-fill" : "bg-accent-soft text-accent-ink"
           }`}
         >
           {badge}
@@ -333,7 +333,7 @@ export function GuidePart({
           <span
             data-num
             aria-hidden
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold text-surface"
           >
             {step}
           </span>
@@ -510,13 +510,13 @@ export function NextStep({
     return (
       <Link
         href="/opportunities"
-        className="flex items-center justify-between gap-3 rounded-2xl bg-ink p-5 text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+        className="flex items-center justify-between gap-3 rounded-2xl bg-ink p-5 text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
       >
         <span>
           <span className="text-sm font-semibold">
             See what you can enter this year
           </span>
-          <span className="mt-0.5 block text-sm text-white/70">
+          <span className="mt-0.5 block text-sm text-surface/70">
             The catalog, filtered to your age and your fields.
           </span>
         </span>

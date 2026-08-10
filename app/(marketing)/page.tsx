@@ -81,7 +81,7 @@ export default async function LandingPage() {
     // main landmark, which makes "jump to main content" land on the logo — the
     // one shortcut for skipping chrome delivering you into it. Both are siblings
     // now, and the skip link ahead of them is the first thing in the tab order.
-    <div className="min-h-screen overflow-x-hidden bg-surface text-ink selection:bg-ink selection:text-white">
+    <div className="min-h-screen overflow-x-hidden bg-surface text-ink selection:bg-ink selection:text-surface">
       <SkipLink />
       <header className="absolute inset-x-0 top-0 z-50">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-6 py-6 md:px-12 md:py-8 xl:px-20">
@@ -170,7 +170,7 @@ export default async function LandingPage() {
                 <ButtonLink
                   href="/opportunities"
                   size="lg"
-                  className="rounded-full bg-ink px-7 py-4 text-base font-medium text-white transition-all hover:bg-ink/90 hover:shadow-lift"
+                  className="rounded-full bg-ink px-7 py-4 text-base font-medium text-surface transition-all hover:bg-ink/90 hover:shadow-lift"
                 >
                   See what you can enter
                 </ButtonLink>
@@ -249,15 +249,15 @@ export default async function LandingPage() {
         <HowItWorks />
 
         {/* ── The problem ── why lists like this usually fail a student. */}
-        <section className="w-full border-y border-black/5 bg-ink px-6 py-24 text-white md:px-12 md:py-28 lg:px-20">
+        <section className="w-full border-y border-black/5 bg-ink px-6 py-24 text-surface md:px-12 md:py-28 lg:px-20">
           <div className="mx-auto max-w-6xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-surface/65">
               The problem
             </p>
             <h2 className="mt-3 max-w-2xl text-balance text-3xl font-medium tracking-tight md:text-4xl lg:text-[2.75rem]">
               The lists exist. They&rsquo;re just not for you.
             </h2>
-            <p className="mt-4 max-w-2xl text-pretty text-lg font-light leading-relaxed text-white/60">
+            <p className="mt-4 max-w-2xl text-pretty text-lg font-light leading-relaxed text-surface/60">
               Search &ldquo;olympiads for school students&rdquo; and you get
               hundreds of results. Almost none of them tell you the one thing
               that decides everything: whether someone your age, in your
@@ -276,14 +276,14 @@ export default async function LandingPage() {
                     subordinate to the heading beside it. */}
                   <span
                     data-num
-                    className="font-display text-sm font-semibold text-white/50"
+                    className="font-display text-sm font-semibold text-surface/65"
                   >
                     {p.n}
                   </span>
-                  <h3 className="mt-3 text-lg font-semibold tracking-tight text-white">
+                  <h3 className="mt-3 text-lg font-semibold tracking-tight text-surface">
                     {p.title}
                   </h3>
-                  <p className="mt-2 text-pretty text-sm leading-relaxed text-white/60">
+                  <p className="mt-2 text-pretty text-sm leading-relaxed text-surface/60">
                     {p.body}
                   </p>
                 </div>

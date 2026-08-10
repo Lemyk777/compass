@@ -97,7 +97,7 @@ export function GuideTabs() {
                     data-num
                     aria-hidden
                     className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
-                      on ? "bg-accent text-white" : "bg-line/70 text-ink-faint"
+                      on ? "bg-accent text-on-fill" : "bg-line/70 text-ink-faint"
                     }`}
                   >
                     {t.step}

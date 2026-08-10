@@ -38,7 +38,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#10192b",
+  // Two values, because this paints the browser's own chrome — the address bar
+  // on Android, the title bar of an installed PWA. One value meant a dark strip
+  // above a light page or the reverse; each now matches the surface underneath.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F7F8FA" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B111C" },
+  ],
 };
 
 export default function RootLayout({
@@ -60,4 +66,3 @@ export default function RootLayout({
     </ViewTransitions>
   );
 }
-

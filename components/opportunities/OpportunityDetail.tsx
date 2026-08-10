@@ -302,7 +302,7 @@ export function OpportunityDetail({
             href={o.url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-11 items-center rounded-xl bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+            className="inline-flex h-11 items-center rounded-xl bg-ink px-4 text-sm font-medium text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
           >
             Open the official page ↗
           </a>

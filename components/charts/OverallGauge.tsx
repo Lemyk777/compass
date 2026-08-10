@@ -49,7 +49,7 @@ export function OverallGauge({ score }: { score: number }) {
               tick={false}
             />
             <RadialBar
-              background={{ fill: "var(--line)" }}
+              background={{ fill: "rgb(var(--line))" }}
               dataKey="value"
               cornerRadius={8}
               angleAxisId={0}

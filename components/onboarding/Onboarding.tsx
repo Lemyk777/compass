@@ -196,7 +196,7 @@ function Wizard({
                   <span
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
                       active
-                        ? "bg-accent text-white"
+                        ? "bg-accent text-on-fill"
                         : done
                           ? "bg-accent/15 text-accent"
                           : "bg-line text-ink-faint"
@@ -344,7 +344,7 @@ function WhyIllustration() {
         width="84"
         height="106"
         rx="10"
-        fill="var(--accent-soft)"
+        fill="rgb(var(--accent-soft))"
       />
       <rect
         x="58"
@@ -352,7 +352,7 @@ function WhyIllustration() {
         width="84"
         height="106"
         rx="10"
-        stroke="var(--accent)"
+        stroke="rgb(var(--accent))"
         strokeOpacity="0.3"
       />
       <rect
@@ -361,22 +361,22 @@ function WhyIllustration() {
         width="32"
         height="16"
         rx="6"
-        fill="var(--card)"
-        stroke="var(--accent)"
+        fill="rgb(var(--card))"
+        stroke="rgb(var(--accent))"
         strokeOpacity="0.4"
       />
       <circle
         cx="100"
         cy="55"
         r="11"
-        fill="var(--card)"
-        stroke="var(--accent)"
+        fill="rgb(var(--card))"
+        stroke="rgb(var(--accent))"
         strokeWidth="2"
       />
-      <circle cx="100" cy="51" r="4" fill="var(--accent)" />
+      <circle cx="100" cy="51" r="4" fill="rgb(var(--accent))" />
       <path
         d="M92 62c2-3 14-3 16 0"
-        stroke="var(--accent)"
+        stroke="rgb(var(--accent))"
         strokeWidth="2"
         strokeLinecap="round"
       />
@@ -386,7 +386,7 @@ function WhyIllustration() {
         width="56"
         height="6"
         rx="3"
-        fill="var(--accent)"
+        fill="rgb(var(--accent))"
         fillOpacity="0.35"
       />
       <rect
@@ -395,7 +395,7 @@ function WhyIllustration() {
         width="40"
         height="6"
         rx="3"
-        fill="var(--accent)"
+        fill="rgb(var(--accent))"
         fillOpacity="0.25"
       />
       <rect
@@ -404,12 +404,12 @@ function WhyIllustration() {
         width="48"
         height="6"
         rx="3"
-        fill="var(--accent)"
+        fill="rgb(var(--accent))"
         fillOpacity="0.25"
       />
       <path
         d="M150 96l24 24m-24 0 24-24"
-        stroke="var(--accent)"
+        stroke="rgb(var(--accent))"
         strokeWidth="3"
         strokeLinecap="round"
         transform="translate(2 -6) rotate(45 162 108)"

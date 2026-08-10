@@ -123,7 +123,7 @@ export function VerifiedTick({ size = "sm" }: { size?: BadgeSize }) {
       <path
         d="M8.6 12.3l2.2 2.2 4.6-4.6"
         fill="none"
-        stroke="var(--color-card, #fff)"
+        stroke="rgb(var(--card))"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"

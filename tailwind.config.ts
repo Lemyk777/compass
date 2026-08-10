@@ -7,18 +7,31 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Every colour is a CSS variable now, and none of them live here.
+      //
+      // app/globals.css holds the values, in channel-triplet form, for light and
+      // dark. `rgb(var(--x) / <alpha-value>)` is the only shape that keeps
+      // Tailwind's opacity modifiers working — `bg-accent-soft/25`,
+      // `text-ink/60`, `border-ivy/20` and 253 others — so the triplet form is
+      // required, not a preference. The whole product themes from that one
+      // block; there is no `dark:` variant anywhere, because a token that means
+      // "the page background" should simply BE the page background.
+      //
+      // What was here before was a second copy of the palette, and the two had
+      // already drifted apart in four places. Now the config names roles and
+      // globals.css gives them values.
       colors: {
         // Deep base + text
         ink: {
-          DEFAULT: "#10192B",
-          soft: "#3A4661",
-          faint: "#525D73",
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          soft: "rgb(var(--ink-soft) / <alpha-value>)",
+          faint: "rgb(var(--ink-faint) / <alpha-value>)",
         },
         // Neutral page surface — matches the landing page background so the app
         // reads as one continuous product from marketing through the dashboard.
-        surface: "#F7F8FA",
-        card: "#FFFFFF",
-        line: "#E6E2DA",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        card: "rgb(var(--card) / <alpha-value>)",
+        line: "rgb(var(--line) / <alpha-value>)",
         // The single accent — reserved for the user's own scores/highlights.
         //
         // Same three roles as the tiers below, and the same trap: DEFAULT is
@@ -29,16 +42,22 @@ const config: Config = {
         // 6.92 on the two, and is what coloured TEXT should use; keep DEFAULT
         // for fills and for icons, which only owe 3:1.
         accent: {
-          DEFAULT: "#2F6FED",
-          soft: "#E4ECFD",
-          ink: "#1B4FB8",
+          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+          soft: "rgb(var(--accent-soft) / <alpha-value>)",
+          ink: "rgb(var(--accent-ink) / <alpha-value>)",
         },
         // Landing redesign: single flat emerald/ivy accent (no gradients).
         ivy: {
-          DEFAULT: "#0E7B57",
-          ink: "#0A5C41",
-          soft: "#E7F2EC",
+          DEFAULT: "rgb(var(--ivy) / <alpha-value>)",
+          ink: "rgb(var(--ivy-ink) / <alpha-value>)",
+          soft: "rgb(var(--ivy-soft) / <alpha-value>)",
         },
+        // The hero headline's deeper, more muted accent. It lived only as a CSS
+        // variable and only `.roll-word` used it; naming it here means the one
+        // place that wants it can stop reaching past the design system for it.
+        hero: { ink: "rgb(var(--hero-ink) / <alpha-value>)" },
+        // Text on a saturated fill — see the note in globals.css.
+        "on-fill": "rgb(var(--on-fill) / <alpha-value>)",
         // Semantic tier scale — used identically everywhere (gauges, chips, bars).
         //
         // Each tier has THREE roles and they are not interchangeable:
@@ -54,18 +73,28 @@ const config: Config = {
         // that should be hard to read. `text-target` was worse at 2.76:1, under
         // even the 3:1 bar for graphics, so the trophy glyph failed too.
         //
-        // The values are NOT new. They are the ones `TIER_META[tier].text` in
-        // lib/tiers.ts has been carrying all along — the file already knew the
-        // fills were unreadable as text. Six components had independently
-        // hand-copied that hex inline (`text-[#2C6B4D]`, `text-[#8A5410]`),
-        // which is the "raw hex in a component" smell pointing straight at a
-        // missing token. Duplicated here rather than imported because a Tailwind
-        // config cannot pull in lib/ai/schema's types; scripts/test-engine.ts
-        // pins the two lists together, the same arrangement as
-        // legacy-guide-urls.ts and next.config.mjs.
-        reach: { DEFAULT: "#E0664F", soft: "#FBE7E2", ink: "#A93B2A" },
-        target: { DEFAULT: "#D98A2B", soft: "#FaEEDB", ink: "#8A5410" },
-        likely: { DEFAULT: "#3F9B6E", soft: "#E1F1E9", ink: "#2C6B4D" },
+        // The light values are the ones `TIER_META[tier].text` in lib/tiers.ts
+        // has been carrying all along — the file already knew the fills were
+        // unreadable as text. Six components had independently hand-copied that
+        // hex inline (`text-[#2C6B4D]`, `text-[#8A5410]`), which is the "raw hex
+        // in a component" smell pointing straight at a missing token. They live
+        // in globals.css now, in both themes, and scripts/test-engine.ts reads
+        // them from there to assert the ratios in light AND dark.
+        reach: {
+          DEFAULT: "rgb(var(--reach) / <alpha-value>)",
+          soft: "rgb(var(--reach-soft) / <alpha-value>)",
+          ink: "rgb(var(--reach-ink) / <alpha-value>)",
+        },
+        target: {
+          DEFAULT: "rgb(var(--target) / <alpha-value>)",
+          soft: "rgb(var(--target-soft) / <alpha-value>)",
+          ink: "rgb(var(--target-ink) / <alpha-value>)",
+        },
+        likely: {
+          DEFAULT: "rgb(var(--likely) / <alpha-value>)",
+          soft: "rgb(var(--likely-soft) / <alpha-value>)",
+          ink: "rgb(var(--likely-ink) / <alpha-value>)",
+        },
       },
       fontFamily: {
         display: ["var(--font-display)", "ui-sans-serif", "system-ui"],
@@ -75,34 +104,43 @@ const config: Config = {
         xl: "0.875rem",
         "2xl": "1.25rem",
       },
+      // Shadows are themed too, and they have to be: a near-black shadow at 4%
+      // opacity is what lifts a white card off an off-white page, and it is
+      // completely invisible under a dark card on a darker page. The dark
+      // values are pure black at several times the opacity — in dark mode a
+      // shadow reads as depth only when it is genuinely darker than the surface
+      // it falls on, which "the same navy, slightly transparent" never is.
       boxShadow: {
-        card: "0 1px 2px rgba(16,25,43,0.04), 0 8px 24px -12px rgba(16,25,43,0.12)",
-        lift: "0 4px 12px rgba(16,25,43,0.06), 0 24px 48px -20px rgba(16,25,43,0.22)",
+        card: "var(--shadow-card)",
+        lift: "var(--shadow-lift)",
       },
       keyframes: {
         "fade-up": {
           "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        "shimmer": {
+        shimmer: {
           from: { backgroundPosition: "0 0" },
           to: { backgroundPosition: "-200% 0" },
         },
-        "spotlight": {
+        spotlight: {
           "0%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.5)" },
           "100%": { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
         },
-        "meteor": {
+        meteor: {
           "0%": { transform: "rotate(215deg) translateX(0)", opacity: "1" },
           "70%": { opacity: "1" },
-          "100%": { transform: "rotate(215deg) translateX(-500px)", opacity: "0" },
+          "100%": {
+            transform: "rotate(215deg) translateX(-500px)",
+            opacity: "0",
+          },
         },
       },
       animation: {
         "fade-up": "fade-up 0.5s ease-out both",
-        "shimmer": "shimmer 2s linear infinite",
-        "spotlight": "spotlight 2s ease .75s 1 forwards",
-        "meteor": "meteor 5s linear infinite",
+        shimmer: "shimmer 2s linear infinite",
+        spotlight: "spotlight 2s ease .75s 1 forwards",
+        meteor: "meteor 5s linear infinite",
       },
     },
   },

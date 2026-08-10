@@ -256,7 +256,7 @@ export function CountryTabs() {
             aria-pressed={on}
             onClick={() => setCountry(code)}
             className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus-visible:focus-ring ${
-              on ? "bg-accent text-white" : "text-ink-soft hover:text-ink"
+              on ? "bg-accent text-on-fill" : "text-ink-soft hover:text-ink"
             }`}
           >
             <Flag code={code} />

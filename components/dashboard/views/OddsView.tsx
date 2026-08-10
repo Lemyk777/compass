@@ -159,9 +159,9 @@ function CountryOdds({
 function Legend() {
   const t = useT();
   const items = [
-    { label: t("tier.likely"), color: "var(--likely)" },
-    { label: t("tier.target"), color: "var(--target)" },
-    { label: t("tier.reach"), color: "var(--reach)" },
+    { label: t("tier.likely"), color: "rgb(var(--likely))" },
+    { label: t("tier.target"), color: "rgb(var(--target))" },
+    { label: t("tier.reach"), color: "rgb(var(--reach))" },
   ];
   return (
     <div className="mt-3 flex flex-wrap gap-4 border-t border-line pt-3">

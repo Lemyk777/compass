@@ -1115,56 +1115,117 @@ test("every destination states its cycle, its reading, and its teaching", () => 
 // did not exist. So the two lists must not drift apart again, and the ratios are
 // asserted rather than trusted — a future tweak to a brand colour cannot quietly
 // drop below AA.
-const relativeLuminance = (hex: string) => {
-  const v = parseInt(hex.slice(1), 16);
+// It now checks BOTH themes, which is the whole reason the palette moved into
+// CSS variables: a dark theme is a second set of values that has to clear the
+// same bar, and eyeballing "looks fine on my monitor" is exactly how a dark mode
+// ships at 2:1. The values are read out of app/globals.css, because after the
+// move the Tailwind config holds no colours at all — it names roles.
+const relativeLuminance = (rgb: [number, number, number]) => {
   const channel = (c: number) => {
     const s = c / 255;
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
   };
   return (
-    0.2126 * channel((v >> 16) & 255) +
-    0.7152 * channel((v >> 8) & 255) +
-    0.0722 * channel(v & 255)
+    0.2126 * channel(rgb[0]) + 0.7152 * channel(rgb[1]) + 0.0722 * channel(rgb[2])
   );
 };
-const contrast = (a: string, b: string) => {
+const contrast = (a: [number, number, number], b: [number, number, number]) => {
   const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort(
     (x, y) => y - x,
   );
   return (hi + 0.05) / (lo + 0.05);
 };
 
-test("every tier's ink is readable on white and on its own tint", () => {
-  const config = readFileSync(
-    path.join(process.cwd(), "tailwind.config.ts"),
-    "utf8",
-  );
-  const CARD = "#FFFFFF";
-  for (const tier of ["reach", "target", "likely"] as const) {
-    const block = new RegExp(`\\b${tier}: \\{([^}]*)\\}`).exec(config)?.[1];
-    assert.ok(block, `${tier} is missing from the Tailwind palette`);
-    const pick = (role: string) =>
-      new RegExp(`${role}: "(#[0-9A-Fa-f]{6})"`).exec(block!)?.[1];
-    const ink = pick("ink");
-    const soft = pick("soft");
-    assert.ok(ink, `${tier} has no ink — coloured text will fall back to the fill`);
-    assert.ok(soft, `${tier} has no soft tint`);
+/** Read one theme's channel triplets out of globals.css. */
+function readTheme(css: string, selector: string) {
+  const start = css.indexOf(selector);
+  assert.ok(start >= 0, `globals.css has no ${selector} block`);
+  const body = css.slice(start, css.indexOf("}", start));
+  const out: Record<string, [number, number, number]> = {};
+  for (const m of body.matchAll(/--([a-z-]+):\s*(\d+)\s+(\d+)\s+(\d+)\s*;/g)) {
+    out[m[1]] = [Number(m[2]), Number(m[3]), Number(m[4])];
+  }
+  return out;
+}
 
-    // Text, so AA is 4.5:1 — on the page and on the chip it sits in.
-    assert.ok(
-      contrast(ink!, CARD) >= 4.5,
-      `${tier}.ink is ${contrast(ink!, CARD).toFixed(2)}:1 on white — under AA`,
+test("both themes clear AA — every ink on every surface it lands on", () => {
+  const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+  const themes = {
+    light: readTheme(css, ":root {"),
+    dark: readTheme(css, ':root[data-theme="dark"] {'),
+  };
+
+  for (const [name, T] of Object.entries(themes)) {
+    const need = (
+      label: string,
+      fg: string,
+      bg: string,
+      min: number,
+      what: string,
+    ) => {
+      assert.ok(T[fg], `${name}: --${fg} is not defined`);
+      assert.ok(T[bg], `${name}: --${bg} is not defined`);
+      const r = contrast(T[fg], T[bg]);
+      assert.ok(
+        r >= min,
+        `${name}: ${label} is ${r.toFixed(2)}:1, under ${min} (${what})`,
+      );
+    };
+
+    // Body text, on both the page and a raised card.
+    for (const fg of ["ink", "ink-soft", "ink-faint"]) {
+      need(`${fg} on surface`, fg, "surface", 4.5, "text");
+      need(`${fg} on card`, fg, "card", 4.5, "text");
+    }
+    // Every coloured TEXT token, on the page, on a card, and on its own tint —
+    // the chip is the case that catches people, because a tint of the same hue
+    // is where a colour has the least room to be readable.
+    for (const t of ["accent", "ivy", "reach", "target", "likely"]) {
+      need(`${t}-ink on surface`, `${t}-ink`, "surface", 4.5, "text");
+      need(`${t}-ink on card`, `${t}-ink`, "card", 4.5, "text");
+      need(`${t}-ink on ${t}-soft`, `${t}-ink`, `${t}-soft`, 4.5, "chip text");
+    }
+    // Fills are graphics: 3:1, and `target` failed even this before the ink
+    // tokens existed.
+    for (const t of ["accent", "ivy", "reach", "target", "likely"]) {
+      need(`${t} fill on card`, t, "card", 3, "graphic");
+    }
+    // A border nobody can see is not a border. Low bar on purpose — this is a
+    // hairline, not a control — but a bar, because "invisible in dark mode" is
+    // the classic way a themed divider disappears.
+    need("line on card", "line", "card", 1.25, "divider");
+    need("line on surface", "line", "surface", 1.25, "divider");
+    // A raised surface must not be the SAME colour as the page — but the floor
+    // is deliberately near the noise, because elevation is not carried by this
+    // step in either theme. Light mode separates a card with its shadow and its
+    // border (white on #F7F8FA is 1.06 and has always been); dark mode uses a
+    // slightly lighter card and leans harder on the border, which is why `line`
+    // is checked above at a real bar. Asserting a big step here would be
+    // asserting a design the product does not have.
+    need("card on surface", "card", "surface", 1.04, "elevation");
+  }
+});
+
+// Nothing may freeze a colour: a literal hex in a component or a data file stays
+// light-mode red on a dark page. The two files that used to hold the palette are
+// the ones most likely to grow one back.
+test("the shared colour modules hold no frozen hex", () => {
+  for (const f of ["lib/tiers.ts", "tailwind.config.ts"]) {
+    const text = readFileSync(path.join(process.cwd(), f), "utf8");
+    const code = text.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
+    const frozen = code.match(/#[0-9A-Fa-f]{6}\b/g) ?? [];
+    assert.deepEqual(
+      frozen,
+      [],
+      `${f} holds ${frozen.join(", ")} — use rgb(var(--token)) so it themes`,
     );
-    assert.ok(
-      contrast(ink!, soft!) >= 4.5,
-      `${tier}.ink is ${contrast(ink!, soft!).toFixed(2)}:1 on ${tier}-soft — under AA`,
-    );
-    // And it must still BE the tier's colour: lib/tiers.ts is what the charts
-    // read, so a divergence would put two different reds on one screen.
-    assert.equal(
-      ink!.toUpperCase(),
-      TIER_META[tier].text.toUpperCase(),
-      `${tier}.ink and TIER_META.${tier}.text have drifted apart`,
+  }
+  // TIER_META is what the charts read; it has to point at the variables.
+  for (const tier of ["reach", "target", "likely"] as const) {
+    assert.match(
+      TIER_META[tier].text,
+      /^rgb\(var\(--\w[\w-]*\)\)$/,
+      `TIER_META.${tier}.text must be a themed variable, not a fixed colour`,
     );
   }
 });
