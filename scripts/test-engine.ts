@@ -81,7 +81,17 @@ import {
   hubsByCountry,
   hubsByRegion,
   hubsForFaculties,
+  type RegionKey,
 } from "@/lib/data/world";
+import {
+  NO_GUIDE_FILTERS,
+  activeGuideFilterCount,
+  filterGuideRows,
+  guideFacets,
+  guideFilterParams,
+  parseGuideFilters,
+  type GuideRow,
+} from "@/lib/data/guide-filter";
 import {
   STUDY_DESTINATIONS,
   destinationById,
@@ -866,7 +876,7 @@ test("the guide's steps are a chain that ends", () => {
 // those are the home region. If a future change nests cities strictly inside
 // country profiles, this test is the one that should stop it.
 // This test used to assert the opposite: that some cities had NO country page,
-// and that Almaty, Astana, Tashkent and Tbilisi were among them — a guard so a
+// and that Almaty, Astana and Tbilisi were among them — a guard so a
 // tidy-up could not delete the home region from the map. Those countries are
 // profiled now, so the guard becomes the stronger invariant it was standing in
 // for: every city belongs to a country you can open, and no city belongs to two.
@@ -886,7 +896,7 @@ test("every city sits in exactly one country we profile", () => {
       `${h.id} does not resolve to a destination`,
     );
   }
-  for (const home of ["almaty", "astana", "tashkent", "tbilisi"]) {
+  for (const home of ["almaty", "astana", "tbilisi"]) {
     assert.ok(
       HUBS.some((h) => h.id === home),
       `${home} has been dropped from the world map`,
@@ -901,6 +911,30 @@ test("every city sits in exactly one country we profile", () => {
       g.hubs.every((h) => h.country === g.country),
       `${g.country} group contains a hub from elsewhere`,
     );
+  }
+});
+
+// A hub may be a PAIR of cities — "Zurich & Lausanne", "Dubai & Abu Dhabi",
+// "Osaka & Kyoto" — where two cities are genuinely one labour market with one
+// route in. That is a deliberate shape and this test does not forbid it.
+//
+// What it forbids is a pair that swallows a city ALREADY PROFILED on its own.
+// The Netherlands listed "Amsterdam" and "Amsterdam & Eindhoven" side by side,
+// and China listed "Shanghai" and "Shenzhen & Shanghai" — so the same city
+// appeared twice in one country's list, under two different cards, with
+// different advice on each. A reader cannot tell which one is for them, and
+// both were simply mislabelled entries about Eindhoven and Shenzhen.
+test("no hub's label swallows a city that is profiled on its own", () => {
+  for (const outer of HUBS) {
+    for (const inner of HUBS) {
+      if (outer.id === inner.id) continue;
+      assert.ok(
+        !outer.city.includes(inner.city),
+        `${outer.id} is labelled "${outer.city}", which contains "${inner.city}" — ` +
+          `${inner.id} already has its own page, so the city appears twice. ` +
+          `Name this hub after the place it is actually about.`,
+      );
+    }
   }
 });
 
@@ -1190,6 +1224,23 @@ test("both themes clear AA — every ink on every surface it lands on", () => {
     for (const t of ["accent", "ivy", "reach", "target", "likely"]) {
       need(`${t} fill on card`, t, "card", 3, "graphic");
     }
+    // The inverted band. The second assertion is the one that encodes the bug:
+    // painted with `ink`, this band passed every contrast check and still broke
+    // the page, because it went WHITE in dark mode. Contrast was never the
+    // problem — DIRECTION was. So the rule is absolute, not relative: the band
+    // is a dark surface in both themes and may never become a light slab.
+    //
+    // Deliberately not "darker than surface". In dark mode the page is already
+    // near-black and the band lifts slightly above it (surface < band < card);
+    // a relative test would force the band under the floor, and down there
+    // contrast ratios compress so far that they measure nothing.
+    need("band-ink on band", "band-ink", "band", 4.5, "text");
+    assert.ok(
+      relativeLuminance(T["band"]) < 0.1,
+      `${name}: --band has luminance ${relativeLuminance(T["band"]).toFixed(3)} — ` +
+        `too light to be an inverted band. It must be dark in BOTH themes; ` +
+        `that is the entire reason it is not just --ink.`,
+    );
     // A border nobody can see is not a border. Low bar on purpose — this is a
     // hairline, not a control — but a bar, because "invisible in dark mode" is
     // the classic way a themed divider disappears.
@@ -1931,4 +1982,93 @@ test("an eligibility sentence no student passes is flagged, not queued as normal
   // Silence about eligibility is itself a finding — it is the first question a
   // student asks.
   assert.ok(screenEligibility(null).some((w) => w.code === "gate_unstated"));
+});
+
+// ── The guide's list filters ────────────────────────────────────────────────
+//
+// Same three rules as the opportunities panel, because a student should not
+// have to learn two filtering behaviours inside one product. These are the
+// rules, not the implementation, so they are worth pinning.
+
+const gRow = (
+  id: string,
+  region: RegionKey,
+  text: string,
+  modelled?: boolean,
+): GuideRow => ({ id, region, text: text.toLowerCase(), modelled });
+
+const GROWS: GuideRow[] = [
+  gRow("germany", "europe", "Germany free public universities", true),
+  gRow("italy", "europe", "Italy income based tuition", true),
+  gRow("japan", "asia_pacific", "Japan national universities", false),
+  gRow("korea", "asia_pacific", "South Korea scholarships", true),
+  gRow("uae", "middle_east", "United Arab Emirates Dubai", true),
+  gRow("kazakhstan", "central_asia", "Kazakhstan already inside", false),
+];
+
+test("no filter shows everything, and the neutral state is empty", () => {
+  assert.equal(filterGuideRows(GROWS, NO_GUIDE_FILTERS).length, GROWS.length);
+  assert.equal(activeGuideFilterCount(NO_GUIDE_FILTERS), 0);
+  assert.deepEqual(guideFilterParams(NO_GUIDE_FILTERS), {});
+});
+
+test("options inside a group are ORed, groups are ANDed", () => {
+  const twoRegions = { ...NO_GUIDE_FILTERS, regions: ["europe", "asia_pacific"] as RegionKey[] };
+  // OR inside the group: both regions, not their intersection (which is empty).
+  assert.equal(filterGuideRows(GROWS, twoRegions).length, 4);
+  // AND across groups: those regions AND modelled.
+  const andModelled = { ...twoRegions, modelledOnly: true };
+  assert.deepEqual(
+    filterGuideRows(GROWS, andModelled).map((r) => r.id),
+    ["germany", "italy", "korea"],
+  );
+});
+
+test("a group's counts are computed with its OWN selection lifted", () => {
+  // The rule that makes a count worth reading: standing on Europe, the number
+  // on Asia-Pacific must still say what switching to it would give you. With
+  // the group applied it would read 0 and tell the student nothing.
+  const f = { ...NO_GUIDE_FILTERS, regions: ["europe"] as RegionKey[] };
+  const facets = guideFacets(GROWS, f);
+  assert.equal(facets.regions.europe, 2);
+  assert.equal(facets.regions.asia_pacific, 2, "sibling region zeroed out");
+  assert.equal(facets.regions.central_asia, 1);
+  // The total, by contrast, IS what the list shows.
+  assert.equal(facets.total, 2);
+});
+
+test("a count from another group still reflects the filters that are on", () => {
+  // Lifting is per-group, not global: with Europe selected, the modelled count
+  // must describe Europe, or the two controls would describe different lists.
+  const f = { ...NO_GUIDE_FILTERS, regions: ["europe"] as RegionKey[] };
+  assert.equal(guideFacets(GROWS, f).modelled, 2);
+  assert.equal(guideFacets(GROWS, NO_GUIDE_FILTERS).modelled, 4);
+});
+
+test("search takes all terms in any order, and an empty query matches all", () => {
+  const q = (s: string) => filterGuideRows(GROWS, { ...NO_GUIDE_FILTERS, q: s });
+  assert.deepEqual(q("public germany").map((r) => r.id), ["germany"]);
+  assert.deepEqual(q("GERMANY").map((r) => r.id), ["germany"], "case-insensitive");
+  assert.deepEqual(q("univers").map((r) => r.id), ["germany", "japan"], "substring");
+  assert.equal(q("   ").length, GROWS.length, "blank query is not a filter");
+  assert.equal(q("germany japan").length, 0, "terms are ANDed");
+});
+
+test("filters survive a round trip through the URL", () => {
+  const f = {
+    q: "free public",
+    regions: ["europe", "middle_east"] as RegionKey[],
+    modelledOnly: true,
+  };
+  assert.deepEqual(parseGuideFilters(guideFilterParams(f)), f);
+  // Empty values never reach the URL — a student pastes these into a chat.
+  assert.deepEqual(guideFilterParams({ ...NO_GUIDE_FILTERS, q: "  " }), {});
+  // Junk in a hand-edited URL is dropped rather than throwing.
+  assert.deepEqual(parseGuideFilters({ r: "europe,atlantis", m: "yes" }), {
+    q: "",
+    regions: ["europe"],
+    modelledOnly: false,
+  });
+  // A repeated region is a hand-edited URL, not a state the panel can produce.
+  assert.deepEqual(parseGuideFilters({ r: "europe,europe" }).regions, ["europe"]);
 });

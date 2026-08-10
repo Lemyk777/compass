@@ -58,6 +58,12 @@ const config: Config = {
         hero: { ink: "rgb(var(--hero-ink) / <alpha-value>)" },
         // Text on a saturated fill — see the note in globals.css.
         "on-fill": "rgb(var(--on-fill) / <alpha-value>)",
+        // A full-bleed inverted band and the text on it. Dark in BOTH themes —
+        // see the note in globals.css for why inversion cannot just be `ink`.
+        band: {
+          DEFAULT: "rgb(var(--band) / <alpha-value>)",
+          ink: "rgb(var(--band-ink) / <alpha-value>)",
+        },
         // Semantic tier scale — used identically everywhere (gauges, chips, bars).
         //
         // Each tier has THREE roles and they are not interchangeable:

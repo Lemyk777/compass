@@ -410,6 +410,19 @@ export function OpportunitiesView() {
                         counts={categoryCounts}
                       />
                     </div>
+                    {/* What "All" counts, said once.
+                      The landing page counts the whole catalog and this row
+                      counts what survived the age and field gates, so the two
+                      numbers on the site disagreed with nothing to explain
+                      them — which reads as broken data rather than as a filter
+                      doing its job. The number itself stays out of here on
+                      purpose: importing the catalog to say "of 156" would drag
+                      all ~2,700 entries into this client bundle, the trap the
+                      dynamic import above exists to avoid. */}
+                    <p className="-mt-1 px-1 text-xs leading-relaxed text-ink-faint">
+                      These counts are what you can enter — the catalog is
+                      larger, and the rest is for other ages or other subjects.
+                    </p>
                     {FIT_GROUPS.map((g) => {
                       const rows = visible.filter((o) => o.fit === g.fit);
                       if (rows.length === 0) return null;
@@ -898,7 +911,11 @@ function CategoryTabs({
             {t.label}
             <span
               data-num
-              className={`tabular-nums text-xs ${on ? "text-white/70" : "text-ink-faint"}`}
+              // `text-on-fill`, not `text-white`. The selected tab is filled
+              // with `accent`, which gets LIGHTER in dark mode — so white at
+              // 70% on it sat near 1.9:1 and the count on the tab you were
+              // standing on was the one you could not read.
+              className={`tabular-nums text-xs ${on ? "text-on-fill/75" : "text-ink-faint"}`}
             >
               {n}
             </span>

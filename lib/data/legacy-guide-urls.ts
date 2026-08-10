@@ -25,13 +25,11 @@
 // `/guide/work`, `/guide/cities` and every step name added later.
 export const LEGACY_GUIDE_PLACE_IDS = [
   "kazakhstan",
-  "uzbekistan",
   "georgia",
   "poland",
   "turkiye",
   "china",
   "japan",
-  "india",
   "united-states",
   "united-kingdom",
   "hong-kong",

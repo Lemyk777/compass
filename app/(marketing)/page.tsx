@@ -249,15 +249,15 @@ export default async function LandingPage() {
         <HowItWorks />
 
         {/* ── The problem ── why lists like this usually fail a student. */}
-        <section className="w-full border-y border-black/5 bg-ink px-6 py-24 text-surface md:px-12 md:py-28 lg:px-20">
+        <section className="w-full border-y border-band-ink/10 bg-band px-6 py-24 text-band-ink md:px-12 md:py-28 lg:px-20">
           <div className="mx-auto max-w-6xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-surface/65">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-band-ink/65">
               The problem
             </p>
             <h2 className="mt-3 max-w-2xl text-balance text-3xl font-medium tracking-tight md:text-4xl lg:text-[2.75rem]">
               The lists exist. They&rsquo;re just not for you.
             </h2>
-            <p className="mt-4 max-w-2xl text-pretty text-lg font-light leading-relaxed text-surface/60">
+            <p className="mt-4 max-w-2xl text-pretty text-lg font-light leading-relaxed text-band-ink/60">
               Search &ldquo;olympiads for school students&rdquo; and you get
               hundreds of results. Almost none of them tell you the one thing
               that decides everything: whether someone your age, in your
@@ -267,7 +267,7 @@ export default async function LandingPage() {
               {PAINS.map((p) => (
                 <div
                   key={p.n}
-                  className="rounded-2xl border border-white/10 bg-white/[0.04] p-6"
+                  className="rounded-2xl border border-band-ink/10 bg-band-ink/[0.04] p-6"
                 >
                   {/* white/50, not white/30. At 30% these ordinals sat at 2.69:1
                     against the tinted card on the dark band — they read as a
@@ -276,14 +276,14 @@ export default async function LandingPage() {
                     subordinate to the heading beside it. */}
                   <span
                     data-num
-                    className="font-display text-sm font-semibold text-surface/65"
+                    className="font-display text-sm font-semibold text-band-ink/65"
                   >
                     {p.n}
                   </span>
-                  <h3 className="mt-3 text-lg font-semibold tracking-tight text-surface">
+                  <h3 className="mt-3 text-lg font-semibold tracking-tight text-band-ink">
                     {p.title}
                   </h3>
-                  <p className="mt-2 text-pretty text-sm leading-relaxed text-surface/60">
+                  <p className="mt-2 text-pretty text-sm leading-relaxed text-band-ink/60">
                     {p.body}
                   </p>
                 </div>
@@ -331,7 +331,7 @@ export default async function LandingPage() {
                 step="3"
                 count={HUBS.length}
                 title="cities to work in"
-                body="Including Almaty, Astana, Tashkent and Tbilisi — the map does not stop at the countries we profile."
+                body="Including Almaty, Astana and Tbilisi — the map does not stop at the countries we profile."
               />
               <GuideCard
                 href="/guide/from-home"

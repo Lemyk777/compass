@@ -153,58 +153,6 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
     modelled: false,
   },
   {
-    id: "uzbekistan",
-    name: "Uzbekistan",
-    where: "Central Asia — Tashkent, and the region's fastest-growing set of foreign branch campuses",
-    oneLine:
-      "The region's fastest-changing system: foreign universities have opened campuses here, so a British or Korean degree can now be taken without leaving.",
-    unique:
-      "Branch campuses award the parent university's own degree in Tashkent at a fraction of the cost of going to it, and they have multiplied here faster than anywhere else in the region.",
-    fields: [
-      "business_economics",
-      "computer_science",
-      "engineering",
-      "medicine_health",
-      "humanities_social",
-    ],
-    hubs: ["tashkent"],
-    strengths: [
-      "Branch campuses of foreign universities award the parent institution's degree in Tashkent — the cheapest way anywhere to hold a foreign credential.",
-      "The state has funded a rapid expansion of places, and English-taught programmes are now normal rather than exceptional.",
-      "Living at home while taking an international programme removes the two largest costs of studying abroad at once.",
-      "The technology and services market is growing fast, and the shortage of experienced people means real responsibility arrives early.",
-    ],
-    tradeoffs: [
-      "Quality between branch campuses varies widely, and the parent university's reputation does not automatically travel to its franchise.",
-      "Research capacity is limited, so a research career still means leaving at master's level.",
-      "Graduate salaries are low, and the gap between them and remote work for foreign clients is large enough to distort career choices.",
-      "The institutions are young, so the alumni network — the thing a degree quietly buys — barely exists yet.",
-      "Regulation changes often, and programme rules can shift between the year you apply and the year you graduate.",
-    ],
-    money:
-      "Tuition at the branch campuses is a fraction of the parent institution's own fees, state grants cover a share of places at national universities, and living at home removes the accommodation cost that dominates every foreign option. The honest risk is buying a name rather than a programme, so the individual campus's staffing and accreditation matter far more than the brand on the certificate.",
-    admissions:
-      "National testing decides places and grants at state universities. The branch campuses run their own admission — school results plus an English qualification and often an interview — which makes them the more forgiving route for a student whose examination score does not match their ability.",
-    afterStudy:
-      "You are a citizen, so there is no permit question at all. The real decision is between a local employer, remote work for foreign clients that pays several times local rates, and a master's abroad — and that decision is easier with a foreign-badged degree already in hand.",
-    suitsYou:
-      "You want a foreign degree without the cost or the visa risk of leaving, or you want to build a record cheaply now and go abroad for the master's instead.",
-    notForYou:
-      "You want laboratory research, a deep alumni network, or a degree read without questions in Western Europe — a branch campus certificate still prompts them.",
-    applicationCycle:
-      "State university admission runs on the summer national test and is settled within weeks of it, so the subject choices made months earlier are the real decision point. The branch campuses keep their own calendars: applications typically open in the spring, English tests and interviews run through early summer, and a second round in August fills what is left — which makes them a genuine fallback rather than a parallel gamble. If a master's abroad is the plan, the language test belongs in the second year of the bachelor's, not the last.",
-    howTheyRead:
-      "At the state universities, the test score against published thresholds and nothing else. At the branch campuses, school results and an English qualification carry most of the weight, with the interview used to confirm the language rather than to assess character; portfolios matter only in design. There is no essay culture and no assessment of activities, so the only levers a student can pull are grades and English — which is at least a clear and honest target.",
-    studyingThere:
-      "The branch campuses run the parent university's curriculum with local staff and visiting faculty: seminar teaching, continuous assessment and coursework in English, a genuinely different experience from the lecture-and-final-examination pattern at the national universities next door. Class sizes are small because the institutions are new. The weakness is depth of staff — a strong programme and a thin one can sit inside the same building.",
-    commonMistake:
-      "Choosing the campus by the name over the door rather than by who teaches inside it. Two branch campuses of equally famous universities can differ enormously in staffing, accreditation and what the degree actually permits afterwards. Ask which body awards the degree, who teaches the final year, and where last year's graduates went — in writing.",
-    sources: [
-      { label: "Ministry of Higher Education, Science and Innovation", url: "https://edu.uz/en/" },
-    ],
-    modelled: false,
-  },
-  {
     id: "georgia",
     name: "Georgia",
     where: "The Caucasus — Tbilisi, and a system built around English-taught medicine",
@@ -534,7 +482,7 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
   {
     id: "italy",
     name: "Italy",
-    where: "Southern Europe — Milan, Turin, Bologna, Rome and dozens of ancient universities",
+    where: "Southern Europe — Milan, Rome and dozens of ancient universities across the country",
     oneLine:
       "The cheapest realistic route into Western Europe for a family without money — tuition scales to income, and regional scholarships pay you to study.",
     unique:
@@ -589,11 +537,11 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
   {
     id: "netherlands",
     name: "Netherlands",
-    where: "Northwestern Europe — Amsterdam, Delft, Eindhoven, Rotterdam",
+    where: "Northwestern Europe — Amsterdam and Eindhoven, and a dense ring of technical universities around them",
     oneLine:
-      "The easiest English-speaking landing in continental Europe: hundreds of English bachelor's degrees and a country that already runs in English.",
+      "The largest choice of English-taught bachelor's degrees in continental Europe — and a country where the paperwork is still in Dutch.",
     unique:
-      "The largest offering of English-taught BACHELOR'S degrees in continental Europe, in a country where you can live, work and deal with officials in English from day one.",
+      "The largest offering of English-taught BACHELOR'S degrees in continental Europe. You can take the whole degree, and work in tech or research afterwards, without Dutch — but the state does not run in English, and that is a separate question from whether the university does.",
     fields: [
       "engineering",
       "computer_science",
@@ -604,7 +552,7 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
     ],
     hubs: ["eindhoven", "amsterdam"],
     strengths: [
-      "English-taught bachelor's degrees are normal here, not a rare exception, and Dutch society operates in English alongside Dutch.",
+      "English-taught bachelor's degrees are normal here, not a rare exception, and English carries university, tech and research work without difficulty.",
       "International and European law taught in English is a Dutch speciality — one of the few places a school-leaver can enter law abroad without first learning the local language.",
       "Problem-based, project-heavy teaching with small groups — closer to work than to lecture halls.",
       "The Eindhoven region is the centre of Europe's semiconductor and precision-engineering industry, with paid internships attached.",
@@ -615,7 +563,9 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "The student housing shortage is severe and openly acknowledged — some universities warn applicants not to come without a room.",
       "Non-EU tuition is real money: far below the US and UK, but nothing like Germany's free public universities.",
       "Popular programmes use numerus fixus selection with early deadlines — miss January and you wait a year.",
-      "Political pressure to reduce English-taught programmes is ongoing; the offering may narrow.",
+      "The state runs in Dutch even though the university does not: the tax office, the municipality, your health insurer and the water board all write to you in Dutch and will not send an English version. Study and work are the English-friendly parts; the admin around them is not.",
+      "Staying permanently means learning Dutch. Civic integration — 'inburgering' — is required of non-EU residents for a permanent permit or naturalisation, and it is a real language exam, not a formality.",
+      "The English-taught offering is being narrowed by the universities themselves. The government dropped its language test for existing programmes in July 2026, but universities are capping intake to English tracks under their own plan — eleven bachelor's programmes did so for 2026/27 — and converting some courses to Dutch. Check the language of instruction on the programme page for the year you would actually start.",
       "Dutch directness reads as rudeness to many newcomers, and integrating socially takes longer than expected.",
       "A law degree is tied to the jurisdiction that granted it: an international-law degree from here does NOT let you practise back home without requalifying, and that surprises people years too late.",
     ],
@@ -640,13 +590,14 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
     sources: [
       { label: "Studielink — the national application system", url: "https://www.studielink.nl/" },
       { label: "Nuffic — official information for international students", url: "https://www.nuffic.nl/en" },
+      { label: "IND — civic integration, permanent residence and naturalisation", url: "https://ind.nl/en/living-in-the-netherlands-with-a-residence-permit/civic-integration-for-more-secure-residence-permit-and-naturalisation" },
     ],
     modelled: false,
   },
   {
     id: "canada",
     name: "Canada",
-    where: "North America — Toronto, Waterloo, Vancouver, Montreal",
+    where: "North America — Toronto, Vancouver and Montreal, and the co-op universities feeding them",
     oneLine:
       "North America with a visible path to staying: study, then work, then permanent residence, on published rules.",
     unique:
@@ -1064,59 +1015,6 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "Applying to a university instead of to a laboratory. Research admission runs through supervisors, so the effective application is a specific, informed message to a specific researcher months before any deadline; sent generically it is ignored, and students conclude the country is closed when they only used the wrong door. The second mistake is assuming an English track removes the language requirement for working here. It does not.",
     sources: [
       { label: "Study in Japan — the MEXT gateway", url: "https://www.studyinjapan.go.jp/en/" },
-    ],
-    modelled: false,
-  },
-  {
-    id: "india",
-    name: "India",
-    where: "South Asia — Bangalore, Hyderabad, and a technology sector that hires globally",
-    oneLine:
-      "English-language technology and pharmaceutical education at the lowest cost on this list, inside the industry that supplies much of the world's software work.",
-    unique:
-      "Higher education and professional work both run in English, so a student from this region can study and then work here without learning a new language at all — which is true of nowhere else in Asia.",
-    fields: [
-      "computer_science",
-      "engineering",
-      "medicine_health",
-      "business_economics",
-    ],
-    hubs: ["bangalore", "hyderabad"],
-    strengths: [
-      "Teaching, work and business all run in English, so there is no language year and no hidden language cost.",
-      "Tuition at private universities and the cost of living are the lowest of any destination here — a full degree costs less than one year in Europe.",
-      "The technology and pharmaceutical industries are enormous and recruit on campus, so internships are genuinely reachable.",
-      "The sheer volume of engineering graduates has produced a deep and competitive teaching culture in mathematics and computing.",
-      "Student visas for applicants from this region are routine, and flights are short and inexpensive.",
-    ],
-    tradeoffs: [
-      "The strongest public institutes admit through examinations almost no foreign applicant prepares for, so the realistic route is a private university.",
-      "Quality between private universities varies enormously, and their international marketing is aggressive and unreliable.",
-      "Local graduate salaries are low, so the value is the experience and the employer's name rather than the earnings.",
-      "Campus placement culture rewards test-taking over depth, and it shapes what is taught in the final years.",
-      "Infrastructure, air quality and heat are real daily costs, particularly for anyone from a cold, dry climate.",
-      "Staying on to work needs an employment visa above a salary threshold, so the study-to-work ladder is weaker than Canada's or Germany's.",
-    ],
-    money:
-      "The cheapest serious option outside staying at home: private university tuition is modest by international standards, living costs are low, and a whole degree lands below a single year almost anywhere in Europe. Scholarships for international students exist but are small. The trade sits on the other side — starting salaries are low, so the return comes from where the degree takes you next rather than from what it pays here.",
-    admissions:
-      "Private universities and international programmes admit on school results plus their own entrance test in mathematics and science. The famous public institutes run national examinations with preparation cultures years long, and are not a realistic target for most applicants from outside the country.",
-    afterStudy:
-      "An employment visa requires a job offer above a salary threshold that most graduate roles do not meet, so staying on is harder than studying here. The usual routes onward are a global employer's office elsewhere, a master's abroad on the strength of the degree, or coming home with skills the local market is short of.",
-    suitsYou:
-      "You want technology, engineering or pharmaceutical education in English at the lowest possible cost, and you are aiming at a global employer or a master's abroad afterwards.",
-    notForYou:
-      "You want to settle in the country you study in, you need Western campus infrastructure, or you cannot verify a private university's quality from a distance — that verification is the whole risk here.",
-    applicationCycle:
-      "Applications to private universities open in winter and run through spring for a July or August start, with entrance tests held in several rounds — so a place is usually settled within weeks and there is a genuine second chance later in the cycle. The public institutes run a single national examination in spring with results and counselling over the summer, on a schedule that assumes years of preparation. Visa processing is quick, but document attestation should be started early.",
-    howTheyRead:
-      "Entrance test scores and school results, in that order, with mathematics and science weighted heaviest for engineering and computing; interviews appear at some private universities and design programmes ask for a portfolio. There is no essay culture and activities are not assessed. The system rewards examination performance in a narrow band of subjects, which is transparent and unforgiving in equal measure — there is nowhere to explain a weak year.",
-    studyingThere:
-      "Large classes, a heavy fixed timetable, continuous internal assessment and semester examinations, with attendance enforced more strictly than most students expect. Campus placement dominates the final year and shapes the two before it: preparation for company tests runs alongside the degree and is treated as equally important. Hostel accommodation on campus is the norm, and student life is lived largely inside it.",
-    commonMistake:
-      "Assuming a private university's advertising reflects its teaching. The gap between the strongest private institutions and the weakest is wider here than in any other country in this guide, and both advertise identically abroad. The questions worth asking are which companies recruited on campus last year, how many students were actually placed, and who accredits the programme.",
-    sources: [
-      { label: "Study in India — the government portal", url: "https://www.studyinindia.gov.in/" },
     ],
     modelled: false,
   },

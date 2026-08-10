@@ -11,13 +11,11 @@
 // sending them to `/guide/places/work` and a 404.
 const LEGACY_GUIDE_PLACE_IDS = [
   "kazakhstan",
-  "uzbekistan",
   "georgia",
   "poland",
   "turkiye",
   "china",
   "japan",
-  "india",
   "united-states",
   "united-kingdom",
   "hong-kong",
