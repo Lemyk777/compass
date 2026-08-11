@@ -87,11 +87,11 @@ Everything here is **deterministic** — no model call — and the design rules 
   there must carry BOTH its catch and a real route in — a city with only good
   news listed is an advert, and a test enforces it. The deep layer is
   [lib/data/study-destinations.ts](lib/data/study-destinations.ts) → `/guide/places/[place]`:
-  19 full country profiles (money, admissions, after-study, cities, sources).
-  **The home region leads the list on purpose** — Kazakhstan, Uzbekistan and
-  Georgia first — for the same reason the world map does: for many of our
+  17 full country profiles (money, admissions, after-study, cities, sources).
+  **The home region leads the list on purpose** — Kazakhstan and Georgia first —
+  for the same reason the world map does: for many of our
   readers a strong degree at home plus a funded master's abroad is the honest
-  answer, and a guide listing eighteen ways to leave and none to stay is not
+  answer, and a guide listing sixteen ways to leave and none to stay is not
   neutral, it is recommending. **Rules,
   test-enforced: trade-offs must outnumber strengths, `notForYou` is mandatory,
   and no prices or rankings** — those rot within a year, structural facts don't.
@@ -126,9 +126,9 @@ is its own route now:
 - **The order is a zoom IN, and it shipped backwards once.** Cities came before
   countries, so the guide asked a student to weigh Berlin and then zoomed out to
   Germany a step later. A country contains cities; it comes first.
-- **Every city now sits in a country we profile** (19 countries, 37 cities as of
-  2026-08-08). It was 11 and 22, and nine cities — including Almaty, Astana,
-  Tashkent and Tbilisi, the whole home region — had no country page at all, so
+- **Every city now sits in a country we profile** (17 countries, 34 cities as of
+  2026-08-11). It was 11 and 22, and nine cities — including Almaty, Astana
+  and Tbilisi, the whole home region — had no country page at all, so
   their breadcrumb dead-ended at the list. The unit test that used to *require*
   those orphans now asserts the opposite and stronger thing: every hub is
   claimed by exactly one destination, and no destination claims a hub twice.
@@ -149,6 +149,22 @@ is its own route now:
   wall and is reported without failing — the server answered, so the page is
   there. A **timeout is not**: it proves nothing, so such a link does not ship.
   That rule is why Germany links anabin and uni-assist rather than DAAD.
+- **The guide names institutions but never ranks them**
+  ([lib/data/place-universities.ts](lib/data/place-universities.ts), rendered as
+  "Who is named here" on both `/guide/places/[place]` and `/guide/cities/[hub]`).
+  The profiles explained a country's admissions, money and visa ladder in full
+  and then named nobody, so a student who had chosen Germany still had nothing to
+  search for. The ban on `top \d+` / `rank(ed|ing) #N` forbids **positions, not
+  names**: each entry is `{ name, city, hub, knownFor[], englishTaught }`, where
+  `knownFor` uses the faculty taxonomy so it stays filterable, and a test also
+  rejects superlatives ("best", "leading", "prestigious") because those are a
+  ranking with the number filed off. `hub` is a real hub id **or null**, and null
+  must render as plain text — naming a city as though it were a page and
+  dead-ending there was a real bug. A **city page derives from the same registry**
+  rather than keeping a second list, so the two can never disagree; a test pins
+  that. `englishTaught` is the one field that rots (same lesson as the
+  Netherlands, §5.3 of the backlog): coarse three-way, never a promise about a
+  named programme, re-verify yearly.
 - **`/guide/compare` is a real comparison.** The country pages carried a panel
   headed "Compare it with" that only navigated to the other country, throwing
   away the side you had just read. Every axis is rendered for both, trade-offs
@@ -393,6 +409,17 @@ names roles and reads `rgb(var(--token) / <alpha-value>)`.
   to get lighter in dark mode to stay visible, so white on it is 2.69:1. And
   `bg-ink text-white` is the classic inversion trap — `ink` is nearly white in
   dark mode, so that button became white on white. Use `text-surface` there.
+- **The filled primary button is `bg-cta text-cta-ink`, never `bg-ink`.** Same
+  root cause one layer down: `bg-ink text-surface` is a handsome deep-navy
+  control on a light page and a NEAR-WHITE SLAB on a dark one, and at `size="lg"`
+  it becomes the brightest object on the screen. It was reported twice, about two
+  different buttons, which is how we knew it was the rule and not the placement.
+  `cta` stays the same navy in light mode and becomes the accent in dark — a
+  button, unlike the `band`, cannot simply stay dark, because it has to lift
+  clear of the page it sits on. The test asserts a **luminance ceiling** (< 0.55
+  in both themes) alongside the label contrast: contrast alone passed the whole
+  time this was broken. Small `bg-ink` controls — the 7×7 step badges, the admin
+  toggles — are still correct; the rule is about things that fill an area.
 - **Shadows theme too** (`--shadow-card`/`--shadow-lift`): a translucent navy
   cannot darken a dark surface, so the dark values are pure black at 40–80%.
 - **What must NOT theme:** national flags, the Google logo, and the ambassador's
@@ -420,6 +447,43 @@ Pinned to `eslint-plugin-tailwindcss@3.17.5` on purpose: 3.18 pulls
 tailwindcss"), and 4.x needs ESLint 9 while Next 14 ships ESLint 8. If a real
 custom class is ever needed, add it to `settings.tailwindcss.whitelist` in
 [.eslintrc.json](.eslintrc.json) — don't disable the rule.
+
+## Controls: merge classes, and let the caller win
+
+[components/ui/Button.tsx](components/ui/Button.tsx) is the button system —
+`variant` × `size` × `shape` (`rounded` | `pill`). Four rules, all
+test-enforced in [scripts/test-engine.ts](scripts/test-engine.ts), and each one
+is a bug this codebase shipped:
+
+- **A component that mixes its own classes with a caller's `className` must
+  merge them with `cn`** ([lib/utils.ts](lib/utils.ts) — clsx + tailwind-merge),
+  never a template string. Tailwind utilities of the same type share
+  specificity, so with concatenation `px-7` from a caller and `px-8` from a size
+  both ship and the winner is whichever Tailwind emitted later. The landing
+  hero's primary CTA asked for `px-7 py-4` and rendered `px-8 h-14` for its whole
+  life — green build, clean lint, correct-looking review.
+- **A `!` Tailwind escape at a call site is never a style decision.** It is that
+  bug, found locally and forced. Fix the component instead. A test fails the
+  build on any `!utility-`.
+- **Focus is `focus-visible:focus-ring`** — the themed utility in
+  `globals.css` (`ring-accent` over `ring-offset-surface`). Never a hardcoded
+  offset: `ring-offset-white` paints a white halo on the dark theme's near-black
+  page, and no light-mode screenshot will ever show it. A test bans it, and a
+  second test fails any `<a>`/`<button>` that paints itself as a control
+  (rounded / border / bg / padding) without a focus style — there were eleven.
+- **Don't rebuild a variant by hand.** `rounded-full bg-ink px-8 py-4 …` on a raw
+  `<Link>` is a second definition of `primary` that changes to the real one never
+  reach — that is exactly how the landing page and `FinalCTA` ended up with no
+  focus ring and no press state.
+
+`cn` costs ~9 kB in any **client** bundle importing the component; server-rendered
+call sites pay nothing, so `/` is unaffected. `Shell.tsx` and `Logo.tsx`
+deliberately still concatenate: no call site overrides one of their groups, and
+their client importers don't otherwise carry tailwind-merge.
+
+`eslint-disable-next-line` disables exactly the **next line** — put the reason
+above it, never as a `--` tail wrapping onto more comment lines, or the directive
+suppresses a comment while the real line keeps warning. Test-enforced.
 
 ## Input bounds (single source of truth)
 

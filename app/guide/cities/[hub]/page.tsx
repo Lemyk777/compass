@@ -13,6 +13,10 @@ import { withFields } from "@/lib/data/guide-fields";
 import { guideMorph } from "@/lib/data/guide-sections";
 import { HUBS, REGION_LABEL } from "@/lib/data/world";
 import { destinationForHub } from "@/lib/data/study-destinations";
+import {
+  ENGLISH_TAUGHT_LABEL,
+  universitiesForHub,
+} from "@/lib/data/place-universities";
 import { statedGuideFields } from "@/lib/guide/student-fields";
 import { pageMeta } from "@/lib/seo";
 
@@ -105,6 +109,54 @@ export default function GuideHubPage({
       ),
     },
   ];
+
+  // Read out of the same registry the country page uses, filtered to this city,
+  // so the two can never disagree about who is here. A test pins that.
+  const named = universitiesForHub(hub.id);
+  if (named.length > 0) {
+    parts.push({
+      id: "who",
+      title: "Who is named here",
+      body: (
+        <>
+          <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+            Not a ranking and not in order of merit — the places a subject is
+            actually studied and taught at in this city, so you have something to
+            search for.
+          </p>
+          <ul className="grid gap-2.5 sm:grid-cols-2">
+            {named.map((u) => (
+              <li
+                key={u.name}
+                className="flex h-full flex-col rounded-2xl border border-line bg-card p-4"
+              >
+                <p className="text-sm font-semibold leading-snug text-ink">
+                  {u.name}
+                </p>
+                <ul className="mt-2.5 flex flex-1 flex-wrap content-start gap-1.5">
+                  {u.knownFor.map((f) => (
+                    <li
+                      key={f}
+                      className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-soft"
+                    >
+                      {FACULTY_LABEL[f]}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-xs text-ink-soft">
+                  {ENGLISH_TAUGHT_LABEL[u.englishTaught]}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-ink-faint">
+            Language of teaching moves within a cycle — check it on the
+            university&rsquo;s own page for your own entry year.
+          </p>
+        </>
+      ),
+    });
+  }
 
   return (
     <DetailShell

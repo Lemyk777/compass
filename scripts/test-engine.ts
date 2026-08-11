@@ -21,6 +21,11 @@ import path from "node:path";
 import { renderModule } from "./build-map-outlines";
 import { MAP_OUTLINES } from "@/lib/data/map-outlines";
 import { COUNTRIES } from "@/lib/data/map-markers";
+import {
+  PLACE_UNIVERSITIES,
+  universitiesForHub,
+  universitiesForPlace,
+} from "@/lib/data/place-universities";
 
 import { RUBRIC, computeOverall, type FactorKey } from "@/lib/rubric";
 import { computeOverallFromFactors, computeBenchmarks } from "@/lib/ai/assemble";
@@ -1235,6 +1240,26 @@ test("both themes clear AA — every ink on every surface it lands on", () => {
     // a relative test would force the band under the floor, and down there
     // contrast ratios compress so far that they measure nothing.
     need("band-ink on band", "band-ink", "band", 4.5, "text");
+
+    // The filled primary control, and the same bug one layer down: painted with
+    // `bg-ink text-surface` it passed every contrast check in both themes and
+    // still broke the dark page, because `ink` is near-white — a `size="lg"`
+    // call to action became the brightest object on screen. Reported twice.
+    //
+    // Two assertions, and the second is the real one. The label has to be
+    // readable (4.5), AND the button must never be a near-white slab: capped
+    // well below the page's own `surface` in light mode, which is 0.94. A button
+    // DOES have to lift clear of a dark page — unlike the band, it cannot simply
+    // stay dark — so this is a ceiling, not a floor.
+    need("cta-ink on cta", "cta-ink", "cta", 4.5, "button label");
+    need("cta fill on surface", "cta", "surface", 3, "the button against the page");
+    assert.ok(
+      relativeLuminance(T["cta"]) < 0.55,
+      `${name}: --cta has luminance ${relativeLuminance(T["cta"]).toFixed(3)} — ` +
+        `that is a near-white slab, not a button. It may get lighter in dark ` +
+        `mode, but never to the point of being the brightest thing on the page.`,
+    );
+
     assert.ok(
       relativeLuminance(T["band"]) < 0.1,
       `${name}: --band has luminance ${relativeLuminance(T["band"]).toFixed(3)} — ` +
@@ -2071,4 +2096,226 @@ test("filters survive a round trip through the URL", () => {
   });
   // A repeated region is a hand-edited URL, not a state the panel can produce.
   assert.deepEqual(parseGuideFilters({ r: "europe,europe" }).regions, ["europe"]);
+});
+
+// ── Interaction & class-composition invariants ───────────────────────────────
+//
+// Four rules, each one a bug this codebase actually shipped. They are checked by
+// reading the source because none of them can fail a type-check, and three of
+// them cannot fail a lint either: the code is valid, it just does not do what it
+// says.
+
+/** Every .ts/.tsx under app/ and components/. */
+const sourceFiles = (): string[] => {
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return e.name === "node_modules" ? [] : walk(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+  return ["app", "components"].flatMap((r) => walk(path.join(process.cwd(), r)));
+};
+const rel = (f: string) =>
+  path.relative(process.cwd(), f).split(path.sep).join("/");
+const stripComments = (s: string) =>
+  s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/[^\n]*$/gm, "");
+
+// A Tailwind `!` escape is never a style decision — it is an author discovering
+// that a component concatenated its classes with theirs, so the framework's
+// emission order beat their override, and forcing the issue locally. Button.tsx
+// had three of these pointing at one root cause. Fix the component (merge with
+// `cn`), don't escape at the call site.
+test("no `!important` Tailwind escapes — they mark a component that won't let a caller win", () => {
+  const offenders: string[] = [];
+  for (const file of sourceFiles()) {
+    stripComments(readFileSync(file, "utf8"))
+      .split("\n")
+      .forEach((line, i) => {
+        // `!` directly before a utility-shaped token (needs the dash, so `!isOpen`
+        // and `!==` are not matches).
+        const hits = line.match(/(?<=[\s"'`{])!(?:[a-z-]+:)*[a-z][a-z0-9]*-[a-z0-9./[\]%-]+/g);
+        for (const h of hits ?? []) offenders.push(`${rel(file)}:${i + 1} ${h}`);
+      });
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `Tailwind \`!\` escape(s) found:\n  ${offenders.join("\n  ")}\nThese mean a component is concatenating classes instead of merging them with cn().`,
+  );
+});
+
+// A focus ring has two colours and BOTH have to theme. `ring-offset-white` was
+// hardcoded in Button.tsx: in dark mode that painted a white halo around every
+// focused control on a near-black page. It is invisible in a light-mode
+// screenshot, which is why it survived — so it is asserted, not looked at.
+test("focus rings theme — no hardcoded ring offset", () => {
+  const offenders: string[] = [];
+  for (const file of sourceFiles()) {
+    stripComments(readFileSync(file, "utf8"))
+      .split("\n")
+      .forEach((line, i) => {
+        if (/ring-offset-(white|black)\b/.test(line))
+          offenders.push(`${rel(file)}:${i + 1}`);
+      });
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `hardcoded focus-ring offset at:\n  ${offenders.join("\n  ")}\nUse the themed \`focus-visible:focus-ring\` utility (ring-accent over ring-offset-surface).`,
+  );
+});
+
+// An element that paints itself as a control — a card, a pill, a bordered row —
+// but carries no focus style is invisible to a keyboard while looking perfectly
+// interactive to a mouse. There were eleven. Anything rendered through
+// Button/ButtonLink is fine; the system supplies the ring.
+test("every self-styled interactive element has a focus treatment", () => {
+  const offenders: string[] = [];
+  for (const file of sourceFiles()) {
+    const src = readFileSync(file, "utf8");
+    for (const m of src.matchAll(/<(a|button|Link)\s([^>]*?)>/gs)) {
+      const attrs = m[2];
+      if (!/className/.test(attrs)) continue;
+      // Only elements that paint themselves. A bare inline link inherits the
+      // browser's own outline and is not the problem.
+      if (!/rounded|border|bg-|shadow|px-|py-|p-\d|flex/.test(attrs)) continue;
+      if (/focus-visible|focus-ring|focus:/.test(attrs)) continue;
+      if (/sr-only/.test(attrs)) continue;
+      offenders.push(`${rel(file)}:${src.slice(0, m.index).split("\n").length} <${m[1]}>`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `interactive but unfocusable:\n  ${offenders.join("\n  ")}\nAdd \`focus-visible:focus-ring\`, or render it through <Button>/<ButtonLink>.`,
+  );
+});
+
+// `eslint-disable-next-line` disables exactly the next LINE. Writing the reason
+// as a `--` tail that wraps onto further comment lines therefore suppresses a
+// comment and leaves the real line still warning — which is how PartnerBadge
+// carried a documented, deliberate `<img>` waiver that never applied and warned
+// on every single build. Put the prose above; keep the directive adjacent.
+test("every eslint-disable-next-line is adjacent to the code it disables", () => {
+  const offenders: string[] = [];
+  for (const file of sourceFiles()) {
+    const lines = readFileSync(file, "utf8").split("\n");
+    lines.forEach((line, i) => {
+      // Only a comment that BEGINS with the directive is one — ESLint ignores a
+      // mention inside prose, and so must this, or documenting the rule trips it.
+      if (!/^\s*(\/\/|\/\*|\{\s*\/\*)\s*eslint-disable-next-line\b/.test(line))
+        return;
+      const next = lines.slice(i + 1).find((l) => l.trim() !== "");
+      if (next && /^(\/\/|\/\*|\{\s*\/\*)/.test(next.trim()))
+        offenders.push(`${rel(file)}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `eslint-disable-next-line followed by a comment, so it disables nothing:\n  ${offenders.join("\n  ")}`,
+  );
+});
+
+// ── Who is actually named for a subject here (#9) ────────────────────────────
+//
+// The guide explained how a country's admissions, money and post-study rules
+// behave and then never named a single institution, so a student who had decided
+// on Germany still had nothing to search for. lib/data/place-universities.ts adds
+// that layer WITHOUT adding a league table — see the rules at the top of that
+// file. These tests are what keep the distinction real.
+
+test("every destination we profile names at least three institutions", () => {
+  for (const d of STUDY_DESTINATIONS) {
+    const named = universitiesForPlace(d.id);
+    assert.ok(
+      named.length >= 3,
+      `${d.id} names ${named.length} — fewer than three reads as a shortlist someone curated for a reason they will not state`,
+    );
+  }
+});
+
+test("the university registry has no key that is not a destination", () => {
+  const ids = new Set(STUDY_DESTINATIONS.map((d) => d.id));
+  for (const key of Object.keys(PLACE_UNIVERSITIES)) {
+    assert.ok(ids.has(key), `place-universities has "${key}", which is not a destination`);
+  }
+});
+
+// `hub: null` is the honest value for a city we do not profile, and the UI must
+// render those as plain text. A hub that IS set has to belong to this very
+// destination, or a city page would list an institution from another country.
+test("every named city is either a hub of that destination, or explicitly null", () => {
+  const hubIds = new Set(HUBS.map((h) => h.id));
+  for (const d of STUDY_DESTINATIONS) {
+    const own = new Set(d.hubs);
+    for (const u of universitiesForPlace(d.id)) {
+      if (u.hub === null) continue;
+      assert.ok(hubIds.has(u.hub), `${d.id}: ${u.name} points at unknown hub "${u.hub}"`);
+      assert.ok(
+        own.has(u.hub),
+        `${d.id}: ${u.name} sits in hub "${u.hub}", which belongs to a different destination`,
+      );
+    }
+  }
+});
+
+test("every institution states what it is studied for, in the product's own taxonomy", () => {
+  const valid = new Set(FACULTY_VALUES);
+  for (const [place, list] of Object.entries(PLACE_UNIVERSITIES)) {
+    for (const u of list) {
+      assert.ok(u.name.trim().length > 0, `${place} has a nameless entry`);
+      assert.ok(u.city.trim().length > 0, `${place}: ${u.name} names no city`);
+      assert.ok(u.knownFor.length > 0, `${place}: ${u.name} says nothing about what it is for`);
+      for (const f of u.knownFor) {
+        assert.ok(valid.has(f), `${place}: ${u.name} claims unknown field "${f}"`);
+      }
+    }
+  }
+});
+
+test("no institution is listed twice inside one destination", () => {
+  for (const [place, list] of Object.entries(PLACE_UNIVERSITIES)) {
+    const names = list.map((u) => u.name);
+    assert.equal(
+      new Set(names).size,
+      names.length,
+      `${place} lists the same institution more than once`,
+    );
+  }
+});
+
+// The whole point of the field: association, never position. A rank is stale
+// within a year, differs between the tables that publish one, and answers a
+// question a seventeen-year-old should not be asking first. Superlatives are
+// banned alongside the numbers, because "the leading university for X" is a
+// ranking with the number filed off.
+test("the university layer quotes no ranking, price or superlative", () => {
+  const forbidden =
+    /(\$|EUR\b|USD\b|GBP\b|rank(ed|ing)?|top \d+|\bbest\b|\bleading\b|\belite\b|\bworld-class\b|\bprestigious\b|\bno\.? ?\d)/i;
+  for (const [place, list] of Object.entries(PLACE_UNIVERSITIES)) {
+    for (const u of list) {
+      for (const text of [u.name, u.city]) {
+        assert.ok(
+          !forbidden.test(text),
+          `${place}: "${text}" carries a ranking, a price or a superlative — this layer names, it does not rank`,
+        );
+      }
+    }
+  }
+});
+
+// A city page reads the same registry the country page does, so the two can
+// never disagree. This pins the derivation rather than the data.
+test("a hub's institutions are exactly the ones its destination puts there", () => {
+  for (const d of STUDY_DESTINATIONS) {
+    for (const hub of d.hubs) {
+      const viaHub = universitiesForHub(hub).map((u) => u.name).sort();
+      const viaPlace = universitiesForPlace(d.id)
+        .filter((u) => u.hub === hub)
+        .map((u) => u.name)
+        .sort();
+      assert.deepEqual(viaHub, viaPlace, `${d.id}/${hub}: city and country pages disagree`);
+    }
+  }
 });
