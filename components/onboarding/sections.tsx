@@ -277,7 +277,7 @@ export function ActivitiesSection() {
         <button
           type="button"
           onClick={add}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
         >
           <span className="text-lg leading-none">+</span> Add activity
         </button>
@@ -374,7 +374,7 @@ export function AwardsSection() {
         <button
           type="button"
           onClick={add}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
         >
           <span className="text-lg leading-none">+</span> Add award
         </button>

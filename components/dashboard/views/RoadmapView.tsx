@@ -318,7 +318,7 @@ function ActionRow({ action, muted }: { action: RoadmapAction; muted?: boolean }
               href={action.url}
               target="_blank"
               rel="noreferrer"
-              className="whitespace-nowrap rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
+              className="whitespace-nowrap rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
             >
               Open ↗
             </a>

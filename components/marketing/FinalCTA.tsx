@@ -1,4 +1,4 @@
-import Link from "@/components/ui/Link";
+import { ButtonLink } from "@/components/ui/Button";
 import { COMPETITIONS } from "@/lib/data/key-dates";
 
 // The close. `signedIn` keeps it honest for a returning student: they get the
@@ -27,11 +27,12 @@ export function FinalCTA({ signedIn = false }: { signedIn?: boolean }) {
           </span>{" "}
           opportunities, every link and date checked by hand.
         </p>
+        {/* The same primary/secondary pair as the hero, and it used to be built
+          from scratch here out of raw `<Link>`s — which meant no focus ring, no
+          press feedback, and a second definition of "primary" that a change to
+          the real one would never reach. */}
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/opportunities"
-            className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-base font-medium text-surface transition-all hover:bg-ink/90 hover:shadow-lift"
-          >
+          <ButtonLink href="/opportunities" size="lg" shape="pill">
             {signedIn ? "Open my opportunities" : "See what you can enter"}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
@@ -42,13 +43,10 @@ export function FinalCTA({ signedIn = false }: { signedIn?: boolean }) {
                 strokeLinejoin="round"
               />
             </svg>
-          </Link>
-          <Link
-            href="/guide"
-            className="inline-flex items-center rounded-full border border-ink/10 bg-card px-8 py-4 text-base font-medium text-ink transition-all hover:shadow-card"
-          >
+          </ButtonLink>
+          <ButtonLink href="/guide" variant="subtle" size="lg" shape="pill">
             Where can it lead?
-          </Link>
+          </ButtonLink>
         </div>
         <p className="mt-6 text-sm text-ink-faint">
           Free, all of it. No account needed to start.

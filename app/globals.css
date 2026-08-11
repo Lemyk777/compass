@@ -92,6 +92,26 @@
   --band: 16 25 43;
   --band-ink: 247 248 250;
 
+  /* The PRIMARY CONTROL — the filled button, and the second casualty of `ink`
+     being near-white in dark mode.
+
+     `bg-ink text-surface` is right at control size on a light page: a deep navy
+     button reading as the one action. Flip the theme and the same two tokens
+     produce a NEAR-WHITE slab, and at `size="lg"` — a hero call to action with a
+     six-word label — it stops reading as a button and becomes the brightest
+     object on a near-black page. That was reported twice, about two different
+     buttons, which is how we know it is the rule and not the placement.
+
+     The band above solved its version by NOT inverting. A button cannot do that:
+     it has to stay clearly distinct from the page it sits on, so in dark mode it
+     must get lighter — just not to white. So this pair keeps the navy button in
+     light mode exactly as it was, and in dark mode becomes the accent, which is
+     already the product's "this is interactive" colour (it is what focus rings
+     are painted in). Contrast is asserted in both themes in
+     scripts/test-engine.ts. */
+  --cta: 16 25 43;
+  --cta-ink: 255 255 255;
+
   --shadow-card:
     0 1px 2px rgba(16, 25, 43, 0.04), 0 8px 24px -12px rgba(16, 25, 43, 0.12);
   --shadow-lift:
@@ -146,6 +166,10 @@
     --band: 20 29 46;
     --band-ink: 241 244 249;
 
+    /* Not `ink` — that is the near-white slab this token exists to stop. */
+    --cta: 110 155 255;
+    --cta-ink: 11 17 28;
+
     /* Pure black at 40–80%, not the navy at 4–22% the light theme uses. A
        translucent shade of the surface's own colour cannot darken that surface;
        under a dark card it simply is not there. */
@@ -192,6 +216,10 @@
 
   --band: 20 29 46;
   --band-ink: 241 244 249;
+
+  /* Not `ink` — that is the near-white slab this token exists to stop. */
+  --cta: 110 155 255;
+  --cta-ink: 11 17 28;
 
   --shadow-card:
     0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);

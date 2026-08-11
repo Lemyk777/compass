@@ -173,7 +173,7 @@ export function Overview() {
       <ButtonLink
         href={`${basePath}/odds`}
         variant="subtle"
-        className="!h-auto w-full justify-start gap-6 rounded-2xl !px-6 py-6 text-left"
+        className="h-auto w-full justify-start gap-6 rounded-2xl px-6 py-6 text-left"
       >
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-fill">
           <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

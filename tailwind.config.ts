@@ -64,6 +64,13 @@ const config: Config = {
           DEFAULT: "rgb(var(--band) / <alpha-value>)",
           ink: "rgb(var(--band-ink) / <alpha-value>)",
         },
+        // The filled primary control. Deep navy in light, the accent in dark —
+        // because `bg-ink` is near-white in dark mode and a large filled button
+        // painted with it stops reading as a button. See the note in globals.css.
+        cta: {
+          DEFAULT: "rgb(var(--cta) / <alpha-value>)",
+          ink: "rgb(var(--cta-ink) / <alpha-value>)",
+        },
         // Semantic tier scale — used identically everywhere (gauges, chips, bars).
         //
         // Each tier has THREE roles and they are not interchangeable:
