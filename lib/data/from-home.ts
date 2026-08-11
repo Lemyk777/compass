@@ -71,11 +71,11 @@ export const HOME_ROUTES: HomeRoute[] = [
     id: "data-competitions",
     name: "Data-science competitions",
     fields: ["computer_science", "natural_sciences", "business_economics"],
-    what: "Kaggle and Zindi run open machine-learning contests judged purely on a score against held-out data. Nobody sees your school, your country or your age — only the number.",
+    what: "Kaggle and Zindi run open machine-learning contests judged purely on a score against held-out data. Nobody sees your school, your country or your age — only the number. They are also the cheapest teacher available: Kaggle publishes free short courses, and every finished competition leaves behind the winners' own notebooks explaining exactly what they did and why, which is a level of access no textbook gives you.",
     catch:
-      "The leaderboard is honest but brutal, and the top of it is professionals. Treat the first several attempts as learning rather than as a result you will put on an application.",
+      "The leaderboard is honest but brutal, and the top of it is professionals. Treat the first several attempts as learning rather than as a result you will put on an application. The failure mode is the opposite of laziness: people spend months 'preparing' before entering, and preparation without a submission teaches almost nothing.",
     firstMove:
-      "Enter one beginner-tier competition and submit something bad on purpose, just to get through the whole loop once. The second submission is where learning starts.",
+      "Enter one beginner-tier competition and submit something bad on purpose, just to get through the whole loop once. The second submission is where learning starts. Then read the discussion thread and one public notebook from someone above you, and copy their approach deliberately — that is not cheating, it is how the field teaches itself.",
     commitment:
       "A weekend for your first honest attempt, then a few hours a week for as long as it stays interesting. There is no deadline pressure beyond the one you choose, which is why people drift away.",
     proof:
