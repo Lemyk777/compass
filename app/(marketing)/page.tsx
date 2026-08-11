@@ -100,7 +100,7 @@ export default async function LandingPage() {
               href="/partners"
               variant="ghost"
               size="sm"
-              className="whitespace-nowrap px-2 font-medium sm:px-4"
+              className="whitespace-nowrap px-2 sm:px-4"
             >
               {/* Visible at every width, because the people this is for read us
                   on a phone. The label shortens rather than disappearing — a
@@ -123,7 +123,8 @@ export default async function LandingPage() {
               href="/opportunities"
               variant="primary"
               size="sm"
-              className="whitespace-nowrap rounded-full px-4 sm:px-5"
+              shape="pill"
+              className="whitespace-nowrap sm:px-5"
             >
               Opportunities
             </ButtonLink>
@@ -137,24 +138,53 @@ export default async function LandingPage() {
           image, no chart, no JS. Content is visible by default (CSS reveal),
           never gated by a scroll animation. */}
         <section className="relative flex min-h-[100svh] w-full items-center overflow-hidden bg-surface">
-          <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 px-6 py-24 md:px-12 lg:grid-cols-[minmax(0,560px)_1fr] lg:gap-20 lg:py-28 xl:px-20">
+          {/* The split is 56/44 with a 56px gap, and both numbers are load-bearing.
+            It used to be a fixed 560px track beside `1fr`, with the card capped at
+            `max-w-lg` and pushed to the far edge — which spent 80px of gap plus
+            113px of empty track, 193px in all, on the space between the headline
+            and the one piece of product on the page. Worse, 560px is narrower than
+            the longest rotating phrase (616px at 60px type), so the headline's
+            second line reserved two lines and rendered one: a 63px hole that
+            appeared and vanished every 2.6 seconds. Fractional tracks close the
+            gap, the card fills its own column, and the type below fits. */}
+          <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 px-6 py-24 md:px-12 lg:grid-cols-[minmax(0,56fr)_minmax(0,44fr)] lg:gap-14 lg:py-28 xl:px-20">
             {/* Left — the message */}
-            <div className="relative z-10 max-w-xl">
+            <div className="relative z-10 max-w-xl lg:max-w-none">
               <span className="rise-in inline-flex items-center rounded-full border border-ink/10 bg-card px-3.5 py-1.5 text-xs font-medium text-ink/60">
                 Free · no account needed · for students anywhere
               </span>
-              <h1 className="rise-in mt-6 text-balance text-[2.75rem] font-medium leading-[1.04] tracking-tight text-ink sm:text-[3.25rem] lg:text-[3.75rem]">
+              {/* The size is a clamp, not three breakpoint steps, because it has
+                to agree with the column beside it at every width — and a
+                breakpoint agrees at three. The rule: the longest rotating phrase
+                measures ~10.3× the font-size, so the type must stay under
+                columnWidth / 10.3 or the slot reserves a line it doesn't use.
+                This ramp is 45px at 1024 and reaches the original 60px at 1440,
+                which clears that bound at every width in between (worst case
+                1280, where the wider gutters kick in: 58px allowed, 54px used).
+                Shortening or lengthening a phrase changes that 10.3 — measure
+                before editing the copy below. */}
+              <h1 className="rise-in mt-6 text-balance text-[2.75rem] font-medium leading-[1.04] tracking-tight text-ink sm:text-[3.25rem] lg:text-[clamp(2.8125rem,3.606vw_+_0.5052rem,3.75rem)]">
                 See what you can enter.
+                {/* These three are near-identical in RENDERED width — 8.69,
+                  9.04 and 9.05 times the font-size — and that is the whole
+                  point, not a coincidence. The slot reserves the longest
+                  phrase's line count; any phrase shorter than that reserve
+                  leaves a hole. "Then make your move." used to sit here at
+                  10.27, which is why one phrase in three wrapped to two lines
+                  on a 430–500px phone while the other two stayed on one.
+                  Keep any replacement at or under 9.1× — and measure it,
+                  don't count characters: this phrase and the one it replaced
+                  are both 19–20 characters and differ by 95px. */}
                 <RotatingHeadline
                   phrases={[
                     "Then go and win it.",
-                    "Then make your move.",
+                    "Then go and own it.",
                     "Then close the gap.",
                   ]}
                 />
               </h1>
               <p
-                className="rise-in mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-ink/60"
+                className="rise-in mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-ink/60 lg:max-w-[34rem]"
                 style={{ animationDelay: "0.08s" }}
               >
                 Competitions, olympiads, courses and programmes you can actually
@@ -167,35 +197,55 @@ export default async function LandingPage() {
                 className="rise-in mt-8 flex flex-wrap items-center gap-3"
                 style={{ animationDelay: "0.16s" }}
               >
-                <ButtonLink
-                  href="/opportunities"
-                  size="lg"
-                  className="rounded-full bg-ink px-7 py-4 text-base font-medium text-surface transition-all hover:bg-ink/90 hover:shadow-lift"
-                >
+                {/* Both of these used to restate the entire variant by hand —
+                  fill, text colour, padding, weight, transition, hover — and
+                  two of those classes never took effect. They are the system's
+                  now, so a change to `primary` reaches the button that matters
+                  most instead of stopping at it. */}
+                <ButtonLink href="/opportunities" size="lg" shape="pill">
                   See what you can enter
                 </ButtonLink>
                 <ButtonLink
                   href="/guide"
                   variant="subtle"
                   size="lg"
-                  className="rounded-full border border-ink/10 bg-card px-7 py-4 text-base font-medium text-ink transition-all hover:shadow-card"
+                  shape="pill"
                 >
                   Where can it lead?
                 </ButtonLink>
               </div>
 
-              <p
-                className="rise-in mt-5 text-sm text-ink-faint"
+              {/* The report is the product's second door, and it was the
+                faintest thing in the hero — `text-ink-faint` running into a
+                link at `text-ink/60`, i.e. quieter than the disclaimer it read
+                like. It is its own affordance now: a strip, not a footnote.
+                Deliberately NOT a third button — one primary CTA per view, and
+                two filled controls competing is how you get neither pressed. A
+                bordered strip sits a clear step below the outlined secondary
+                while still being something you can see from across the room. */}
+              <div
+                className="rise-in mt-7 flex w-fit max-w-full flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-line bg-card px-4 py-3"
                 style={{ animationDelay: "0.24s" }}
               >
-                Free, all of it. Applying to university too?{" "}
+                <span className="rounded-full bg-ivy-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ivy-ink">
+                  Also free
+                </span>
+                <span className="text-sm text-ink/70">
+                  Applying to university too?
+                </span>
                 <a
                   href="/demo"
-                  className="font-medium text-ink/60 underline-offset-2 transition hover:text-ink hover:underline"
+                  className="group inline-flex items-center gap-1 rounded text-sm font-semibold text-ivy-ink underline-offset-4 transition hover:underline focus-visible:focus-ring"
                 >
                   See a sample admission report
+                  <span
+                    aria-hidden="true"
+                    className="transition-transform duration-300 group-hover:translate-x-0.5"
+                  >
+                    →
+                  </span>
                 </a>
-              </p>
+              </div>
             </div>
 
             {/* Right — the product. */}
@@ -210,7 +260,10 @@ export default async function LandingPage() {
                 <div className="absolute right-[8%] top-[6%] h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
                 <div className="absolute bottom-[4%] left-[12%] h-64 w-64 rounded-full bg-ivy/10 blur-3xl" />
               </div>
-              <div className="mx-auto w-full max-w-lg lg:ml-auto lg:mr-0">
+              {/* `max-w-lg` stays below lg, where the card is centred under the
+                message and 512px is a sensible measure. From lg it must go: the
+                cap was leaving 113px of its own column empty. */}
+              <div className="mx-auto w-full max-w-lg lg:ml-auto lg:mr-0 lg:max-w-none">
                 <OpportunityPreview items={preview} />
               </div>
             </div>
@@ -386,7 +439,7 @@ export default async function LandingPage() {
                     href={session ? "/dashboard" : "/auth/signup"}
                     variant="subtle"
                     size="md"
-                    className="rounded-full"
+                    shape="pill"
                   >
                     {session ? t("common.dashboard") : "Assess my full profile"}
                   </ButtonLink>
@@ -394,7 +447,7 @@ export default async function LandingPage() {
                     href="/demo"
                     variant="ghost"
                     size="md"
-                    className="rounded-full"
+                    shape="pill"
                   >
                     See a sample report
                   </ButtonLink>
@@ -450,7 +503,8 @@ export default async function LandingPage() {
               href="/partners"
               variant="subtle"
               size="md"
-              className="shrink-0 rounded-full"
+              shape="pill"
+              className="shrink-0"
             >
               For organisations
             </ButtonLink>
@@ -529,10 +583,12 @@ function GuideCard({
   title: string;
   body: string;
 }) {
+  // Hover lifts it, press puts it back down, focus rings it. A card that only
+  // answers a pointer is a card a keyboard user cannot find.
   return (
     <a
       href={href}
-      className="group flex flex-col rounded-2xl border border-line bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift"
+      className="group flex flex-col rounded-2xl border border-line bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lift focus-visible:focus-ring active:translate-y-0 active:shadow-card"
     >
       <span
         data-num

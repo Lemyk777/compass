@@ -232,7 +232,7 @@ export default async function AdminOpportunitiesPage() {
                     <form action={rejectCandidate.bind(null, c.id)} className="shrink-0">
                       <button
                         type="submit"
-                        className="rounded-xl border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:bg-surface"
+                        className="rounded-xl border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:bg-surface focus-visible:focus-ring"
                       >
                         {t("admin.oppsReject")}
                       </button>
@@ -319,7 +319,7 @@ export default async function AdminOpportunitiesPage() {
                     </label>
                     <button
                       type="submit"
-                      className="rounded-xl bg-ink px-3 py-1.5 text-xs font-semibold text-surface hover:opacity-90"
+                      className="rounded-xl bg-ink px-3 py-1.5 text-xs font-semibold text-surface hover:opacity-90 focus-visible:focus-ring"
                     >
                       {t("admin.oppsApprove")}
                     </button>

@@ -82,10 +82,16 @@ export function PartnerLogo({
     size === "lg" ? "h-14 w-14 text-lg" : size === "md" ? "h-7 w-7 text-[11px]" : "h-5 w-5 text-[9px]";
 
   if (partner.logoUrl) {
+    // Logos are either committed to /public or an organisation's own https URL,
+    // and next/image would need a `remotePatterns` entry per partner domain.
+    //
+    // The reason lives here rather than after the directive below: an
+    // `eslint-disable-next-line` disables exactly the next LINE, so when the
+    // explanation was written as a `--` tail spilling onto two more comment
+    // lines, the directive suppressed a comment and the `<img>` three lines
+    // down kept warning on every build.
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- logos are either
-      // committed to /public or an organisation's own https URL; next/image
-      // would need a remotePatterns entry per partner domain.
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={partner.logoUrl}
         alt=""

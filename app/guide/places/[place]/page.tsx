@@ -17,6 +17,10 @@ import {
   destinationById,
   type StudyDestination,
 } from "@/lib/data/study-destinations";
+import {
+  ENGLISH_TAUGHT_LABEL,
+  universitiesForPlace,
+} from "@/lib/data/place-universities";
 import { statedGuideFields } from "@/lib/guide/student-fields";
 import { pageMeta } from "@/lib/seo";
 
@@ -72,6 +76,7 @@ function DestinationBody({
   stated: ReturnType<typeof statedGuideFields>;
 }) {
   const hubs = HUBS.filter((h) => d.hubs.includes(h.id));
+  const named = universitiesForPlace(d.id);
   const others = STUDY_DESTINATIONS.filter((x) => x.id !== d.id);
 
   // The page's skeleton, declared once and read twice — by the contents list at
@@ -129,6 +134,71 @@ function DestinationBody({
           <GuideBlock label="What applicants from this region get wrong">
             {d.commonMistake}
           </GuideBlock>
+        </>
+      ),
+    },
+    // "How do I get in" is only half a question — in to WHERE. The guide
+    // explained a country's admissions, money and visa ladder in full and then
+    // never named an institution, so a student who had decided on Germany still
+    // had nothing to search for on Monday morning. This is that half.
+    {
+      id: "where",
+      title: "Who is named here",
+      body: (
+        <>
+          <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+            Not a ranking, and deliberately not in any order of merit — these are
+            the places a subject is actually studied and taught at here, so you
+            have something to search for. A position in a league table is stale
+            within a year, differs between the four tables that publish one, and
+            is the wrong first question. What each is named for holds for years.
+          </p>
+          <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+            {named.map((u) => (
+              <li
+                key={u.name}
+                className="flex h-full flex-col rounded-2xl border border-line bg-card p-4"
+              >
+                <p className="text-sm font-semibold leading-snug text-ink">
+                  {u.name}
+                </p>
+                <p className="mt-1 text-xs text-ink-faint">
+                  {/* A city we profile opens; one we don't is plain text. Naming
+                      a city as if it were a page and dead-ending there was a
+                      real bug once. */}
+                  {u.hub ? (
+                    <Link
+                      href={withFields(`/guide/cities/${u.hub}`, stated)}
+                      className="rounded underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+                    >
+                      {u.city}
+                    </Link>
+                  ) : (
+                    u.city
+                  )}
+                </p>
+                <ul className="mt-2.5 flex flex-1 flex-wrap content-start gap-1.5">
+                  {u.knownFor.map((f) => (
+                    <li
+                      key={f}
+                      className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-soft"
+                    >
+                      {FACULTY_LABEL[f]}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-xs text-ink-soft">
+                  {ENGLISH_TAUGHT_LABEL[u.englishTaught]}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-ink-faint">
+            Language of teaching is the one thing here that moves within a
+            cycle — a country can widen or cut its English-taught intake in a
+            single year. Check it on the university&rsquo;s own page for your
+            own entry year.
+          </p>
         </>
       ),
     },

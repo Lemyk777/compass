@@ -12,10 +12,19 @@ import { useEffect, useRef, useState } from "react";
  * forced the browser to re-rasterise a 60px headline on a loop for as long as
  * the page was open — see the note on .roll-word in globals.css.
  *
- * Layout-stable & no overlap: an invisible sizer reserves the LONGEST phrase's
- * box, and the animated phrases are layered absolutely on top of it — so they
- * never shift the surrounding text and never collide with the lines around them.
- * Full sentences keep each grammatical in any language.
+ * Layout-stable & no overlap: an invisible sizer reserves the box, and the
+ * animated phrases are layered absolutely on top of it — so they never shift the
+ * surrounding text and never collide with the lines around them. Full sentences
+ * keep each grammatical in any language.
+ *
+ * The sizer stacks EVERY phrase in one grid cell rather than picking "the
+ * longest" one. It used to pick by `String.length`, which is not width and was
+ * only ever right by accident: the three phrases in the hero are 19 characters
+ * each and render 382px, 398px and 398px wide. Picking by character count
+ * reserved the narrowest, and the other two would have overflowed the box into
+ * the paragraph below on any width where they wrapped and it did not. A grid
+ * row is as tall as its tallest item, measured by the browser, at every width —
+ * so the reserve is correct for free, with no measurement and no heuristic.
  *
  * SSR shows the first phrase (visible without JS); a stable copy is exposed to
  * screen readers (the motion is decorative). Honors prefers-reduced-motion: it
@@ -33,7 +42,6 @@ export function RotatingHeadline({
   const first = phrases[0] ?? "";
   const [index, setIndex] = useState(0);
   const [rotated, setRotated] = useState(false);
-  const longest = phrases.reduce((a, b) => (b.length > a.length ? b : a), "");
   const box = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -79,17 +87,36 @@ export function RotatingHeadline({
 
   return (
     <span className={`block ${className}`}>
-      <span ref={box} className="relative inline-block align-top">
-        {/* Invisible sizer — reserves the longest phrase's box → zero layout shift. */}
-        <span aria-hidden="true" className="invisible">
-          {longest}
-        </span>
+      <span ref={box} className="relative grid items-start">
+        {/* Invisible sizer — every phrase in ONE grid cell, so the row is as tall
+            as the tallest of them AS RENDERED at this width → zero layout shift,
+            and no phrase can outgrow its own box. The animated copies below are
+            absolutely positioned, so they stay out of this measurement. */}
+        {phrases.map((p) => (
+          <span
+            key={`size-${p}`}
+            aria-hidden="true"
+            className="invisible col-start-1 row-start-1"
+          >
+            {p}
+          </span>
+        ))}
         {/* Incoming / current phrase — glides down into place, crossfading with
-            the outgoing one (both blurred + semi-transparent as they cross). */}
+            the outgoing one.
+
+            `inset-0 grid content-center`, not `top-0`: the slot is as tall as
+            the phrase needing the MOST lines, and at some widths a shorter
+            phrase needs fewer. Top-aligning it put that whole difference
+            underneath, where it read as a hole between the headline and the
+            paragraph. Centred, the same difference is split above and below and
+            reads as leading. Two near-identical English sentences still differ
+            by ~16px — "win" against "own" is enough — so no copy can remove this
+            case, only shrink the band of widths it happens in. The keyframes
+            translate by `em`, so a full-height box does not change the glide. */}
         <span
           key={`in-${index}`}
           aria-hidden="true"
-          className="roll-word roll-in absolute inset-x-0 top-0"
+          className="roll-word roll-in absolute inset-0 grid content-center"
         >
           {phrases[index]}
         </span>
@@ -98,7 +125,7 @@ export function RotatingHeadline({
           <span
             key={`out-${index}`}
             aria-hidden="true"
-            className="roll-word roll-out pointer-events-none absolute inset-x-0 top-0"
+            className="roll-word roll-out pointer-events-none absolute inset-0 grid content-center"
           >
             {phrases[prevIndex]}
           </span>

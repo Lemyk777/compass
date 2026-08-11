@@ -134,6 +134,41 @@ export default async function GuideFromHomePage({
         ))}
       </div>
 
+      {/* The question every one of these routes actually raises, answered at
+          the END of the step rather than the top of it. Two reasons: a reader
+          who has not yet seen the six routes has nothing to attach it to, and
+          putting it above them pushed the first route back off a phone screen —
+          the fold this page was just fixed for. */}
+      <section className="rounded-2xl border border-accent/35 bg-accent-soft/25 p-4 sm:p-5">
+        <h2 className="text-sm font-semibold text-ink">
+          &ldquo;But I don&rsquo;t know how to do any of this yet&rdquo;
+        </h2>
+        <div className="mt-1.5 max-w-[60ch] space-y-2.5 text-sm leading-relaxed text-ink-soft">
+          <p>
+            Neither did anyone who does. The honest answer to &ldquo;how did you
+            learn this?&rdquo; is almost always the same one: they entered
+            something before they were ready, and looked up whatever they got
+            stuck on. The entering is not the reward for learning. It is the
+            method.
+          </p>
+          <p>
+            These platforms are built for exactly that. Kaggle publishes free
+            courses and every finished competition leaves the winners&rsquo; own
+            notebooks behind, explaining what they did. Open-source projects
+            have their whole review history in public. Nobody is waiting for you
+            to qualify first — you get in, you get stuck, you read, and that is
+            the entire loop.
+          </p>
+          <p>
+            So the useful first move is never a course. It is a bad submission,
+            a small pull request, a rough draft — something real and finished
+            enough to get feedback on. The people whose profiles look
+            intimidating got them by doing that repeatedly, not by preparing
+            longer.
+          </p>
+        </div>
+      </section>
+
       <p className="max-w-[60ch] text-pretty text-sm leading-relaxed text-ink-faint">
         Leaving is one route. It is not the only one, and for plenty of students
         it is not the best one — a strong record built from where you are is
