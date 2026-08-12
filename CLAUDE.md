@@ -106,6 +106,25 @@ Everything here is **deterministic** — no model call — and the design rules 
   drive matching. Answers live in `localStorage`, not the profile.
 - **Bundle rule (easy to break):** `key-dates.ts` builds a lookup map over the whole ~2,700-entry catalog at module load, so *any* runtime import drags the dataset into that route's client bundle. Client components must import `formatDate`/`opportunityCost` from [lib/data/opportunity-format.ts](lib/data/opportunity-format.ts), and the three matching views (`OpportunitiesView`, `EligibilityChecker`, `FirstWin`) **dynamic-import** `buildExtracurriculars`. Keep it that way; type-only imports from key-dates are free.
 - **Never show a countdown for a date we can't stand behind.** A confirmed date renders as a countdown; anything else is "Dates TBA" or "open now". Verify a date against the organiser's own page before setting `dateConfirmed: true`, and read what the page says — `test:links` cannot tell you a contest was discontinued.
+- **`pinned` is the ONLY editorial override in the ordering, and it reorders
+  only.** Everything else about the order is derived from the student's profile
+  (fit → confirmed date → days left). A pinned row still has to pass eligibility:
+  a card telling a student they can enter something they cannot is the one
+  failure this product does not get to make, and "we pinned it" is not a reason
+  the student can see. **One at a time** — a list where several rows outrank the
+  student's own fit has no order at all. Tests assert all three, and they are
+  written against whatever is pinned *today* rather than a named entry, because a
+  pinned row is short-lived and a test naming one fails the day it expires.
+- **An admin can post an opportunity from the top of the list**
+  ([QuickAddOpportunity](components/admin/QuickAddOpportunity.tsx) →
+  `quickAddOpportunity` in [app/admin/opportunities/actions.ts](app/admin/opportunities/actions.ts)).
+  It writes the **same `competition_deadlines` row a partner post writes**, with
+  `partner_id` null, so it flows through `resolveCompetitions()` and renders
+  through the same card — no second catalog, no second renderer. Validation lives
+  in the server action, not only in the form: a server action is a public HTTP
+  endpoint. It is mounted with `next/dynamic`, deliberately — `{isAdmin && …}`
+  decides what *renders*, not what *ships*, and a static import put the admin
+  form in every student's bundle.
 
 ## The guide is a section of routes, not a page
 

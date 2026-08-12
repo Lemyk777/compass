@@ -1,8 +1,8 @@
 # The 23-item backlog — state, findings, and what to do next
 
-Written 2026-08-11 as a handoff. The founder gave a 23-item fix/redesign list on
-2026-08-10. Thirteen items are done and merged into `develop`; this file carries
-everything a fresh session needs to finish the rest without re-deriving it.
+The founder gave a 23-item fix/redesign list on 2026-08-10. **Last updated
+2026-08-12.** This file carries everything a fresh session needs to finish the
+rest without re-deriving it.
 
 Read [CLAUDE.md](../CLAUDE.md) first — it holds the product rules. This file
 holds only what is **specific to this backlog** and not already written there.
@@ -13,19 +13,36 @@ holds only what is **specific to this backlog** and not already written there.
 
 | | |
 |---|---|
-| `develop` | pushed through `8c46c3e` |
-| PR [#99](https://github.com/Lemyk777/compass/pull/99) | `develop` → `main`, OPEN, MERGEABLE — **the founder merges it, not us** |
-| `ad8eaec` | committed **locally, deliberately not pushed** |
+| `main` and `develop` | **in sync**, everything merged and deployed |
+| PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
+| Progress | **16 of 23 done, 2 half-done, 5 untouched** — see §3 and §4 |
+| Unit tests | **127** (`npm run test:unit`) |
 
-**Why `ad8eaec` is unpushed, and what to do about it.** PR #99 is open and the
-founder is going to review and merge it. Pushing `develop` adds this commit to
-that PR silently, which changes what a reviewer is looking at after they started
-looking. Either push it deliberately (`git push origin develop`) and say so, or
-leave it for the release after. Do not push it as a side effect of other work.
+### ⚠️ One thing is pending and it is not code
 
-**Before any push:** `npm run build` is the gate, and it must not run while
-`npm run dev` is up — they share `.next/` and the production build replaces
-chunks the dev server still references. Stop the dev server first.
+**Migration `0027_pinned_opportunities.sql` has not been applied.** Migrations in
+this project are run by hand in the Supabase SQL editor. Until it is:
+
+- the site works and NAO Cup is still pinned — that entry is in the curated
+  catalog, not the database;
+- but the **"Pin to the top" checkbox in the admin form will not work**. The
+  action returns a readable error naming the migration rather than a 500, and
+  `live.ts` reads the column defensively, so an un-migrated database degrades
+  instead of breaking.
+
+Run it, then `npm run db:check`.
+
+### The one trap that will waste an hour
+
+`npm run build` must **not** run while `npm run dev` is up — they share `.next/`
+and the production build replaces chunks the dev server still references. The dev
+server then dies with `Cannot find module './NNNN.js'`, which looks exactly like
+a code bug and is not one. Stop the dev server first, or recover with
+`rm -rf .next`.
+
+If another session's dev server is holding the port and you need bundle numbers
+anyway, build into a throwaway directory rather than clobbering theirs — but see
+§5.9 for the side effect that has.
 
 ---
 
@@ -62,13 +79,44 @@ chunks the dev server still references. Stop the dev server first.
 | 21 | Three country blurbs named cities we do not profile (Delft, Rotterdam, Turin, Bologna, Waterloo). |
 | 22 (part) | The full-bleed white band on the landing page. See §5.2. |
 | 22 (hero) | **One layout bug, not three complaints.** The dead space, the gutter and the too-small card were all the same 193px of accumulated slack. See §5.8 — and note the two further bugs it uncovered in `RotatingHeadline`. |
+| 3 + 13 (again) | **Reopened and finished.** The band was only half of it — every filled primary button was still `bg-ink`, i.e. luminance 0.90 on a page of 0.006. New `--cta` token pair. See §5.2. |
+| 8 | A question, not a task — and answering it exposed that #5 and #7 had been fixed one way and four other cities left the other way. 34 → 38 hubs. See the #8 entry in §4. |
+| 9 | 79 institutions, named and never ranked. See §4. |
+| 23 (buttons) | The button system was being bypassed by the page that mattered most, and three call sites had `!important` escapes pointing at why. See §5.9. |
+
+**Not on the founder's list, added because it was needed:**
+
+| | |
+|---|---|
+| NAO Cup | First **pinned** entry — a debate tournament in Shymkent, region-scoped to KZ, auto-expiring the day after the event. |
+| Pinning | `Competition.pinned` — the one editorial override in an otherwise derived ordering. Reorders only; never bypasses eligibility. See §5.10. |
+| Admin quick-add | Post an opportunity from the top of the Opportunities list, writing the same live row a partner post writes. See §5.10. |
+| Georgia's sources | `npm run test:links`' sibling gate was **red and nobody knew**. See §5.11. |
 
 ---
 
 ## 4. What is left, in detail
 
-Ordered by what unblocks the most. Each entry states the ask, what is already
-known, the files, and the decision needed.
+**Five untouched (#11, #14, #15, #16, #17), two half-done (#22, #23).** By item
+count that is ~74% complete; by effort it is nearer half, because two of the five
+untouched are the largest things on the list — **#17** (the planner: a third
+top-level section with its own migration) and **#16** (the coherent spine), which
+could not have been started earlier because it depends on #9 and #14.
+
+Suggested order, and the reason for it:
+
+1. **#14** — Malaysia and Australia. Self-contained, and #16 needs it.
+2. **#15** — verify the unconfirmed dates. Pure verification, no design decisions,
+   and it protects the product's central promise.
+3. **#11** — careers depth and the quiz. Two separable halves: re-tune the weights,
+   rewrite the content in the direct tone already chosen.
+4. **#16** — the spine. Unblocked by #9, better after #14.
+5. **#17** — the planner. Its own release.
+6. The animation half of **#23**, and then the progress-tracker copy in **#22**,
+   which is blocked on #17 existing.
+
+Each entry below states the ask, what is already known, the files, and the
+decision needed.
 
 ### #22 — the landing page (hero DONE 2026-08-11, rest below)
 
@@ -236,6 +284,23 @@ and passes, a **timeout does not ship**.
 
 Each new city must be added to some country's `hubs` — a test asserts every hub
 is claimed by exactly one destination.
+
+**It costs more than it did when this was written, in three ways:**
+
+1. **At least three named institutions per country**, or the #9 test rejects the
+   destination. `{ name, city, hub, knownFor[], englishTaught }`, `hub` a real hub
+   of that country or explicitly `null`, no rankings and no superlatives.
+2. **One hub is one city now** (§ the #8 entry). Do not add `Sydney & Melbourne`
+   or `Kuala Lumpur & Penang` — that is the pattern we just spent a release
+   undoing.
+3. **Verify the sources yourself before committing.** `test:guide-links` is not
+   in CI, and two of Georgia's sources were dead for an unknown length of time.
+   A reset connection is not a timeout and not a bot wall; see §5.11.
+
+Both are English-teaching destinations with post-study work routes that **drift**
+— Australia's in particular has changed repeatedly — so write them as "current
+rule, check it" the way every other profile does, and put them in the annual
+re-verify pass.
 
 ### The cost / language filter (deferred from #6, pairs with #9)
 
@@ -585,7 +650,59 @@ Each was verified to actually fire by seeding one violation of each into a
 throwaway component and watching all four fail — a source-scanning test that
 cannot fail is worth nothing.
 
-### 5.10 Two of Georgia's official sources reset the connection
+### 5.10 Pinning, and the admin route from knowing to publishing
+
+Two halves of one need: something happens on Friday, we heard about it today, and
+the only routes to a student's screen were the curated catalog (needs a deploy)
+and discovery (finds things far too late).
+
+**`Competition.pinned` is the single editorial override in the matching engine.**
+Everything else about the order is derived from the student's own profile — fit,
+then whether the date is confirmed, then how soon it closes. This sorts above all
+of it. Three rules, test-enforced:
+
+- **It reorders; it never bypasses eligibility.** A pinned row a student cannot
+  enter is filtered out exactly like any other. "Pinned" is about order and
+  eligibility is about truth, and a card saying "you can enter this" to someone
+  who cannot is the one failure this product does not get to make.
+- **One at a time.** A list where several rows outrank the student's own fit is a
+  list with no order, and the override stops meaning anything.
+- **The tests are written against whatever is pinned today, not a named entry.**
+  A pinned row is short-lived by nature; a test naming one starts failing the day
+  it expires.
+
+**The admin quick-add writes the same `competition_deadlines` row a partner post
+writes**, with `partner_id` left null — so it flows through `resolveCompetitions()`
+and renders through the same card. No second catalog, no second renderer, nothing
+new for the rest of the code to learn. Validation lives in the server action, not
+only in the form: a server action is a public HTTP endpoint and the form is a
+convenience. Past dates are rejected outright, because an expired confirmed row
+publishes and is then invisible, which reads as a bug.
+
+**The bundle trap, walked into and measured.** The control is rendered behind
+`{isAdmin && …}`, and that decides what RENDERS, not what SHIPS — imported
+statically it cost every student the admin form's bundle for a control they can
+never see. `next/dynamic` fixed it: `/dashboard/opportunities` went 187 → **186
+kB**, a kilobyte below where it started. Same trap as importing the catalog or
+`careers.ts` into a client component, in a new place.
+
+**NAO Cup is the first pinned entry** and shows the shape: region-scoped to `KZ`
+with `city: "Shymkent"` so it reaches students who can physically turn up and
+never lands on a student in Rome, `dateConfirmed: true` on the organiser's own
+announcement (the same trust a partner-set date gets), and no `cost` — the
+announcement lists a certificate, food and prizes and says nothing about an entry
+fee, and this product does not file something under "free" on the strength of it
+not being mentioned. Verified: first for a KZ student on the 12th, absent for an
+IT student, gone on the 15th.
+
+**Where the founder overruled us, and it is recorded rather than argued.** The
+registration link is a Google Forms URL containing `/u/6/` — a browser-account
+index — and `/edit`. Fetched without that session it answers **401**; the founder
+confirmed twice that it works for them and asked for it as supplied, so it ships
+as supplied. If students report they cannot register, that is the first thing to
+look at, and it is a form-sharing setting rather than a code change.
+
+### 5.11 Two of Georgia's official sources reset the connection
 
 `npm run test:guide-links` was **failing** (exit 1, 26/28) and had been for a
 while — nobody had run it, because CI does not. Both of Georgia's sources were
@@ -620,13 +737,134 @@ touches the guide, not just when editing `sources`.
 
 ```bash
 npm run build            # the gate — never while `npm run dev` is running
-npm run test:unit        # 124 tests (113 + 4 interaction invariants §5.9 + 7 for #9)
+npm run test:unit        # 127 tests
 npx tsc --noEmit
 npm run lint
-npm run test:guide-links # 28/28 official sources reachable
-node --import tsx scripts/test-session-checks.ts
+node --import tsx scripts/test-session-checks.ts   # 60 checks
+npm run test:guide-links # 27/27 official sources — NOT in CI, run it anyway
+npm run db:check         # after applying a migration, and before believing any note about one
 ```
 
-CI runs `npm run build`, the session checks, then `npm run test:unit`, without
-secrets. `npm run test:analyze` is the only one needing a real
-`ANTHROPIC_API_KEY`.
+**CI runs three of these**: `npm run build`, the session checks, then
+`npm run test:unit`, without secrets. `npm run test:analyze` is the only one
+needing a real `ANTHROPIC_API_KEY`.
+
+**The two that CI does not run are the two that rot.** `test:guide-links` and
+`test:links` need the network and would make CI flaky, so they only fail when a
+person runs them — and `test:guide-links` was found red, exit 1, with no idea how
+long it had been that way (§5.11). Run both before any release touching the guide
+or the catalog, not only when editing a URL.
+
+---
+
+## 7. How we work — the method, not the findings
+
+Everything in §5 was found the same handful of ways. This section is the method
+itself, because it transfers and the individual findings do not.
+
+### Measure it; do not look at it
+
+For any claim that can be a number — a column width, a gap, a bundle size, a
+contrast ratio, a line count — read it out of the running system. A screenshot
+shows one state and proves nothing about the states between the ones you sampled.
+
+The practical form: write one probe function, store it on `window`, and re-invoke
+it after every viewport change. That is how "the hero looks off" became "560px
+column, 616px phrase, 63px reserved and unused" — and once it is a number, the
+fix is decided rather than debated. It also worked when screenshots were
+unavailable, which is more than half the time in this harness (§5.7).
+
+Corollaries paid for in this backlog:
+
+- **Character count is not width.** Two 19-character phrases differed by 95px.
+- **Contrast is not brightness.** The band and the primary button both passed
+  every contrast check while being visibly broken; what was wrong was luminance,
+  and only an absolute assertion catches it.
+- **A theme toggle at runtime does not repaint `var()` colours.** Load the page
+  under the OS setting instead. This produced a false "the fix didn't work"
+  reading here, exactly as CLAUDE.md warned.
+- **Measuring during an animation measures the animation.** Force it to its
+  resting state first; do not await `finished` in a hidden pane, it never
+  settles.
+
+### A test you have not seen fail is a belief, not a test
+
+Every source-scanning invariant added in this backlog was verified by **seeding a
+violation and watching it fail**, then reverting. This is not ceremony: the first
+draft of one of them passed only because its regex was wrong, and the `--cta`
+luminance ceiling was confirmed by temporarily restoring the old value and
+reading the failure message.
+
+### Fix the root, then encode the audit
+
+When a defect is found by grepping or probing rather than by the compiler, the
+grep is the durable artefact. Convert it into an assertion in
+`scripts/test-engine.ts` before finishing, and say in the test's own comment which
+bug it caught — that is what lets a future reader tell a real invariant from
+cargo-culted lint.
+
+Five of the seven defects in §5.9–5.11 could not fail a type-check, and three
+could not fail a lint either. The code was valid; it simply did not do what it
+said.
+
+### Separate what decays from what holds
+
+When a request collides with a rule (#9: "list the top universities" versus a ban
+on rankings), decompose it. A *position* rots within a year; an *association* —
+what a place is actually studied for — holds. Ship the durable half in full,
+model the volatile field coarsely with an explicit "check it for your own year",
+and extend the rule to cover the paraphrase that would smuggle the banned thing
+back in (here: superlatives, a ranking with the number filed off).
+
+### Two views of one dataset are one dataset and a function
+
+The city page derives from the same registry the country page reads. The test
+asserts the **derivation**, not the contents — a contents test rots at the speed
+of the content and gets deleted; a derivation test is size-independent.
+
+### Bundle cost is per consumer, not global
+
+"Should we adopt this dependency?" is one question per consumer with different
+answers. `cn` was free in `Input` (its importers already carried tailwind-merge),
+worth +9 kB in the components that needed it, and deliberately declined in `Shell`
+and `Logo` — with the reason written in the code and the latent risk covered by a
+test instead of by bytes. And `{isAdmin && …}` decides what renders, not what
+ships (§5.10).
+
+### A question from the founder can be a bug report
+
+#8 was phrased as a neutral question about an existing decision. Answering it
+literally was correct; checking the answer against the rest of the same list is
+what found that #5 and #7 had been fixed one way and four other cities left the
+other way. **"Why is this like this?" means the design failed to explain itself,
+which is a defect even when the design is defensible.**
+
+### Say the concern once, then build what was asked
+
+Where we disagreed with the founder and they reaffirmed — the NAO Cup
+registration link — the decision is theirs, it ships as they asked, and the
+reasoning is recorded in §5.10 so nobody re-opens it as a mystery later. State a
+concern once with evidence; do not re-litigate it.
+
+### Never ship a claim you cannot stand behind
+
+The three that keep coming up, all of them rules this product already had and
+still nearly broke:
+
+- **"Free" is not the absence of a stated price.** NAO Cup ships with no `cost`,
+  which renders as "we have not verified this", because the announcement simply
+  does not mention a fee.
+- **A countdown needs a date we can source.** The organiser's own announcement
+  counts; a scrape does not.
+- **A link has to work for the reader, not for us.** And when it fails, say which
+  of the four failure modes it was — answered-with-error, refused mid-handshake,
+  timed out, or unresolvable — because each licenses a different action and two of
+  them look identical in a one-line report (§5.11).
+
+### Process notes that cost time here
+
+- Commit in logical units, and order them so each one is green on its own.
+- `next build` with a throwaway `distDir` rewrites `tsconfig.json` — it injects
+  `<thatDir>/types/**/*.ts` into `include` and reformats the file. Revert it.
+- The doc you are reading goes stale fastest at the top. §1 claimed an open PR
+  and an unpushed commit for a day after both were false.
