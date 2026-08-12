@@ -42,6 +42,7 @@ import {
 import {
   buildExtracurriculars,
   strengthBand,
+  reachableFrom,
   COMPETITIONS,
 } from "@/lib/data/key-dates";
 import type { CompetitionLevel, Opportunity } from "@/lib/data/key-dates";
@@ -2416,4 +2417,27 @@ test("at most one thing is pinned in the curated catalog", () => {
     pinned.length <= 1,
     `${pinned.length} entries are pinned (${pinned.join(", ")}) — keep it to one`,
   );
+});
+
+// The region rule has three cases and the middle one is easy to collapse into
+// the wrong neighbour — which is exactly what happened: "country unknown" was
+// treated like "country does not match", so a local event was hidden from the
+// only visitors who had not told us where they are. Pinned directly, because
+// both the opportunities list and the timeline read it and they must not drift.
+test("a local opportunity is hidden only from a country we KNOW is different", () => {
+  const local = { region: "KZ" };
+  const global_ = { region: null };
+
+  assert.equal(reachableFrom(local, "KZ"), true, "its own country cannot see it");
+  assert.equal(reachableFrom(local, "UZ"), false, "leaked to a known, different country");
+  // Unknown must not exclude — the same rule as empty faculties meaning "show
+  // everything" and an unknown grade never removing a row.
+  assert.equal(reachableFrom(local, null), true, "hidden from an unknown country");
+  assert.equal(reachableFrom(local, undefined), true, "hidden from an unknown country");
+  assert.equal(reachableFrom(local, ""), true, "an empty string is not a country");
+
+  // A row with no region tag is global and reaches everyone, always.
+  for (const c of ["KZ", "UZ", null, undefined]) {
+    assert.equal(reachableFrom(global_, c), true, `a global row was hidden from ${c}`);
+  }
 });

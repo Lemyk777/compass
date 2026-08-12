@@ -134,12 +134,27 @@ ok("buildExtracurriculars: KZ student sees the local row", () => {
   });
   assert.ok(plan.items.some((o) => o.id === "kz-test-olympiad"));
 });
-ok("buildExtracurriculars: UZ / unknown student does NOT see it", () => {
-  for (const home of ["UZ", null, undefined]) {
+ok("buildExtracurriculars: a KNOWN, different country does NOT see it", () => {
+  const plan = buildExtracurriculars({
+    today, faculties: ["law"], factors, liveCompetitions: [localRow], homeCountry: "UZ",
+  });
+  assert.ok(!plan.items.some((o) => o.id === "kz-test-olympiad"), "leaked to UZ");
+});
+// Deliberately the opposite of what this asserted until 2026-08-12, and the
+// change is the product's own rule finally applied to country: an UNKNOWN fact
+// must not remove something from the list. Hiding local rows from a visitor
+// whose country we do not know meant a Shymkent tournament was invisible in
+// Shymkent until you made an account — the person it is for was the only one who
+// could not see it. Known-and-different still hides, which is the useful half.
+ok("buildExtracurriculars: an UNKNOWN country still sees it", () => {
+  for (const home of [null, undefined]) {
     const plan = buildExtracurriculars({
       today, faculties: ["law"], factors, liveCompetitions: [localRow], homeCountry: home,
     });
-    assert.ok(!plan.items.some((o) => o.id === "kz-test-olympiad"), `leaked to ${home}`);
+    assert.ok(
+      plan.items.some((o) => o.id === "kz-test-olympiad"),
+      `hidden from a visitor whose country is ${home}`,
+    );
   }
 });
 ok("buildExtracurriculars: no factors → emerging, accessible recommended (growth mode)", () => {
@@ -154,17 +169,17 @@ ok("buildExtracurriculars: no factors → emerging, accessible recommended (grow
   }
 });
 
-ok("buildStudyPlan: timeline gates local rows by homeCountry too", () => {
-  const withKZ = buildStudyPlan({
-    today, graduationYear: today.getFullYear() + 2, faculties: ["law"],
-    homeCountry: "KZ", liveCompetitions: [localRow],
-  });
-  const without = buildStudyPlan({
-    today, graduationYear: today.getFullYear() + 2, faculties: ["law"],
-    homeCountry: null, liveCompetitions: [localRow],
-  });
-  assert.ok(withKZ.competitions.some((c) => c.id === "kz-test-olympiad"));
-  assert.ok(!without.competitions.some((c) => c.id === "kz-test-olympiad"));
+// The timeline reads the same rule, and it has to — two surfaces disagreeing
+// about who can reach an opportunity is worse than either answer.
+ok("buildStudyPlan: timeline applies the same three-case region rule", () => {
+  const plan = (homeCountry: string | null) =>
+    buildStudyPlan({
+      today, graduationYear: today.getFullYear() + 2, faculties: ["law"],
+      homeCountry, liveCompetitions: [localRow],
+    }).competitions.some((c) => c.id === "kz-test-olympiad");
+  assert.ok(plan("KZ"), "the row's own country cannot see it");
+  assert.ok(!plan("UZ"), "leaked to a known, different country");
+  assert.ok(plan(null), "hidden from a visitor whose country is unknown");
 });
 
 // ── growth mode: roadmap without analysis ────────────────────────────────────
