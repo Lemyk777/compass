@@ -35,7 +35,8 @@ export const COMPETITIONS: Competition[] = [
     // who can actually turn up and does not land on a student in Rome.
     region: "KZ",
     city: "Shymkent",
-    url: "https://docs.google.com/forms/d/1ExqYn1nwLlgUZ8YJ4j34NCJMA5hqyiVyE9IqYoV52hA/viewform",
+    // The organiser's registration form, as supplied by them.
+    url: "https://docs.google.com/forms/u/6/d/1ExqYn1nwLlgUZ8YJ4j34NCJMA5hqyiVyE9IqYoV52hA/edit?pli=1&pli=1#response=ACYDBNgVJWdCyF18wgeVGLValklCZZ5Ky3GiB-x0Za7b3pb8o0v5LAYO9oAbgxAReA",
     blurb:
       "Three qualifying rounds, then a semi-final and a final, run in Russian. Resolutions follow the Japanese theme, there is a prize for the best costume and one for best speaker, and lunch is included. Open to students who have never debated before as well as to those who have.",
     // Deliberately NOT "free": the announcement lists what you get and says
