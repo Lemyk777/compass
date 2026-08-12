@@ -387,7 +387,7 @@ export function buildStudyPlan({
   // catalog (incl. not-yet-announced ones) lives in the Opportunities section.
   const fac = new Set(faculties);
   const competitions: CompetitionStep[] = comps
-    .filter((c) => !c.region || c.region === homeCountry)
+    .filter((c) => reachableFrom(c, homeCountry))
     .filter((c) => c.fields === "all" || c.fields.some((f) => fac.has(f)))
     .filter((c) => c.dateConfirmed && daysBetween(today, c.deadline) >= 0)
     .map((c) => ({ ...c, daysToDeadline: daysBetween(today, c.deadline) }))
@@ -492,6 +492,36 @@ const FIT_ORDER: Record<OpportunityFit, number> = {
  * student's strength, sorted recommended-first then by nearest deadline. The
  * view groups/filters from this; the matching is all deterministic.
  */
+/**
+ * Can a student in `homeCountry` reach this opportunity?
+ *
+ * Three cases, and the middle one is the fix:
+ *
+ *  • no `region` tag        → global, always shown.
+ *  • `region` set, country UNKNOWN → **shown**. An unknown fact must not remove
+ *    something from the list, which is the rule the whole matching engine
+ *    already runs on: empty faculties means "show everything", an unknown grade
+ *    never excludes. Country was the one place that broke it, and the effect was
+ *    the worst possible one — a logged-out visitor is exactly who a local event
+ *    is FOR, and they were the only person who could not see it. A Shymkent
+ *    tournament was invisible in Shymkent until you made an account.
+ *  • `region` set, country known and different → hidden. This is the part worth
+ *    keeping: a student in Rome should not be offered a one-day event in
+ *    Kazakhstan, and once we know where they are we can say so.
+ *
+ * A local row still carries its city badge, so a visitor whose country we do not
+ * know can see at a glance that it is in Shymkent and judge for themselves —
+ * which is more respect than hiding it paid them.
+ */
+export function reachableFrom(
+  c: Pick<Competition, "region">,
+  homeCountry?: string | null,
+): boolean {
+  if (!c.region) return true;
+  if (!homeCountry) return true;
+  return c.region === homeCountry;
+}
+
 export function buildExtracurriculars({
   today,
   faculties,
@@ -521,7 +551,7 @@ export function buildExtracurriculars({
   const grade = gradeFromGraduationYear(graduationYear, today);
 
   const items: Opportunity[] = comps
-    .filter((c) => !c.region || c.region === homeCountry)
+    .filter((c) => reachableFrom(c, homeCountry))
     // An empty field selection means "we don't know yet", not "show almost
     // nothing". Filtering on it left a profile-less student with 9 of 86
     // opportunities — the exact dead end that makes people leave.
