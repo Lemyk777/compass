@@ -196,3 +196,155 @@ export async function runDiscoveryNow(formData: FormData): Promise<RunDiscoveryS
     };
   }
 }
+
+// ── Quick add: an admin posting an opportunity directly ──────────────────────
+//
+// The founder's route for "we heard about this today and it happens on Friday".
+// Discovery finds things eventually; a person who was told about a tournament in
+// their own city knows first, and there was no way to act on that without
+// editing the catalog and shipping a deploy.
+//
+// It writes the SAME `competition_deadlines` row a partner post writes, with
+// `partner_id` left null — so it flows through resolveCompetitions() and renders
+// through the same card as everything else. No second catalog, no second
+// renderer, and no "admin opportunities" concept for the rest of the code to
+// learn.
+
+const ADMIN_LEVELS = ["school", "regional", "national", "international"] as const;
+const ADMIN_CATEGORIES = [
+  "competition",
+  "olympiad",
+  "course",
+  "research_program",
+  "summer_program",
+] as const;
+
+export type QuickAddInput = {
+  name: string;
+  url: string;
+  blurb: string;
+  eligibility: string;
+  /** ISO date, or "" when the thing runs continuously. */
+  deadline: string;
+  alwaysOpen: boolean;
+  level: (typeof ADMIN_LEVELS)[number];
+  category: (typeof ADMIN_CATEGORIES)[number];
+  fields: FacultyValue[];
+  cost: CostModel;
+  costDetail: string;
+  /** Empty = worldwide. An ISO-2 code scopes it to that country's students. */
+  region: string;
+  city: string;
+  pinned: boolean;
+};
+
+export type QuickAddResult = { ok: true; id: string } | { ok: false; error: string };
+
+function slugId(name: string): string {
+  const base = name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48);
+  return `${base || "opportunity"}-${Date.now().toString(36)}`;
+}
+
+/**
+ * Publish an opportunity as an admin. Live to students the moment it returns.
+ *
+ * Validated here rather than only in the form, because a server action is a
+ * public HTTP endpoint: the form is a convenience, this is the boundary.
+ */
+export async function quickAddOpportunity(
+  input: QuickAddInput,
+): Promise<QuickAddResult> {
+  await requireRole("admin");
+
+  const name = input.name.trim();
+  const url = input.url.trim();
+  const blurb = input.blurb.trim();
+
+  if (name.length < 3) return { ok: false, error: "Give it a name." };
+  if (blurb.length < 20)
+    return { ok: false, error: "The blurb is what a student reads first — write a sentence or two." };
+  if (!input.eligibility.trim())
+    return {
+      ok: false,
+      error: "Who can enter? This is on every card and is the whole point of the product.",
+    };
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { ok: false, error: "That URL is not valid." };
+  }
+  if (parsed.protocol !== "https:")
+    return { ok: false, error: "The link has to be https." };
+
+  // A deadline is either a real future date or the thing is always open. A past
+  // date is rejected outright: resolveCompetitions() drops expired confirmed
+  // rows, so it would be published and invisible, which looks like a bug.
+  let deadline = cycleEndPlaceholder();
+  let dateConfirmed = false;
+  if (!input.alwaysOpen) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.deadline))
+      return { ok: false, error: "Pick a date, or tick “runs continuously”." };
+    const today = new Date().toISOString().slice(0, 10);
+    if (input.deadline < today)
+      return { ok: false, error: "That date has already passed." };
+    deadline = input.deadline;
+    // An admin typing a date off the organiser's own announcement is the same
+    // trust as a partner stating their own date — the one case confirmation is
+    // granted without a scrape.
+    dateConfirmed = true;
+  }
+
+  const fields = input.fields.filter((f) => FACULTY_VALUES.includes(f));
+  const region = input.region.trim().toUpperCase() || null;
+
+  const id = slugId(name);
+  const admin = createAdminClient();
+  const { error } = await admin.from("competition_deadlines").insert({
+    id,
+    partner_id: null,
+    published: true,
+    posted_at: new Date().toISOString(),
+    name,
+    // Empty selection means "any field", stored exactly as the catalog stores it
+    // so matching cannot tell this row apart from a curated one.
+    fields: fields.length > 0 ? fields : "all",
+    deadline,
+    event_window: input.alwaysOpen
+      ? "Runs continuously — start whenever you like"
+      : "See the official page",
+    level: input.level,
+    category: input.category,
+    url,
+    blurb,
+    eligibility: input.eligibility.trim(),
+    date_confirmed: dateConfirmed,
+    always_open: input.alwaysOpen,
+    cost: input.cost,
+    cost_detail: input.costDetail.trim() || null,
+    region,
+    city: input.city.trim() || null,
+    pinned: input.pinned,
+    cycle: currentCycle(),
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.error("[admin] quick add failed:", error);
+    // The most likely cause on a database that has not run 0027 yet.
+    if (/pinned/.test(error.message))
+      return { ok: false, error: "Run migration 0027 first — the `pinned` column is missing." };
+    return { ok: false, error: "Could not publish that. Try again in a moment." };
+  }
+
+  revalidatePath("/opportunities");
+  revalidatePath("/dashboard/opportunities");
+  revalidatePath("/admin/opportunities");
+  return { ok: true, id };
+}

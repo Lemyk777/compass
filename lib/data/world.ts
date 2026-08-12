@@ -249,21 +249,39 @@ export const HUBS: Hub[] = [
   },
   {
     id: "zurich",
-    city: "Zurich & Lausanne",
+    city: "Zurich",
     country: "Switzerland",
     region: "europe",
-    fields: ["computer_science", "natural_sciences", "engineering"],
-    what: "ETH and EPFL, plus the deep-tech and quantitative finance built around them — research here is funded at a level almost nowhere else matches.",
-    catch: "The wall is admission and cost of living, not tuition: Switzerland is the most expensive country in Europe to exist in.",
-    route: "Tuition at ETH/EPFL is low even for internationals. A PhD position is a salaried job, which is why doctoral study is the common way in.",
+    fields: ["computer_science", "natural_sciences", "engineering", "business_economics"],
+    what: "ETH plus the deep-tech and quantitative finance built around it, and the largest concentration of research money and technical employers in the German-speaking world.",
+    catch: "The wall is admission and cost of living, not tuition: Switzerland is the most expensive country in Europe to exist in, and daily life runs in a German most textbooks do not teach you.",
+    route: "Tuition at ETH is low even for internationals. A PhD position is a salaried job, which is why doctoral study is the common way in.",
     dayHere:
-      "Orderly to a degree that is either restful or stifling depending on temperament: transport runs exactly on time, the lakes and mountains are genuinely at hand, and the rules about noise, recycling and neighbourliness are taken seriously. It is quiet, extremely safe, and socially reserved — foreigners consistently report that making local friends takes years rather than months.",
+      "Orderly to a degree that is either restful or stifling depending on temperament: transport runs exactly on time, the lake and the mountains are genuinely at hand, and the rules about noise, recycling and neighbourliness are taken seriously. It is quiet, extremely safe, and socially reserved — foreigners consistently report that making local friends takes years rather than months.",
     money:
-      "The inversion that surprises everyone: tuition at ETH and EPFL is low even for internationals, while simply existing in Switzerland is the most expensive on this list. Rent, food, insurance and transport all cost multiples of neighbouring countries. This is why the doctoral route dominates — a PhD position is a salaried job, and salary is what makes the country affordable.",
+      "The inversion that surprises everyone: tuition at ETH is low even for internationals, while simply existing in Switzerland is the most expensive on this list. Rent, food, insurance and transport all cost multiples of neighbouring countries. This is why the doctoral route dominates — a PhD position is a salaried job, and salary is what makes the country affordable.",
     language:
-      "Research and graduate teaching run in English, and at EPFL much of the environment does too. Zurich's daily life is in German (with Swiss German spoken), Lausanne's in French. You can complete a doctorate in English; you cannot integrate socially in it.",
+      "Research and graduate teaching run in English. Daily life runs in German, and specifically in Swiss German, which is spoken rather than written and which standard German lessons will not prepare you for. You can complete a doctorate in English; you cannot integrate socially in it.",
     whoThrives:
-      "Suits you if you are academically strong and aiming at research or deep tech, particularly via a funded PhD. Look elsewhere if you need to arrive as an undergraduate on a tight budget — the cost of living, not the fees, is what excludes people.",
+      "Suits you if you are academically strong, aiming at research or deep tech, and want the option of leaving academia without leaving the city — Zurich has the employers for that and Lausanne does not. Look elsewhere if you need to arrive as an undergraduate on a tight budget: the cost of living, not the fees, is what excludes people.",
+  },
+  {
+    id: "lausanne",
+    city: "Lausanne",
+    country: "Switzerland",
+    region: "europe",
+    fields: ["computer_science", "engineering", "natural_sciences"],
+    what: "EPFL on Lake Geneva — robotics, life sciences and computer science on one campus, in an environment that runs in English further down than Zurich's does.",
+    catch: "The same Swiss cost wall, and a much smaller job market: outside the campus and a handful of research-led companies, leaving academia here usually means leaving the city.",
+    route: "Tuition at EPFL is low even for internationals, and a doctoral position is a salaried job. Master's programmes are widely taught in English, which makes it an easier first step than Zurich for someone with no German.",
+    dayHere:
+      "Small, steep and built down to the lake, with the Alps across the water — you can be in a vineyard or on a train to the mountains within half an hour. The campus dominates the city's rhythm in a way it does not in Zurich, so student life is more concentrated and easier to enter. It is French-speaking, noticeably more relaxed than the German-speaking side, and small enough that you will recognise people.",
+    money:
+      "The same inversion as the rest of Switzerland: fees are low and living is not. Rent is below Zurich's but not by enough to change the calculation, and health insurance is compulsory and privately bought, which catches arrivals out because it is a real monthly cost nobody warns you about. A funded doctorate is what turns this from unaffordable into comfortable.",
+    language:
+      "EPFL works in English at master's and doctoral level, and much of the campus does day to day. The city outside it is French, and the administration — residence permits, insurance, tax — is in French. Enough French to handle an office counter is the practical threshold.",
+    whoThrives:
+      "Suits you if EPFL specifically is the target, or if French-speaking Europe is where you want to live and study in English while you learn the language. Look elsewhere if you want a large non-academic job market in the same city — that is Zurich — or if you want a big city at all.",
   },
   {
     id: "geneva",
@@ -359,21 +377,39 @@ export const HUBS: Hub[] = [
   },
   {
     id: "dubai",
-    city: "Dubai & Abu Dhabi",
+    city: "Dubai",
     country: "UAE",
     region: "middle_east",
-    fields: ["business_economics", "engineering", "computer_science", "medicine_health"],
-    what: "A fast-growing corporate and startup market three hours from Central Asia, with branch campuses of Western universities on the ground.",
-    catch: "Income is untaxed but living costs are high, and residence is tied to your employer — losing the job means losing the visa.",
-    route: "NYU Abu Dhabi admits internationally with need-based aid that can cover the full cost, which makes it one of the most generous doors anywhere. Compass models UAE admissions already.",
+    fields: ["business_economics", "computer_science", "engineering", "medicine_health"],
+    what: "A fast-growing corporate and startup market three hours from Central Asia, with branch campuses of Western universities on the ground and the region's densest concentration of private employers.",
+    catch: "Income is untaxed but living costs are high, and residence is tied to your employer — losing the job means losing the visa, on a short clock.",
+    route: "Branch campuses admit internationally and teach in English, and the free-zone company structures make it one of the easier places to be employed as a foreigner. Compass models UAE admissions already.",
     dayHere:
       "Life is organised around air conditioning and the car; the summer months are genuinely severe and much of daily life moves indoors. The population is overwhelmingly foreign, so being an expatriate is the norm rather than the exception — and the flip side is that communities are transient and friends leave. Central Asia is a short flight away, which matters more than people expect.",
     money:
-      "Income is untaxed, which is the headline, and the honest counterweights are that rent and schooling are expensive and usually paid in large advance instalments, and that your legal residence is tied to your employer. Losing the job means losing the right to stay, on a short clock — so the savings that make this attractive should be built deliberately and early.",
+      "Income is untaxed, which is the headline, and the honest counterweights are that rent and schooling are expensive and usually paid in large advance instalments, and that your legal residence is tied to your employer. Losing the job means losing the right to stay — so the savings that make this attractive should be built deliberately and early.",
     language:
       "Business, universities and most workplaces run in English, and you can live here entirely in it. Arabic is valuable for government-facing work and for genuine integration, but it is not a barrier to entry the way German or Korean is.",
     whoThrives:
-      "Suits you if you want to save quickly, stay near home, and work in a corporate or startup environment in English — and NYU Abu Dhabi's need-based aid makes it one of the most generous undergraduate doors anywhere. Look elsewhere if you want a permanent home with a path to citizenship, or a deep research culture.",
+      "Suits you if you want to save quickly, stay near home, and work in a corporate or startup environment in English. Look elsewhere if you want a permanent home with a path to citizenship, a deep research culture, or a fully funded undergraduate place — for that last one the door is Abu Dhabi, not here.",
+  },
+  {
+    id: "abu-dhabi",
+    city: "Abu Dhabi",
+    country: "UAE",
+    region: "middle_east",
+    fields: ["engineering", "natural_sciences", "business_economics", "medicine_health"],
+    what: "The capital, and the country's research and energy centre — government bodies, sovereign funds and the two universities that admit internationally with real money behind them.",
+    catch: "Quieter, more spread out and more conservative than Dubai, with a much smaller private job market: outside the state-linked sector and the universities, the openings are in Dubai and people commute or move.",
+    route: "New York University Abu Dhabi admits internationally with need-based aid that can cover the full cost, which makes it one of the most generous undergraduate doors anywhere; Khalifa University funds science and engineering students directly. Compass models UAE admissions already.",
+    dayHere:
+      "Flatter, calmer and more residential than Dubai, built around wide roads and the car rather than around a skyline. The summer is as severe and the indoor life is the same, but the pace is slower and the population less transient, because so much of it works for institutions rather than for companies that come and go. The island layout means distances are real and a car is close to necessary.",
+    money:
+      "The same untaxed income and the same employer-tied residence as Dubai, with rents that sit somewhat below it and a shorter list of ways to spend money. The difference that matters for a student is the funding: aid at NYU Abu Dhabi is need-based rather than merit-priced, so the cost of the degree is assessed against what your family can actually pay — which is a fundamentally different proposition from a discount.",
+    language:
+      "The universities and the professional world run in English. Arabic carries more weight here than in Dubai because so much of the work is government-facing, and it is the difference between a job in the sector and a job adjacent to it.",
+    whoThrives:
+      "Suits you if you want a funded undergraduate degree in English near home, or research and engineering tied to energy, space and the state sector. Look elsewhere if you want a large private job market, startup density or nightlife — that is Dubai, an hour and a half up the road.",
   },
   {
     id: "istanbul",
@@ -468,22 +504,40 @@ export const HUBS: Hub[] = [
       "Suits you if you want precision engineering, materials or animation at world level and will learn Japanese. Look elsewhere if you need to change employers freely — the hiring system is unusually rigid about when and how you apply, especially for graduates.",
   },
   {
-    id: "osaka-kyoto",
-    city: "Osaka & Kyoto",
+    id: "osaka",
+    city: "Osaka",
     country: "Japan",
     region: "asia_pacific",
-    fields: ["engineering", "natural_sciences", "computer_science", "arts_design"],
-    what: "Japan's second centre: heavy industry, electronics and materials research in Osaka, and one of Asia's strongest research universities in Kyoto half an hour away.",
+    fields: ["engineering", "natural_sciences", "computer_science", "business_economics"],
+    what: "Japan's industrial second city: heavy engineering, electronics, materials and pharmaceuticals, with the manufacturers that actually hire for them headquartered in the region.",
     catch: "Less international than Tokyo, so Japanese is needed sooner, and the graduate hiring calendar is rigid in a way that catches foreigners out.",
     route: "MEXT government scholarships cover tuition, travel and a monthly allowance for research and undergraduate students alike, and national universities charge internationals the same fees as Japanese students.",
     dayHere:
-      "Osaka is the informal, food-obsessed counterweight to Tokyo; Kyoto next door is smaller, older and stricter about how things are done. Rents are meaningfully below Tokyo's, transport is superb and neither city needs a car. Being visibly foreign registers more here than in the capital, in both the warm and the awkward senses.",
+      "The informal, food-obsessed counterweight to Tokyo — louder, blunter and easier to talk to strangers in, which people who have lived in both consistently say is the real difference. Rents are meaningfully below Tokyo's, the transport is superb and no car is needed. Being visibly foreign registers more here than in the capital, in both the warm and the awkward senses.",
     money:
       "National university fees are set nationally and are identical for international students, which makes Japan much cheaper to study in than its reputation suggests; the government scholarship removes them entirely and adds a monthly allowance. Living costs are dominated by rent and by the deposits and guarantor requirements that make moving in expensive at the start rather than each month.",
     language:
       "Research groups will use English on paper and Japanese in the room, and the hiring system expects business-level Japanese from anyone joining a Japanese company. English-track degrees are growing, but treat them as a way in rather than as a way to avoid learning the language.",
     whoThrives:
-      "Suits you if you want funded research or engineering in Japan and will commit to the language. Look elsewhere if you want an English-speaking career, or the density of international employers — that is Tokyo, and even there it is smaller than people expect.",
+      "Suits you if you want engineering or applied science next to the companies that manufacture it, and will commit to the language. Look elsewhere if you want an English-speaking career or the density of international employers — that is Tokyo, and even there it is smaller than people expect.",
+  },
+  {
+    id: "kyoto",
+    city: "Kyoto",
+    country: "Japan",
+    region: "asia_pacific",
+    fields: ["natural_sciences", "engineering", "humanities_social", "arts_design"],
+    what: "A research city rather than an industrial one — one of Asia's strongest universities, a basic-science culture that has produced a long line of Nobel laureates, and the country's traditional crafts and design still practised commercially.",
+    catch: "Small, conservative and short on employers: this is a place to do research and then leave for work, and the tourism load on the centre has made housing and daily movement noticeably harder than it was.",
+    route: "The same MEXT scholarships and the same national fee schedule as the rest of Japan, and Kyoto University runs English-taught graduate programmes that do not require Japanese to enter — though the laboratory around you will still be working in it.",
+    dayHere:
+      "Low-rise, walkable and cyclable, hemmed in by mountains on three sides, with the temples and the river doing more for daily life than any listing suggests. It is stricter than Osaka about how things are done and slower to accept outsiders, and the tourist crowds in the central districts are a genuine daily irritation rather than a postcard. Winters are colder and summers more humid than the coast.",
+    money:
+      "Identical national fees to everywhere else in the Japanese system, and living costs below Tokyo but above what the city's size suggests, because tourism has pushed rents in the centre. The guarantor and deposit requirements are the same start-up cost as elsewhere in Japan, and student housing is the usual way around them.",
+    language:
+      "Graduate research can be entered in English and increasingly conducted in it, but the seminar, the corridor and the administration are Japanese. For the crafts and design side the language is not optional at all — those are apprenticeship cultures and they run entirely in Japanese.",
+    whoThrives:
+      "Suits you if you want basic research, an academic path, or one of the traditional design disciplines, and you want a small city you can cross on a bicycle. Look elsewhere if you want to work in industry after graduating — the jobs are in Osaka half an hour away, or in Tokyo.",
   },
   {
     id: "singapore",
@@ -651,21 +705,39 @@ export const HUBS: Hub[] = [
   },
   {
     id: "toronto",
-    city: "Toronto & Waterloo",
+    city: "Toronto",
     country: "Canada",
     region: "north_america",
     fields: ["computer_science", "business_economics", "medicine_health", "engineering"],
-    what: "A large tech and finance sector with a university pipeline (Waterloo) built around paid co-op work terms.",
-    catch: "International tuition is substantial, and the winters are not a joke.",
+    what: "Canada's largest job market by a distance — banking and insurance, a substantial technology sector, and the hospital and research network that comes with the country's biggest city.",
+    catch: "International tuition is substantial, housing has become genuinely difficult, and the winters are not a joke.",
     route: "The most predictable immigration ladder in North America: study permit, then a post-graduation work permit, then permanent residence — a route the US does not offer.",
     dayHere:
-      "Genuinely multicultural in a way that makes being foreign unremarkable — a large share of the population was born elsewhere, and the city is organised around that fact. Toronto is big and transit-served; Waterloo is a smaller university town an hour and a half away. The winter is long and cold, and that is worth taking seriously rather than laughing off.",
+      "Genuinely multicultural in a way that makes being foreign unremarkable — a large share of the population was born elsewhere, and the city is organised around that fact. It is big, flat and transit-served, though the transit is stretched and commutes are long. The winter is long and cold, and that is worth taking seriously rather than laughing off.",
     money:
-      "International tuition is substantial and housing in Toronto has become genuinely difficult, which together make this less of a bargain than its reputation suggests. The counterweight is structural: Waterloo's co-op model puts paid work terms inside the degree, so you earn and gain local experience while studying — and local experience is what the immigration route actually rewards.",
+      "International tuition is substantial and housing here is the single hardest cost in this guide's North American entries, which together make Toronto less of a bargain than its reputation suggests. Work during study is permitted, and the thing actually worth planning around is that the immigration route rewards Canadian work experience — so a job that counts matters more than a job that pays slightly better.",
     language:
       "English, with French an asset nationally and a requirement in parts of the public sector. No language barrier to study or work, which combined with the immigration ladder is much of the appeal.",
     whoThrives:
-      "Suits you if a predictable path from study permit to permanent residence matters more to you than prestige or salary — that ladder is the most reliable in North America and the US does not offer an equivalent. Look elsewhere if you cannot fund substantial international tuition, or want the highest technology salaries.",
+      "Suits you if a predictable path from study permit to permanent residence matters more than prestige or salary, and you want the deepest job market in the country. Look elsewhere if you cannot fund substantial international tuition, or if software specifically is the plan and you would rather have paid work terms built into the degree — that is Waterloo, an hour and a half west.",
+  },
+  {
+    id: "waterloo",
+    city: "Waterloo",
+    country: "Canada",
+    region: "north_america",
+    fields: ["computer_science", "engineering", "business_economics"],
+    what: "A university town organised around one idea: co-op, where paid work terms alternate with study terms, so a software or engineering degree here ends with about two years of real employment already on the record.",
+    catch: "It is a small town, not a city — if you want urban life you commute or you leave — and the co-op cycle is relentless: you are applying and interviewing for the next placement while doing the current term.",
+    route: "The same Canadian ladder as Toronto — study permit, post-graduation work permit, permanent residence — but with the work experience the ladder rewards built into the degree instead of chased after it.",
+    dayHere:
+      "Small, quiet and campus-shaped: most of what happens socially happens through the university and through the companies that recruit out of it, which makes it unusually easy to arrive into and unusually narrow if you want anything else. The winter is the same long Ontario winter as Toronto's, with less to do indoors. Toronto is reachable for a day but not for an evening.",
+    money:
+      "International tuition is substantial in the same way as the rest of Ontario, and the structural counterweight is real: co-op terms are paid employment, so a meaningful share of the cost is earned back during the degree rather than borrowed against it. Housing is cheaper than Toronto's, though the student market tightens hard around the start of each work-term cycle.",
+    language:
+      "English throughout. The co-op interview process is the thing to prepare for rather than any language test — it starts early, runs on a fixed cycle, and rewards people who can talk about their own projects clearly.",
+    whoThrives:
+      "Suits you if software or engineering is the plan and you want the shortest distance between a degree and the companies that hire for it, with Canadian work experience accumulating from year one. Look elsewhere if you want a city, a broad choice of industries, or a research-first undergraduate experience.",
   },
   {
     id: "vancouver",

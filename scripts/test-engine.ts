@@ -39,7 +39,11 @@ import {
   scoreInterestQuiz,
   topFacultiesFromQuiz,
 } from "@/lib/data/interest-quiz";
-import { buildExtracurriculars, strengthBand } from "@/lib/data/key-dates";
+import {
+  buildExtracurriculars,
+  strengthBand,
+  COMPETITIONS,
+} from "@/lib/data/key-dates";
 import type { CompetitionLevel, Opportunity } from "@/lib/data/key-dates";
 import {
   NO_FILTERS,
@@ -62,7 +66,10 @@ import {
 } from "@/lib/data/careers";
 import { CAREER_AREA_TITLES } from "@/lib/data/career-titles";
 import { HOME_ROUTES, homeRoutesForFaculties } from "@/lib/data/from-home";
-import { LEGACY_GUIDE_PLACE_IDS } from "@/lib/data/legacy-guide-urls";
+import {
+  LEGACY_GUIDE_PLACE_IDS,
+  RENAMED_HUB_IDS,
+} from "@/lib/data/legacy-guide-urls";
 import {
   ALL_FIELDS,
   parseFieldsParam,
@@ -960,7 +967,18 @@ test("every country's legacy URL is redirected, and no extra ones are", async ()
   // grepped for a string and matched the explanatory COMMENT next to the code.
   const config = (await import("../next.config.mjs")).default;
   const redirects = await config.redirects!();
-  const guide = redirects.filter((r) => r.source.startsWith("/guide/"));
+  // Two different kinds live here now, and they are asserted separately: a
+  // country's short address is `/guide/<id>` (two segments), a renamed city hub
+  // is `/guide/cities/<id>` (three). Lumping them together is how the country
+  // assertion would silently start passing with a city redirect in the list.
+  const all = redirects.filter((r) => r.source.startsWith("/guide/"));
+  const guide = all.filter((r) => r.source.split("/").length === 3);
+  const renamedHubs = all.filter((r) => r.source.startsWith("/guide/cities/"));
+  assert.equal(
+    guide.length + renamedHubs.length,
+    all.length,
+    "a /guide redirect exists that is neither a country short URL nor a renamed hub",
+  );
 
   assert.deepEqual(
     guide.map((r) => r.source).sort(),
@@ -982,10 +1000,33 @@ test("every country's legacy URL is redirected, and no extra ones are", async ()
     );
   }
 
+  // A renamed hub must redirect to a hub that EXISTS, and must not point at
+  // itself — both of which a copy-paste rename gets wrong silently.
+  assert.deepEqual(
+    renamedHubs.map((r) => r.source).sort(),
+    Object.keys(RENAMED_HUB_IDS)
+      .map((id) => `/guide/cities/${id}`)
+      .sort(),
+    "next.config.mjs has drifted from RENAMED_HUB_IDS",
+  );
+  for (const [from, to] of Object.entries(RENAMED_HUB_IDS)) {
+    assert.ok(
+      !HUBS.some((h) => h.id === from),
+      `${from} is still a live hub id, so it must not be redirected away`,
+    );
+    assert.ok(
+      HUBS.some((h) => h.id === to),
+      `${from} redirects to ${to}, which is not a hub`,
+    );
+  }
+  for (const r of renamedHubs) {
+    assert.equal(r.permanent, true, `${r.source} should be a 308, not a 307`);
+  }
+
   // And the steps themselves must not be matched by any of it.
   for (const s of GUIDE_SECTIONS) {
     assert.ok(
-      !guide.some((r) => r.source === s.href),
+      !all.some((r) => r.source === s.href),
       `${s.href} is being redirected away`,
     );
   }
@@ -2318,4 +2359,61 @@ test("a hub's institutions are exactly the ones its destination puts there", () 
       assert.deepEqual(viaHub, viaPlace, `${d.id}/${hub}: city and country pages disagree`);
     }
   }
+});
+
+// ── Pinning ──────────────────────────────────────────────────────────────────
+// The one editorial override in an otherwise derived ordering, so it gets the
+// two assertions that keep it from becoming a way to lie: it must actually win
+// the sort, and it must not survive an eligibility check it would otherwise
+// fail. Deliberately written as invariants over whatever is pinned TODAY rather
+// than against a named entry — a pinned row is by nature short-lived, and a test
+// naming one starts failing the day it expires.
+
+test("a pinned opportunity sorts above everything else", () => {
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+    homeCountry: "KZ",
+    graduationYear: 2028,
+  });
+  const flags = plan.items.map((i) => Boolean(i.pinned));
+  const lastPinned = flags.lastIndexOf(true);
+  const firstLoose = flags.indexOf(false);
+  if (lastPinned === -1) return; // nothing pinned right now — the invariant holds vacuously
+  assert.ok(
+    firstLoose === -1 || lastPinned < firstLoose,
+    `a pinned row sits below an unpinned one (last pinned ${lastPinned}, first unpinned ${firstLoose})`,
+  );
+});
+
+test("pinning reorders, it never bypasses eligibility", () => {
+  // A region-scoped pin must not reach a student in another country. This is the
+  // failure that would matter: a card saying "you can enter this" to someone who
+  // cannot is the one thing the product does not get to do, and "we pinned it"
+  // is not an excuse the student can see.
+  const local = COMPETITIONS.filter((c) => c.pinned && c.region);
+  for (const c of local) {
+    const elsewhere = buildExtracurriculars({
+      today: TODAY,
+      faculties: [],
+      factors: [],
+      homeCountry: c.region === "IT" ? "KZ" : "IT",
+      graduationYear: 2028,
+    });
+    assert.ok(
+      !elsewhere.items.some((i) => i.id === c.id),
+      `${c.id} is region-scoped to ${c.region} but reached a student outside it`,
+    );
+  }
+});
+
+test("at most one thing is pinned in the curated catalog", () => {
+  // Not a style rule. A list where several rows outrank the student's own fit is
+  // a list with no order at all, and the override stops meaning anything.
+  const pinned = COMPETITIONS.filter((c) => c.pinned).map((c) => c.id);
+  assert.ok(
+    pinned.length <= 1,
+    `${pinned.length} entries are pinned (${pinned.join(", ")}) — keep it to one`,
+  );
 });

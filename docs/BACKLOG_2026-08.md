@@ -144,10 +144,48 @@ Known constraints, all still binding:
   `transition`-based hover or press state needs no extra guard. Only
   framer-motion escapes it.
 
+### #8 — why some cities were merged — ANSWERED, and then fixed 2026-08-11
+
+The founder asked whether the paired hubs were merged "because they are similar".
+They were not: a hub in `world.ts` models a **labour market**, not a municipality
+— Toronto–Waterloo is one recruiting corridor, Zurich–Lausanne the ETH/EPFL pair,
+Dubai–Abu Dhabi one country's two centres, Osaka–Kyoto the Kansai region.
+
+But the question exposed an inconsistency worth more than the answer. **Items #5
+and #7 were this exact pattern** — Amsterdam and Shanghai reading as duplicates —
+**and both were fixed by splitting.** Four paired hubs were left behind, so one
+problem had two different answers depending on which city you happened to open.
+It had already begun to bite: the #9 layer filed the University of Waterloo under
+`hub: "toronto"`, so a page titled "Toronto & Waterloo" was the only place
+Waterloo existed at all.
+
+Split, 34 → **38 hubs**: `waterloo`, `abu-dhabi`, `lausanne` and `kyoto` are their
+own pages, each with the full profile every hub owes — catch, route, `dayHere`,
+money, language, and who should look elsewhere. `San Francisco Bay Area` stays
+paired on purpose: that is the accepted name of a region, not two cities glued
+together.
+
+Three things this turned up:
+
+- **A hub id is a public URL.** Three splits kept their id and gained a sibling,
+  but `osaka-kyoto` became `osaka`, and that address was already in the sitemap.
+  It is a 308 now via `RENAMED_HUB_IDS` in
+  [legacy-guide-urls.ts](../lib/data/legacy-guide-urls.ts), duplicated into
+  `next.config.mjs` for the same reason the country list is, and held honest by
+  the same unit test — which now also asserts a rename points at a hub that
+  **exists** and that the old id is **no longer live**.
+- **The redirect test had to learn the difference between two kinds.** It
+  asserted that every `/guide/*` redirect was exactly a country short URL, so a
+  city redirect would have broken it. It now partitions them by segment count and
+  asserts each kind separately, plus that nothing else is hiding in the list.
+- **Splitting Dubai from Abu Dhabi emptied Dubai.** Both research universities
+  are in the capital, so the city with the biggest name on the map had nobody
+  named. Its three branch campuses are listed now, described as what they are.
+
 ### #9 — top universities per country and city — DONE 2026-08-11
 
 Shipped as [lib/data/place-universities.ts](../lib/data/place-universities.ts):
-**76 institutions across all 17 destinations, covering all 34 hubs**, rendered as a
+**79 institutions across all 17 destinations, covering all 38 hubs**, rendered as a
 "Who is named here" part on both `/guide/places/[place]` and
 `/guide/cities/[hub]`. The trap held — the rule bans **positions, not names** —
 so the entry shape is `{ name, city, hub, knownFor[], englishTaught }` and the
@@ -546,6 +584,35 @@ instead, as four tests in `scripts/test-engine.ts` (113 → 117):
 Each was verified to actually fire by seeding one violation of each into a
 throwaway component and watching all four fail — a source-scanning test that
 cannot fail is worth nothing.
+
+### 5.10 Two of Georgia's official sources reset the connection
+
+`npm run test:guide-links` was **failing** (exit 1, 26/28) and had been for a
+while — nobody had run it, because CI does not. Both of Georgia's sources were
+dead: `mes.gov.ge` (the ministry) and `eqe.ge` (the quality-enhancement centre).
+
+The diagnosis matters more than the fix, because the obvious readings are both
+wrong. DNS resolves for both. TCP 443 is **open** for both. The failure is a
+**connection reset during the TLS handshake**, reproduced on two different TLS
+stacks (Windows schannel and Node's OpenSSL). And other Georgian government
+hosts — `mfa.gov.ge`, `naec.ge`, `tsu.ge` — answer fine from the same machine,
+so it is those two hosts specifically, not the country being unreachable.
+
+That is neither of the cases the rule already covers. A **403/429/412 is a bot
+wall and passes**, because the server answered and the page is therefore there.
+A **timeout fails**, because it proves nothing. A reset is a third thing: the
+host is alive and refusing us, and we cannot tell whether a student in Tbilisi
+would get through — quite possibly they would.
+
+Resolved by replacing them with **NAEC**, the body that actually runs the unified
+national entrance examinations, which is a better source than a ministry front
+page for the question a student is asking. The reason is recorded in
+`study-destinations.ts` so nobody restores the old two and turns the gate red
+again. One source is enough — the test requires `>= 1`.
+
+**Worth acting on:** this gate is not in CI (it needs the network and would make
+CI flaky), so it only fails when someone runs it. Run it before any release that
+touches the guide, not just when editing `sources`.
 
 ---
 

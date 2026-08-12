@@ -198,9 +198,24 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "Lecture-heavy in the early years with assessment concentrated in examinations, moving into hospital placements later; the quality of those placements is the single largest difference between institutions and the thing to ask about before enrolling. Cohorts are heavily international, so your classmates are mostly other foreigners rather than Georgians, and the social experience reflects that. Independent study is expected but not always structured for you.",
     commonMistake:
       "Choosing through an agency that is paid by the university it recommends. The differences between medical schools here are large and invisible from a brochure — clinical hours, licensing pass rates, where graduates actually ended up — and those three questions, asked directly and in writing, are worth more than every ranking or promise an agent will show you.",
+    // The ministry (mes.gov.ge) and the quality-enhancement centre (eqe.ge) used
+    // to be the two sources here, and both had to go: they accept the TCP
+    // connection and then RESET it during the TLS handshake, from several
+    // networks and two different TLS stacks. That is not a bot wall — a bot wall
+    // answers, which is why a 403 or a 412 is allowed to pass — and it is not a
+    // timeout either. It is a link we cannot stand behind, and other Georgian
+    // government hosts (mfa.gov.ge) answer fine from the same machine, so it is
+    // those two hosts specifically rather than the country being unreachable.
+    //
+    // NAEC is the better source anyway: it is the body that actually runs the
+    // unified national entrance examinations, which is the thing a student
+    // needs, rather than a ministry front page. Do not "restore" the other two
+    // without checking them — `npm run test:guide-links` will fail again.
     sources: [
-      { label: "Ministry of Education and Science of Georgia", url: "https://mes.gov.ge/?lang=eng" },
-      { label: "National Center for Educational Quality Enhancement", url: "https://eqe.ge/en" },
+      {
+        label: "National Assessment and Examinations Centre (the entrance exams)",
+        url: "https://www.naec.ge/",
+      },
     ],
     modelled: false,
   },
@@ -609,7 +624,7 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "medicine_health",
       "natural_sciences",
     ],
-    hubs: ["toronto", "vancouver", "montreal"],
+    hubs: ["toronto", "waterloo", "vancouver", "montreal"],
     strengths: [
       "The post-graduation work permit follows automatically from an eligible degree — no employer sponsorship, no lottery.",
       "Co-op programmes (Waterloo above all) alternate study with paid work terms, so you graduate with real experience and savings.",
@@ -715,7 +730,7 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "computer_science",
       "medicine_health",
     ],
-    hubs: ["dubai"],
+    hubs: ["dubai", "abu-dhabi"],
     strengths: [
       "Branch campuses of established Western universities award the same degree as the home institution.",
       "NYUAD's need-based aid can cover essentially the whole cost for admitted international students.",
@@ -763,7 +778,7 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
     unique:
       "ETH Zurich and EPFL charge among the lowest tuition of any top-tier research university on earth — the wall here is entrance and living costs, not fees.",
     fields: ["computer_science", "engineering", "natural_sciences", "business_economics"],
-    hubs: ["zurich", "geneva"],
+    hubs: ["zurich", "lausanne", "geneva"],
     strengths: [
       "Tuition at the federal institutes is a fraction of what comparable universities charge internationals.",
       "Research funding per student is exceptional, and PhD positions are salaried jobs with real wages.",
@@ -979,7 +994,7 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
       "arts_design",
       "business_economics",
     ],
-    hubs: ["tokyo", "osaka-kyoto"],
+    hubs: ["tokyo", "osaka", "kyoto"],
     strengths: [
       "National university fees are set nationally and are identical for international students — there is no separate international price at all.",
       "The government scholarship covers tuition, flights and a monthly allowance, and it takes undergraduates as well as researchers.",

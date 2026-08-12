@@ -385,7 +385,7 @@ export const PLACE_UNIVERSITIES: Record<string, NamedUniversity[]> = {
     {
       name: "University of Waterloo",
       city: "Waterloo",
-      hub: "toronto",
+      hub: "waterloo",
       knownFor: ["computer_science", "engineering"],
       englishTaught: "widely",
     },
@@ -440,15 +440,41 @@ export const PLACE_UNIVERSITIES: Record<string, NamedUniversity[]> = {
     {
       name: "Khalifa University",
       city: "Abu Dhabi",
-      hub: "dubai",
+      hub: "abu-dhabi",
       knownFor: ["engineering", "computer_science", "natural_sciences"],
       englishTaught: "widely",
     },
     {
       name: "New York University Abu Dhabi",
       city: "Abu Dhabi",
-      hub: "dubai",
+      hub: "abu-dhabi",
       knownFor: ["humanities_social", "natural_sciences", "engineering", "business_economics"],
+      englishTaught: "widely",
+    },
+    // Dubai's own entries are branch campuses, and that is the honest thing to
+    // say about them: they teach a foreign university's degree on the ground
+    // here, in English, which is exactly why they exist and exactly what a
+    // student is choosing. Splitting Dubai from Abu Dhabi left this city with
+    // nothing named, because the research universities are in the capital.
+    {
+      name: "Heriot-Watt University Dubai",
+      city: "Dubai",
+      hub: "dubai",
+      knownFor: ["engineering", "business_economics", "computer_science"],
+      englishTaught: "widely",
+    },
+    {
+      name: "University of Wollongong in Dubai",
+      city: "Dubai",
+      hub: "dubai",
+      knownFor: ["business_economics", "computer_science", "engineering"],
+      englishTaught: "widely",
+    },
+    {
+      name: "American University in Dubai",
+      city: "Dubai",
+      hub: "dubai",
+      knownFor: ["business_economics", "engineering", "arts_design"],
       englishTaught: "widely",
     },
     {
@@ -478,7 +504,7 @@ export const PLACE_UNIVERSITIES: Record<string, NamedUniversity[]> = {
     {
       name: "EPFL",
       city: "Lausanne",
-      hub: "zurich",
+      hub: "lausanne",
       knownFor: ["engineering", "computer_science", "natural_sciences"],
       englishTaught: "some",
     },
@@ -616,14 +642,14 @@ export const PLACE_UNIVERSITIES: Record<string, NamedUniversity[]> = {
     {
       name: "Kyoto University",
       city: "Kyoto",
-      hub: "osaka-kyoto",
+      hub: "kyoto",
       knownFor: ["natural_sciences", "engineering", "humanities_social"],
       englishTaught: "some",
     },
     {
       name: "Osaka University",
       city: "Osaka",
-      hub: "osaka-kyoto",
+      hub: "osaka",
       knownFor: ["engineering", "medicine_health", "natural_sciences"],
       englishTaught: "some",
     },

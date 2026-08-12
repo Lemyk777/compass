@@ -42,3 +42,21 @@ export const LEGACY_GUIDE_PLACE_IDS = [
   "uae",
   "switzerland",
 ] as const;
+
+// A city that has been RENAMED, old id → new id.
+//
+// Different from the list above, which is a short address that has always
+// worked. This one exists because a hub id changed, and a hub id is a public,
+// shareable URL: `/guide/cities/osaka-kyoto` was in the sitemap, so silently
+// 404ing it would break links that already exist and tell a crawler a page it
+// has indexed is gone.
+//
+// `osaka-kyoto` became `osaka` when the paired city hubs were split. The other
+// three splits — Toronto & Waterloo, Dubai & Abu Dhabi, Zurich & Lausanne —
+// kept their original ids and gained a sibling, so they need nothing here.
+//
+// Same duplication into next.config.mjs and the same unit test holding the two
+// honest, for the same reason: the config cannot import TypeScript.
+export const RENAMED_HUB_IDS: Record<string, string> = {
+  "osaka-kyoto": "osaka",
+};

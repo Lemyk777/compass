@@ -29,6 +29,14 @@ const LEGACY_GUIDE_PLACE_IDS = [
   "switzerland",
 ];
 
+// Renamed city hubs, old id → new id. Duplicated from
+// lib/data/legacy-guide-urls.ts (RENAMED_HUB_IDS) — same reason as above, this
+// file is loaded before any TypeScript is compiled — and asserted equal by a
+// unit test. A hub id is a public URL that was already in the sitemap.
+const RENAMED_HUB_IDS = {
+  "osaka-kyoto": "osaka",
+};
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -43,11 +51,22 @@ const nextConfig = {
     ],
   },
   async redirects() {
-    return LEGACY_GUIDE_PLACE_IDS.map((id) => ({
-      source: `/guide/${id}`,
-      destination: `/guide/places/${id}`,
-      permanent: true,
-    }));
+    return [
+      ...LEGACY_GUIDE_PLACE_IDS.map((id) => ({
+        source: `/guide/${id}`,
+        destination: `/guide/places/${id}`,
+        permanent: true,
+      })),
+      // Renamed city hubs. A hub id is a public URL that was in the sitemap, so
+      // a rename has to redirect rather than 404. Duplicated from
+      // lib/data/legacy-guide-urls.ts (RENAMED_HUB_IDS) for the same reason as
+      // the list above, and held honest by the same unit test.
+      ...Object.entries(RENAMED_HUB_IDS).map(([from, to]) => ({
+        source: `/guide/cities/${from}`,
+        destination: `/guide/cities/${to}`,
+        permanent: true,
+      })),
+    ];
   },
 };
 

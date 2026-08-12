@@ -118,6 +118,24 @@ export type Competition = {
   level: CompetitionLevel;
   category?: CompetitionCategory;
   tier?: CompetitionTier;
+  /**
+   * Put this above everything else on the list, ahead of fit and deadline.
+   *
+   * An editorial override, and the only one in the matching engine — everything
+   * else about the order is derived. It exists for the case the ordering cannot
+   * express: something happening imminently that we want a student to see the
+   * moment they open the page, usually because we know about it before any
+   * ranking signal does.
+   *
+   * It does NOT bypass eligibility. A pinned row a student cannot enter is
+   * filtered out exactly like any other, because "pinned" is about ORDER and
+   * eligibility is about truth — an entry that says "you can enter this" when
+   * you cannot is the one failure this product does not get to make.
+   *
+   * Use it for one thing at a time. A list where everything is pinned is a list
+   * with no order at all.
+   */
+  pinned?: boolean;
   // True only when `deadline` is a real, sourced date for the CURRENT cycle.
   // When false/absent the date is an estimate (or the cycle isn't published yet)
   // and the UI says "Dates not yet announced" instead of showing a countdown we
@@ -554,6 +572,12 @@ export function buildExtracurriculars({
       };
     })
     .sort((a, b) => {
+      // The one editorial override, ahead of fit. Everything below this line is
+      // derived from the student's own profile; this line is us saying "look at
+      // this first". It only reorders what already passed eligibility.
+      const ap = a.pinned ? 0 : 1;
+      const bp = b.pinned ? 0 : 1;
+      if (ap !== bp) return ap - bp;
       if (FIT_ORDER[a.fit] !== FIT_ORDER[b.fit])
         return FIT_ORDER[a.fit] - FIT_ORDER[b.fit];
       // Confirmed-date items first (actionable now), then "dates TBA".
