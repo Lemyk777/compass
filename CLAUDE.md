@@ -126,7 +126,16 @@ is its own route now:
 - **The order is a zoom IN, and it shipped backwards once.** Cities came before
   countries, so the guide asked a student to weigh Berlin and then zoomed out to
   Germany a step later. A country contains cities; it comes first.
-- **Every city now sits in a country we profile** (17 countries, 34 cities as of
+- **One hub is one city.** Four hubs used to carry a paired label — `Toronto &
+  Waterloo`, `Dubai & Abu Dhabi`, `Zurich & Lausanne`, `Osaka & Kyoto` — because
+  a hub models a *labour market*, and those pairs recruit across. It reads as a
+  bug to a student, and it produced exactly the duplicate-looking lists that got
+  reported for Amsterdam and Shanghai. Those two were fixed by splitting; these
+  four now are too, so the same problem has one answer everywhere. `San Francisco
+  Bay Area` stays — that is the accepted name of a region, not two cities glued
+  together. A rename is a **public URL change**: `osaka-kyoto` → `osaka` is a 308
+  from `RENAMED_HUB_IDS`, not a 404.
+- **Every city now sits in a country we profile** (17 countries, 38 cities as of
   2026-08-11). It was 11 and 22, and nine cities — including Almaty, Astana
   and Tbilisi, the whole home region — had no country page at all, so
   their breadcrumb dead-ended at the list. The unit test that used to *require*

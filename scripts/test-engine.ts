@@ -62,7 +62,10 @@ import {
 } from "@/lib/data/careers";
 import { CAREER_AREA_TITLES } from "@/lib/data/career-titles";
 import { HOME_ROUTES, homeRoutesForFaculties } from "@/lib/data/from-home";
-import { LEGACY_GUIDE_PLACE_IDS } from "@/lib/data/legacy-guide-urls";
+import {
+  LEGACY_GUIDE_PLACE_IDS,
+  RENAMED_HUB_IDS,
+} from "@/lib/data/legacy-guide-urls";
 import {
   ALL_FIELDS,
   parseFieldsParam,
@@ -960,7 +963,18 @@ test("every country's legacy URL is redirected, and no extra ones are", async ()
   // grepped for a string and matched the explanatory COMMENT next to the code.
   const config = (await import("../next.config.mjs")).default;
   const redirects = await config.redirects!();
-  const guide = redirects.filter((r) => r.source.startsWith("/guide/"));
+  // Two different kinds live here now, and they are asserted separately: a
+  // country's short address is `/guide/<id>` (two segments), a renamed city hub
+  // is `/guide/cities/<id>` (three). Lumping them together is how the country
+  // assertion would silently start passing with a city redirect in the list.
+  const all = redirects.filter((r) => r.source.startsWith("/guide/"));
+  const guide = all.filter((r) => r.source.split("/").length === 3);
+  const renamedHubs = all.filter((r) => r.source.startsWith("/guide/cities/"));
+  assert.equal(
+    guide.length + renamedHubs.length,
+    all.length,
+    "a /guide redirect exists that is neither a country short URL nor a renamed hub",
+  );
 
   assert.deepEqual(
     guide.map((r) => r.source).sort(),
@@ -982,10 +996,33 @@ test("every country's legacy URL is redirected, and no extra ones are", async ()
     );
   }
 
+  // A renamed hub must redirect to a hub that EXISTS, and must not point at
+  // itself — both of which a copy-paste rename gets wrong silently.
+  assert.deepEqual(
+    renamedHubs.map((r) => r.source).sort(),
+    Object.keys(RENAMED_HUB_IDS)
+      .map((id) => `/guide/cities/${id}`)
+      .sort(),
+    "next.config.mjs has drifted from RENAMED_HUB_IDS",
+  );
+  for (const [from, to] of Object.entries(RENAMED_HUB_IDS)) {
+    assert.ok(
+      !HUBS.some((h) => h.id === from),
+      `${from} is still a live hub id, so it must not be redirected away`,
+    );
+    assert.ok(
+      HUBS.some((h) => h.id === to),
+      `${from} redirects to ${to}, which is not a hub`,
+    );
+  }
+  for (const r of renamedHubs) {
+    assert.equal(r.permanent, true, `${r.source} should be a 308, not a 307`);
+  }
+
   // And the steps themselves must not be matched by any of it.
   for (const s of GUIDE_SECTIONS) {
     assert.ok(
-      !guide.some((r) => r.source === s.href),
+      !all.some((r) => r.source === s.href),
       `${s.href} is being redirected away`,
     );
   }
