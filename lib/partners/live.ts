@@ -81,5 +81,10 @@ function baseCompetition(r: Row): Competition {
     cost: (r.cost as Competition["cost"]) ?? undefined,
     costDetail: (r.cost_detail as string | null) ?? undefined,
     alwaysOpen: r.always_open === true,
+    // Pinning (migration 0027). `=== true` rather than a cast, so a database
+    // that has not run the migration yet reads `undefined` as "not pinned"
+    // instead of throwing — the same shape every column above uses, and the
+    // reason a missing migration degrades rather than breaks the page.
+    pinned: r.pinned === true,
   };
 }

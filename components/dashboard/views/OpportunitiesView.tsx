@@ -1,10 +1,23 @@
 "use client";
+import dynamic from "next/dynamic";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 // Opportunities is the one view whose cards reflow on tab switch, so it uses the
 // framer-backed MotionCard (position animation) instead of the plain Card.
 import { MotionCard as Card } from "@/components/report/MotionCard";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
+// Dynamic, and that is the point: `{isAdmin && <QuickAddOpportunity />}` decides
+// what RENDERS, not what ships. Imported statically it cost every student the
+// admin form's bundle for a control they can never see — the same trap as
+// importing the catalog or careers.ts into a client component. This way the
+// chunk is fetched when an admin actually opens the page.
+const QuickAddOpportunity = dynamic(
+  () =>
+    import("@/components/admin/QuickAddOpportunity").then(
+      (m) => m.QuickAddOpportunity,
+    ),
+  { ssr: false },
+);
 import { PageHeader } from "@/components/dashboard/states";
 import { saveFaculties, saveGraduationYear } from "@/app/dashboard/actions";
 import {
@@ -105,7 +118,7 @@ const SHOWN = 5;
 const PAGE = 8;
 
 export function OpportunitiesView() {
-  const { analysis, hasProfile, profileMeta, liveDates, basePath } =
+  const { analysis, hasProfile, profileMeta, liveDates, basePath, isAdmin } =
     useDashboard();
   // Derived, not configured: this view is the dedicated section when it IS the
   // dedicated section. A flag threaded through the provider was one more thing
@@ -275,6 +288,12 @@ export function OpportunitiesView() {
     // foot of every guide page: "where could this lead" is the question you have
     // AFTER you have seen the list, not instead of it.
     <div>
+      {/* Above everything, and only for an admin. The founder's case is "someone
+          told me about a tournament today and it happens on Friday" — the
+          curated catalog needs a deploy and discovery finds things too late.
+          Collapsed to a single quiet button so that the person running the
+          product still sees their own product when they open this page. */}
+      {isAdmin && <QuickAddOpportunity />}
       <PageHeader
         title="Opportunities"
         hint="Competitions and olympiads we recommend for you — matched to your field and strength. These are our suggestions to enter next, not your own activities."

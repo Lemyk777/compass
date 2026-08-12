@@ -39,7 +39,11 @@ import {
   scoreInterestQuiz,
   topFacultiesFromQuiz,
 } from "@/lib/data/interest-quiz";
-import { buildExtracurriculars, strengthBand } from "@/lib/data/key-dates";
+import {
+  buildExtracurriculars,
+  strengthBand,
+  COMPETITIONS,
+} from "@/lib/data/key-dates";
 import type { CompetitionLevel, Opportunity } from "@/lib/data/key-dates";
 import {
   NO_FILTERS,
@@ -2355,4 +2359,61 @@ test("a hub's institutions are exactly the ones its destination puts there", () 
       assert.deepEqual(viaHub, viaPlace, `${d.id}/${hub}: city and country pages disagree`);
     }
   }
+});
+
+// ── Pinning ──────────────────────────────────────────────────────────────────
+// The one editorial override in an otherwise derived ordering, so it gets the
+// two assertions that keep it from becoming a way to lie: it must actually win
+// the sort, and it must not survive an eligibility check it would otherwise
+// fail. Deliberately written as invariants over whatever is pinned TODAY rather
+// than against a named entry — a pinned row is by nature short-lived, and a test
+// naming one starts failing the day it expires.
+
+test("a pinned opportunity sorts above everything else", () => {
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+    homeCountry: "KZ",
+    graduationYear: 2028,
+  });
+  const flags = plan.items.map((i) => Boolean(i.pinned));
+  const lastPinned = flags.lastIndexOf(true);
+  const firstLoose = flags.indexOf(false);
+  if (lastPinned === -1) return; // nothing pinned right now — the invariant holds vacuously
+  assert.ok(
+    firstLoose === -1 || lastPinned < firstLoose,
+    `a pinned row sits below an unpinned one (last pinned ${lastPinned}, first unpinned ${firstLoose})`,
+  );
+});
+
+test("pinning reorders, it never bypasses eligibility", () => {
+  // A region-scoped pin must not reach a student in another country. This is the
+  // failure that would matter: a card saying "you can enter this" to someone who
+  // cannot is the one thing the product does not get to do, and "we pinned it"
+  // is not an excuse the student can see.
+  const local = COMPETITIONS.filter((c) => c.pinned && c.region);
+  for (const c of local) {
+    const elsewhere = buildExtracurriculars({
+      today: TODAY,
+      faculties: [],
+      factors: [],
+      homeCountry: c.region === "IT" ? "KZ" : "IT",
+      graduationYear: 2028,
+    });
+    assert.ok(
+      !elsewhere.items.some((i) => i.id === c.id),
+      `${c.id} is region-scoped to ${c.region} but reached a student outside it`,
+    );
+  }
+});
+
+test("at most one thing is pinned in the curated catalog", () => {
+  // Not a style rule. A list where several rows outrank the student's own fit is
+  // a list with no order at all, and the override stops meaning anything.
+  const pinned = COMPETITIONS.filter((c) => c.pinned).map((c) => c.id);
+  assert.ok(
+    pinned.length <= 1,
+    `${pinned.length} entries are pinned (${pinned.join(", ")}) — keep it to one`,
+  );
 });
