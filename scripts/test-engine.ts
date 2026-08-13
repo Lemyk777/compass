@@ -140,6 +140,7 @@ import {
   destinationsForFaculties,
 } from "@/lib/data/study-destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
+import { plannerStarts } from "@/lib/data/planner-start";
 import {
   areasForDestination,
   areasForHub,
@@ -4127,4 +4128,88 @@ test("no client component in the planner reads the clock", () => {
       `components/planner/${f} calls new Date() — todayISO comes from the loader`,
     );
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Where a plan starts (release 3, #26) — the guide→planner bridge.
+
+test("the empty planner offers a choice, and every option is a thing that happens", () => {
+  const starts = plannerStarts({
+    faculties: ["computer_science"],
+    areaCount: 4,
+    placeCount: 16,
+    openCount: 104,
+    mapCount: 0,
+  });
+
+  assert.equal(starts.length, 4, "the choice lost an option");
+
+  for (const s of starts) {
+    // The constraint the whole screen rests on: "pick a field" is a form with
+    // different paint, and a form is exactly what a student who cannot say what
+    // they want to study is unable to fill in. Every label is an ACTION.
+    assert.match(
+      s.label,
+      /^(See|Find|Think|Go)\b/,
+      `"${s.label}" is a noun phrase — every option must be something that happens`,
+    );
+    // What they will know afterwards. Without it, choosing requires already
+    // knowing, which is the thing this student does not have.
+    assert.ok(
+      s.tells.length > 25,
+      `${s.id} does not say what it will tell them`,
+    );
+    assert.ok(s.href.startsWith("/"), `${s.id} leaves the app`);
+  }
+
+  // Three of the four land in the guide or the catalog — the bridge. A choice
+  // screen whose options all stayed inside the planner would be the island the
+  // planner already was.
+  const outward = starts.filter((s) => !s.href.startsWith("/planner"));
+  assert.equal(
+    outward.length,
+    3,
+    "the choice stopped reaching outside the planner",
+  );
+
+  // A count is a real number or absent. A zero rendered as a count is the one
+  // thing on the card a student would take literally.
+  assert.equal(
+    starts.find((s) => s.id === "map")!.count,
+    null,
+    "a zero map count must render as no count at all",
+  );
+  assert.equal(starts.find((s) => s.id === "enter")!.count, 104);
+});
+
+test("with no field stated the choice widens rather than shortening", () => {
+  // Unknown facts never exclude — the product's oldest rule, and the one most
+  // easily broken by a screen that thinks it needs an answer before it can help.
+  const none = plannerStarts({
+    faculties: [],
+    areaCount: 33,
+    placeCount: 19,
+    openCount: 121,
+    mapCount: 2,
+  });
+  assert.equal(
+    none.length,
+    4,
+    "a student who stated nothing got fewer choices",
+  );
+
+  // And the guide links carry `f=all`, which is "they deliberately widened it"
+  // rather than "not stated" — the third of the three states that must not be
+  // collapsed, or the profile re-applies itself on every navigation.
+  for (const id of ["work", "places"]) {
+    assert.match(
+      none.find((s) => s.id === id)!.href,
+      /\?f=all$/,
+      `${id} does not widen the guide for a student with no stated field`,
+    );
+  }
+
+  // Already has maps — the label acknowledges it rather than inviting them to
+  // start over.
+  assert.match(none.find((s) => s.id === "map")!.label, /back/i);
 });

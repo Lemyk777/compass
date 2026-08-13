@@ -66,7 +66,9 @@ export function MapOutline({
       }
       case "ArrowLeft": {
         e.preventDefault();
-        const parent = visible.find((n) => n.children.some((c) => c.id === node.id));
+        const parent = visible.find((n) =>
+          n.children.some((c) => c.id === node.id),
+        );
         if (parent) focusRow(parent.id);
         break;
       }

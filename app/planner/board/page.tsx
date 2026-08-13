@@ -19,6 +19,7 @@ export default async function PlannerBoardPage() {
       <PlannerBoard
         columns={data.columns}
         droppedCount={data.droppedCount}
+        starts={data.starts}
         suggestions={data.suggestions}
       />
     </div>

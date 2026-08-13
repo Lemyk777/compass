@@ -5,6 +5,7 @@ import { agendaHomeIndex } from "@/lib/data/planner";
 import type { PlannerItem, PlannerMonth } from "@/lib/data/planner";
 import { PlannerCard } from "@/components/planner/PlannerCard";
 import { EmptyPlanner } from "@/components/planner/EmptyPlanner";
+import type { PlannerStart } from "@/lib/data/planner-start";
 import { MonthGrid } from "@/components/planner/MonthGrid";
 import { PeriodStepper } from "@/components/planner/PeriodStepper";
 
@@ -30,12 +31,15 @@ export function PlannerAgenda({
   months,
   overdue,
   undated,
+  starts,
   suggestions,
   todayISO,
 }: {
   months: PlannerMonth[];
   overdue: PlannerItem[];
   undated: PlannerItem[];
+  /** The choice the empty planner offers — derived from the spine, in the loader. */
+  starts: PlannerStart[];
   suggestions: { id: string; name: string; deadline: string }[];
   /** Resolved on the server. No client component in the planner calls `new Date()`. */
   todayISO: string;
@@ -50,7 +54,7 @@ export function PlannerAgenda({
   const [index, setIndex] = useState(homeIndex);
 
   if (months.length === 0 && overdue.length === 0 && undated.length === 0) {
-    return <EmptyPlanner suggestions={suggestions} />;
+    return <EmptyPlanner starts={starts} suggestions={suggestions} />;
   }
 
   const month = months[Math.min(index, months.length - 1)];

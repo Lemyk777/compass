@@ -58,11 +58,17 @@ export function PlannerCard({ item }: { item: PlannerItem }) {
           deadline never reaches `dueISO` at all, so this branch is physically
           unable to render one — the rule lives in the type, not here. */}
       <p className="mt-1 text-xs text-ink-faint">
-        {item.dueISO ? <DueLabel daysLeft={item.daysLeft ?? 0} /> : "Dates not announced"}
+        {item.dueISO ? (
+          <DueLabel daysLeft={item.daysLeft ?? 0} />
+        ) : (
+          "Dates not announced"
+        )}
       </p>
 
       {item.note && (
-        <p className="mt-2 text-xs italic text-ink-soft">&ldquo;{item.note}&rdquo;</p>
+        <p className="mt-2 text-xs italic text-ink-soft">
+          &ldquo;{item.note}&rdquo;
+        </p>
       )}
 
       {movable && (

@@ -22,6 +22,7 @@ export default async function PlannerPage() {
         months={data.months}
         overdue={data.overdue}
         undated={data.undated}
+        starts={data.starts}
         suggestions={data.suggestions}
         todayISO={data.todayISO}
       />
