@@ -15,8 +15,8 @@ holds only what is **specific to this backlog** and not already written there.
 |---|---|
 | `main` and `develop` | **in sync**, everything merged and deployed |
 | PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
-| Progress | **19 of 23 done, 1 half-done, 3 untouched**, plus **#24 done** 2026-08-13 — see §3 and §4 |
-| Unit tests | **161** (`npm run test:unit`) |
+| Progress | **20 of 23 done, 1 half-done, 2 untouched** (#11, #14), plus **#24 done** — see §3 and §4 |
+| Unit tests | **167** (`npm run test:unit`) |
 
 ### The migrations are applied — verified 2026-08-13
 
@@ -91,6 +91,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 | 9 | 79 institutions, named and never ranked. See §4. |
 | 23 (buttons) | The button system was being bypassed by the page that mattered most, and three call sites had `!important` escapes pointing at why. See §5.9. |
 | 24 | **The hero background.** Two bugs, neither of them the one reported. See §5.14. |
+| 16 | **The spine.** The parts were all there; nothing was joined. See §5.17. |
 | 25 | **Readability.** The dark theme was not lower-contrast, it was under-engineered: no type step, a 10px floor, and one theme's optics served by the other's settings. See §5.16. |
 | 22 | **CLOSED.** The planner is advertised now that it works; the bands below the hero ramp with the window. See §5.15. |
 | 17 | **The planner, COMPLETE** — `/planner` (agenda) + `/planner/board` + `/planner/maps`. Delivered in two releases; both shipped. See §5.12 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
@@ -108,9 +109,9 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 ## 4. What is left, in detail
 
-**Three untouched (#11, #14, #15), one half-done (#23).** #22 closed on
-2026-08-13; #16 is the spine and is what is left of the big work. By item count
-that is ~83% complete; by effort it is nearer two thirds, because **#16** (the
+**Two untouched (#11, #14), one half-done (#23), and #15 is verification.**
+#22 closed 2026-08-13, **#16 closed 2026-08-14** — the big structural work is
+done. By item count that is ~87% complete; by effort it is nearer two thirds, because **#16** (the
 coherent spine) is now the largest thing left, and it could not have been started
 earlier because it depends on #9 and #14.
 
@@ -121,14 +122,14 @@ on 2026-08-13, and it turned out to be the natural way in to the animation half
 of #23: the open question there was always *which* moment had earned an authored
 one, and the answer arrived as a complaint. What is left:
 
-1. **#14** — Malaysia and Australia. Self-contained, and #16 needs it.
+1. **#14** — Malaysia and Australia. Self-contained. #16 shipped without it;
+   two more countries now simply widen a chain that already works.
 2. **#15** — verify the unconfirmed dates. Pure verification, no design decisions,
    and it protects the product's central promise. It is also worth more than it
    was: an unconfirmed date now costs a row its place in the planner's calendar
    as well as its countdown, so every one verified moves a card onto the agenda.
 3. **#11** — careers depth and the quiz. Two separable halves: re-tune the weights,
    rewrite the content in the direct tone already chosen.
-4. **#16** — the spine. Unblocked by #9, better after #14.
 5. The rest of the animation half of **#23**, and then the progress-tracker copy in **#22** —
    **no longer blocked**, because #17 now exists and can honestly be advertised.
 6. The planner's **release 2**: mind maps, and the drag-and-drop enhancement over
@@ -430,12 +431,18 @@ a human read of the organiser's own page. Setting `dateConfirmed: true` is what
 turns on a countdown, and the rule is that we never show one for a date we
 cannot stand behind.
 
-### #16 — the coherent spine
+### #16 — the coherent spine — DONE 2026-08-14
 
 Connect areas of work → majors → countries → cities → universities and their
-majors, and explain the from-home step better. This is the largest structural
-item after the planner and is best done **after** #9 and #14, because it needs
-the university layer to exist to connect to.
+majors, and explain the from-home step better.
+
+**Shipped, and it needed no new content.** See §5.17 — every layer already
+carried the same key, so the spine is a function
+([lib/data/spine.ts](../lib/data/spine.ts)) rather than a table, rendered from
+both directions by one component
+([components/guide/Spine.tsx](../components/guide/Spine.tsx)). It did not have
+to wait for #14: two more countries widen the chain, they are not what makes it
+exist.
 
 ### #17 — the planner — DONE 2026-08-12, both releases
 
@@ -1045,6 +1052,55 @@ test that exists to name exactly this mistake covered `reach`/`target`/`likely`
 and stopped. The lesson generalises past this bug: **a test that names a class of
 mistake must enumerate the whole class**, or it becomes evidence that the
 uncovered members are fine.
+
+### 5.17 The spine: the join was a function, not a table
+
+#16 read like the largest structural item left, and it turned out to need **no
+new content at all**. Every layer already carried the same key:
+
+| layer | field |
+|---|---|
+| `CAREER_AREAS_BY_FACULTY` | keyed by `FacultyValue` |
+| `Hub.fields` | `FacultyValue[]` |
+| `StudyDestination.fields` | `FacultyValue[]` |
+| `NamedUniversity.knownFor` | `FacultyValue[]` |
+| `HomeRoute.fields` | `FacultyValue[]` |
+
+What was missing was that **nothing derived the chain**. An area of work listed
+the cities it lives in as bare chips — no country, no institution, no route from
+home. A city listed the *labels* of the fields that cluster there and gave no
+way to read what any of them means. A country explained its money, its
+admissions and its visa ladder in full and never said what any of it leads to.
+Every one of those is the same dead end pointing a different way.
+
+**So it is a function, not a table**, for the same reason the planner refuses to
+snapshot the catalog: a stored spine would be a sixth copy of relationships that
+already exist five times, and it would start drifting the first time a city
+gained a field.
+
+**The bug the tests found on the first run, and why it matters more than the
+feature.** The derivation was two passes — cities in region order, then the
+countries that claim a field without any city carrying it. The second pass
+appended *after* the first had already walked every region, so the chain went
+"… North America" and then back to Asia-Pacific. **The home-region rule was true
+of each pass and false of the result.** That is exactly the class of drift the
+join exists to end, and no amount of looking at the page would have shown it —
+the order looks plausible either way. It is one walk now.
+
+Four rules live in the module rather than in a component, so a view added later
+cannot forget them: the home region leads; every stop has a page behind it (a
+country that is a name a student cannot click is an advert); institutions appear
+only under a field they are actually `knownFor`, in the registry's own order;
+and a country we merely NAME does not become a link — that dead end was a real
+bug on the city pages and this layer would have repeated it at nine countries.
+
+The round-trip is asserted: if a city is on a field's chain, that city must lead
+back to the areas of that field. That is what "coherent" means operationally,
+and it is checkable in a way "the pages feel connected" is not.
+
+Cost: **nothing**. `spine.ts` is server-only in practice — it reaches into five
+prose registries totalling ~4,000 lines — so the guide's route bundles are
+unchanged at 99 kB, and a test fails any client component that imports it.
 
 ## 6. Verification
 
