@@ -15,7 +15,7 @@ holds only what is **specific to this backlog** and not already written there.
 |---|---|
 | `main` and `develop` | **in sync**, everything merged and deployed |
 | PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
-| Progress | **20 of 23 done, 1 half-done, 2 untouched** (#11, #14), plus **#24 done** — see §3 and §4 |
+| Progress | **20 of 23 done, 1 half-done, 2 untouched** (#11, #14), plus **#24** and **#27** done. **#26 — the planner rebuilt as one connected thing — is next and is the biggest.** See §4 |
 | Unit tests | **167** (`npm run test:unit`) |
 
 ### The migrations are applied — verified 2026-08-13
@@ -92,6 +92,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 | 23 (buttons) | The button system was being bypassed by the page that mattered most, and three call sites had `!important` escapes pointing at why. See §5.9. |
 | 24 | **The hero background.** Two bugs, neither of them the one reported. See §5.14. |
 | 16 | **The spine.** The parts were all there; nothing was joined. See §5.17. |
+| 27 | **Community, and 157 → 172.** A kind of opportunity the catalog had no shape for. See §5.18. |
 | 25 | **Readability.** The dark theme was not lower-contrast, it was under-engineered: no type step, a 10px floor, and one theme's optics served by the other's settings. See §5.16. |
 | 22 | **CLOSED.** The planner is advertised now that it works; the bands below the hero ramp with the window. See §5.15. |
 | 17 | **The planner, COMPLETE** — `/planner` (agenda) + `/planner/board` + `/planner/maps`. Delivered in two releases; both shipped. See §5.12 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
@@ -202,6 +203,98 @@ points travelling the lattice. `/` is still **107 kB**, and the section now has
 Two bugs surfaced only by measuring, both written up in §5.14: the hero's promise
 paragraph was at 4.53:1 before any of this existed, and the blobs were anchored
 in percentages of a section that is 900px on a desktop and 1635px on a phone.
+
+### #27 — the catalog widens, and gains a kind — DONE 2026-08-14
+
+**The ask:** more opportunities — at least 170 — and a **community** subsection.
+
+Both shipped: **172 entries, 15 of them `community`**, and every link in the
+catalog answers (see §5.18, including the three entries that did not survive
+verification and were replaced rather than softened).
+
+**Community is a kind, not a tag**, and the reason is the product's own shape.
+The catalog is built around "what can I enter, and when does it close" — a
+question with a deadline in it. A forum, a club network, a citizen-science
+platform and an open-source month have no deadline and nothing to win; you join,
+and you keep going. Filing them under `competition` answered neither question.
+
+It is also the honest answer for the student this product is actually for: the
+one who is twelve, or has no money, or lives where none of the programmes reach.
+Joining costs nothing and starts today.
+
+**The next expansion, when it comes, should widen the same way** — by asking
+what question the catalog cannot currently answer, not by adding more rows to
+the questions it already answers well. Two candidates already visible:
+
+- **Local (KZ / Central Asia) rows.** The catalog is overwhelmingly
+  international, and `region` exists precisely so a Shymkent row can be shown
+  only to students who can reach it. NAO Cup is currently the only one.
+- **Job simulations and "try the work" rows.** Named directly by the founder
+  (Forage's JP Morgan simulation is the example). They belong to the spine's
+  "test it this month" step and would give the guide's career layer something
+  actionable, not just readable.
+
+### #26 — the planner, rebuilt as ONE connected thing — NEXT, and the biggest
+
+**This is the founder's own diagnosis, 2026-08-14, and it is about the product's
+whole premise rather than about a screen.** Recorded close to verbatim, because
+paraphrasing it would lose the part that matters:
+
+> A school student arrives knowing nothing — not about themselves, not about
+> their future. They look for opportunities, collect them, read the guide, and
+> then go to the plan — and **the plan has to be built ON the guide**. That is
+> the important part. Students come to us because we say: *we were just as
+> confused, so we built a system to help you work it out.* But the system as
+> built confuses them further.
+>
+> I am not blaming anyone — I do not know exactly how it should look either,
+> because there is no alternative to copy and I am confused myself. But arriving
+> at the site I get **more** confused, and I can see this is not the thing that
+> helps me understand myself and build a plan: where do I start, what do I want
+> to study, where, how do I get in, what to do, when to do it.
+>
+> And not "just" those questions either. *What do I want to study* is a very
+> deep question — you cannot simply ask it and offer options. People come to us
+> **because they cannot answer it.** We have to help them. How? Honestly, I am
+> still working that out, and that is exactly why I asked for everything to be
+> connected into one structure. It is why I created the guide section at all,
+> and why I asked for majors and fields of study.
+>
+> We are not for the student who already knows and just wants to draw it out —
+> that student does not need us. We are for the one who understands nothing. So:
+> **minimum friction.** Think of us as a consultant, or a companion through
+> admissions.
+
+**The concrete faults named:**
+
+1. **The agenda dumps every month down the page as one list.** It should be an
+   **interactive window inside the page** — step between periods with arrows,
+   nothing else.
+2. **The three views are three sub-tabs, and they should be one window.** The
+   calendar, the board and the map are meant to be the same thing seen three
+   ways, and today they are three destinations.
+3. **The mind map's controls are badly implemented and hard to understand.**
+4. **Nothing connects the plan to the guide.** This is the load-bearing one.
+   #16 joined the guide's four steps to each other; the plan is still an
+   island beside them.
+
+**What must NOT be lost while fixing it** — every one of these was a decision
+with a reason, and several were bugs first:
+
+- moving a card is a **button, never a drag** (keyboard, and most of our
+  students are on a phone);
+- `dueISO` is null unless the date is confirmed — the type is what enforces
+  "no countdown we cannot stand behind";
+- **nothing is duplicated**: an opportunity's state lives in
+  `opportunity_intents`, a student's own task in `planner_items`;
+- the map stores **structure, never coordinates**;
+- no client component in the planner calls `new Date()`.
+
+**This needs a design pass before code.** The founder has said plainly that the
+answer is not yet known, which makes "build what was asked" the wrong reflex:
+what was asked is a direction, and the open question — *how do you help someone
+answer "what do I want to study" without pretending a five-option quiz did it* —
+is the actual work. Brainstorm it, agree the shape, then build.
 
 ### #22 — the landing page — DONE 2026-08-13
 
@@ -1101,6 +1194,41 @@ and it is checkable in a way "the pages feel connected" is not.
 Cost: **nothing**. `spine.ts` is server-only in practice — it reaches into five
 prose registries totalling ~4,000 lines — so the guide's route bundles are
 unchanged at 99 kB, and a test fails any client component that imports it.
+
+### 5.18 The catalog widened, and three rows failed verification
+
+157 → **172**, with a new kind: `community`. The number is the least
+interesting part.
+
+**A kind, not a tag.** The catalog's every field assumes an event with a
+deadline. A forum, a club network, a citizen-science platform and an open-source
+month have neither a deadline nor anything to win, so they were unrepresentable
+rather than merely missing. That is why this is a sixth `CompetitionCategory`
+and not a chip.
+
+**Adding it found that the list of kinds existed FIVE times** — the type union,
+the partner form's Zod enum, the admin quick-add's const, the partner option
+list, and the session checks — with nothing making them agree. Three of the five
+broke, which is the only reason anyone found out. `COMPETITION_CATEGORIES` is
+one array now and the union is derived from it.
+
+**Three of the first fourteen rows did not survive `npm run test:links`, and
+each failed in a way this catalog's promise forbids shipping:**
+
+| row | what happened | why it cannot ship |
+|---|---|---|
+| eBird | anonymous visitors bounce into a login loop | a card that lands a student on a sign-in wall lied about "you can start today" |
+| THIMUN | TLS chain does not validate | a browser security warning is worse than a 404 — it teaches a student to click through those |
+| UNICEF Voices of Youth | 200, redirecting to u-report.org | a different product; guessing what is actually there is the one thing this catalog does not do |
+
+All three were **dropped and replaced** with URLs probed to a clean 200 before
+being written, rather than softened into a vaguer blurb. That is the whole
+lesson: the failure mode under a deadline is to keep the row and weaken the
+claim, and the claim is the product.
+
+Also fixed **`ijso`**, broken before any of this — a dead TLS handshake on
+`ijso-official.org`, live on `ijsoweb.org`. **172 links, 0 broken.** Two sit
+behind bot walls, which the rules already treat as answered.
 
 ## 6. Verification
 
