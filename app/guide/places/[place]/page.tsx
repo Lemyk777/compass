@@ -22,6 +22,8 @@ import {
   universitiesForPlace,
 } from "@/lib/data/place-universities";
 import { statedGuideFields } from "@/lib/guide/student-fields";
+import { WorkFromHere } from "@/components/guide/Spine";
+import { areasForDestination } from "@/lib/data/spine";
 import { pageMeta } from "@/lib/seo";
 
 // One destination, in full: what it uniquely gives, what it costs you, what
@@ -147,11 +149,12 @@ function DestinationBody({
       body: (
         <>
           <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
-            Not a ranking, and deliberately not in any order of merit — these are
-            the places a subject is actually studied and taught at here, so you
-            have something to search for. A position in a league table is stale
-            within a year, differs between the four tables that publish one, and
-            is the wrong first question. What each is named for holds for years.
+            Not a ranking, and deliberately not in any order of merit — these
+            are the places a subject is actually studied and taught at here, so
+            you have something to search for. A position in a league table is
+            stale within a year, differs between the four tables that publish
+            one, and is the wrong first question. What each is named for holds
+            for years.
           </p>
           <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
             {named.map((u) => (
@@ -194,10 +197,10 @@ function DestinationBody({
             ))}
           </ul>
           <p className="text-xs text-ink-faint">
-            Language of teaching is the one thing here that moves within a
-            cycle — a country can widen or cut its English-taught intake in a
-            single year. Check it on the university&rsquo;s own page for your
-            own entry year.
+            Language of teaching is the one thing here that moves within a cycle
+            — a country can widen or cut its English-taught intake in a single
+            year. Check it on the university&rsquo;s own page for your own entry
+            year.
           </p>
         </>
       ),
@@ -258,6 +261,15 @@ function DestinationBody({
       </>
     ),
   });
+
+  const areas = areasForDestination(d);
+  if (areas.length > 0) {
+    parts.push({
+      id: "leads-to",
+      title: "What studying here is a route into",
+      body: <WorkFromHere areas={areas} stated={stated} where={d.name} />,
+    });
+  }
 
   if (hubs.length > 0) {
     parts.push({

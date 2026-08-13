@@ -110,9 +110,16 @@ export function spineForFaculty(faculty: FacultyValue): Spine {
   const uniByDest = universitiesByDestination(faculty);
   const stops: SpineStop[] = [];
 
-  // Cities first, in curated region order — the same walk `hubsByCountry` does,
-  // because the two must agree about what "the home region leads" means.
+  // ONE walk over the regions, and that is the fix rather than the style.
+  //
+  // This was two passes — cities first, then the countries that claim the field
+  // without a city carrying it — and the second pass appended after the first
+  // had already run through every region. So the chain went ... North America,
+  // and then back to Asia-Pacific. The home-region rule was true of each pass
+  // and false of the result, which is precisely the drift the join was supposed
+  // to end; a test caught it on the first run.
   for (const region of REGION_ORDER) {
+    // The cities here whose labour market includes this field.
     for (const hub of HUBS.filter(
       (h) => h.region === region && h.fields.includes(faculty),
     )) {
@@ -132,12 +139,11 @@ export function spineForFaculty(faculty: FacultyValue): Spine {
         universities: destination ? (uniByDest.get(destination.id) ?? []) : [],
       });
     }
-  }
 
-  // A country we profile for this field but whose cities carry none of it is
-  // still a real answer — it just arrives through the country page rather than
-  // through a city. Added after the loop so it never displaces a city-led stop.
-  for (const region of REGION_ORDER) {
+    // Then the countries in the SAME region that claim the field themselves
+    // without any of their cities carrying it. Still a real answer — it just
+    // arrives through the country page rather than through a city — and second
+    // within the region, so it never displaces a city-led stop.
     for (const d of STUDY_DESTINATIONS) {
       if (!d.fields.includes(faculty)) continue;
       if (stops.some((s) => s.destination?.id === d.id)) continue;

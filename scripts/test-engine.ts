@@ -139,6 +139,12 @@ import {
   destinationsForFaculties,
 } from "@/lib/data/study-destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
+import {
+  areasForDestination,
+  areasForHub,
+  facultyOfArea,
+  spineForFaculty,
+} from "@/lib/data/spine";
 import { competitionsFromRows } from "@/lib/partners/live";
 import sitemapRoutes from "@/app/sitemap";
 import robotsFile from "@/app/robots";
@@ -3874,5 +3880,154 @@ test("the two cards that carry the product have a real type step", () => {
     guide,
     /className="text-base font-semibold leading-snug text-ink"/,
     "the guide card's title is back to the same size as its own description",
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The spine (#16) — the guide's four steps, joined.
+//
+// The chain is DERIVED, so what has to be asserted is not "the data is right"
+// but "the derivation preserves the product's rules". All four of those rules
+// were already true of some individual layer and could quietly stop being true
+// of the join.
+
+test("every field's chain reaches somewhere, and every stop can be opened", () => {
+  for (const f of FACULTY_VALUES) {
+    const spine = spineForFaculty(f);
+    assert.ok(
+      spine.stops.length > 0,
+      `${f} leads nowhere — a field of study with no place attached is a dead end`,
+    );
+    for (const stop of spine.stops) {
+      // A country with neither a profile page nor a single city page is a name
+      // a student cannot click. A list of those is an advert, which is the same
+      // rule the world map is held to.
+      assert.ok(
+        stop.destination !== null || stop.hubs.length > 0,
+        `${f}: "${stop.country}" is on the chain with no page behind it`,
+      );
+    }
+  }
+});
+
+test("the home region leads the chain, exactly as it leads the map", () => {
+  // Central Asia and the Caucasus first, for the reason the destination list
+  // and the world map already do it: for many of our readers a strong degree at
+  // home plus a funded master's abroad is the honest answer, and a chain that
+  // lists sixteen ways to leave and none to stay is recommending, not informing.
+  for (const f of FACULTY_VALUES) {
+    const spine = spineForFaculty(f);
+    const positions = spine.stops.map((s) => REGION_ORDER.indexOf(s.region));
+    for (let i = 1; i < positions.length; i++) {
+      assert.ok(
+        positions[i] >= positions[i - 1],
+        `${f}: the chain leaves ${REGION_ORDER[positions[i - 1]]} and comes back to ${REGION_ORDER[positions[i]]}`,
+      );
+    }
+    assert.ok(
+      positions.every((p) => p >= 0),
+      `${f}: a stop is in no known region`,
+    );
+  }
+});
+
+test("the chain names institutions and never ranks or invents them", () => {
+  for (const f of FACULTY_VALUES) {
+    for (const stop of spineForFaculty(f).stops) {
+      if (stop.universities.length === 0) continue;
+      assert.ok(
+        stop.destination,
+        `${f}: "${stop.country}" names institutions with no country profile behind them`,
+      );
+      // Only ever listed under a field they are actually known for.
+      for (const u of stop.universities) {
+        assert.ok(
+          u.knownFor.includes(f),
+          `${u.name} is listed under ${f}, which it is not knownFor`,
+        );
+      }
+      // And in the registry's own order — no score, no reordering, nothing that
+      // could read as a ranking. This is the assertion that would fail the day
+      // someone sorts by "strength".
+      const expected = universitiesForPlace(stop.destination!.id)
+        .filter((u) => u.knownFor.includes(f))
+        .map((u) => u.name);
+      assert.deepEqual(
+        stop.universities.map((u) => u.name),
+        expected,
+        `${f}/${stop.country}: the institution order is not the registry's`,
+      );
+    }
+  }
+});
+
+test("the chain agrees with itself walked backwards", () => {
+  // The whole point of #16: the layers were joined in one direction and could
+  // drift in the other. If a city is on the chain for a field, that city must
+  // return the areas of that field — and if a country page says it is a route
+  // into some work, that work's chain must contain the country.
+  for (const f of FACULTY_VALUES) {
+    const spine = spineForFaculty(f);
+    const areas = CAREER_AREAS_BY_FACULTY[f] ?? [];
+    assert.ok(areas.length > 0, `${f} names no areas of work`);
+
+    for (const stop of spine.stops) {
+      for (const hub of stop.hubs) {
+        const back = areasForHub(hub).map(({ area }) => areaSlug(area.title));
+        for (const area of areas) {
+          assert.ok(
+            back.includes(areaSlug(area.title)),
+            `${hub.city} is on ${f}'s chain but does not lead back to "${area.title}"`,
+          );
+        }
+      }
+      if (!stop.destination) continue;
+      const backFromCountry = areasForDestination(stop.destination).map(
+        ({ faculty }) => faculty,
+      );
+      // A country reached only through its cities need not claim the field
+      // itself — `fields` on a destination is an editorial claim about the
+      // country, and a city's labour market is a different one. But if it DOES
+      // claim it, the chain must contain it.
+      if (backFromCountry.includes(f)) {
+        assert.ok(
+          spine.stops.some((s) => s.destination?.id === stop.destination!.id),
+          `${stop.destination.name} claims ${f} but is missing from its chain`,
+        );
+      }
+    }
+  }
+});
+
+test("every area of work resolves to exactly one field", () => {
+  // `facultyOfArea` walks the registry by SLUG, because an area has no id. A
+  // collision would silently file one area's chain under another's field.
+  for (const { faculty, area } of allCareerAreas()) {
+    assert.equal(
+      facultyOfArea(area),
+      faculty,
+      `"${area.title}" resolves to the wrong field`,
+    );
+  }
+});
+
+test("the spine stays out of every client bundle", () => {
+  // It reaches into five prose registries totalling ~4,000 lines. Same trap as
+  // `careers.ts` and the catalog: a single runtime import from a client
+  // component drags all of it into that route's bundle.
+  const offenders: string[] = [];
+  for (const file of sourceFiles()) {
+    const src = readFileSync(file, "utf8");
+    if (!/^\s*["']use client["']/m.test(src)) continue;
+    if (
+      /from "@\/lib\/data\/spine"/.test(src.replace(/import type[^;]+;/g, ""))
+    ) {
+      offenders.push(rel(file));
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `a client component imports the spine at runtime:\n${offenders.join("\n")}`,
   );
 });

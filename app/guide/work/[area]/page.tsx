@@ -13,7 +13,8 @@ import { FACULTY_LABEL } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
 import { guideMorph } from "@/lib/data/guide-sections";
 import { VALUE_LABEL } from "@/lib/data/values";
-import { hubsByRegion } from "@/lib/data/world";
+import { SpineChain } from "@/components/guide/Spine";
+import { spineForFaculty } from "@/lib/data/spine";
 import { statedGuideFields } from "@/lib/guide/student-fields";
 import { pageMeta } from "@/lib/seo";
 
@@ -55,12 +56,10 @@ export default function GuideAreaPage({
   // One city per region rather than the first four in the list: the map is
   // ordered home-region-first on purpose, so taking the head of it would show a
   // student four Central Asian cities and imply the work stops there. This keeps
-  // home first AND shows the spread.
-  const cities = hubsByRegion([faculty])
-    .map((g) => g.hubs[0])
-    .slice(0, 5);
   // `adjacent` holds area TITLES; resolve each to its route. A test pins that
   // every one of them resolves, so a silent dead entry cannot ship.
+  // The whole chain for this area’s field, derived — see lib/data/spine.ts.
+  const spine = spineForFaculty(faculty);
   const neighbours = area.adjacent
     .map((title) => ({ title, slug: areaSlug(title) }))
     .filter((n) => Boolean(areaBySlug(n.slug)));
@@ -159,6 +158,16 @@ export default function GuideAreaPage({
       ),
     },
     {
+      // The chain: the country, the cities inside it, who is named there for
+      // this field, and the routes that need no move. Every one of those facts
+      // already existed one registry away and none of them were joined — a
+      // student who had chosen this work still had to carry the choice by hand
+      // into three other lists.
+      id: "where",
+      title: "Where this work lives, and how you reach it",
+      body: <SpineChain spine={spine} stated={stated} />,
+    },
+    {
       // Its own part rather than the seventh box down, because it is the only
       // thing on the page a reader can act on today, and a page that ends in
       // reading is where a student leaves.
@@ -211,29 +220,11 @@ export default function GuideAreaPage({
             </section>
           )}
 
-          {cities.length > 0 && (
-            <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-              <h2 className="text-sm font-semibold text-ink">
-                Where this work sits
-              </h2>
-              <p className="mt-1 text-sm text-ink-soft">
-                Each one states its catch as well as its appeal.
-              </p>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {cities.map((h) => (
-                  <li key={h.id}>
-                    <Link
-                      href={withFields(`/guide/cities/${h.id}`, stated)}
-                      className="inline-flex h-11 items-center rounded-full border border-line bg-surface px-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring"
-                    >
-                      {h.city}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
+          {/* The flat city-chip list that used to sit here is gone: the spine
+              part above says the same thing with the country, the institutions
+              and the routes from home attached. Two lists of the same cities,
+              one of them poorer, is how the layers drifted apart in the first
+              place. */}
           <Link
             href="/opportunities"
             className="group flex items-start justify-between gap-3 rounded-2xl bg-accent p-5 text-on-fill transition-[background-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lift focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none"
