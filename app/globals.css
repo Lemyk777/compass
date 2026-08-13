@@ -139,6 +139,27 @@
 
      --field-line is the lattice. On an off-white page it is the page's own ink
      at a whisper: graph paper, not a table. */
+  /* TYPOGRAPHY THAT KNOWS WHICH THEME IT IS IN.
+     
+     The product ships one typographic setting for two themes whose optical
+     requirements are opposite, and that — not contrast — is why the dark theme
+     reads as harder work. Every colour here is already a token; the two type
+     properties that depend on the theme were not.
+
+     Light text on a dark surface BLOOMS: the glyphs spread into the ground,
+     strokes thicken, counters close and the space between letters is eaten.
+     The standard compensation is a small positive tracking, and Inter needs it
+     more than most at reading sizes because its default fit is tight.
+
+     0.008em is ~0.13px at 16px. It is deliberately small: enough to reopen the
+     word shapes, not enough for anyone to notice as letter-spacing. It is
+     applied to `body`, so it INHERITS into every paragraph and is overridden
+     exactly where an explicit `tracking-*` was a decision — the 73
+     `tracking-tight` headings and the 38 tracked labels all keep their own
+     value. Nothing in the product sets tracking on body copy, which is what
+     makes this insertion point clean. */
+  --type-tracking-body: 0em;
+
   --field-line: 16 25 43;
   --field-line-alpha: 0.091;
   /* The aurora blobs. Their softness is baked into the radial-gradient's own
@@ -214,6 +235,10 @@
        hairline, it is nothing at all. A dark theme's grid has to be drawn in
        light, which is a different token and not the same one at a different
        alpha. */
+    /* See the note in the light block: light-on-dark blooms, so the body text
+       gets its letter-fit back. */
+    --type-tracking-body: 0.008em;
+
     --field-line: 132 160 208;
     --field-line-alpha: 0.127;
     --field-glow-alpha: 0.22;
@@ -276,6 +301,10 @@
      hairline, it is nothing at all. A dark theme's grid has to be drawn in
      light, which is a different token and not the same one at a different
      alpha. */
+  /* See the note in the light block: light-on-dark blooms, so the body text
+     gets its letter-fit back. */
+  --type-tracking-body: 0.008em;
+
   --field-line: 132 160 208;
   --field-line-alpha: 0.127;
   --field-glow-alpha: 0.22;
@@ -298,6 +327,18 @@
   body {
     @apply bg-surface text-ink font-body antialiased;
     text-rendering: optimizeLegibility;
+    /* The theme's own letter-fit — see --type-tracking-body in the light block.
+       It sits here rather than on a utility so it INHERITS, and so the 111
+       places that made an explicit `tracking-*` decision keep it. */
+    letter-spacing: var(--type-tracking-body);
+  }
+  /* The caret is a browser surface we did not draw, and the default is a system
+     colour belonging to neither palette. */
+  input,
+  textarea,
+  select,
+  [contenteditable] {
+    caret-color: rgb(var(--accent));
   }
   /* The surfaces we did not draw still carry the design. A browser's default
      selection is a system blue that belongs to no palette and looks wrong in
@@ -305,6 +346,39 @@
      2:1. Tinted from the accent, with `ink` kept as the text so the contrast is
      the one already verified. Deliberately not `--accent` at full strength: a
      saturated fill behind body copy is a highlighter, not a selection. */
+  /* The scrollbar is the largest surface on the page we never drew. Chrome's
+     default on a near-black page is a light grey slab that belongs to no
+     palette and is the brightest vertical object on the screen; Firefox's is
+     the OS's. Both are themed from the page's own ink now, and both stay quiet
+     until you reach for them.
+
+     `scrollbar-gutter: stable` on `html` above is what stops this changing the
+     layout when a list grows past the fold. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--ink) / 0.22) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    /* Painted through the padding box so the 3px transparent border reads as a
+       gap: a thumb that touches both edges of its track looks like a bug. */
+    background-color: rgb(var(--ink) / 0.22);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--ink) / 0.38);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
   ::selection {
     background-color: rgb(var(--accent-soft));
     color: rgb(var(--ink));
