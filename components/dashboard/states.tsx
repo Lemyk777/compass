@@ -11,8 +11,12 @@ export function LoadingState() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
       <div className="h-10 w-10 animate-spin rounded-full border-2 border-line border-t-accent" />
-      <h2 className="mt-5 text-lg font-semibold text-ink">{t("dash.loadingTitle")}</h2>
-      <p className="mt-1 max-w-xs text-sm text-ink-soft">{t("dash.loadingBody")}</p>
+      <h2 className="mt-5 text-lg font-semibold text-ink">
+        {t("dash.loadingTitle")}
+      </h2>
+      <p className="mt-1 max-w-xs text-sm text-ink-soft">
+        {t("dash.loadingBody")}
+      </p>
     </div>
   );
 }
@@ -46,7 +50,9 @@ export function EmptyState({
       <h1 className="text-2xl font-semibold tracking-tight text-ink">
         {t("dash.emptyReadyTitle")}
       </h1>
-      <p className="mt-2 max-w-sm text-sm text-ink-soft">{t("dash.emptyReadyBody")}</p>
+      <p className="mt-2 max-w-sm text-sm text-ink-soft">
+        {t("dash.emptyReadyBody")}
+      </p>
       <Button size="lg" className="mt-6" onClick={onRun}>
         {t("dash.seeStanding")}
       </Button>
@@ -128,7 +134,7 @@ function ReadinessCard() {
                 </span>
               </a>
             </li>
-          )
+          ),
         )}
       </ul>
 
@@ -176,12 +182,15 @@ function EmptyStatePreLinks() {
       {t("dash.emptyPreLinksLead")}{" "}
       <a
         href={`${basePath}/opportunities`}
-        className="font-medium text-accent hover:underline"
+        className="font-medium text-accent-ink hover:underline"
       >
         {t("nav.opportunities")}
       </a>{" "}
       {t("dash.emptyPreLinksAnd")}{" "}
-      <a href={`${basePath}/plan`} className="font-medium text-accent hover:underline">
+      <a
+        href={`${basePath}/plan`}
+        className="font-medium text-accent-ink hover:underline"
+      >
         {t("nav.plan")}
       </a>{" "}
       {t("dash.emptyPreLinksTail")}
@@ -229,7 +238,9 @@ export function NoAnalysisYet() {
       <h1 className="text-xl font-semibold tracking-tight text-ink">
         {t("dash.noAnalysisTitle")}
       </h1>
-      <p className="mt-2 max-w-sm text-sm text-ink-soft">{t("dash.noAnalysisBody")}</p>
+      <p className="mt-2 max-w-sm text-sm text-ink-soft">
+        {t("dash.noAnalysisBody")}
+      </p>
       <ButtonLink href={basePath} size="lg" className="mt-6">
         {t("dash.goDashboard")}
       </ButtonLink>
@@ -281,8 +292,8 @@ export function EmptyCountryList({ code }: { code: DestinationCode }) {
         No {label} universities yet
       </h2>
       <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
-        Add the {label} universities or programs you&apos;re aiming for and Compass
-        will score your admission odds at each.
+        Add the {label} universities or programs you&apos;re aiming for and
+        Compass will score your admission odds at each.
       </p>
       <ButtonLink href={`${basePath}/college-list`} size="lg" className="mt-6">
         Build your {label} list
@@ -295,7 +306,9 @@ export function EmptyCountryList({ code }: { code: DestinationCode }) {
 export function PageHeader({ title, hint }: { title: string; hint?: string }) {
   return (
     <div className="mb-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-ink">
+        {title}
+      </h1>
       {hint && <p className="mt-1 text-sm text-ink-soft">{hint}</p>}
     </div>
   );

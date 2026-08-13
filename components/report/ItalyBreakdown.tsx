@@ -380,7 +380,7 @@ function ThresholdBar({
           <div className="h-6 w-px bg-ink-faint" />
         </div>
         <p
-          className="absolute -bottom-4 text-[9px] text-ink-faint"
+          className="absolute -bottom-4 text-[11px] text-ink-faint"
           style={{
             left: `${thresholdPct}%`,
             transform: "translateX(-50%)",
@@ -438,7 +438,7 @@ function ScoreBar({
           style={{ left: `${cutoffPct}%` }}
         />
         <p
-          className="absolute -bottom-4 text-[9px] text-ink-faint"
+          className="absolute -bottom-4 text-[11px] text-ink-faint"
           style={{ left: `${cutoffPct}%`, transform: "translateX(-50%)" }}
         >
           {cutoff}

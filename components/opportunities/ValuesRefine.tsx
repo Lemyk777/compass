@@ -142,9 +142,11 @@ export function ValuesRefine({
             setAsking(true);
             setStep(0);
           }}
-          className="text-xs font-medium text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+          className="text-xs font-medium text-accent-ink underline-offset-2 hover:underline focus-visible:focus-ring"
         >
-          {answered < VALUES_QUIZ.length ? "Finish the questions" : "Change my answers"}
+          {answered < VALUES_QUIZ.length
+            ? "Finish the questions"
+            : "Change my answers"}
         </button>
         <button
           type="button"

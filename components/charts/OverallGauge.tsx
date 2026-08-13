@@ -67,7 +67,9 @@ export function OverallGauge({ score }: { score: number }) {
           {animated}
         </span>
         <span className="mt-1 text-xs text-ink-faint">{t("report.outOf")}</span>
-        <span className="mt-1.5 text-sm font-medium text-accent">{band}</span>
+        <span className="mt-1.5 text-sm font-medium text-accent-ink">
+          {band}
+        </span>
       </div>
     </div>
   );

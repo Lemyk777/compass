@@ -3703,3 +3703,176 @@ test("the landing page's bands ramp with the window, and no band caps at 1152", 
     }
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Readability, measured rather than looked at (2026-08-14).
+//
+// The report was "text on our site is hard to read", next to a competitor's
+// light-theme screenshot. Contrast turned out to be fine everywhere — the
+// defects were a type scale with no steps in it, a 10px floor, and one theme's
+// optical needs being served by the other theme's settings.
+
+test("11px is the floor — no surface ships 10px type", () => {
+  // 10px uppercase with letter-spacing was the smallest type in the product and
+  // it carried real information across 21 files: the report's programme cards,
+  // four country breakdowns, the admin tables, the guide's badges and the
+  // landing's own hero preview. A floor that holds in some components is not a
+  // floor, so it is asserted over the whole tree.
+  const offenders: string[] = [];
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return walk(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+  for (const root of ["app", "components"]) {
+    for (const file of walk(path.join(process.cwd(), root))) {
+      readFileSync(file, "utf8")
+        .split("\n")
+        .forEach((line, i) => {
+          const m = line.match(/text-\[(\d+(?:\.\d+)?)px\]/);
+          if (m && Number(m[1]) < 11) {
+            offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
+          }
+        });
+    }
+  }
+  assert.deepEqual(offenders, [], `type below 11px:\n${offenders.join("\n")}`);
+});
+
+test("the accent fill is not used as a foreground on text", () => {
+  // The sibling test above covers reach/target/likely and stops there, which is
+  // how 25 call sites came to paint TEXT with `text-accent` — 4.28:1 on the
+  // page background, i.e. the exact failure that test exists to name. `accent`
+  // is the only other fill with the problem: `ivy` measures 4.95 and 6.41.
+  //
+  // Icons keep the fill, because a graphic owes 3:1 and this token clears it.
+  // They are told apart by what else is on the line: an icon carries its own
+  // box, is an <svg>, or is a form control's tick.
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return walk(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+  const ALLOW = new Set([
+    // Paints its own FIXED dark gradient in both themes, so a token that gets
+    // darker in light mode is a regression here rather than a fix.
+    "components/marketing/AuthAside.tsx",
+  ]);
+  const offenders: string[] = [];
+  for (const root of ["app", "components"]) {
+    for (const file of walk(path.join(process.cwd(), root))) {
+      const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+      if (ALLOW.has(rel)) continue;
+      const lines = readFileSync(file, "utf8").split("\n");
+      lines.forEach((line, i) => {
+        if (!/(?<![-\w:])text-accent(?![-\w])/.test(line)) return;
+        // An icon's evidence is rarely on the same line as its colour: the size
+        // can come from a `${px}` variable, and a wrapper span sits above the
+        // `ICONS[...]` it colours. Two lines either way catches both, and is
+        // narrow enough that a paragraph cannot borrow an icon's alibi.
+        const near = lines.slice(Math.max(0, i - 2), i + 3).join(" ");
+        if (
+          /\bh-\d|\bw-\d|<svg|role="img"|aria-hidden|ICONS\[|type="(checkbox|radio)"/.test(
+            near,
+          )
+        ) {
+          return;
+        }
+        offenders.push(`${rel}:${i + 1}`);
+      });
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `use text-accent-ink for foreground colour; the bare token is the fill (4.28:1 on the page):\n${offenders.join("\n")}`,
+  );
+});
+
+test("typography compensates for the theme it is rendered in", () => {
+  // Light text on a dark ground blooms — the glyphs spread into the background
+  // and the space between letters is eaten. The compensation is a property of
+  // the THEME, so it is a token, in all three blocks like every colour.
+  const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+  const track = (selector: string) => {
+    const start = css.indexOf(selector);
+    assert.ok(start >= 0, `globals.css has no ${selector} block`);
+    const body = css.slice(start, css.indexOf("color-scheme", start));
+    const m = body.match(/--type-tracking-body:\s*([\d.]+)em\s*;/);
+    assert.ok(m, `${selector} does not define --type-tracking-body`);
+    return Number(m![1]);
+  };
+  const light = track(":root {");
+  for (const dark of [
+    ':root:not([data-theme="light"]) {',
+    ':root[data-theme="dark"] {',
+  ]) {
+    assert.ok(
+      track(dark) > light,
+      `${dark}: the dark theme must open the letter-fit, not match the light one`,
+    );
+    assert.ok(
+      track(dark) <= 0.02,
+      `${dark}: ${track(dark)}em is letter-spacing a reader will see, not optical compensation`,
+    );
+  }
+  assert.equal(
+    light,
+    0,
+    "the light theme needs no compensation and should say so",
+  );
+
+  // It has to INHERIT, or the 111 places that made an explicit `tracking-*`
+  // decision would be the only ones affected — the exact inverse of the intent.
+  assert.match(
+    css,
+    /body\s*\{[^}]*letter-spacing:\s*var\(--type-tracking-body\)/,
+    "the tracking token is defined but never applied to body",
+  );
+});
+
+test("the two cards that carry the product have a real type step", () => {
+  // Both were measured flat. The opportunity card ran title 18 / body 15.2 — a
+  // step of 1.18 — and the guide card ran title 14 / body 14, a step of exactly
+  // 1.00, while being the navigation for 88 pages. Neither is a contrast
+  // problem, which is why no contrast test caught either.
+  const card = readFileSync(
+    path.join(process.cwd(), "components/opportunities/OpportunityCard.tsx"),
+    "utf8",
+  );
+  assert.match(
+    card,
+    /: "text-xl font-semibold leading-snug text-ink"/,
+    "the opportunity card's title is no longer a step above its body",
+  );
+  assert.match(
+    card,
+    /: "mt-3 text-base leading-relaxed text-ink-soft"/,
+    "the opportunity card's description left the 16px body floor",
+  );
+  // The deadline is the promise the whole product is built on. It was the
+  // faintest thing on the card, quieter than the description above it.
+  // Scoped to the deadline block: `ink-faint` is still correct on the TBA pill,
+  // which sits on `bg-surface` rather than on the card, and on the person glyph.
+  const deadline = card.slice(
+    card.indexOf("{o.dateConfirmed ? ("),
+    card.indexOf("</div>", card.indexOf("{o.dateConfirmed ? (")),
+  );
+  assert.ok(deadline.length > 0, "the deadline block moved");
+  assert.ok(
+    !/text-ink-faint/.test(deadline),
+    "the deadline is back on ink-faint — it is the product's central promise",
+  );
+
+  const guide = readFileSync(
+    path.join(process.cwd(), "components/guide/parts.tsx"),
+    "utf8",
+  );
+  assert.match(
+    guide,
+    /className="text-base font-semibold leading-snug text-ink"/,
+    "the guide card's title is back to the same size as its own description",
+  );
+});

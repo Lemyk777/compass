@@ -90,7 +90,7 @@ export default async function GuidePage({
               <span className="mt-2 text-sm leading-relaxed text-ink-soft">
                 {s.blurb}
               </span>
-              <span className="mt-3 flex items-center gap-1.5 text-xs font-medium text-accent">
+              <span className="mt-3 flex items-center gap-1.5 text-xs font-medium text-accent-ink">
                 {counts[s.id]}
                 <span
                   aria-hidden

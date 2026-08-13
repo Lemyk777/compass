@@ -171,7 +171,7 @@ function Wizard({
             half-answered and come back.{" "}
             <Link
               href="/opportunities"
-              className="font-medium text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+              className="font-medium text-accent-ink underline-offset-2 hover:underline focus-visible:focus-ring"
             >
               Back to Opportunities
             </Link>
@@ -198,7 +198,7 @@ function Wizard({
                       active
                         ? "bg-accent text-on-fill"
                         : done
-                          ? "bg-accent/15 text-accent"
+                          ? "bg-accent/15 text-accent-ink"
                           : "bg-line text-ink-faint"
                     }`}
                   >

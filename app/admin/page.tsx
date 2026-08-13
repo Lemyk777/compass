@@ -4,7 +4,10 @@ import { requireRole } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Card } from "@/components/report/Section";
-import { SignupsOverTime, SignupsByCountry } from "@/components/admin/AdminCharts";
+import {
+  SignupsOverTime,
+  SignupsByCountry,
+} from "@/components/admin/AdminCharts";
 import { getT } from "@/lib/i18n/server";
 import {
   analysisCostUSD,
@@ -36,7 +39,10 @@ export default async function AdminPage() {
       .eq("type", "signup")
       .not("ref_code", "is", null),
     // Onboarding funnel: every "onboarding_step:<key>" event (see logOnboardingStep).
-    admin.from("events").select("user_id, type").like("type", "onboarding_step:%"),
+    admin
+      .from("events")
+      .select("user_id, type")
+      .like("type", "onboarding_step:%"),
     // Partner applications. Nothing about a new application is pushed anywhere —
     // no email, no webhook — so this page is the only place one surfaces. That
     // is exactly why the count sits above the metrics when it isn't zero.
@@ -53,7 +59,10 @@ export default async function AdminPage() {
   // estimate (rows simply look like they predate 0007).
   let runs = analyses ?? [];
   if (analysesErr) {
-    console.error("admin: analyses select failed; retrying without usage", analysesErr);
+    console.error(
+      "admin: analyses select failed; retrying without usage",
+      analysesErr,
+    );
     const { data: fallback } = await admin
       .from("analyses")
       .select("user_id, created_at");
@@ -73,18 +82,24 @@ export default async function AdminPage() {
   }[];
   const pendingPartners = partners.filter((p) => p.status === "pending");
   const listedPartners = partners.filter((p) => p.status === "active").length;
-  const oldestPendingDays = pendingPartners.reduce<number | null>((oldest, p) => {
-    if (!p.created_at) return oldest;
-    const days = Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86_400_000);
-    return oldest == null || days > oldest ? days : oldest;
-  }, null);
+  const oldestPendingDays = pendingPartners.reduce<number | null>(
+    (oldest, p) => {
+      if (!p.created_at) return oldest;
+      const days = Math.floor(
+        (Date.now() - new Date(p.created_at).getTime()) / 86_400_000,
+      );
+      return oldest == null || days > oldest ? days : oldest;
+    },
+    null,
+  );
 
   const totalUsers = users.length;
   const totalAnalyses = runs.length;
 
   // Active vs one-time: analyses per user.
   const perUser = new Map<string, number>();
-  for (const r of runs) perUser.set(r.user_id, (perUser.get(r.user_id) ?? 0) + 1);
+  for (const r of runs)
+    perUser.set(r.user_id, (perUser.get(r.user_id) ?? 0) + 1);
   const analyzedUsers = perUser.size;
   const returningUsers = [...perUser.values()].filter((n) => n >= 2).length;
   const oneTimeUsers = [...perUser.values()].filter((n) => n === 1).length;
@@ -119,11 +134,14 @@ export default async function AdminPage() {
   // else the per-analysis estimate for rows predating migration 0007.
   const totalCost = runs.reduce(
     (sum, r) =>
-      sum + (hasUsage(r.usage) ? analysisCostUSD(r.usage) : EST_COST_PER_ANALYSIS),
-    0
+      sum +
+      (hasUsage(r.usage) ? analysisCostUSD(r.usage) : EST_COST_PER_ANALYSIS),
+    0,
   );
   const estCost = totalCost.toFixed(2);
-  const perAnalysis = (totalAnalyses > 0 ? totalCost / totalAnalyses : 0).toFixed(3);
+  const perAnalysis = (
+    totalAnalyses > 0 ? totalCost / totalAnalyses : 0
+  ).toFixed(3);
 
   // Onboarding funnel: distinct users who reached each step (instrumented via
   // logOnboardingStep). The drop between consecutive bars is the abandonment
@@ -142,7 +160,10 @@ export default async function AdminPage() {
     if (e.user_id) stepUsers.get(key)!.add(e.user_id as string);
   }
   const funnel = [
-    ...FUNNEL_STEPS.map((s) => ({ label: s.label, count: stepUsers.get(s.key)?.size ?? 0 })),
+    ...FUNNEL_STEPS.map((s) => ({
+      label: s.label,
+      count: stepUsers.get(s.key)?.size ?? 0,
+    })),
     { label: "Analyzed", count: analyzedUsers },
   ];
   const funnelBase = Math.max(funnel[0]?.count ?? 0, 1);
@@ -215,7 +236,9 @@ export default async function AdminPage() {
               <h2 className="text-base font-semibold text-ink">
                 {t("admin.ambassadors")}
               </h2>
-              <p className="mt-0.5 text-xs text-ink-soft">{t("admin.ambSub")}</p>
+              <p className="mt-0.5 text-xs text-ink-soft">
+                {t("admin.ambSub")}
+              </p>
             </div>
             <span className="shrink-0 text-ink-faint transition-colors group-hover:text-accent">
               →
@@ -223,7 +246,10 @@ export default async function AdminPage() {
           </div>
           <div className="mt-3 flex gap-6">
             <div>
-              <span data-num className="font-display text-2xl font-semibold text-ink">
+              <span
+                data-num
+                className="font-display text-2xl font-semibold text-ink"
+              >
                 {ambassadorCount}
               </span>
               <span className="ml-1.5 text-xs text-ink-soft">
@@ -231,7 +257,10 @@ export default async function AdminPage() {
               </span>
             </div>
             <div>
-              <span data-num className="font-display text-2xl font-semibold text-accent">
+              <span
+                data-num
+                className="font-display text-2xl font-semibold text-accent-ink"
+              >
                 {referredSignups}
               </span>
               <span className="ml-1.5 text-xs text-ink-soft">
@@ -264,7 +293,9 @@ export default async function AdminPage() {
 
         <div className="mt-6 space-y-6">
           <Card>
-            <h2 className="text-base font-semibold text-ink">Onboarding funnel</h2>
+            <h2 className="text-base font-semibold text-ink">
+              Onboarding funnel
+            </h2>
             <p className="mb-3 mt-0.5 text-xs text-ink-soft">
               Distinct users reaching each step → where they drop off.
             </p>
@@ -295,7 +326,10 @@ export default async function AdminPage() {
             <h2 className="text-base font-semibold text-ink">
               {t("admin.estCost")}
             </h2>
-            <p data-num className="mt-1 font-display text-3xl font-semibold text-ink">
+            <p
+              data-num
+              className="mt-1 font-display text-3xl font-semibold text-ink"
+            >
               ~${estCost}
             </p>
             <p data-num className="mt-1 text-sm text-ink-soft">

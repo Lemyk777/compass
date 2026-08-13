@@ -54,7 +54,7 @@ export default async function AmbassadorPage() {
                 <Card className="flex flex-col justify-center text-center">
                   <span
                     data-num
-                    className="font-display text-5xl font-semibold text-accent"
+                    className="font-display text-5xl font-semibold text-accent-ink"
                   >
                     {liveSignups}
                   </span>

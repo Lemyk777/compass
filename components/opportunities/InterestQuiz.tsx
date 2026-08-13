@@ -183,7 +183,7 @@ function QuizResults({
               }`}
             >
               {i === 0 && on && (
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
                   Top
                 </span>
               )}

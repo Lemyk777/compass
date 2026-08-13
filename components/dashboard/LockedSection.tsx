@@ -31,7 +31,10 @@ export function LockedSection({
   return (
     <div className="relative">
       {/* Blurred teaser */}
-      <div aria-hidden className="pointer-events-none select-none blur-[5px] saturate-[0.85] opacity-70">
+      <div
+        aria-hidden
+        className="pointer-events-none select-none blur-[5px] saturate-[0.85] opacity-70"
+      >
         {teaser}
       </div>
 
@@ -65,7 +68,7 @@ export function LockedSection({
                   <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
                     {eyebrow}
                   </span>
-                  <span className="rounded-full border border-accent/30 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent">
+                  <span className="rounded-full border border-accent/30 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
                     Locked
                   </span>
                 </div>
@@ -73,13 +76,26 @@ export function LockedSection({
                 <h2 className="mt-4 text-2xl font-semibold leading-tight tracking-tight text-ink">
                   {headline}
                 </h2>
-                <p className="mt-2 text-sm leading-relaxed text-ink-soft">{description}</p>
+                <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                  {description}
+                </p>
 
                 <ul className="mt-5 space-y-2.5">
                   {bullets.map((b) => (
-                    <li key={b} className="flex items-start gap-2.5 text-sm text-ink">
+                    <li
+                      key={b}
+                      className="flex items-start gap-2.5 text-sm text-ink"
+                    >
                       <span className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-accent text-on-fill">
-                        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-3 w-3"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d="M5 12l5 5L20 7" />
                         </svg>
                       </span>
@@ -91,7 +107,15 @@ export function LockedSection({
                 <div className="mt-7 flex flex-wrap items-center gap-4">
                   <ButtonLink href={ctaHref} size="md">
                     {ctaLabel}
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M5 12h14M13 6l6 6-6 6" />
                     </svg>
                   </ButtonLink>
