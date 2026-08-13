@@ -11,7 +11,10 @@ import type {
 import { FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
 import { regionLabel } from "@/lib/data/geo";
 import { downloadIcs } from "@/lib/calendar/ics";
-import { PartnerBadge, VerifiedExplainer } from "@/components/partners/PartnerBadge";
+import {
+  PartnerBadge,
+  VerifiedExplainer,
+} from "@/components/partners/PartnerBadge";
 import { ShareLink } from "@/components/opportunities/ShareLink";
 
 // The detail panel behind every opportunity card.
@@ -57,6 +60,7 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
   course: "Course",
   research_program: "Research program",
   summer_program: "Summer program",
+  community: "Community",
 };
 
 /**
@@ -66,6 +70,8 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
  * every elite olympiad.
  */
 const CATEGORY_WHY: Record<CompetitionCategory, string> = {
+  community:
+    "This is the one kind here that will not show up on an application by itself — nobody is impressed that you joined a forum. What it does is put you next to people already doing the thing: they tell you which competition is worth entering, read your draft, and answer the question you would otherwise have quietly given up on. It costs nothing, there is no deadline to miss, and most students who get somewhere had one of these long before they had a result.",
   course:
     "Finishing a real course from a name a university recognises shows you can teach yourself — which is most of what studying abroad actually demands. What carries weight is not the enrolment but what you build with it afterwards: a project, a club you start, a younger student you teach.",
   olympiad:
@@ -202,7 +208,9 @@ export function OpportunityDetail({
           <section className={`rounded-xl border p-4 ${tone.panel}`}>
             <p className="flex flex-wrap items-center gap-2">
               <WalletIcon className={tone.icon} />
-              <span className="text-sm font-semibold text-ink">{cost.label}</span>
+              <span className="text-sm font-semibold text-ink">
+                {cost.label}
+              </span>
             </p>
             <p className="mt-2 text-pretty text-sm leading-relaxed text-ink-soft">
               {cost.detail}
@@ -245,8 +253,8 @@ export function OpportunityDetail({
             {o.notYetEligible && (
               <p className="mt-2 rounded-lg bg-surface px-3 py-2 text-ink-soft">
                 You are not old enough for this one yet — you become eligible{" "}
-                <span className="font-medium text-ink">{o.notYetEligible}</span>.
-                It is here so you know what to aim at.
+                <span className="font-medium text-ink">{o.notYetEligible}</span>
+                . It is here so you know what to aim at.
               </p>
             )}
           </Section>
@@ -256,9 +264,7 @@ export function OpportunityDetail({
             <p className="mt-1.5 text-ink-faint">{TIER_WHY[o.tierResolved]}</p>
           </Section>
 
-          <Section
-            title={o.alwaysOpen ? "When you can start" : "When"}
-          >
+          <Section title={o.alwaysOpen ? "When you can start" : "When"}>
             {/* A self-paced course has no cycle to miss, so the "dates not
                 announced" line below would be nonsense for one. */}
             {!o.dateConfirmed && o.alwaysOpen ? (

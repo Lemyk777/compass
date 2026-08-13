@@ -40,6 +40,7 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
   course: "Course",
   research_program: "Research",
   summer_program: "Summer program",
+  community: "Community",
 };
 
 export function OpportunityCard({

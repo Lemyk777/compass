@@ -903,6 +903,7 @@ function CategoryTabs({
     { key: "course", label: "Courses" },
     { key: "summer_program", label: "Summer" },
     { key: "research_program", label: "Research" },
+    { key: "community", label: "Community" },
   ];
   return (
     // Scrollable on a phone rather than wrapping into two ragged rows.
