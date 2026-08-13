@@ -601,6 +601,53 @@ names roles and reads `rgb(var(--token) / <alpha-value>)`.
   custom property updates and `color` does not. Audit a theme by loading the
   page under that OS setting, not by toggling the attribute.
 
+## Type is a system, and one of its axes is the theme
+
+Colour was already tokenised per theme; type was not, and the gap was the whole
+reason the dark theme read as harder work. **Contrast was never the problem** —
+every text token on `/opportunities` measured 5.48:1 or better while the
+complaint stood. Four rules, all test-enforced:
+
+- **`--type-tracking-body` is a theme token** (`app/globals.css`): 0 in light,
+  `0.008em` in dark. Light text on a dark ground **blooms** — glyphs spread into
+  the background, counters close, and the space between letters is eaten — and
+  Inter feels it more than most because its default fit is tight. It is applied
+  on `body` so it **inherits**, and so the 73 `tracking-tight` headings and the
+  38 tracked labels keep the value they chose. Nothing in the product sets
+  tracking on body copy, which is what makes that insertion point clean. Bounded
+  at 0.02em by a test: past that it stops being optical compensation and starts
+  being letter-spacing a reader can see.
+- **11px is the floor, everywhere.** 69 labels sat at 10px and four at 9px,
+  across 21 files — the report's programme cards, four country breakdowns, the
+  admin tables, the guide's badges, the landing's own hero preview. A floor that
+  holds in some components is not a floor, so the test walks the whole tree.
+- **A card needs a step, and size alone should not carry it.** The two cards
+  that carry the product both measured flat: the opportunity card ran title 18 /
+  body 15.2 (a step of **1.18**), and the guide card — the navigation for 88
+  pages — ran title 14 / body 14, a step of exactly **1.00**. Both are 1.14–1.25
+  in size *and* 200 in weight now. No contrast test could ever have caught
+  either, which is the point: "everything is nearly the same size, nearly the
+  same distance apart" is what a reader means by a wall of text.
+- **Group facts that are the same kind of fact.** The opportunity card had five
+  text tiers 4–10px apart and therefore no groups. Eligibility and the deadline
+  are both *the terms of entry*; they are one block now, set off from the
+  description by real space. Five tiers became four.
+
+**`text-accent` is a fill, not a foreground** — 4.28:1 on the page background.
+The existing "no tier fill as text" test named this exact mistake and covered
+only `reach`/`target`/`likely`, so 22 call sites were painting text with
+`accent`. It covers `accent` now, with an exemption for icons (a graphic owes
+3:1). Two traps in that exemption: an icon's evidence is often **not on the same
+line** as its colour — the size can come from a `${px}` variable and
+`role="img"` sits two lines up — and **`AuthAside` paints its own fixed dark
+gradient in both themes**, so `accent-ink` is a regression there rather than a
+fix.
+
+**The surfaces we never drew still carry the design.** Text selection was themed
+already; the **scrollbar** (the largest of them — Chrome's default on a
+near-black page is a light grey slab that is the brightest vertical object on
+screen) and the **caret** now are too, both from `--ink`.
+
 ## Tailwind classes are linted against the config
 
 `eslint-plugin-tailwindcss` runs inside `next build` with

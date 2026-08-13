@@ -16,7 +16,7 @@ holds only what is **specific to this backlog** and not already written there.
 | `main` and `develop` | **in sync**, everything merged and deployed |
 | PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
 | Progress | **19 of 23 done, 1 half-done, 3 untouched**, plus **#24 done** 2026-08-13 — see §3 and §4 |
-| Unit tests | **157** (`npm run test:unit`) |
+| Unit tests | **161** (`npm run test:unit`) |
 
 ### The migrations are applied — verified 2026-08-13
 
@@ -91,6 +91,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 | 9 | 79 institutions, named and never ranked. See §4. |
 | 23 (buttons) | The button system was being bypassed by the page that mattered most, and three call sites had `!important` escapes pointing at why. See §5.9. |
 | 24 | **The hero background.** Two bugs, neither of them the one reported. See §5.14. |
+| 25 | **Readability.** The dark theme was not lower-contrast, it was under-engineered: no type step, a 10px floor, and one theme's optics served by the other's settings. See §5.16. |
 | 22 | **CLOSED.** The planner is advertised now that it works; the bands below the hero ramp with the window. See §5.15. |
 | 17 | **The planner, COMPLETE** — `/planner` (agenda) + `/planner/board` + `/planner/maps`. Delivered in two releases; both shipped. See §5.12 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
 
@@ -1003,6 +1004,47 @@ paragraphs over 75 at either 1440 or 1920.
 
 A test pins both halves: `Band` must keep all three steps, and no container in
 the landing files may cap at `max-w-6xl` without ramping past it.
+
+### 5.16 "The text is hard to read" — and it was not contrast
+
+The founder reported it on 2026-08-14 beside a competitor's screenshot. The
+competitor's site is light-themed, ours is dark-first, and **copying their
+numbers would have fixed nothing** — measured, every text token on
+`/opportunities` was already 5.48:1 or better.
+
+Three defects, none of which any contrast test could catch:
+
+**1. No type step.** The opportunity card held five stacked rows at 18 / 10 /
+15.2 / 14 / 14px inside 20px of padding — a title **1.18×** its own body. The
+guide card was worse: title and description both 14px, a step of exactly
+**1.00**, on the component that navigates 88 pages. "Everything is nearly the
+same size, nearly the same distance apart" is what a reader means by a wall of
+text, and it is a geometry problem wearing a colour problem's clothes.
+
+Both are fixed with size *and* weight, because size alone asked to carry a
+hierarchy will always be pushed too far. And the opportunity card's five tiers
+became four: eligibility and the deadline are the same KIND of fact — the terms
+of entry — so they are one group now rather than two rows 4px apart.
+
+**2. A 10px floor.** 69 labels at 10px and four at 9px across 21 files, carrying
+real information. Raised to 11px in one pass, because a floor that holds in some
+components is not a floor.
+
+**3. One typographic setting for two themes with opposite optical needs.**
+This is the finding worth keeping. Light text on a dark ground **blooms**: the
+glyphs spread into the background, strokes thicken, counters close and the space
+between letters is eaten. Colour was already a per-theme token in this product;
+letter-fit was not. `--type-tracking-body` is 0 in light and 0.008em in dark —
+~0.13px at 16px, enough to reopen the word shapes and not enough to read as
+letter-spacing — applied on `body` so it inherits everywhere an explicit
+`tracking-*` was not a decision.
+
+**Found on the way, and bigger than the report:** `text-accent` was painting
+real text at 22 call sites. `accent` DEFAULT is **4.28:1 on the page** — and the
+test that exists to name exactly this mistake covered `reach`/`target`/`likely`
+and stopped. The lesson generalises past this bug: **a test that names a class of
+mistake must enumerate the whole class**, or it becomes evidence that the
+uncovered members are fine.
 
 ## 6. Verification
 
