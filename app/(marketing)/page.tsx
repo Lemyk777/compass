@@ -22,6 +22,7 @@ import { allCareerAreas } from "@/lib/data/careers";
 import { HUBS } from "@/lib/data/world";
 import { STUDY_DESTINATIONS } from "@/lib/data/study-destinations";
 import { HOME_ROUTES } from "@/lib/data/from-home";
+import { PLANNER_SECTIONS } from "@/lib/data/planner-sections";
 
 // The landing page tells the product's story in the product's own order.
 //
@@ -37,9 +38,10 @@ import { HOME_ROUTES } from "@/lib/data/from-home";
 //   3. how it works              (two questions)
 //   4. why lists usually fail    (the problem, restated for this product)
 //   5. where it leads            (the guide)
-//   6. honest by design          (the promise both halves are built on)
-//   7. the full admission read   (the report — still here, now opt-in)
-//   8. for organisations · FAQ · close
+//   6. and then it is work       (the planner — dates and states, two views)
+//   7. honest by design          (the promise both halves are built on)
+//   8. the full admission read   (the report — still here, now opt-in)
+//   9. for organisations · FAQ · close
 //
 // Every count on this page is computed from the data at request time, so it
 // cannot drift from what the student will actually see.
@@ -403,6 +405,61 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        {/* ── Then it becomes work ── the planner, the student's third section.
+          Held back for two releases on purpose: this page does not describe a
+          feature until it works, and until 0028/0029 were applied two of the
+          three views returned an error naming a migration. They are applied
+          (`npm run db:check`, 31/31), so it can be said out loud.
+
+          The three cards are read from PLANNER_SECTIONS rather than written
+          here, for the same reason every count on this page is computed: a
+          fourth view would otherwise exist in the product and not on the page
+          that sells it. */}
+        <section className="w-full border-y border-line bg-card px-6 py-24 md:px-12 md:py-28 lg:px-20">
+          <div className="mx-auto max-w-6xl">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-ink">
+                Then it becomes work
+              </p>
+              <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
+                A deadline you agreed to is a different thing from one you read.
+              </h2>
+              <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
+                Say you are doing something and it gets a date and a state. The
+                planner keeps both — what you committed to, the cutoffs around
+                it, and the stretch of the year you are in — as one list you can
+                read two ways. Nothing is typed twice, and nothing is invented:
+                a date we have not confirmed is listed without a countdown
+                rather than guessed at.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {PLANNER_SECTIONS.map((view, i) => (
+                <PlannerCard
+                  key={view.id}
+                  href={view.href}
+                  step={String(i + 1)}
+                  title={view.label}
+                  body={view.blurb}
+                />
+              ))}
+            </div>
+
+            <div className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-3">
+              <ButtonLink href="/planner" shape="pill">
+                Open your planner
+              </ButtonLink>
+              {/* Worth saying, because it is a real property of the thing and
+                not a reassurance: /planner is behind a session, robots.ts
+                blocks it and the sitemap does not list it. */}
+              <p className="text-sm font-light text-ink-soft">
+                Private. Not indexed, and nobody else can see it.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* ── Honest by design ── the promise both halves are built on. */}
         <section className="w-full border-y border-line bg-card">
           <div className="mx-auto max-w-6xl px-6 py-24 md:px-12 md:py-28 lg:px-20">
@@ -573,6 +630,39 @@ function Stat({
         {note}
       </p>
     </div>
+  );
+}
+
+function PlannerCard({
+  href,
+  step,
+  title,
+  body,
+}: {
+  href: string;
+  step: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <a
+      href={href}
+      className="group flex flex-col rounded-2xl border border-line bg-surface p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card focus-visible:focus-ring active:translate-y-0 active:shadow-none"
+    >
+      <span
+        data-num
+        className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint"
+      >
+        View {step}
+      </span>
+      <p className="mt-3 text-base font-medium text-ink">{title}</p>
+      <p className="mt-2 flex-1 text-pretty text-sm font-light leading-relaxed text-ink-soft">
+        {body}
+      </p>
+      <span className="mt-4 text-sm font-medium text-accent-ink transition-transform duration-300 group-hover:translate-x-0.5">
+        Open →
+      </span>
+    </a>
   );
 }
 
