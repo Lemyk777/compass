@@ -74,12 +74,22 @@ export function HeroField() {
 
       {/* 3 — the aurora. Sizes are a single `min()` rather than four
         breakpoints: a blob has no content to reflow, so it should simply scale
-        with the viewport it is lighting. */}
-      <div className="field-glow field-glow-a -left-[12%] -top-[18%] h-[min(48rem,86vw)] w-[min(48rem,86vw)]" />
-      <div className="field-glow field-glow-b -bottom-[22%] left-[14%] h-[min(36rem,72vw)] w-[min(36rem,72vw)]" />
+        with the viewport it is lighting.
+
+        The VERTICAL anchors are `vh`, and that is not a style preference — it
+        is a bug fix. They were percentages of the section, and the section is
+        ~900px on a desktop and 1635px on a 375px phone, because below `lg` the
+        message and the card stack instead of sitting side by side. Measured at
+        375: the accent blob ended 774px above the fold and the ivy one started
+        90px BELOW the section it was clipped to, so two of the three lights
+        simply were not there on the layout most of our students read us on.
+        A viewport unit anchors each blob to what a reader can actually see,
+        which is the only frame that means the same thing in both layouts. */}
+      <div className="field-glow field-glow-a -left-[12%] -top-[16vh] h-[min(48rem,86vw)] w-[min(48rem,86vw)]" />
+      <div className="field-glow field-glow-b left-[13%] top-[54vh] h-[min(36rem,72vw)] w-[min(36rem,72vw)]" />
       {/* The warm one, and the only one on the right: it replaces the pair of
         blurred blobs that used to sit behind the opportunity card. */}
-      <div className="field-glow field-glow-c -right-[10%] top-[6%] h-[min(40rem,78vw)] w-[min(40rem,78vw)]" />
+      <div className="field-glow field-glow-c -right-[12%] -top-[2vh] h-[min(40rem,78vw)] w-[min(40rem,78vw)]" />
 
       {/* 4 — the sparks. Hidden below `sm`: on a phone the hero is one column,
         the card fills most of it, and three points crossing behind live text
