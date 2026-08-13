@@ -37,6 +37,9 @@ export default function robots(): MetadataRoute.Robots {
         "/admin",
         "/dashboard",
         "/onboarding",
+        // The planner is the student's own plan — behind a login, and nothing
+        // in it is a document a crawler could usefully hold.
+        "/planner",
         "/ambassador",
         "/auth/",
         // The partner console only. `/partners` (public) stays crawlable.
