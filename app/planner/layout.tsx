@@ -36,11 +36,15 @@ export default async function PlannerLayout({
       hasReport={Boolean(ctx.analysis)}
     >
       <div className="space-y-7">
+        {/* ONE heading for the window, and the view switcher under it. The
+            three views used to bring their own `<h1>` each, so the section had
+            two headings before any content and the views disagreed about how
+            tall their header was. */}
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-faint">
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">
             Your plan
-          </p>
-          <div className="mt-2">
+          </h1>
+          <div className="mt-3.5">
             <PlannerTabs />
           </div>
         </div>

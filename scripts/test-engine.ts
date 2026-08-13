@@ -101,6 +101,7 @@ import {
 import {
   PLANNER_COLUMNS,
   buildPlanner,
+  agendaHomeIndex,
   daysBetweenISO,
   intentStatusFromPlanner,
   isMovable,
@@ -4030,4 +4031,100 @@ test("the spine stays out of every client bundle", () => {
     [],
     `a client component imports the spine at runtime:\n${offenders.join("\n")}`,
   );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The agenda's window (release 3, #26).
+//
+// The agenda shows ONE period now instead of every month down the page, so
+// something has to decide which period it opens on. That decision is pure and
+// lives in lib/data/planner.ts, because a rule the planner cannot test is
+// folklore — the same reason `stepStatus` is there.
+
+test("the agenda's window opens on a period that answers 'what is next'", () => {
+  const months = (...keys: string[]) => keys.map((key) => ({ key }));
+
+  // The ordinary case: today's month is in the list.
+  assert.equal(
+    agendaHomeIndex(months("2026-07", "2026-08", "2026-09"), "2026-08-14"),
+    1,
+  );
+
+  // The case that matters. Nothing is due in August, and opening on July —
+  // which is behind — or on an empty window would answer "what is next" with
+  // either the past or with nothing. It steps to the next month that HAS
+  // something, which is the honest answer.
+  assert.equal(
+    agendaHomeIndex(months("2026-07", "2026-09", "2026-11"), "2026-08-14"),
+    1,
+  );
+
+  // Everything dated is already behind. The last month is the only honest
+  // answer; pretending there is a future period would be inventing one.
+  assert.equal(agendaHomeIndex(months("2026-03", "2026-05"), "2026-08-14"), 1);
+
+  // Everything is ahead — open on the first, not on some notion of "now" that
+  // has no period to sit in.
+  assert.equal(agendaHomeIndex(months("2027-01", "2027-04"), "2026-08-14"), 0);
+
+  // Empty list returns 0 so a caller can index without a guard, and the view
+  // renders its empty state rather than reading months[-1].
+  assert.equal(agendaHomeIndex([], "2026-08-14"), 0);
+
+  // Year boundaries are string comparisons on "YYYY-MM", which sort correctly.
+  // This is the assertion that fails if anyone switches to a numeric month.
+  assert.equal(
+    agendaHomeIndex(months("2026-09", "2026-12", "2027-02"), "2027-01-05"),
+    2,
+  );
+});
+
+test("the planner's window is stepped, and nothing in it moves on its own", () => {
+  const stepper = readFileSync(
+    path.join(process.cwd(), "components/planner/PeriodStepper.tsx"),
+    "utf8",
+  );
+  // The founder's rule for the whole section, and it now has a second surface:
+  // a card moves because a button was pressed. A carousel that advances itself
+  // would be the first thing here that moves without being asked.
+  assert.ok(
+    !/setInterval|setTimeout\(\s*\(\)\s*=>\s*[^)]*step/i.test(stepper),
+    "the period stepper advances on a timer — every step must be asked for",
+  );
+  // Disabled exactly when the step is impossible, the same rule the map's
+  // action bar follows: a lit control the handler then refuses teaches the
+  // structure's rules wrongly.
+  assert.match(
+    stepper,
+    /disabled=\{index <= 0\}/,
+    "stepping earlier is not disabled at the first period",
+  );
+  assert.match(
+    stepper,
+    /disabled=\{index >= count - 1\}/,
+    "stepping later is not disabled at the last period",
+  );
+  // Keys are bound on the group, not the document: otherwise an arrow press
+  // while typing a task title somewhere else on the page would step the window.
+  assert.ok(
+    !/addEventListener\(\s*["']keydown/.test(stepper),
+    "the stepper binds keys globally — it must bind them on its own group",
+  );
+});
+
+test("no client component in the planner reads the clock", () => {
+  // Release 1's rule, and the window is the first thing that would have been
+  // tempted to break it: `todayISO` is resolved once in the loader and passed
+  // down. It is what makes the views agree with each other, survive hydration,
+  // and stay unit-testable.
+  const dir = path.join(process.cwd(), "components/planner");
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith(".tsx")) continue;
+    const src = readFileSync(path.join(dir, f), "utf8");
+    if (!/^\s*["']use client["']/m.test(src)) continue;
+    assert.ok(
+      !/new Date\(\s*\)/.test(stripComments(src)),
+      `components/planner/${f} calls new Date() — todayISO comes from the loader`,
+    );
+  }
 });

@@ -383,3 +383,36 @@ export function buildPlanner(input: PlannerInputs): PlannerView {
 
   return { items, months, overdue, undated, columns, droppedCount };
 }
+
+/**
+ * Which period the agenda's window should open on.
+ *
+ * The agenda shows one period at a time, so something has to decide which one,
+ * and "the first" is wrong the moment a student has anything overdue or has
+ * scrolled a year ahead. It is pure and it lives here rather than in the
+ * component for the reason `stepStatus` does: the planner's rules are testable
+ * or they are folklore.
+ *
+ * Three cases, and the middle one is the one that matters:
+ *
+ *   • the month today falls in, when there is anything dated in it;
+ *   • otherwise the NEXT month that has something — "now" has to mean something
+ *     even in a month where nothing happens to be due, and showing an empty
+ *     window as the answer to "what is next" is how a working plan reads as an
+ *     empty one;
+ *   • otherwise the last month we have, which is the only honest answer when
+ *     every dated thing is already behind.
+ *
+ * Returns 0 for an empty list so a caller can index without a guard.
+ */
+export function agendaHomeIndex(
+  months: { key: string }[],
+  todayISO: string,
+): number {
+  if (months.length === 0) return 0;
+  const nowKey = todayISO.slice(0, 7);
+  const exact = months.findIndex((m) => m.key === nowKey);
+  if (exact >= 0) return exact;
+  const next = months.findIndex((m) => m.key > nowKey);
+  return next >= 0 ? next : months.length - 1;
+}
