@@ -136,7 +136,7 @@ export function GuideCard({
       // snapshots the incoming page, so the card the title is flying back into
       // was itself still sliding up. One motion per view, and it is the one that
       // carries meaning.
-      className={`group flex h-full flex-col rounded-2xl border p-4 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card active:scale-[0.99] active:duration-75 focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none ${
+      className={`group flex h-full flex-col rounded-2xl border p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card active:scale-[0.99] active:duration-75 focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none ${
         emphasis
           ? "border-accent/50 bg-accent-soft/25 hover:border-accent"
           : "border-line bg-card hover:border-accent"
@@ -145,7 +145,7 @@ export function GuideCard({
       <span className="flex items-start justify-between gap-2">
         <span className="min-w-0">
           <span
-            className="text-sm font-semibold text-ink"
+            className="text-base font-semibold leading-snug text-ink"
             style={
               transitionName
                 ? { viewTransitionName: transitionName }
@@ -155,7 +155,7 @@ export function GuideCard({
             {title}
           </span>
           {sub && (
-            <span className="ml-1.5 text-sm font-normal text-ink-faint">
+            <span className="ml-1.5 text-sm font-normal text-ink-soft">
               {sub}
             </span>
           )}
@@ -168,23 +168,30 @@ export function GuideCard({
         </span>
       </span>
       {meta && (
-        <span className="mt-1 text-xs leading-relaxed text-ink-faint">
+        <span className="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
           {meta}
         </span>
       )}
       {badge && (
         <span
           className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
-            emphasis ? "bg-accent text-on-fill" : "bg-accent-soft text-accent-ink"
+            emphasis
+              ? "bg-accent text-on-fill"
+              : "bg-accent-soft text-accent-ink"
           }`}
         >
           {badge}
         </span>
       )}
-      <span className="mt-1 line-clamp-3 text-sm leading-relaxed text-ink-soft">
+      <span className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-soft">
         {line}
       </span>
-      <span className="mt-2.5 text-xs font-medium text-accent">{cta}</span>
+      {/* `accent-ink`, not `accent`: DEFAULT is a FILL and measures 4.28:1 on
+        the page — the rule the palette already states, broken on the one word
+        that tells a reader the card opens. */}
+      <span className="mt-3 text-[0.8125rem] font-semibold text-accent-ink">
+        {cta}
+      </span>
     </Link>
   );
 }
