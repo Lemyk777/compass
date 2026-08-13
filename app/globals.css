@@ -112,6 +112,25 @@
   --cta: 16 25 43;
   --cta-ink: 255 255 255;
 
+  /* THE HERO FIELD — the light behind the landing page's first screen.
+     Five values, and they are values per theme rather than one alpha that
+     "looks about right", because a field tuned on a dark monitor is invisible
+     on the light one and a field tuned on the light one is a smear on the dark.
+
+     --field-line is the lattice. On an off-white page it is the page's own ink
+     at a whisper: graph paper, not a table. */
+  --field-line: 16 25 43;
+  --field-line-alpha: 0.055;
+  /* The aurora blobs. Their softness is baked into the radial-gradient's own
+     falloff — there is no filter here to animate, on purpose. */
+  --field-glow-alpha: 0.18;
+  /* The strip along the very top, behind the header. This is the half of the
+     hero that was reported as empty. */
+  --field-beam-alpha: 0.1;
+  /* The points that travel the lattice. Small, so they need to be nearly
+     opaque to register at all. */
+  --field-spark-alpha: 0.45;
+
   --shadow-card:
     0 1px 2px rgba(16, 25, 43, 0.04), 0 8px 24px -12px rgba(16, 25, 43, 0.12);
   --shadow-lift:
@@ -170,6 +189,17 @@
     --cta: 110 155 255;
     --cta-ink: 11 17 28;
 
+    /* The field, dark. Every value is HIGHER than the light theme's and the
+       lattice changes hue outright: 16 25 43 on a page of 11 17 28 is not a
+       hairline, it is nothing at all. A dark theme's grid has to be drawn in
+       light, which is a different token and not the same one at a different
+       alpha. */
+    --field-line: 132 160 208;
+    --field-line-alpha: 0.075;
+    --field-glow-alpha: 0.26;
+    --field-beam-alpha: 0.16;
+    --field-spark-alpha: 0.75;
+
     /* Pure black at 40–80%, not the navy at 4–22% the light theme uses. A
        translucent shade of the surface's own colour cannot darken that surface;
        under a dark card it simply is not there. */
@@ -220,6 +250,17 @@
   /* Not `ink` — that is the near-white slab this token exists to stop. */
   --cta: 110 155 255;
   --cta-ink: 11 17 28;
+
+  /* The field, dark. Every value is HIGHER than the light theme's and the
+     lattice changes hue outright: 16 25 43 on a page of 11 17 28 is not a
+     hairline, it is nothing at all. A dark theme's grid has to be drawn in
+     light, which is a different token and not the same one at a different
+     alpha. */
+  --field-line: 132 160 208;
+  --field-line-alpha: 0.075;
+  --field-glow-alpha: 0.26;
+  --field-beam-alpha: 0.16;
+  --field-spark-alpha: 0.75;
 
   --shadow-card:
     0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
@@ -565,6 +606,219 @@ summary::-webkit-details-marker {
   transform-origin: center;
   opacity: 0;
   animation: aside-pop 0.9s cubic-bezier(0.21, 0.7, 0.35, 1) 0.45s forwards;
+}
+
+/* ── THE HERO FIELD ────────────────────────────────────────────────────────
+   The light behind the landing page's first screen (#24). The hero used to
+   paint --surface and stop, which on the dark theme is a flat near-black
+   rectangle under the badge, the headline and the two calls to action — i.e.
+   the half of the page carrying the promise was the unlit half.
+
+   Four layers, and ONE rule holds all of them together: the only properties
+   that ever animate are `transform` and `opacity`. That is not a preference,
+   it is what keeps an always-on background off the main thread. The two
+   techniques every tutorial reaches for — animating `background-position`
+   across a mesh of radial gradients, and animating a `filter: blur` radius —
+   both re-paint every frame, and this page already paid for that once with the
+   rotating headline's blur loop.
+
+   Consequently the SOFTNESS IS IN THE PAINT. A blob is a radial-gradient whose
+   own falloff is the blur; the element is then merely translated, which the
+   compositor does for free. There is no `filter` anywhere in this block.
+
+   Note the stop colours: `rgb(var(--x) / 0)`, never the keyword `transparent`.
+   `transparent` is rgba(0, 0, 0, 0), so a gradient running to it interpolates
+   through black and leaves a grey bruise around every blob — most visible on
+   the light theme, which is where nobody was looking.
+
+   Reduced motion: the global guard below forces `animation-iteration-count: 1`
+   as well as a ~0 duration, so an infinite loop does not pause where it
+   started — it JUMPS TO ITS END STATE. Every loop here is therefore closed
+   (0% and 100% identical) so the end state IS the resting composition. The
+   travelling sparks are the deliberate exception: their 100% is `opacity: 0`,
+   so a reader who asked for less motion gets the field without the runners,
+   which is the right answer rather than three dots frozen mid-flight. */
+
+.field-grid-mask {
+  /* The mask lives on the STATIC parent so the lattice can drift underneath it
+     without dragging its own fade around. Anchored at 50% 0% — top-centre —
+     because the density belongs where the complaint was, and it dissolves well
+     before the bottom edge so the hero flows into the counts band instead of
+     ending at a line. */
+  -webkit-mask-image: radial-gradient(
+    118% 82% at 50% 0%,
+    #000 0%,
+    #000 40%,
+    rgba(0, 0, 0, 0) 78%
+  );
+  mask-image: radial-gradient(
+    118% 82% at 50% 0%,
+    #000 0%,
+    #000 40%,
+    rgba(0, 0, 0, 0) 78%
+  );
+}
+
+.field-grid {
+  --field-cell: 76px;
+  background-image:
+    linear-gradient(
+      to right,
+      rgb(var(--field-line) / var(--field-line-alpha)) 1px,
+      rgb(var(--field-line) / 0) 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(var(--field-line) / var(--field-line-alpha)) 1px,
+      rgb(var(--field-line) / 0) 1px
+    );
+  background-size: var(--field-cell) var(--field-cell);
+  animation: field-grid-drift 64s linear infinite;
+}
+
+/* Exactly one cell, on both axes. That is the whole trick: the end state is
+   pixel-identical to the start, so `linear` + `infinite` reads as one endless
+   drift with no reset to see — and the reduced-motion jump to the end state is
+   invisible for the same reason. Change the distance and the seam appears. */
+@keyframes field-grid-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(
+      calc(var(--field-cell) * -1),
+      calc(var(--field-cell) * -1),
+      0
+    );
+  }
+}
+
+.field-glow {
+  position: absolute;
+  border-radius: 9999px;
+  background-image: radial-gradient(
+    closest-side,
+    rgb(var(--field-hue) / var(--field-glow-alpha)) 0%,
+    rgb(var(--field-hue) / calc(var(--field-glow-alpha) * 0.42)) 45%,
+    rgb(var(--field-hue) / 0) 100%
+  );
+}
+
+/* Three drifts rather than one shared keyframe, because two blobs on the same
+   curve read as a pendulum however long you make it. Each has three waypoints
+   and its own period, and the periods do not divide each other (37/53/47s) so
+   the composition does not repeat within a visit. The negative delays start
+   them mid-loop, so the field is already alive on first paint instead of
+   easing into motion while the page is still settling. */
+.field-glow-a {
+  --field-hue: var(--accent);
+  animation: field-float-a 37s ease-in-out -13s infinite;
+}
+.field-glow-b {
+  --field-hue: var(--ivy);
+  animation: field-float-b 53s ease-in-out -29s infinite;
+}
+.field-glow-c {
+  --field-hue: var(--target);
+  animation: field-float-c 47s ease-in-out -7s infinite;
+}
+
+@keyframes field-float-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  34% {
+    transform: translate3d(7%, -5%, 0) scale(1.16);
+  }
+  67% {
+    transform: translate3d(-4%, 4%, 0) scale(0.92);
+  }
+}
+@keyframes field-float-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  38% {
+    transform: translate3d(-8%, 6%, 0) scale(1.1);
+  }
+  71% {
+    transform: translate3d(5%, -3%, 0) scale(0.95);
+  }
+}
+@keyframes field-float-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  42% {
+    transform: translate3d(6%, 7%, 0) scale(0.9);
+  }
+  76% {
+    transform: translate3d(-6%, -4%, 0) scale(1.12);
+  }
+}
+
+/* The strip along the very top — behind the transparent header, which is the
+   exact rectangle that got reported. A wash that fades out downward, plus a
+   sheen that crosses it slowly, so the top of the page has a light source
+   rather than an absence. */
+.field-beam {
+  background-image: linear-gradient(
+    180deg,
+    rgb(var(--accent) / var(--field-beam-alpha)) 0%,
+    rgb(var(--accent) / 0) 100%
+  );
+}
+
+.field-sweep {
+  background-image: linear-gradient(
+    74deg,
+    rgb(var(--accent) / 0) 32%,
+    rgb(var(--accent) / var(--field-beam-alpha)) 50%,
+    rgb(var(--accent) / 0) 68%
+  );
+  animation: field-sweep 23s ease-in-out infinite;
+}
+@keyframes field-sweep {
+  0%,
+  100% {
+    transform: translate3d(-15%, 0, 0);
+  }
+  50% {
+    transform: translate3d(15%, 0, 0);
+  }
+}
+
+/* Points travelling the lattice. This is the layer that makes the field belong
+   to THIS product rather than being aurora wallpaper: the page is about routes
+   a student can take, and something is moving along them. Three, slow, and
+   they fade in and out at the ends so nothing ever appears or vanishes at a
+   hard edge. `--field-run` is the distance, set per spark. */
+.field-spark {
+  position: absolute;
+  border-radius: 9999px;
+  background-color: rgb(var(--accent) / var(--field-spark-alpha));
+  box-shadow: 0 0 10px 1px
+    rgb(var(--accent) / calc(var(--field-spark-alpha) * 0.55));
+  animation: field-spark-run 29s linear infinite;
+}
+@keyframes field-spark-run {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  9% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--field-run), 0, 0);
+  }
 }
 
 /* Honor reduced-motion */
