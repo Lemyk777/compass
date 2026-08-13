@@ -488,3 +488,195 @@ Written first, in `scripts/test-engine.ts`:
 7. Every leaf gets its own row; no two nodes overlap.
 8. The four `can*` predicates agree with what the actions actually permit.
 9. An empty map (root only) lays out without throwing, width and height sane.
+
+---
+
+# Release 3 — one connected thing, and the question underneath it
+
+**Decided 2026-08-14 from published evidence rather than from taste**, because
+the founder said plainly that the answer was not yet known and asked for the
+decisions to be made on research. Sources are listed at the end of this section.
+Every decision below names the finding it rests on, so a future disagreement can
+be with the evidence rather than with an opinion.
+
+## 0. The finding that changes the shape of the product
+
+Two results, and together they invalidate the obvious design:
+
+1. **Career indecision is not one state.** A person-centred analysis of late
+   adolescents finds four profiles — Lower (39%), Moderate (31%), High (23%),
+   Very High (7%). A product that treats every arriving student as "completely
+   lost" is wrong for seven in ten of them; one that assumes they know is wrong
+   for three in ten.
+2. **Brief interventions barely move 11–16-year-olds. Sustained ones do.** The
+   review is explicit that short-term efforts to raise career decision-making
+   self-efficacy in that age band show *limited* effects, and that sustained or
+   longer-term approaches are more effective.
+
+**Therefore the answer to "what do I want to study" cannot be a screen.** No
+quiz, no onboarding flow and no five-option question is going to produce it —
+and shipping one would be the product doing exactly what the founder objected
+to: pretending the deep question had been handled.
+
+The thing this product already has that IS sustained is **the plan**. So the
+decision is: *the planner is the intervention.* It is not where a finished
+answer gets recorded; it is where the answer gets assembled, over months, out of
+what the student actually does.
+
+## 1. What a student who knows nothing sees first
+
+**Owner's call, 2026-08-14: we give them a CHOICE.** Not an empty plan waiting
+to be filled, and not a single prescribed next move — a small set of concrete
+starting points, and they pick one.
+
+That overrides the narrower version this section originally proposed (one
+recommended next move) and it is the better call, because it fixes the one thing
+the evidence below cannot: **a single recommendation is a judgement about a
+student we have not met yet.** Offering three or four real starting points and
+letting them choose is still one tap, still costs no profile — and the choice
+itself is the first piece of revealed preference we get.
+
+The evidence for the mechanism is unusually specific. A one-hour intervention
+giving adolescents **personalised recommendations for career exploration**
+raised career decision self-efficacy *and* widened interest into
+gender-non-traditional careers. What moved was not information and not
+introspection: it was being handed a concrete next thing to explore.
+
+And on why not to ask: people do not have reliable access to their own
+preferences, and stated preferences diverge from revealed ones. The
+recommendation from that literature is to combine them — stated preferences give
+motives, revealed preferences give truth. Progressive-disclosure practice says
+the same thing operationally: start from the minimal action and reveal more only
+as the person shows interest.
+
+So the planner's empty state is not empty and not a form. It is **a short set of
+real starting points, each saying what it will tell you** — and the answer
+accrues from behaviour afterwards: what was opened in the guide, what was
+committed to, what was dropped. Dropping something is signal, which is a second
+reason `dropped` is kept as an archive line rather than deleted.
+
+The constraint the evidence puts on that choice: every option must be a real
+thing that happens, not a category. "Pick a field" is a form with different
+paint. "Try what a week of this work is actually like", "see what someone in
+Almaty can enter this month", "read what this country actually costs" are
+choices, because each one ends somewhere the student can act.
+
+**Explicitly rejected: a RIASEC / Holland-style interest inventory as the way
+in.** The structure is well validated, but the scales are **confounded with
+prestige and gender**, and cultural applicability is a stated limitation outside
+the contexts they were built in. For our readers — mostly Central Asian, mostly
+choosing under family and status pressure — a six-letter code would launder
+exactly the pressures we exist to counteract into something that looks like a
+measurement. Interest signals may inform an *offer*; they may never be the
+answer.
+
+## 2. The mind map: thinking tool, or the structure of a decision?
+
+**Owner's call, 2026-08-14: it is the STRUCTURE OF A DECISION.** Branches are
+the real things — a country, a direction, a step — and the plan assembles out of
+them. Not a free-form diary that happens to allow links.
+
+This is a deliberate move away from "structure offered, never imposed", and it
+follows from what the map is for here. A blank canvas is the correct tool for
+someone who already knows what they are weighing; our reader does not, and a
+blank canvas asks them to invent the axes of their own decision before they have
+any. Typed branches supply the axes.
+
+"Possible selves" — imagining concrete future selves — is the established
+technique for the job the map is doing, and the literature describes it doing
+three things in sequence: increase self-awareness, **generate options**, and
+**formulate plans**. A tool that only did the first is a diary; one that only
+did the third is a form. The map has to carry all three, which means it cannot
+be a fixed taxonomy and cannot be shapeless.
+
+So a node **is** something: a country, a field of study, an area of work, or an
+opportunity — the same entities the spine (#16) already joins — and a plain-text
+node stays available for the thought that has no type yet. A typed node carries
+its real link, so a branch goes to the plan as a dated step rather than as a
+sentence, and the map stops being a place where thinking goes to be forgotten.
+
+Release 2's rule survives untouched: **we store the structure, never the
+coordinates.** Types make that rule stronger rather than weaker — a tree whose
+nodes mean something can be laid out for the reader, where a tree of free text
+can only be laid out for the author.
+
+This is also the answer to "the map's controls are terrible". The controls were
+hard to understand because the nodes meant nothing — there is no intuition about
+where to put a thought. Once a node can be a place or a field, the operations
+have an obvious meaning, and the action bar can name them in the product's own
+language rather than in tree vocabulary.
+
+## 3. Job simulations (Forage and the like)
+
+**Decision: a new catalog kind, surfaced inside the guide's area pages through
+the spine. One home, two surfaces — and we LINK OUT, we never build them.**
+
+The owner's call on 2026-08-14 settles the second half: Compass does not build
+simulations, courses or assessments of its own. It points at the real ones and
+is honest about them, which is the same relationship it already has with every
+other row in the catalog. That is a scope rule worth stating out loud, because
+"we could just build a small version ourselves" is the request that arrives
+every time a good external tool has an awkward sign-up.
+
+They are the single most evidence-backed item on the founder's list. Job
+simulations appear by name in the intervention literature as raising career
+decision self-efficacy, and the platform's own outcome data is strong enough to
+be worth stating: completers are reported as twice as likely to be hired, and
+87% said they gained practical skills. They are free.
+
+They are **not** competitions — nothing to win, no deadline — so they need the
+same treatment `community` just got: their own kind, or the catalog cannot
+describe them honestly. That is now a one-line change, which is the payoff of
+collapsing the five copies of the category list into one array.
+
+Where they surface is the point: the spine gives every area of work a "test it
+this month" step, and *a simulation of that exact job* is the best possible
+content for it. A student weighing investment banking gets the JP Morgan
+simulation on the investment-banking page, not in a list of 172 things.
+
+## 4. The three views become one window
+
+**Decision: one route, one dataset, three synchronised views — not three
+destinations.**
+
+This is the settled pattern rather than an invention: Notion, Linear, Asana,
+Trello and Smartsheet all present one dataset through table / board / calendar /
+timeline views that switch **without losing context**, with every view reading
+the same source so an edit in one appears in all. Our data model is already
+built for it — `lib/planner/load.ts` is a single loader, the views are already a
+registry, and nothing is duplicated between them.
+
+The founder's specific complaints follow from having shipped destinations
+instead of views:
+
+- **the agenda dumps every month down the page.** It becomes a **window on one
+  period, stepped with arrows** — which is what a calendar view is. The full
+  list stops being the default rather than stops existing.
+- **the three sub-tabs should be one window.** They become a view switcher over
+  one state: the same selection, the same filters, the same scroll anchor.
+- **nothing connects the plan to the guide.** The window gains the spine's own
+  chain as its source: what the student read becomes what the plan can offer.
+
+## Build order
+
+1. **The view switcher over one state.** Structural, no new data, and it is what
+   makes the rest expressible.
+2. **The agenda as a stepped window.**
+3. **The next-move card** — the empty state that is not empty.
+4. **Typed map nodes**, seeded from the spine.
+5. **The `simulation` kind**, surfaced through the spine's "test it this month".
+
+Order is deliberate: 1–2 are structure the founder named directly, 3 is the one
+that changes what the product IS, and 4–5 depend on both.
+
+## Sources
+
+- [Profiles of Career Indecision: A Person-Centered Approach with Italian Late Adolescents](https://pmc.ncbi.nlm.nih.gov/articles/PMC11120456/) — the four profiles.
+- [What's Your Vocation? A Meta-Analysis of Interventions Tackling Youth Educational and Professional Identity](https://www.tandfonline.com/doi/full/10.1080/15283488.2024.2394861) — 17 studies, 3,617 participants.
+- [Immediate Feedback Improves Career Decision Self-Efficacy and Aspirational Alignment](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6381004/) — personalised exploration recommendations.
+- [A systematic review on career interventions for high school students](https://www.researchgate.net/publication/387078683_A_systematic_review_on_career_interventions_for_high_school_students) — structured, multilevel, sustained.
+- [Holland Code Assessment and RIASEC](https://www.careerkey.org/fit/personality/holland-code-assessment-riasec) and [An examination of gender imbalance in Scottish adolescents' vocational interests](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8462744/) — the prestige and gender confounds.
+- [Stated versus revealed preferences: an approach to reduce bias](https://onlinelibrary.wiley.com/doi/full/10.1002/hec.4246) — why asking harder questions does not work.
+- [What Is Progressive Disclosure in UX?](https://www.uxpin.com/studio/blog/what-is-progressive-disclosure/) — minimal action first.
+- [Forage virtual job simulations](https://www.theforage.com/simulations) and [Job simulation teaches students professional skills](https://www.insidehighered.com/news/student-success/life-after-college/2024/05/15/job-simulation-teaches-students-professional) — the outcome data.
+- [Notion database views](https://www.sparxno.com/blog/notion-database-views) and [Trello workspace views](https://www.atlassian.com/blog/trello/trello-workspace-views-dashcards) — one dataset, many views, no duplication.

@@ -290,11 +290,41 @@ with a reason, and several were bugs first:
 - the map stores **structure, never coordinates**;
 - no client component in the planner calls `new Date()`.
 
-**This needs a design pass before code.** The founder has said plainly that the
-answer is not yet known, which makes "build what was asked" the wrong reflex:
-what was asked is a direction, and the open question — *how do you help someone
-answer "what do I want to study" without pretending a five-option quiz did it* —
-is the actual work. Brainstorm it, agree the shape, then build.
+**The design pass is DONE — decided 2026-08-14 from published evidence**, at
+the founder’s instruction, and written up as **Release 3 in
+[PLANNER_PLAN.md](PLANNER_PLAN.md)** with every source listed.
+
+The finding that changed the shape: career indecision is **four profiles, not
+one state** (Lower 39% / Moderate 31% / High 23% / Very High 7%), and **brief
+interventions barely move 11–16-year-olds while sustained ones do**. So the
+answer to "what do I want to study" cannot be a screen at all — no quiz, no
+onboarding flow. The thing this product already has that IS sustained is the
+plan, so **the planner is the intervention**: not where a finished answer is
+recorded, but where it is assembled over months out of what the student does.
+
+Four decisions follow, each with its evidence in PLANNER_PLAN.md — and the
+**owner settled three of them on 2026-08-14**, overriding the narrower versions
+the research had proposed:
+
+1. **A CHOICE, not an empty plan and not one prescribed next move.** A single
+   recommendation is a judgement about a student we have not met; three or four
+   real starting points cost the same one tap and the pick itself is the first
+   revealed preference we get. Constraint from the evidence: every option must
+   be a thing that HAPPENS, not a category — "pick a field" is a form with
+   different paint.
+2. **The map is the STRUCTURE OF A DECISION**, not a free canvas. Branches are
+   the real things — a country, a direction, a step — and the plan assembles out
+   of them. A blank canvas is the right tool for someone who already knows what
+   they are weighing; ours does not, and it asks them to invent the axes of
+   their own decision before they have any.
+3. **We LINK OUT and never build.** Compass does not make its own simulations,
+   courses or assessments. Worth stating out loud, because "we could build a
+   small version ourselves" arrives every time a good external tool has an
+   awkward sign-up.
+4. The three views become one window over one state. A RIASEC-style interest inventory is **explicitly
+rejected** — valid structure, but confounded with prestige and gender and
+culturally caveated, which for our readers would launder the exact pressures we
+exist to counteract.
 
 ### #22 — the landing page — DONE 2026-08-13
 
