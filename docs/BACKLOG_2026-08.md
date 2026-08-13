@@ -15,20 +15,29 @@ holds only what is **specific to this backlog** and not already written there.
 |---|---|
 | `main` and `develop` | **in sync**, everything merged and deployed |
 | PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
-| Progress | **16 of 23 done, 2 half-done, 5 untouched** — see §3 and §4 |
-| Unit tests | **127** (`npm run test:unit`) |
+| Progress | **17 of 23 done, 2 half-done, 4 untouched** — see §3 and §4 |
+| Unit tests | **151** (`npm run test:unit`) |
 
 ### ⚠️ One thing is pending and it is not code
 
-**Migration `0027_pinned_opportunities.sql` has not been applied.** Migrations in
-this project are run by hand in the Supabase SQL editor. Until it is:
+**Migrations `0028_planner.sql` and `0029_planner_maps.sql` have not been
+applied.** (`0027` now has been — `npm run db:check` on 2026-08-12 reported only
+0028 missing at that point.) Migrations in this project are run by hand in the
+Supabase SQL editor. Apply **0028 first**: `0029`'s "Send to plan" writes into
+the table 0028 creates. Until 0029 is applied, `/planner/maps` reads as "no
+maps" and starting one returns a readable error naming the migration.
 
-- the site works and NAO Cup is still pinned — that entry is in the curated
-  catalog, not the database;
-- but the **"Pin to the top" checkbox in the admin form will not work**. The
-  action returns a readable error naming the migration rather than a 500, and
-  `live.ts` reads the column defensively, so an un-migrated database degrades
-  instead of breaking.
+Until 0028 is applied:
+
+- the **agenda still works in full** — it is built from `opportunity_intents`,
+  the catalog and the roadmap, none of which are new;
+- **the student's own tasks do not save.** `planner_items` does not exist, so
+  the board shows only committed opportunities and "Add" returns a readable
+  error naming the migration rather than a 500. The loader reads the missing
+  table as "no tasks of your own" instead of throwing.
+- **and nothing can be moved to "In progress"**, because that writes
+  `status = 'doing'`, which the old CHECK constraint rejects. Same treatment: a
+  named error, not a crash.
 
 Run it, then `npm run db:check`.
 
@@ -48,9 +57,14 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 ## 2. Owner decisions already taken — do not re-litigate
 
-- **#17 planner = FULL scope.** Calendar + kanban board + mind maps, as a third
-  top-level section beside Opportunities and Guide, interacting with both the
-  catalog and the guide. Needs a DB migration.
+- **#17 planner = FULL scope, SPLIT INTO TWO RELEASES** (revised 2026-08-12).
+  The original decision was calendar + kanban board + mind maps in one go. The
+  scope is unchanged; the delivery is not. **Release 1 (shipped): calendar +
+  board.** They are two views of one list — the same rows, sorted by date or
+  grouped by status — so they share a data model, a renderer and a set of rules.
+  **Release 2: mind maps**, which share none of those (nodes and edges, a free
+  canvas, and the hardest part to operate from a keyboard). Cutting on that seam
+  shipped a whole first release instead of half of three.
 - **#11 career honesty = DIRECT tone.** Name the barriers explicitly:
   consulting and IB recruit from short lists of target schools and that is the
   main factor; game-dev hiring has contracted and a specialist degree often is
@@ -83,6 +97,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 | 8 | A question, not a task — and answering it exposed that #5 and #7 had been fixed one way and four other cities left the other way. 34 → 38 hubs. See the #8 entry in §4. |
 | 9 | 79 institutions, named and never ranked. See §4. |
 | 23 (buttons) | The button system was being bypassed by the page that mattered most, and three call sites had `!important` escapes pointing at why. See §5.9. |
+| 17 | **The planner, COMPLETE** — `/planner` (agenda) + `/planner/board` + `/planner/maps`. Delivered in two releases; both shipped. See §5.12 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
 
 **Not on the founder's list, added because it was needed:**
 
@@ -97,23 +112,25 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 ## 4. What is left, in detail
 
-**Five untouched (#11, #14, #15, #16, #17), two half-done (#22, #23).** By item
-count that is ~74% complete; by effort it is nearer half, because two of the five
-untouched are the largest things on the list — **#17** (the planner: a third
-top-level section with its own migration) and **#16** (the coherent spine), which
-could not have been started earlier because it depends on #9 and #14.
+**Four untouched (#11, #14, #15, #16), two half-done (#22, #23).** By item count
+that is ~78% complete; by effort it is nearer two thirds, because **#16** (the
+coherent spine) is now the largest thing left, and it could not have been started
+earlier because it depends on #9 and #14.
 
 Suggested order, and the reason for it:
 
 1. **#14** — Malaysia and Australia. Self-contained, and #16 needs it.
 2. **#15** — verify the unconfirmed dates. Pure verification, no design decisions,
-   and it protects the product's central promise.
+   and it protects the product's central promise. It is also worth more than it
+   was: an unconfirmed date now costs a row its place in the planner's calendar
+   as well as its countdown, so every one verified moves a card onto the agenda.
 3. **#11** — careers depth and the quiz. Two separable halves: re-tune the weights,
    rewrite the content in the direct tone already chosen.
 4. **#16** — the spine. Unblocked by #9, better after #14.
-5. **#17** — the planner. Its own release.
-6. The animation half of **#23**, and then the progress-tracker copy in **#22**,
-   which is blocked on #17 existing.
+5. The animation half of **#23**, and then the progress-tracker copy in **#22** —
+   **no longer blocked**, because #17 now exists and can honestly be advertised.
+6. The planner's **release 2**: mind maps, and the drag-and-drop enhancement over
+   the existing move action. See [PLANNER_PLAN.md](PLANNER_PLAN.md) §10.
 
 Each entry below states the ask, what is already known, the files, and the
 decision needed.
@@ -353,18 +370,21 @@ majors, and explain the from-home step better. This is the largest structural
 item after the planner and is best done **after** #9 and #14, because it needs
 the university layer to exist to connect to.
 
-### #17 — the planner (largest item)
+### #17 — the planner — DONE 2026-08-12, both releases
 
-Full scope, per the founder. A third top-level section beside Opportunities and
-Guide. Deadlines from `opportunity_intents` on a calendar, a board of goals with
-statuses and notes, free mind maps of a student's own paths, interacting with
-both the catalog and the guide. Needs a migration.
+Design and rules: [PLANNER_PLAN.md](PLANNER_PLAN.md) (§1–§10 the agenda and the
+board, §11 the maps). Findings: §5.12 and §5.13 below.
 
-Note there is prior art to reuse and not duplicate: `lib/data/roadmap.ts`
-already turns a graduation year into date-anchored phases, and
-`lib/data/intents.ts` already records "I'm doing this" plus when the student will
-start — which is, per the product's own note, the **only** behavioural metric
-that matters. The planner should read those, not invent a parallel store.
+**Delivered in two releases, and the seam is worth keeping.** The agenda and the
+board are two views of ONE list — the same rows, sorted by date or grouped by
+status. A mind map re-uses none of it: a different data shape, a different
+renderer, and the hardest part to operate from a keyboard. Cutting there shipped
+a whole first release instead of half of three, and the second release then
+landed without touching a line of the first.
+
+**Still open and deliberately not part of #17:** drag-and-drop, as an
+enhancement over the existing `movePlannerItem` action. The buttons stay either
+way — they are the accessible path, not the fallback.
 
 ---
 
@@ -730,6 +750,78 @@ again. One source is enough — the test requires `>= 1`.
 **Worth acting on:** this gate is not in CI (it needs the network and would make
 CI flaky), so it only fails when someone runs it. Run it before any release that
 touches the guide, not just when editing `sources`.
+
+### 5.12 The planner, and the three things it turned out to be
+
+**A rule is worth more in a type than in a component.** The product's oldest
+promise is "never show a countdown for a date we can't stand behind", and it had
+been enforced by every view remembering to check `dateConfirmed`. The planner
+adds two more views, so instead `PlannerItem.dueISO` is **null unless the date is
+confirmed** — there is simply no date for a view to draw. The test that pins it
+was proved by seeding the obvious mistake (`dueISO: c.deadline`) and watching it
+fail with `an unconfirmed deadline leaked into dueISO`.
+
+**Adding a state means auditing everything that reads it.** `opportunity_intents`
+gained `doing`, and the immediate consequence was silent: `/admin/intents`
+bucketed it into "planning" via an `else`, and its per-opportunity `total` — the
+sort key for "what students actually commit to" — omitted it entirely. Neither
+could fail a type-check. **When you widen a union that lives in a database
+column, grep for every `else` that used to be exhaustive.**
+
+**A layout cannot own a redirect that depends on the path.** `/planner/board`
+sent an unauthenticated visitor to `?next=/planner`, because the layout's
+`requireSession` runs before the page's and a layout never receives the pathname
+— so signing in landed them on the agenda rather than the board they had clicked.
+Found by reading the `Location` header, not by looking at the screen. The layout
+asks with `getSession` and renders nothing when there is none; each page requires
+its own path.
+
+Also confirmed, and worth repeating because it is the trap this codebase keeps
+re-finding: the bundle rule held only because `lib/data/planner.ts` takes a
+**structural subset** of `Competition` rather than importing the catalog's type
+module at runtime. `/planner` is 110 kB against an 87.8 kB baseline; the catalog
+alone would have been multiples of that.
+
+### 5.13 Mind maps: what storing structure instead of coordinates bought
+
+A mind map is conventionally a free canvas — drag a node anywhere, store x/y.
+That would have collided with four things this codebase already decided: no
+drag-and-drop library, a test that fails the build on an interactive element
+with no focus treatment, the planner's own "moving is a button, never a drag",
+and a student body mostly on phones.
+
+Decomposing the request the way §7 describes settles it. **The value of a
+student's map is the branching** — these are my options, this is what each needs.
+Where a box sits is the part that would rot, cost a drag implementation the
+keyboard cannot use, and be unusable at 375px. So the table stores a parent and
+a position, and `layoutTree` computes the picture.
+
+What that bought, beyond avoiding the collision:
+
+- **The geometry is assertable.** A parent sits at the midpoint of its children;
+  no two nodes overlap; the canvas has a size for a root on its own. Measured in
+  the browser as well: 9 nodes, **0 overlapping pairs**, page does not scroll
+  sideways while the 373px container scrolls inside itself.
+- **The outline can be a real ARIA tree.** Tab in and out, arrows within — which
+  is the pattern precisely because a canvas cannot have it.
+- **Two panes cannot disagree**, because one is a function of the other.
+
+Three things worth not re-discovering:
+
+- **Read structure from the tree, never from the drawing.** The first version of
+  "Add after" found the parent by comparing y-coordinates in the layout. It
+  worked on the example and is nonsense: the picture is derived from the tree, so
+  reading the tree back out of the picture inverts the dependency. `parentIdOf`
+  exists for this.
+- **A scratch page without a viewport meta tag reports `innerWidth: 980` under
+  mobile emulation**, not 375. §5.7's rule — check `innerWidth` before trusting
+  any layout number — caught it. Measure phone behaviour on a real app route, or
+  in a fixed-width container on the scratch page.
+- **The detector found nothing, and that is not the same as the design being
+  good.** The one real design decision here was refusing to introduce
+  `lucide-react` (installed, and used in exactly zero files) for this view alone:
+  drawn icons in one corner of a product whose entire vocabulary is text glyphs
+  would be the inconsistency, not the fix.
 
 ---
 

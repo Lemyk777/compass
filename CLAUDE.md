@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Compass — a guidance tool for international students. **Opportunities is the front door**: what competitions, olympiads, courses and programmes a student can actually enter, at their age, with honest dates and costs. The admission analysis (factor scores, per-school likelihood ranges, benchmarks, gap analysis, recommendations across **US · Italy · Hong Kong · UAE · Korea**) is now one opt-in input, not the product a student arrives for. Three roles share one backend: **student** (core product), **ambassador** (referral growth), **admin/founder** (metrics). Full product spec lives in [docs/compass-project-blueprint.md](docs/compass-project-blueprint.md); setup in [docs/SETUP.md](docs/SETUP.md); a map of the codebase in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); the plan of record for the front door in [docs/OPPORTUNITIES_PLAN.md](docs/OPPORTUNITIES_PLAN.md).
+Compass — a guidance tool for international students. **Opportunities is the front door**: what competitions, olympiads, courses and programmes a student can actually enter, at their age, with honest dates and costs. The **planner** ([docs/PLANNER_PLAN.md](docs/PLANNER_PLAN.md)) is the third section, where what they committed to becomes dated work. The admission analysis (factor scores, per-school likelihood ranges, benchmarks, gap analysis, recommendations across **US · Italy · Hong Kong · UAE · Korea**) is now one opt-in input, not the product a student arrives for. Three roles share one backend: **student** (core product), **ambassador** (referral growth), **admin/founder** (metrics). Full product spec lives in [docs/compass-project-blueprint.md](docs/compass-project-blueprint.md); setup in [docs/SETUP.md](docs/SETUP.md); a map of the codebase in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); the plan of record for the front door in [docs/OPPORTUNITIES_PLAN.md](docs/OPPORTUNITIES_PLAN.md).
 
 Stack: Next.js 14 (App Router, RSC, server actions) · TypeScript (strict) · Tailwind · Supabase (Postgres + Auth + RLS) · Anthropic `claude-haiku-4-5` · Recharts · Zod · framer-motion.
 
@@ -227,6 +227,90 @@ is its own route now:
   never in a shell** — hoisting it would drag framer into the guide's route
   bundles, which are server-rendered apart from two islands.
 - **The loading skeleton is on the LIST routes only, and that is load-bearing.** A `loading.tsx` is a Suspense boundary, and a boundary lets the server flush the response — status line included — before the page under it renders. One section-wide `app/guide/loading.tsx` therefore made every unknown id answer **200** carrying a not-found page. The skeleton (`components/guide/Skeleton.tsx`) now sits in six scoped files, which is why `/guide`, `/guide/work`, `/guide/places` and `/guide/cities` each live in a `(index)`/`(list)` route group — a group adds nothing to the URL but stops the subject pages inheriting the boundary. It is also where the wait actually is: a list page resolves the session (`guideView`), a subject page reads static data. Don't "tidy" the groups away or hoist the file back up.
+
+## The planner — one list, two views (read [docs/PLANNER_PLAN.md](docs/PLANNER_PLAN.md) first)
+
+The student's third section, at `/planner` (agenda) and `/planner/board`.
+Private — `robots.ts` blocks it, the sitemap does not list it, each page calls
+`requireSession` with **its own path**.
+
+- **The selection rule is one sentence: the planner holds things that have a
+  date and a state.** From that everything follows, including the split between
+  the views: **the agenda shows everything with a date, the board shows
+  everything with a state the student owns.** Committed opportunities are the
+  intersection and appear on both. SAT cutoffs and verified application
+  deadlines are dated facts about the world with no state, so they are agenda-
+  only — a card nobody can move is what breaks a board. Roadmap **phases** are
+  separators in the agenda and never items: a phase is a *period*, so it has
+  neither a single date nor a state.
+- **Nothing is duplicated. `movePlannerItem` dispatches on `origin`** — an
+  opportunity's state is written to `opportunity_intents`, a student's own task
+  to `planner_items`. One fact, one home; a snapshot table would drift from the
+  catalog the first time a deadline was corrected, and from the number
+  `/admin/intents` reads.
+- **`dueISO` is null unless the date is confirmed, and that is the whole
+  enforcement of "never show a countdown for a date we can't stand behind".**
+  The rule lives in the TYPE, not in a component, so a view added later cannot
+  forget it. Unconfirmed rows are still listed — under "Dates not announced
+  yet", with no position in time.
+- **`opportunity_intents.status` gained `doing` (migration 0028).** Not a
+  convenience for a middle column: we ask "when will you start?" and previously
+  had no way to record whether they did. `applied` keeps its exact meaning, so
+  every existing count is unchanged — but anything that *reads* status must
+  handle the new value, and `/admin/intents` counts it separately rather than
+  folding it into "planning".
+- **`dropped` is an archive line, not a column.** The row is kept (0022), but a
+  permanent column headed "gave up" on a school student's own planning screen is
+  not a neutral design choice.
+- **Moving is a button, never a drag.** Native HTML5 drag cannot be operated
+  from a keyboard and is poor on touch, and most of our students are on a phone.
+  `stepStatus` is the whole move model, and it is pure.
+- **`lib/planner/load.ts` is the ONLY place the planner touches `key-dates` or
+  `roadmap`**, it is server-only, and it reaches both through dynamic `import()`.
+  `lib/data/planner.ts` takes `PlannerCompetition` — a structural subset of
+  `Competition` — so the pure core never imports the catalog at all. Same bundle
+  rule as `guide-filter.ts`; `/planner` is 110 kB against an 87.8 kB baseline
+  because of it.
+- **No client component in the planner calls `new Date()`.** `todayISO` is
+  resolved once in the loader and passed down. That is what makes the two views
+  agree with each other, survive hydration, and stay unit-testable.
+- **A derived card cannot be deleted, only dropped** — deleting it would delete
+  the record of a commitment. Own tasks delete.
+- The views are a registry ([lib/data/planner-sections.ts](lib/data/planner-sections.ts)),
+  same as the guide's steps. Adding mind maps was one entry, as intended.
+
+### Mind maps (`/planner/maps`, migration 0029)
+
+- **We store the STRUCTURE, never the coordinates.** A node has a parent and a
+  position among its siblings; the picture is computed by `layoutTree` in
+  [lib/data/mindmap.ts](lib/data/mindmap.ts), so one tree always draws one map.
+  That is what keeps release 1's "moving is a button, never a drag" rule true
+  here (there is nothing to drag), what makes the outline keyboard-operable
+  without a second parallel interaction model, and what makes the geometry
+  unit-testable. If placement is ever really wanted, the additive answer is two
+  nullable **offset** columns on top of the computed position — never a switch
+  to stored coordinates.
+- **`buildTree` is defensive about three states the database can hold and a
+  renderer cannot survive**: a parent from another map (dropped), a cycle
+  (broken, not recursed into), and depth past `MINDMAP_MAX_DEPTH` (truncated).
+  The query is already scoped; the builder does not assume it was written right.
+- **The outline is a real ARIA tree — Tab moves in and out, arrows move within.**
+  Binding Tab to "indent" is the convention in note apps and it takes away the
+  one key a screen-reader user needs to leave the widget. Structural edits live
+  in the action bar instead, which also makes them visible rather than folklore.
+- **The action bar sits OUTSIDE the diagram's scroll container.** A dropdown
+  inside an `overflow-x: auto` ancestor is clipped; that is why there isn't one.
+  Each button is disabled exactly when its operation is impossible, using the
+  same pure predicates (`canIndent`/`canOutdent`/`canMoveUp`/`canMoveDown`) the
+  server actions check — a lit button the server then refuses teaches the
+  structure's rules wrongly.
+- **The diagram is `role="img"`; the outline is the content.** Two
+  representations of one tree, and only one of them is authoritative or
+  focusable. Two focusable copies is a worse experience, not a more accessible
+  one.
+- **"Send to plan" writes a `planner_items` row and keeps the node.** Deleting
+  the thinking at the moment you act on it is backwards, and a test asserts the
+  promote path contains no delete.
 
 ## Being findable is a feature (`sitemap.ts`, `robots.ts`, canonicals)
 
