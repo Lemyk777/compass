@@ -15,22 +15,24 @@ holds only what is **specific to this backlog** and not already written there.
 |---|---|
 | `main` and `develop` | **in sync**, everything merged and deployed |
 | PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
-| Progress | **16 of 23 done, 2 half-done, 5 untouched** — see §3 and §4 |
-| Unit tests | **127** (`npm run test:unit`) |
+| Progress | **19 of 23 done, 1 half-done, 3 untouched**, plus **#24 done** 2026-08-13 — see §3 and §4 |
+| Unit tests | **161** (`npm run test:unit`) |
 
-### ⚠️ One thing is pending and it is not code
+### The migrations are applied — verified 2026-08-13
 
-**Migration `0027_pinned_opportunities.sql` has not been applied.** Migrations in
-this project are run by hand in the Supabase SQL editor. Until it is:
+`npm run db:check` reports **all 31 checks pass**, which includes
+`planner_items` (0028) and `planner_map_nodes` (0029). The warning that used
+to stand here is gone: the agenda, the board, the student's own tasks, "In
+progress" and the mind maps are all live against a real schema.
 
-- the site works and NAO Cup is still pinned — that entry is in the curated
-  catalog, not the database;
-- but the **"Pin to the top" checkbox in the admin form will not work**. The
-  action returns a readable error naming the migration rather than a 500, and
-  `live.ts` reads the column defensively, so an un-migrated database degrades
-  instead of breaking.
+That is what unblocked the planner being **advertised** on the landing page —
+this product's own rule is that a feature is not described until it works, and
+until today two of the three planner surfaces would have returned a readable
+error naming a migration.
 
-Run it, then `npm run db:check`.
+Re-run `npm run db:check` before believing any note about what is applied,
+including this one. It is read-only, takes a couple of seconds, and it is the
+only thing here that cannot go stale silently — a note can.
 
 ### The one trap that will waste an hour
 
@@ -48,9 +50,14 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 ## 2. Owner decisions already taken — do not re-litigate
 
-- **#17 planner = FULL scope.** Calendar + kanban board + mind maps, as a third
-  top-level section beside Opportunities and Guide, interacting with both the
-  catalog and the guide. Needs a DB migration.
+- **#17 planner = FULL scope, SPLIT INTO TWO RELEASES** (revised 2026-08-12).
+  The original decision was calendar + kanban board + mind maps in one go. The
+  scope is unchanged; the delivery is not. **Release 1 (shipped): calendar +
+  board.** They are two views of one list — the same rows, sorted by date or
+  grouped by status — so they share a data model, a renderer and a set of rules.
+  **Release 2: mind maps**, which share none of those (nodes and edges, a free
+  canvas, and the hardest part to operate from a keyboard). Cutting on that seam
+  shipped a whole first release instead of half of three.
 - **#11 career honesty = DIRECT tone.** Name the barriers explicitly:
   consulting and IB recruit from short lists of target schools and that is the
   main factor; game-dev hiring has contracted and a specialist degree often is
@@ -83,6 +90,10 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 | 8 | A question, not a task — and answering it exposed that #5 and #7 had been fixed one way and four other cities left the other way. 34 → 38 hubs. See the #8 entry in §4. |
 | 9 | 79 institutions, named and never ranked. See §4. |
 | 23 (buttons) | The button system was being bypassed by the page that mattered most, and three call sites had `!important` escapes pointing at why. See §5.9. |
+| 24 | **The hero background.** Two bugs, neither of them the one reported. See §5.14. |
+| 25 | **Readability.** The dark theme was not lower-contrast, it was under-engineered: no type step, a 10px floor, and one theme's optics served by the other's settings. See §5.16. |
+| 22 | **CLOSED.** The planner is advertised now that it works; the bands below the hero ramp with the window. See §5.15. |
+| 17 | **The planner, COMPLETE** — `/planner` (agenda) + `/planner/board` + `/planner/maps`. Delivered in two releases; both shipped. See §5.12 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
 
 **Not on the founder's list, added because it was needed:**
 
@@ -97,28 +108,101 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 ## 4. What is left, in detail
 
-**Five untouched (#11, #14, #15, #16, #17), two half-done (#22, #23).** By item
-count that is ~74% complete; by effort it is nearer half, because two of the five
-untouched are the largest things on the list — **#17** (the planner: a third
-top-level section with its own migration) and **#16** (the coherent spine), which
-could not have been started earlier because it depends on #9 and #14.
+**Three untouched (#11, #14, #15), one half-done (#23).** #22 closed on
+2026-08-13; #16 is the spine and is what is left of the big work. By item count
+that is ~83% complete; by effort it is nearer two thirds, because **#16** (the
+coherent spine) is now the largest thing left, and it could not have been started
+earlier because it depends on #9 and #14.
 
 Suggested order, and the reason for it:
 
+**#24 is done** — it was taken first because the founder asked for it directly
+on 2026-08-13, and it turned out to be the natural way in to the animation half
+of #23: the open question there was always *which* moment had earned an authored
+one, and the answer arrived as a complaint. What is left:
+
 1. **#14** — Malaysia and Australia. Self-contained, and #16 needs it.
 2. **#15** — verify the unconfirmed dates. Pure verification, no design decisions,
-   and it protects the product's central promise.
+   and it protects the product's central promise. It is also worth more than it
+   was: an unconfirmed date now costs a row its place in the planner's calendar
+   as well as its countdown, so every one verified moves a card onto the agenda.
 3. **#11** — careers depth and the quiz. Two separable halves: re-tune the weights,
    rewrite the content in the direct tone already chosen.
 4. **#16** — the spine. Unblocked by #9, better after #14.
-5. **#17** — the planner. Its own release.
-6. The animation half of **#23**, and then the progress-tracker copy in **#22**,
-   which is blocked on #17 existing.
+5. The rest of the animation half of **#23**, and then the progress-tracker copy in **#22** —
+   **no longer blocked**, because #17 now exists and can honestly be advertised.
+6. The planner's **release 2**: mind maps, and the drag-and-drop enhancement over
+   the existing move action. See [PLANNER_PLAN.md](PLANNER_PLAN.md) §10.
 
 Each entry below states the ask, what is already known, the files, and the
 decision needed.
 
-### #22 — the landing page (hero DONE 2026-08-11, rest below)
+### #24 — the hero background — DONE 2026-08-13
+
+**The ask, verbatim:** the landing background at the top is "just dark, empty
+somehow"; make it more creative, and animate it properly.
+
+It is a fair report and it names a real hole. The hero paints `bg-surface` and
+nothing else. In light mode that is off-white and reads as clean; in dark mode
+`--surface` is `11 17 28`, so the top of the page — the header strip, the
+badge, the `<h1>`, the whole left 56% — is a **flat near-black rectangle**. The
+only light in the section was two blurred blobs, and both sat in the RIGHT
+column behind the opportunity card, i.e. nowhere near the part that was
+reported.
+
+So this is not "add a nice background". It is: the hero has a lit half and an
+unlit half, and the unlit half is the half carrying the promise.
+
+**What it must not become.** Every constraint from #23 still binds, and they are
+what make this hard rather than a copy-paste:
+
+- **No framer-motion on this page**, and no new client component. `/` is 107 kB
+  of first-load JS and that was hard-won (§5.8, and the landing section of
+  CLAUDE.md). A background is decoration; decoration does not get to cost
+  hydration.
+- **No animated `filter: blur`.** It cannot be composited, and the old rotating
+  headline already taught this lesson the expensive way — a 60px `<h1>`
+  re-rasterised on a 2.6s loop for as long as the tab was open. Softness has to
+  be baked into the *paint* (a radial-gradient falloff) so the only thing that
+  ever animates is a transform.
+- **Transform and opacity only.** That rules out the two techniques every
+  tutorial reaches for first: animating `background-position` across a mesh of
+  radial gradients, and animating a `filter` radius. Both run on the main
+  thread every frame.
+- **Both themes, from tokens.** A field tuned by eye on a dark monitor is
+  invisible on the light one, and vice versa. The strengths have to be per-theme
+  values, not one alpha that "looks about right".
+- **Reduced motion is already guarded, but the guard changes the design.**
+  `globals.css` zeroes `animation-duration`, `animation-delay` **and forces
+  `animation-iteration-count: 1`** — so an infinite loop does not stop where it
+  started, it jumps to its **end state** and stays there. Every looping keyframe
+  here therefore has to be **closed** (`0%` and `100%` identical), or a reader
+  who asked their system for less motion gets the composition frozen mid-stride.
+
+**What was looked at, and why it was not chosen.** The current vocabulary for
+this on the web is four things: an aurora / mesh gradient, a masked dot-or-line
+lattice, a cursor spotlight, and a particle field. The **cursor spotlight is the
+one that gets recommended most and it is the one that fits this product least** —
+it needs a pointer, it needs JS, and most of our students read us on a phone
+where it renders as nothing at all. A particle canvas is the same trade one step
+worse. That leaves aurora + lattice, which are both pure paint, and the whole
+craft is in not doing them the way the tutorials do.
+
+**Files:** `app/globals.css` (tokens + keyframes),
+`components/marketing/HeroField.tsx`, `app/(marketing)/page.tsx`.
+
+**Shipped.** `HeroField` — a server component, four layers, zero JavaScript.
+The beam and its sweep along the top edge, a masked lattice drifting exactly one
+cell, three radial-gradient blobs on unrelated periods weighted LEFT, and three
+points travelling the lattice. `/` is still **107 kB**, and the section now has
+*fewer* paints than before: the two `blur-3xl` blobs it replaced were the only
+`filter` on the page.
+
+Two bugs surfaced only by measuring, both written up in §5.14: the hero's promise
+paragraph was at 4.53:1 before any of this existed, and the blobs were anchored
+in percentages of a section that is 900px on a desktop and 1635px on a phone.
+
+### #22 — the landing page — DONE 2026-08-13
 
 The confirmed finding: the rotating-headline bug and the "too much gutter, the
 gap between the columns is too big" complaint were **the same problem**. Three
@@ -139,17 +223,17 @@ reverted, and the reason is worth keeping: **neither was a layout change.** The
 column was narrower than the copy, so nothing done inside the component could
 help. Fixed by making the type and the column agree — see §5.8.
 
-**Still open in #22:**
+**Both remaining halves closed on 2026-08-13:**
 
-- **Do not add the progress-tracker copy yet.** The founder asked for it, but
-  #17 does not exist. Advertising a feature that is not built is exactly what
-  this product's own rules forbid. This half of #22 is blocked on #17.
-- Everything below the hero is untouched: the counts band, `HowItWorks`, the
-  problem band, the guide cards, the report section. Nobody has audited those
-  against the founder's "gutters are too big" complaint at 1440+, and the
-  `max-w-6xl` on all of them is the same class of cap that was wrong in the hero
-  — 1152px of content inside a 1440px window. Measure before changing: the
-  Shell rule is that width buys **columns**, never line length.
+- **The planner is on the page.** It was held back because advertising a feature
+  that is not built is what this product's own rules forbid — and until
+  `0028`/`0029` were applied, two of the three views returned an error naming a
+  migration. `npm run db:check` reports 31/31, so the third door is now stated
+  in the page's own order: Opportunities → the guide → **the planner** → the
+  report. The three cards are read from `PLANNER_SECTIONS`, not written out.
+- **The gutters below the hero.** Measured, fixed, and pinned. See §5.15 — the
+  finding is that the complaint was right and the number was worse than anyone
+  had said: 768px of gutter at 1920, on a page whose hero runs to 1600.
 
 ### #23 — animations, interactions, and the button system
 
@@ -353,18 +437,21 @@ majors, and explain the from-home step better. This is the largest structural
 item after the planner and is best done **after** #9 and #14, because it needs
 the university layer to exist to connect to.
 
-### #17 — the planner (largest item)
+### #17 — the planner — DONE 2026-08-12, both releases
 
-Full scope, per the founder. A third top-level section beside Opportunities and
-Guide. Deadlines from `opportunity_intents` on a calendar, a board of goals with
-statuses and notes, free mind maps of a student's own paths, interacting with
-both the catalog and the guide. Needs a migration.
+Design and rules: [PLANNER_PLAN.md](PLANNER_PLAN.md) (§1–§10 the agenda and the
+board, §11 the maps). Findings: §5.12 and §5.13 below.
 
-Note there is prior art to reuse and not duplicate: `lib/data/roadmap.ts`
-already turns a graduation year into date-anchored phases, and
-`lib/data/intents.ts` already records "I'm doing this" plus when the student will
-start — which is, per the product's own note, the **only** behavioural metric
-that matters. The planner should read those, not invent a parallel store.
+**Delivered in two releases, and the seam is worth keeping.** The agenda and the
+board are two views of ONE list — the same rows, sorted by date or grouped by
+status. A mind map re-uses none of it: a different data shape, a different
+renderer, and the hardest part to operate from a keyboard. Cutting there shipped
+a whole first release instead of half of three, and the second release then
+landed without touching a line of the first.
+
+**Still open and deliberately not part of #17:** drag-and-drop, as an
+enhancement over the existing `movePlannerItem` action. The buttons stay either
+way — they are the accessible path, not the fallback.
 
 ---
 
@@ -731,7 +818,233 @@ again. One source is enough — the test requires `>= 1`.
 CI flaky), so it only fails when someone runs it. Run it before any release that
 touches the guide, not just when editing `sources`.
 
+### 5.12 The planner, and the three things it turned out to be
+
+**A rule is worth more in a type than in a component.** The product's oldest
+promise is "never show a countdown for a date we can't stand behind", and it had
+been enforced by every view remembering to check `dateConfirmed`. The planner
+adds two more views, so instead `PlannerItem.dueISO` is **null unless the date is
+confirmed** — there is simply no date for a view to draw. The test that pins it
+was proved by seeding the obvious mistake (`dueISO: c.deadline`) and watching it
+fail with `an unconfirmed deadline leaked into dueISO`.
+
+**Adding a state means auditing everything that reads it.** `opportunity_intents`
+gained `doing`, and the immediate consequence was silent: `/admin/intents`
+bucketed it into "planning" via an `else`, and its per-opportunity `total` — the
+sort key for "what students actually commit to" — omitted it entirely. Neither
+could fail a type-check. **When you widen a union that lives in a database
+column, grep for every `else` that used to be exhaustive.**
+
+**A layout cannot own a redirect that depends on the path.** `/planner/board`
+sent an unauthenticated visitor to `?next=/planner`, because the layout's
+`requireSession` runs before the page's and a layout never receives the pathname
+— so signing in landed them on the agenda rather than the board they had clicked.
+Found by reading the `Location` header, not by looking at the screen. The layout
+asks with `getSession` and renders nothing when there is none; each page requires
+its own path.
+
+Also confirmed, and worth repeating because it is the trap this codebase keeps
+re-finding: the bundle rule held only because `lib/data/planner.ts` takes a
+**structural subset** of `Competition` rather than importing the catalog's type
+module at runtime. `/planner` is 110 kB against an 87.8 kB baseline; the catalog
+alone would have been multiples of that.
+
+### 5.13 Mind maps: what storing structure instead of coordinates bought
+
+A mind map is conventionally a free canvas — drag a node anywhere, store x/y.
+That would have collided with four things this codebase already decided: no
+drag-and-drop library, a test that fails the build on an interactive element
+with no focus treatment, the planner's own "moving is a button, never a drag",
+and a student body mostly on phones.
+
+Decomposing the request the way §7 describes settles it. **The value of a
+student's map is the branching** — these are my options, this is what each needs.
+Where a box sits is the part that would rot, cost a drag implementation the
+keyboard cannot use, and be unusable at 375px. So the table stores a parent and
+a position, and `layoutTree` computes the picture.
+
+What that bought, beyond avoiding the collision:
+
+- **The geometry is assertable.** A parent sits at the midpoint of its children;
+  no two nodes overlap; the canvas has a size for a root on its own. Measured in
+  the browser as well: 9 nodes, **0 overlapping pairs**, page does not scroll
+  sideways while the 373px container scrolls inside itself.
+- **The outline can be a real ARIA tree.** Tab in and out, arrows within — which
+  is the pattern precisely because a canvas cannot have it.
+- **Two panes cannot disagree**, because one is a function of the other.
+
+Three things worth not re-discovering:
+
+- **Read structure from the tree, never from the drawing.** The first version of
+  "Add after" found the parent by comparing y-coordinates in the layout. It
+  worked on the example and is nonsense: the picture is derived from the tree, so
+  reading the tree back out of the picture inverts the dependency. `parentIdOf`
+  exists for this.
+- **A scratch page without a viewport meta tag reports `innerWidth: 980` under
+  mobile emulation**, not 375. §5.7's rule — check `innerWidth` before trusting
+  any layout number — caught it. Measure phone behaviour on a real app route, or
+  in a fixed-width container on the scratch page.
+- **The detector found nothing, and that is not the same as the design being
+  good.** The one real design decision here was refusing to introduce
+  `lucide-react` (installed, and used in exactly zero files) for this view alone:
+  drawn icons in one corner of a product whose entire vocabulary is text glyphs
+  would be the inconsistency, not the fix.
+
 ---
+
+### 5.14 The hero background, and the two bugs that were not the one reported
+
+The report was "the top is just dark, empty somehow". Both real defects found
+while fixing it were *underneath* that sentence, and neither is visible in a
+screenshot.
+
+**1. The hero's promise paragraph was already failing AA, before any background
+existed.** It was `text-ink/60`, which measures **4.53:1** on the bare light
+page — AA by three hundredths, with no headroom at all. Put anything behind it
+and it goes under: with the field lit it measured 3.71:1 light and 3.99:1 dark.
+It is `text-ink-soft` now, the token that exists for secondary copy, worth
+8.87:1 and 10.52:1 bare.
+
+The general lesson, and it is the one worth keeping: **an alpha modifier on
+`ink` is a colour nobody has checked.** `text-ink/60` looks like a design
+decision and is arithmetic — it lands wherever the surface happens to be. The
+named tokens are checked, in both themes, by a test that has been there for
+months. Reach for `ink-soft`/`ink-faint`, not for `/60`.
+
+That is also why the field's strengths are a **solve** rather than a taste. The
+bound is the worst composite the field can produce anywhere — the beam and its
+sweep overlapping, with the strongest blob centred on top — at which the
+faintest text on it must still clear 4.5:1. That fixes the glow at 0.20 light /
+0.22 dark and the beam at 0.12 / 0.13. Tuning by eye would have picked 0.30,
+which measures 4.14:1 in dark, and nothing on screen would have looked wrong.
+
+**2. The blobs were anchored in percentages of a box whose height doubles.**
+The hero section is ~900px on a desktop and **1635px at 375×812**, because below
+`lg` the message and the opportunity card stop sitting side by side and stack.
+So `-top-[18%]` put the accent blob's centre 774px above the fold, and
+`-bottom-[22%]` put the ivy one 90px *below* the section it is clipped to. Two
+of the three lights did not exist on a phone — while looking perfect on the
+display they were built on.
+
+They are anchored in `vh` now. A viewport unit is the only frame that means the
+same thing in both layouts. **Any decorative layer inside a container that
+reflows should be measured on the reflowed layout, not the built one**, and a
+percentage offset is the specific spelling that hides it.
+
+**What the design turned out to be.** Four layers, all paint, all composited:
+
+| layer | what it does | why it is that and not the obvious thing |
+|---|---|---|
+| beam + sweep | lights the top edge, behind the header | the literal rectangle that was reported |
+| lattice | hairline grid, masked at top-centre, drifting | drifts exactly ONE cell, so the end state is pixel-identical to the start and `linear infinite` has no seam |
+| aurora | three blobs, three unrelated periods | softness is the gradient's own falloff — **there is no `filter` anywhere**, so only transforms animate |
+| sparks | three points travelling the lattice | the page is about routes; something moves along them |
+
+Three details that only exist because they were got wrong first:
+
+- **Gradient stops are `rgb(var(--x) / 0)`, never `transparent`.** The keyword is
+  `rgba(0, 0, 0, 0)`, so a stop running to it interpolates through black and
+  leaves a grey bruise round every blob — worst on the light theme.
+- **Every loop is closed.** The reduced-motion guard forces
+  `animation-iteration-count: 1` *as well as* a ~0 duration, so an infinite
+  animation does not pause where it started — it **jumps to its end state**. A
+  loop whose 100% differs from its 0% therefore freezes a reduced-motion reader
+  mid-stride, which is precisely what the guard exists to prevent. The sparks
+  are the one deliberate exception: their 100% is `opacity: 0`, so reduced
+  motion *removes* the runners rather than freezing three dots in mid-air.
+- **Stacking is DOM order, not `-z-10`.** A negative z-index puts a child behind
+  its parent's own background whenever the parent is `position: relative` with
+  `z-index: auto` — which is exactly this section — so the field would have
+  painted invisibly under `bg-surface`. It is the section's first child and
+  carries no z-index; the content grid beside it gained `relative`.
+
+**What was surveyed and rejected.** The four live techniques are aurora/mesh, a
+masked lattice, a cursor spotlight, and a particle field. The **cursor spotlight
+is the most recommended and the worst fit here** — it needs a pointer, it needs
+JS, and it renders as nothing at all on the phone most of our students read us
+on. A particle canvas is the same trade one step worse. The two that survived
+are pure paint, and the craft is in not doing them the way the tutorials do:
+both standard recipes animate `background-position` or a `filter` radius, and
+both re-paint every frame.
+
+**Cost:** `/` is still **107 kB** of first-load JS, and the section now has
+*fewer* paints than before — the two `blur-3xl` blobs the field replaced were
+the only `filter` on the page.
+
+### 5.15 The gutters below the hero, and the measure that is not `ch`
+
+The founder's "the gutters are too big" was fixed in the hero on 2026-08-11 and
+never checked below it. At **1920 every section under the hero was 1152px of
+content — 768px of gutter, 40% of the display** — while the hero above ran to
+1600. The page did not look wide and then narrow by accident; it did that at
+exactly the point where the reader stopped looking at the product and started
+reading about it.
+
+Nine sections set `max-w-6xl` independently, which is the same duplication
+`Shell.tsx` exists to remove for the student's section, so the fix is the same
+shape: one `Band`, carrying Shell's own ramp (1152 → 1280 → 1440, stopping
+there). Gutter at 1920 is now 480.
+
+**The part worth keeping is how the prose was checked.** Widening a container is
+only an improvement if the extra width goes into columns; the failure mode is
+that a paragraph quietly stretches with it, which is how the country page
+reached 131 characters a line. So every paragraph on the page was measured in
+**real characters per line — text length over rendered line count**, and not in
+`ch`:
+
+> `ch` is the width of a ZERO, and reads about 20% narrow in this font. A
+> measurement of "78ch" is ~94 real characters. Measuring in the unit you are
+> capping in will tell you the cap is fine.
+
+One paragraph had gone over: the partners band, at **89 characters**. Its parent
+carried `max-w-2xl`, which is a rem measure and therefore does not track the
+16px type inside it — a cap in `rem` bounds the BOX, not the line. It carries
+`max-w-[60ch]` now (the repo's idiom, ~70 real characters) and the page has zero
+paragraphs over 75 at either 1440 or 1920.
+
+A test pins both halves: `Band` must keep all three steps, and no container in
+the landing files may cap at `max-w-6xl` without ramping past it.
+
+### 5.16 "The text is hard to read" — and it was not contrast
+
+The founder reported it on 2026-08-14 beside a competitor's screenshot. The
+competitor's site is light-themed, ours is dark-first, and **copying their
+numbers would have fixed nothing** — measured, every text token on
+`/opportunities` was already 5.48:1 or better.
+
+Three defects, none of which any contrast test could catch:
+
+**1. No type step.** The opportunity card held five stacked rows at 18 / 10 /
+15.2 / 14 / 14px inside 20px of padding — a title **1.18×** its own body. The
+guide card was worse: title and description both 14px, a step of exactly
+**1.00**, on the component that navigates 88 pages. "Everything is nearly the
+same size, nearly the same distance apart" is what a reader means by a wall of
+text, and it is a geometry problem wearing a colour problem's clothes.
+
+Both are fixed with size *and* weight, because size alone asked to carry a
+hierarchy will always be pushed too far. And the opportunity card's five tiers
+became four: eligibility and the deadline are the same KIND of fact — the terms
+of entry — so they are one group now rather than two rows 4px apart.
+
+**2. A 10px floor.** 69 labels at 10px and four at 9px across 21 files, carrying
+real information. Raised to 11px in one pass, because a floor that holds in some
+components is not a floor.
+
+**3. One typographic setting for two themes with opposite optical needs.**
+This is the finding worth keeping. Light text on a dark ground **blooms**: the
+glyphs spread into the background, strokes thicken, counters close and the space
+between letters is eaten. Colour was already a per-theme token in this product;
+letter-fit was not. `--type-tracking-body` is 0 in light and 0.008em in dark —
+~0.13px at 16px, enough to reopen the word shapes and not enough to read as
+letter-spacing — applied on `body` so it inherits everywhere an explicit
+`tracking-*` was not a decision.
+
+**Found on the way, and bigger than the report:** `text-accent` was painting
+real text at 22 call sites. `accent` DEFAULT is **4.28:1 on the page** — and the
+test that exists to name exactly this mistake covered `reach`/`target`/`likely`
+and stopped. The lesson generalises past this bug: **a test that names a class of
+mistake must enumerate the whole class**, or it becomes evidence that the
+uncovered members are fine.
 
 ## 6. Verification
 

@@ -62,7 +62,10 @@ export function RoadmapView() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={t("report.roadmapTitle")} hint={t("report.roadmapHint")} />
+      <PageHeader
+        title={t("report.roadmapTitle")}
+        hint={t("report.roadmapHint")}
+      />
 
       {roadmap ? (
         <RoadmapHeader roadmap={roadmap} today={today!} basePath={basePath} />
@@ -78,7 +81,10 @@ export function RoadmapView() {
             <span className="font-medium text-ink">
               This is your date-anchored skeleton plan.
             </span>{" "}
-            <a href={basePath} className="font-medium text-accent hover:underline">
+            <a
+              href={basePath}
+              className="font-medium text-accent-ink hover:underline"
+            >
               Run the analysis
             </a>{" "}
             to fold in your target schools&rsquo; real deadlines and a
@@ -109,8 +115,8 @@ export function RoadmapView() {
       )}
 
       <p className="text-center text-xs text-ink-faint">
-        Dates are indicative — always confirm on the official site before you rely
-        on them.
+        Dates are indicative — always confirm on the official site before you
+        rely on them.
       </p>
     </div>
   );
@@ -139,12 +145,16 @@ function RoadmapHeader({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-semibold text-ink">{roadmap.headline}</h2>
         {roadmap.cycleLabel && (
-          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${accent}`}>
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-medium ${accent}`}
+          >
             {roadmap.cycleLabel}
           </span>
         )}
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-ink-soft">{roadmap.subhead}</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+        {roadmap.subhead}
+      </p>
 
       {roadmap.operativeDeadlineISO ? (
         <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
@@ -161,7 +171,9 @@ function RoadmapHeader({
             <span data-num className="tabular-nums text-ink-soft">
               {formatDate(roadmap.operativeDeadlineISO)}
             </span>
-            {roadmap.runwayDays != null && <Countdown days={roadmap.runwayDays} />}
+            {roadmap.runwayDays != null && (
+              <Countdown days={roadmap.runwayDays} />
+            )}
           </span>
         </div>
       ) : roadmap.hasGraduationYear ? (
@@ -169,16 +181,16 @@ function RoadmapHeader({
           We don&rsquo;t have a to-the-day deadline we can stand behind for your
           current target schools — they admit on rolling or per-programme
           timelines. See{" "}
-          <span className="font-medium text-ink">Confirm these dates</span> below
-          and check each official page.
+          <span className="font-medium text-ink">Confirm these dates</span>{" "}
+          below and check each official page.
         </p>
       ) : (
         <p className="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-ink-soft">
-          <span className="font-medium text-ink">Add your graduation year</span> to
-          anchor this plan to your deadlines.{" "}
+          <span className="font-medium text-ink">Add your graduation year</span>{" "}
+          to anchor this plan to your deadlines.{" "}
           <a
             href={basePath === "/demo" ? "#" : "/onboarding"}
-            className="font-medium text-accent hover:underline"
+            className="font-medium text-accent-ink hover:underline"
           >
             Update profile
           </a>
@@ -203,8 +215,8 @@ function RoadmapPhases({ roadmap }: { roadmap: Roadmap }) {
           <p className="mt-1 text-sm text-ink-soft">
             We only show a countdown for deadlines we verified against the
             official page. For these schools the date is rolling, set per
-            programme, or not yet published — open each official page and confirm
-            before you rely on it.
+            programme, or not yet published — open each official page and
+            confirm before you rely on it.
           </p>
           <ul className="mt-4 space-y-2.5">
             {roadmap.unconfirmedDeadlines.map((a, i) => (
@@ -221,7 +233,8 @@ function RoadmapPhases({ roadmap }: { roadmap: Roadmap }) {
           </h3>
           <p className="mt-1 text-sm text-ink-soft">
             High-value profile moves that need more runway than you have before
-            this deadline — worth it for a next round or a gap year, not this one.
+            this deadline — worth it for a next round or a gap year, not this
+            one.
           </p>
           <ul className="mt-4 space-y-2.5">
             {roadmap.deferred.map((a, i) => (
@@ -258,7 +271,9 @@ function PhaseCard({ phase }: { phase: RoadmapPhase }) {
           {phase.rangeLabel}
         </span>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-ink-soft">{phase.focus}</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+        {phase.focus}
+      </p>
 
       {phase.actions.length > 0 ? (
         <ul className="mt-4 space-y-2.5">
@@ -268,8 +283,8 @@ function PhaseCard({ phase }: { phase: RoadmapPhase }) {
         </ul>
       ) : (
         <p className="mt-4 text-sm text-ink-faint">
-          Nothing scheduled here yet — the levers above feed into the phases with
-          dated deadlines.
+          Nothing scheduled here yet — the levers above feed into the phases
+          with dated deadlines.
         </p>
       )}
     </Card>
@@ -283,7 +298,13 @@ const SOURCE_ICON: Record<RoadmapAction["source"], React.ReactNode> = {
   note: <InfoIcon />,
 };
 
-function ActionRow({ action, muted }: { action: RoadmapAction; muted?: boolean }) {
+function ActionRow({
+  action,
+  muted,
+}: {
+  action: RoadmapAction;
+  muted?: boolean;
+}) {
   return (
     <li
       className={`flex flex-wrap items-start justify-between gap-x-4 gap-y-2 rounded-xl border border-line px-4 py-3 ${
@@ -351,7 +372,16 @@ function Countdown({ days }: { days: number }) {
 
 function PencilIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
     </svg>
   );
@@ -359,7 +389,16 @@ function PencilIcon() {
 
 function TrophyIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z" />
       <path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" />
     </svg>
@@ -368,7 +407,16 @@ function TrophyIcon() {
 
 function SparkIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />
     </svg>
   );
@@ -376,7 +424,16 @@ function SparkIcon() {
 
 function InfoIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <circle cx="12" cy="12" r="9" />
       <path d="M12 16v-4M12 8h.01" />
     </svg>
@@ -385,7 +442,16 @@ function InfoIcon() {
 
 function ClockIcon() {
   return (
-    <svg className="h-5 w-5 text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      className="h-5 w-5 text-ink-faint"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 2" />
     </svg>

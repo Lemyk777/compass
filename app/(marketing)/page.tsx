@@ -5,6 +5,8 @@ import { UniversityLogos } from "@/components/marketing/UniversityMarquee";
 import { MiniScorecard } from "@/components/marketing/MiniScorecard";
 import { MapScene } from "@/components/marketing/MapScene";
 import { RotatingHeadline } from "@/components/marketing/RotatingHeadline";
+import { HeroField } from "@/components/marketing/HeroField";
+import { Band } from "@/components/marketing/Band";
 import { HowItWorks } from "@/components/marketing/HowItWorks";
 import { FAQ } from "@/components/marketing/FAQ";
 import { FinalCTA } from "@/components/marketing/FinalCTA";
@@ -21,6 +23,7 @@ import { allCareerAreas } from "@/lib/data/careers";
 import { HUBS } from "@/lib/data/world";
 import { STUDY_DESTINATIONS } from "@/lib/data/study-destinations";
 import { HOME_ROUTES } from "@/lib/data/from-home";
+import { PLANNER_SECTIONS } from "@/lib/data/planner-sections";
 
 // The landing page tells the product's story in the product's own order.
 //
@@ -36,9 +39,10 @@ import { HOME_ROUTES } from "@/lib/data/from-home";
 //   3. how it works              (two questions)
 //   4. why lists usually fail    (the problem, restated for this product)
 //   5. where it leads            (the guide)
-//   6. honest by design          (the promise both halves are built on)
-//   7. the full admission read   (the report — still here, now opt-in)
-//   8. for organisations · FAQ · close
+//   6. and then it is work       (the planner — dates and states, two views)
+//   7. honest by design          (the promise both halves are built on)
+//   8. the full admission read   (the report — still here, now opt-in)
+//   9. for organisations · FAQ · close
 //
 // Every count on this page is computed from the data at request time, so it
 // cannot drift from what the student will actually see.
@@ -138,6 +142,11 @@ export default async function LandingPage() {
           image, no chart, no JS. Content is visible by default (CSS reveal),
           never gated by a scroll animation. */}
         <section className="relative flex min-h-[100svh] w-full items-center overflow-hidden bg-surface">
+          {/* The section's light, and the first child on purpose. It is
+            positioned with NO z-index, and so is the content grid below it, so
+            paint order is DOM order — no negative z-index, which would have put
+            it behind the section's own background and rendered it invisible. */}
+          <HeroField />
           {/* The split is 56/44 with a 56px gap, and both numbers are load-bearing.
             It used to be a fixed 560px track beside `1fr`, with the card capped at
             `max-w-lg` and pushed to the far edge — which spent 80px of gap plus
@@ -147,7 +156,7 @@ export default async function LandingPage() {
             second line reserved two lines and rendered one: a 63px hole that
             appeared and vanished every 2.6 seconds. Fractional tracks close the
             gap, the card fills its own column, and the type below fits. */}
-          <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 px-6 py-24 md:px-12 lg:grid-cols-[minmax(0,56fr)_minmax(0,44fr)] lg:gap-14 lg:py-28 xl:px-20">
+          <div className="relative mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 px-6 py-24 md:px-12 lg:grid-cols-[minmax(0,56fr)_minmax(0,44fr)] lg:gap-14 lg:py-28 xl:px-20">
             {/* Left — the message */}
             <div className="relative z-10 max-w-xl lg:max-w-none">
               <span className="rise-in inline-flex items-center rounded-full border border-ink/10 bg-card px-3.5 py-1.5 text-xs font-medium text-ink/60">
@@ -184,7 +193,14 @@ export default async function LandingPage() {
                 />
               </h1>
               <p
-                className="rise-in mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-ink/60 lg:max-w-[34rem]"
+                // `text-ink-soft`, not `text-ink/60`. This paragraph is the
+                // product's promise, it is 18px `font-light`, and it is the
+                // only normal-sized text in the hero sitting directly on the
+                // field rather than on an opaque card. At /60 it measured
+                // 4.53:1 on the bare page — AA by three hundredths — and 3.71:1
+                // with the field lit under it. `ink-soft` is the token that
+                // exists for secondary copy and is worth 8.87:1 bare.
+                className="rise-in mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-ink-soft lg:max-w-[34rem]"
                 style={{ animationDelay: "0.08s" }}
               >
                 Competitions, olympiads, courses and programmes you can actually
@@ -253,13 +269,6 @@ export default async function LandingPage() {
               className="rise-in relative w-full"
               style={{ animationDelay: "0.1s" }}
             >
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 -z-10"
-              >
-                <div className="absolute right-[8%] top-[6%] h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
-                <div className="absolute bottom-[4%] left-[12%] h-64 w-64 rounded-full bg-ivy/10 blur-3xl" />
-              </div>
               {/* `max-w-lg` stays below lg, where the card is centred under the
                 message and 512px is a sensible measure. From lg it must go: the
                 cap was leaving 113px of its own column empty. */}
@@ -272,7 +281,7 @@ export default async function LandingPage() {
 
         {/* ── What the list is made of ── the counts, from the data itself. */}
         <section className="w-full border-t border-black/5 bg-card px-6 py-20 md:px-12 lg:px-20">
-          <div className="mx-auto max-w-6xl">
+          <Band>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               <Stat
                 value={COMPETITIONS.length}
@@ -295,7 +304,7 @@ export default async function LandingPage() {
                 note="US, Italy, Hong Kong, the UAE and Korea — if and when you want that part."
               />
             </div>
-          </div>
+          </Band>
         </section>
 
         {/* ── How it works ── two questions, then the list. */}
@@ -303,7 +312,7 @@ export default async function LandingPage() {
 
         {/* ── The problem ── why lists like this usually fail a student. */}
         <section className="w-full border-y border-band-ink/10 bg-band px-6 py-24 text-band-ink md:px-12 md:py-28 lg:px-20">
-          <div className="mx-auto max-w-6xl">
+          <Band>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-band-ink/65">
               The problem
             </p>
@@ -342,12 +351,12 @@ export default async function LandingPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Band>
         </section>
 
         {/* ── Where it leads ── the guide, the second half of the student's section. */}
         <section className="w-full px-6 py-24 md:px-12 md:py-28 lg:px-20">
-          <div className="mx-auto max-w-6xl">
+          <Band>
             <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ivy">
                 Where it leads
@@ -394,12 +403,67 @@ export default async function LandingPage() {
                 body="Ways in that need no visa and no move — for when leaving isn't the plan, or isn't possible yet."
               />
             </div>
-          </div>
+          </Band>
+        </section>
+
+        {/* ── Then it becomes work ── the planner, the student's third section.
+          Held back for two releases on purpose: this page does not describe a
+          feature until it works, and until 0028/0029 were applied two of the
+          three views returned an error naming a migration. They are applied
+          (`npm run db:check`, 31/31), so it can be said out loud.
+
+          The three cards are read from PLANNER_SECTIONS rather than written
+          here, for the same reason every count on this page is computed: a
+          fourth view would otherwise exist in the product and not on the page
+          that sells it. */}
+        <section className="w-full border-y border-line bg-card px-6 py-24 md:px-12 md:py-28 lg:px-20">
+          <Band>
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-ink">
+                Then it becomes work
+              </p>
+              <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
+                A deadline you agreed to is a different thing from one you read.
+              </h2>
+              <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
+                Say you are doing something and it gets a date and a state. The
+                planner keeps both — what you committed to, the cutoffs around
+                it, and the stretch of the year you are in — as one list you can
+                read two ways. Nothing is typed twice, and nothing is invented:
+                a date we have not confirmed is listed without a countdown
+                rather than guessed at.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {PLANNER_SECTIONS.map((view, i) => (
+                <PlannerCard
+                  key={view.id}
+                  href={view.href}
+                  step={String(i + 1)}
+                  title={view.label}
+                  body={view.blurb}
+                />
+              ))}
+            </div>
+
+            <div className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-3">
+              <ButtonLink href="/planner" shape="pill">
+                Open your planner
+              </ButtonLink>
+              {/* Worth saying, because it is a real property of the thing and
+                not a reassurance: /planner is behind a session, robots.ts
+                blocks it and the sitemap does not list it. */}
+              <p className="text-sm font-light text-ink-soft">
+                Private. Not indexed, and nobody else can see it.
+              </p>
+            </div>
+          </Band>
         </section>
 
         {/* ── Honest by design ── the promise both halves are built on. */}
         <section className="w-full border-y border-line bg-card">
-          <div className="mx-auto max-w-6xl px-6 py-24 md:px-12 md:py-28 lg:px-20">
+          <Band className="px-6 py-24 md:px-12 md:py-28 lg:px-20">
             <h2 className="max-w-3xl text-balance text-3xl font-medium tracking-tight text-ink md:text-5xl">
               Honest by design
             </h2>
@@ -409,7 +473,7 @@ export default async function LandingPage() {
               facts never remove an opportunity from your list; unverified dates
               never get a countdown; and nothing is called free unless it is.
             </p>
-          </div>
+          </Band>
         </section>
 
         {/* ── The report ── still here, still free, now something you opt into.
@@ -417,7 +481,7 @@ export default async function LandingPage() {
           the university map and the logo row all belong to the admission
           analysis, and they say so. */}
         <section className="w-full bg-surface px-6 py-24 md:px-12 md:py-28 lg:px-20">
-          <div className="mx-auto max-w-6xl">
+          <Band>
             <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ivy">
@@ -473,7 +537,7 @@ export default async function LandingPage() {
               </div>
               <MapScene className="order-1 w-full lg:order-2" />
             </div>
-          </div>
+          </Band>
         </section>
 
         <section className="w-full border-y border-black/5 bg-card py-16">
@@ -488,12 +552,17 @@ export default async function LandingPage() {
         {/* ── For organisations ── the partner door, stated rather than hidden in
           the header where a phone never shows it. */}
         <section className="w-full px-6 py-20 md:px-12 lg:px-20">
-          <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-2xl border border-line bg-card p-8 md:flex-row md:items-center md:p-10">
+          <Band className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-line bg-card p-8 md:flex-row md:items-center md:p-10">
             <div className="max-w-2xl">
               <h2 className="text-balance text-2xl font-medium tracking-tight text-ink">
                 Running a competition, hackathon or programme?
               </h2>
-              <p className="mt-2 text-pretty text-base font-light leading-relaxed text-ink/60">
+              {/* Its own cap, in `ch`, because the parent’s `max-w-2xl` is a
+                rem measure and does not track the type: at 16px it rendered 89
+                real characters per line once the band widened to 1440. The
+                repo’s idiom is `max-w-[60ch]`, which lands at ~72 — a `ch` is
+                the width of a ZERO, not of an average letter. */}
+              <p className="mt-2 max-w-[60ch] text-pretty text-base font-light leading-relaxed text-ink/60">
                 Post it under your own name, logo and verification tick, and it
                 appears on the list students actually read — with your deadline
                 treated as the organiser&rsquo;s own word, not a scrape.
@@ -508,7 +577,7 @@ export default async function LandingPage() {
             >
               For organisations
             </ButtonLink>
-          </div>
+          </Band>
         </section>
 
         <FAQ />
@@ -516,7 +585,7 @@ export default async function LandingPage() {
         <FinalCTA signedIn={!!session} />
       </main>
 
-      <footer className="mx-auto max-w-6xl px-6 py-10 text-sm font-light text-ink-faint">
+      <footer className="mx-auto max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem] px-6 py-10 text-sm font-light text-ink-faint">
         <div className="flex flex-col items-start justify-between gap-4 border-t border-black/10 pt-8 sm:flex-row sm:items-center">
           <Logo className="text-ink/80" />
           <nav className="flex flex-wrap items-center gap-5">
@@ -567,6 +636,39 @@ function Stat({
         {note}
       </p>
     </div>
+  );
+}
+
+function PlannerCard({
+  href,
+  step,
+  title,
+  body,
+}: {
+  href: string;
+  step: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <a
+      href={href}
+      className="group flex flex-col rounded-2xl border border-line bg-surface p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card focus-visible:focus-ring active:translate-y-0 active:shadow-none"
+    >
+      <span
+        data-num
+        className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint"
+      >
+        View {step}
+      </span>
+      <p className="mt-3 text-base font-medium text-ink">{title}</p>
+      <p className="mt-2 flex-1 text-pretty text-sm font-light leading-relaxed text-ink-soft">
+        {body}
+      </p>
+      <span className="mt-4 text-sm font-medium text-accent-ink transition-transform duration-300 group-hover:translate-x-0.5">
+        Open →
+      </span>
+    </a>
   );
 }
 

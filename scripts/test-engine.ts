@@ -28,7 +28,10 @@ import {
 } from "@/lib/data/place-universities";
 
 import { RUBRIC, computeOverall, type FactorKey } from "@/lib/rubric";
-import { computeOverallFromFactors, computeBenchmarks } from "@/lib/ai/assemble";
+import {
+  computeOverallFromFactors,
+  computeBenchmarks,
+} from "@/lib/ai/assemble";
 import {
   gradeFromGraduationYear,
   graduationYearFromGrade,
@@ -82,6 +85,30 @@ import {
   guideMorph,
   nextGuideSection,
 } from "@/lib/data/guide-sections";
+import { INTENT_STATUSES } from "@/lib/data/intents";
+import { PLANNER_SECTIONS } from "@/lib/data/planner-sections";
+import {
+  MINDMAP_MAX_DEPTH,
+  buildTree,
+  canIndent,
+  canMoveDown,
+  canMoveUp,
+  canOutdent,
+  layoutTree,
+  type MapNode,
+  type MapNodeRow,
+} from "@/lib/data/mindmap";
+import {
+  PLANNER_COLUMNS,
+  buildPlanner,
+  daysBetweenISO,
+  intentStatusFromPlanner,
+  isMovable,
+  plannerStatusFromIntent,
+  stepStatus,
+  type PlannerInputs,
+  type PlannerStatus,
+} from "@/lib/data/planner";
 import {
   VALUE_LABEL,
   rankAreasByValues,
@@ -144,12 +171,14 @@ import {
 // A fixed "today" in the second half of the year → academic year end rolls to
 // the next year (June rollover), so a Class of 2027 student is in grade 12.
 const TODAY = new Date("2026-08-04T00:00:00Z");
-const allTen = Object.fromEntries(
-  RUBRIC.map((f) => [f.key, 10]),
-) as Record<FactorKey, number>;
-const allZero = Object.fromEntries(
-  RUBRIC.map((f) => [f.key, 0]),
-) as Record<FactorKey, number>;
+const allTen = Object.fromEntries(RUBRIC.map((f) => [f.key, 10])) as Record<
+  FactorKey,
+  number
+>;
+const allZero = Object.fromEntries(RUBRIC.map((f) => [f.key, 0])) as Record<
+  FactorKey,
+  number
+>;
 
 // ── Rubric / overall score ───────────────────────────────────────────────────
 test("rubric weights sum to 1.0", () => {
@@ -163,9 +192,10 @@ test("computeOverall: all 10s → 100, all 0s → 0", () => {
 });
 
 test("computeOverall is monotonic and bounded", () => {
-  const mid = Object.fromEntries(
-    RUBRIC.map((f) => [f.key, 5]),
-  ) as Record<FactorKey, number>;
+  const mid = Object.fromEntries(RUBRIC.map((f) => [f.key, 5])) as Record<
+    FactorKey,
+    number
+  >;
   const score = computeOverall(mid);
   assert.equal(score, 50);
   assert.ok(score > computeOverall(allZero));
@@ -217,10 +247,9 @@ test("plausibleAgeForGrade is a wide range, not a point", () => {
 });
 
 test("checkEligibility: unknown country never excludes", () => {
-  assert.deepEqual(
-    checkEligibility({ countries: ["US"] }, { country: null }),
-    { ok: true },
-  );
+  assert.deepEqual(checkEligibility({ countries: ["US"] }, { country: null }), {
+    ok: true,
+  });
 });
 
 test("checkEligibility: wrong country excludes", () => {
@@ -243,7 +272,10 @@ test("checkEligibility: inferred age fires only when the whole year is outside",
     true,
   );
   // Year 6 (11–12) vs "ages 13+" — entire group below → excluded.
-  const below = checkEligibility({ ageMin: 13 }, { ageRange: { min: 11, max: 12 } });
+  const below = checkEligibility(
+    { ageMin: 13 },
+    { ageRange: { min: 11, max: 12 } },
+  );
   assert.equal(below.ok === false && below.reason, "too_young");
 });
 
@@ -299,7 +331,11 @@ test("buildExtracurriculars: empty faculties shows the whole catalog", () => {
 });
 
 test("buildExtracurriculars: a chosen field never widens the list", () => {
-  const all = buildExtracurriculars({ today: TODAY, faculties: [], factors: [] });
+  const all = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
   const cs = buildExtracurriculars({
     today: TODAY,
     faculties: ["computer_science"],
@@ -334,12 +370,40 @@ function opp(over: Partial<Opportunity> & { id: string }): Opportunity {
 }
 
 const FILTER_POOL: Opportunity[] = [
-  opp({ id: "free-intl", cost: "free", level: "international", dateConfirmed: true, daysToDeadline: 10 }),
-  opp({ id: "funded-natl", cost: "funded", level: "national", alwaysOpen: true }),
-  opp({ id: "cert-paid", cost: "free_cert_paid", level: "national", dateConfirmed: true, daysToDeadline: 200 }),
-  opp({ id: "fee", cost: "one_time", level: "regional", dateConfirmed: true, daysToDeadline: 5 }),
+  opp({
+    id: "free-intl",
+    cost: "free",
+    level: "international",
+    dateConfirmed: true,
+    daysToDeadline: 10,
+  }),
+  opp({
+    id: "funded-natl",
+    cost: "funded",
+    level: "national",
+    alwaysOpen: true,
+  }),
+  opp({
+    id: "cert-paid",
+    cost: "free_cert_paid",
+    level: "national",
+    dateConfirmed: true,
+    daysToDeadline: 200,
+  }),
+  opp({
+    id: "fee",
+    cost: "one_time",
+    level: "regional",
+    dateConfirmed: true,
+    daysToDeadline: 5,
+  }),
   opp({ id: "unverified", level: "regional" }), // no cost, no date → unknown/TBA
-  opp({ id: "too-young", cost: "free", level: "international", notYetEligible: "from year 11" }),
+  opp({
+    id: "too-young",
+    cost: "free",
+    level: "international",
+    notYetEligible: "from year 11",
+  }),
 ];
 
 const ids = (items: Opportunity[]) => items.map((o) => o.id).sort();
@@ -353,13 +417,18 @@ test("filtering to free never includes a cost we haven't verified", () => {
   // The rule the whole money layer rests on: `unknown` and `varies` belong to
   // NO bucket. A filter that quietly lumps "we haven't checked" in with "free"
   // is the same lie as a card that does it.
-  const free = filterOpportunities(FILTER_POOL, { ...NO_FILTERS, cost: ["free"] });
+  const free = filterOpportunities(FILTER_POOL, {
+    ...NO_FILTERS,
+    cost: ["free"],
+  });
   assert.deepEqual(ids(free), ["free-intl", "funded-natl", "too-young"]);
   assert.ok(!ids(free).includes("unverified"));
   // "Free to learn, paid certificate" is not free either — it is its own bucket.
   assert.ok(!ids(free).includes("cert-paid"));
   assert.deepEqual(
-    ids(filterOpportunities(FILTER_POOL, { ...NO_FILTERS, cost: ["free_start"] })),
+    ids(
+      filterOpportunities(FILTER_POOL, { ...NO_FILTERS, cost: ["free_start"] }),
+    ),
     ["cert-paid"],
   );
   // Every bucket together still leaves the unverified row out.
@@ -373,7 +442,12 @@ test("filtering to free never includes a cost we haven't verified", () => {
 test("groups are ANDed, options inside a group are ORed", () => {
   // Two levels → either. A level plus a cost → both.
   assert.deepEqual(
-    ids(filterOpportunities(FILTER_POOL, { ...NO_FILTERS, levels: ["international", "regional"] })),
+    ids(
+      filterOpportunities(FILTER_POOL, {
+        ...NO_FILTERS,
+        levels: ["international", "regional"],
+      }),
+    ),
     ["fee", "free-intl", "too-young", "unverified"],
   );
   assert.deepEqual(
@@ -389,7 +463,8 @@ test("groups are ANDed, options inside a group are ORed", () => {
 });
 
 test("timing buckets say only what we can stand behind", () => {
-  const t = (b: TimingBucket) => ids(filterOpportunities(FILTER_POOL, { ...NO_FILTERS, timing: [b] }));
+  const t = (b: TimingBucket) =>
+    ids(filterOpportunities(FILTER_POOL, { ...NO_FILTERS, timing: [b] }));
   assert.deepEqual(t("closing"), ["fee", "free-intl"]); // confirmed and ≤ 30 days
   assert.deepEqual(t("open"), ["funded-natl"]); // no deadline to miss
   // TBA is the honest third state: no confirmed date and nothing to start today.
@@ -399,11 +474,20 @@ test("timing buckets say only what we can stand behind", () => {
 
 test("search takes all terms, in any order, over name and blurb", () => {
   const pool = [
-    opp({ id: "a", name: "International Robotics Olympiad", blurb: "Build a robot." }),
-    opp({ id: "b", name: "Essay Prize", blurb: "Write about robotics in society." }),
+    opp({
+      id: "a",
+      name: "International Robotics Olympiad",
+      blurb: "Build a robot.",
+    }),
+    opp({
+      id: "b",
+      name: "Essay Prize",
+      blurb: "Write about robotics in society.",
+    }),
     opp({ id: "c", name: "Maths Challenge", blurb: "Ten problems." }),
   ];
-  const q = (query: string) => ids(filterOpportunities(pool, { ...NO_FILTERS, query }));
+  const q = (query: string) =>
+    ids(filterOpportunities(pool, { ...NO_FILTERS, query }));
   assert.deepEqual(q("robot"), ["a", "b"]); // matches the blurb too
   assert.deepEqual(q("olympiad robotics"), ["a"]); // both terms, order irrelevant
   assert.deepEqual(q("  "), ["a", "b", "c"]); // whitespace is not a filter
@@ -411,14 +495,25 @@ test("search takes all terms, in any order, over name and blurb", () => {
 });
 
 test("only-what-I-can-enter-now drops the not-yet-eligible rows", () => {
-  const now = filterOpportunities(FILTER_POOL, { ...NO_FILTERS, openOnly: true });
+  const now = filterOpportunities(FILTER_POOL, {
+    ...NO_FILTERS,
+    openOnly: true,
+  });
   assert.ok(!ids(now).includes("too-young"));
   assert.equal(now.length, FILTER_POOL.length - 1);
 });
 
 test("facet counts lift their own group and keep the others", () => {
-  const f = { ...NO_FILTERS, cost: ["free"] as const, levels: ["international"] as const };
-  const facets = opportunityFacets(FILTER_POOL, { ...NO_FILTERS, cost: [...f.cost], levels: [...f.levels] });
+  const f = {
+    ...NO_FILTERS,
+    cost: ["free"] as const,
+    levels: ["international"] as const,
+  };
+  const facets = opportunityFacets(FILTER_POOL, {
+    ...NO_FILTERS,
+    cost: [...f.cost],
+    levels: [...f.levels],
+  });
   // Money counts ignore the money selection (what happens if I pick this
   // instead) but still respect the level one — only the two international rows
   // are in play, and both are free.
@@ -443,7 +538,11 @@ test("the chips and the badge can never disagree", () => {
   };
   const chips = activeChips(f);
   assert.equal(chips.length, activeFilterCount(f));
-  assert.equal(new Set(chips.map((c) => c.id)).size, chips.length, "chip keys must be unique");
+  assert.equal(
+    new Set(chips.map((c) => c.id)).size,
+    chips.length,
+    "chip keys must be unique",
+  );
   // Dismissing one chip removes exactly that one.
   for (const chip of chips) {
     assert.equal(activeFilterCount(withoutChip(f, chip)), chips.length - 1);
@@ -458,7 +557,11 @@ test("the chips and the badge can never disagree", () => {
 test("no filter combination can widen the student's matched list", () => {
   // Run against the REAL catalog: the filter narrows what buildExtracurriculars
   // already decided this student may enter, and may never add to it.
-  const plan = buildExtracurriculars({ today: TODAY, faculties: [], factors: [] });
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
   const matched = new Set(plan.items.map((o) => o.id));
   for (const filters of [
     { ...NO_FILTERS, cost: ["free"] as CostBucket[] },
@@ -468,7 +571,8 @@ test("no filter combination can widen the student's matched list", () => {
   ]) {
     const out = filterOpportunities(plan.items, filters);
     assert.ok(out.length <= plan.items.length);
-    for (const o of out) assert.ok(matched.has(o.id), `${o.id} was not in the matched set`);
+    for (const o of out)
+      assert.ok(matched.has(o.id), `${o.id} was not in the matched set`);
   }
 });
 
@@ -478,7 +582,10 @@ test("every faculty has at least 3 fully-filled career areas", () => {
     const areas = CAREER_AREAS_BY_FACULTY[f];
     assert.ok(areas && areas.length >= 3, `${f} has too few career areas`);
     for (const a of areas) {
-      assert.ok(a.title.trim() && a.what.trim() && a.path.trim(), `${f}/${a.title} has an empty field`);
+      assert.ok(
+        a.title.trim() && a.what.trim() && a.path.trim(),
+        `${f}/${a.title} has an empty field`,
+      );
     }
   }
 });
@@ -546,7 +653,10 @@ test("an unanswered refine leaves the areas exactly as curated", () => {
     ranked.map((r) => r.area.title),
     areas.map((a) => a.title),
   );
-  assert.ok(ranked.every((r) => !r.fits), "nothing may be badged a fit");
+  assert.ok(
+    ranked.every((r) => !r.fits),
+    "nothing may be badged a fit",
+  );
 });
 
 test("ranking reorders but never drops or duplicates an area", () => {
@@ -572,7 +682,10 @@ test("ranking reorders but never drops or duplicates an area", () => {
     );
     assert.equal(ranked[0].fits, anyMatch, `${f} badges the wrong thing`);
     if (!anyMatch) {
-      assert.ok(ranked.every((r) => !r.fits), `${f} badged a zero score`);
+      assert.ok(
+        ranked.every((r) => !r.fits),
+        `${f} badged a zero score`,
+      );
     }
   }
 });
@@ -606,7 +719,10 @@ test("every hub has a catch and a way in, and unique ids", () => {
     ids.add(h.id);
     assert.ok(h.city.trim() && h.country.trim(), `${h.id} is missing a name`);
     assert.ok(h.what.trim().length > 40, `${h.id} has no real description`);
-    assert.ok(h.catch.trim().length > 40, `${h.id} has no catch — that is an advert`);
+    assert.ok(
+      h.catch.trim().length > 40,
+      `${h.id} has no catch — that is an advert`,
+    );
     assert.ok(h.route.trim().length > 40, `${h.id} has no way in`);
     assert.ok(h.fields.length > 0, `${h.id} belongs to no field`);
     assert.ok(REGION_ORDER.includes(h.region), `${h.id} has an unknown region`);
@@ -632,8 +748,7 @@ test("every hub says what living there is like, costs, and demands", () => {
     );
     // Both halves, or it is a recommendation rather than a description.
     assert.ok(
-      h.whoThrives.trim().length > 120 &&
-        /look elsewhere/i.test(h.whoThrives),
+      h.whoThrives.trim().length > 120 && /look elsewhere/i.test(h.whoThrives),
       `${h.id} does not name who should go somewhere else instead`,
     );
   }
@@ -672,8 +787,12 @@ test("no chosen field ⇒ the whole map; a chosen one never widens it", () => {
   const groups = hubsByRegion(["law"]);
   assert.ok(groups.length > 0);
   const order = groups.map((g) => REGION_ORDER.indexOf(g.region));
-  assert.deepEqual(order, [...order].sort((a, b) => a - b));
-  for (const g of groups) assert.ok(g.hubs.length > 0, "an empty region survived");
+  assert.deepEqual(
+    order,
+    [...order].sort((a, b) => a - b),
+  );
+  for (const g of groups)
+    assert.ok(g.hubs.length > 0, "an empty region survived");
 });
 
 test("the home region leads the map", () => {
@@ -749,7 +868,11 @@ test("every area of work says who it suits AND who should look elsewhere", () =>
     avoid.add(area.notForYou.trim());
   }
   const n = allCareerAreas().length;
-  assert.equal(suits.size, n, "two areas claim to suit exactly the same person");
+  assert.equal(
+    suits.size,
+    n,
+    "two areas claim to suit exactly the same person",
+  );
   assert.equal(avoid.size, n, "two areas warn off exactly the same person");
 });
 
@@ -831,7 +954,10 @@ test("the guide's field parameter separates unstated from everything", () => {
 
   assert.equal(serializeFields([]), ALL_FIELDS);
   assert.equal(withFields("/guide/cities", null), "/guide/cities");
-  assert.equal(withFields("/guide/cities", []), `/guide/cities?f=${ALL_FIELDS}`);
+  assert.equal(
+    withFields("/guide/cities", []),
+    `/guide/cities?f=${ALL_FIELDS}`,
+  );
   assert.equal(withFields("/guide/cities", ["law"]), "/guide/cities?f=law");
   // Round trip: whatever a link writes, the next page reads back unchanged.
   for (const fields of [["law"], ["law", "engineering"], []] as const) {
@@ -846,7 +972,9 @@ test("the guide's field parameter separates unstated from everything", () => {
 // failure with no error anywhere, just a transition that stopped happening.
 test("every guide morph name is a valid, unique custom-ident", () => {
   const names = [
-    ...allCareerAreas().map(({ area }) => guideMorph("area", areaSlug(area.title))),
+    ...allCareerAreas().map(({ area }) =>
+      guideMorph("area", areaSlug(area.title)),
+    ),
     ...HUBS.map((h) => guideMorph("hub", h.id)),
     ...STUDY_DESTINATIONS.map((d) => guideMorph("place", d.id)),
   ];
@@ -917,7 +1045,11 @@ test("every city sits in exactly one country we profile", () => {
   }
   // Grouping by country must lose nobody: every hub still appears exactly once.
   const grouped = hubsByCountry([]).flatMap((g) => g.hubs);
-  assert.equal(grouped.length, HUBS.length, "grouping by country dropped a hub");
+  assert.equal(
+    grouped.length,
+    HUBS.length,
+    "grouping by country dropped a hub",
+  );
   assert.equal(new Set(grouped.map((h) => h.id)).size, HUBS.length);
   for (const g of hubsByCountry([])) {
     assert.ok(
@@ -1081,7 +1213,10 @@ test("no chosen field ⇒ every from-home route; field-free routes always show",
   assert.equal(homeRoutesForFaculties([]).length, HOME_ROUTES.length);
   for (const f of FACULTY_VALUES) {
     const routes = homeRoutesForFaculties([f]);
-    assert.ok(routes.length > 0, `${f} is told there is nothing to do from home`);
+    assert.ok(
+      routes.length > 0,
+      `${f} is told there is nothing to do from home`,
+    );
     assert.ok(routes.length <= HOME_ROUTES.length);
     for (const r of HOME_ROUTES.filter((x) => x.fields.length === 0)) {
       assert.ok(
@@ -1101,7 +1236,9 @@ test("no chosen field ⇒ every from-home route; field-free routes always show",
 test("cron auth refuses when CRON_SECRET is missing, not the reverse", () => {
   const req = (auth?: string) =>
     ({
-      headers: { get: (k: string) => (k === "authorization" ? (auth ?? null) : null) },
+      headers: {
+        get: (k: string) => (k === "authorization" ? (auth ?? null) : null),
+      },
     }) as unknown as NextRequest;
 
   const original = process.env.CRON_SECRET;
@@ -1207,7 +1344,9 @@ const relativeLuminance = (rgb: [number, number, number]) => {
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
   };
   return (
-    0.2126 * channel(rgb[0]) + 0.7152 * channel(rgb[1]) + 0.0722 * channel(rgb[2])
+    0.2126 * channel(rgb[0]) +
+    0.7152 * channel(rgb[1]) +
+    0.0722 * channel(rgb[2])
   );
 };
 const contrast = (a: [number, number, number], b: [number, number, number]) => {
@@ -1294,7 +1433,13 @@ test("both themes clear AA — every ink on every surface it lands on", () => {
     // DOES have to lift clear of a dark page — unlike the band, it cannot simply
     // stay dark — so this is a ceiling, not a floor.
     need("cta-ink on cta", "cta-ink", "cta", 4.5, "button label");
-    need("cta fill on surface", "cta", "surface", 3, "the button against the page");
+    need(
+      "cta fill on surface",
+      "cta",
+      "surface",
+      3,
+      "the button against the page",
+    );
     assert.ok(
       relativeLuminance(T["cta"]) < 0.55,
       `${name}: --cta has luminance ${relativeLuminance(T["cta"]).toFixed(3)} — ` +
@@ -1389,7 +1534,19 @@ test("no component paints text with a tier fill instead of its ink", () => {
 // The sequences below cannot occur in real Russian, so this stays safe for the
 // files that legitimately contain it (lib/data/geo.ts, the reasoning traces).
 test("no source file carries mojibake from a bad encoding round-trip", () => {
-  const MOJIBAKE = ["вЂ", "Гј", "Гі", "Гџ", "Г¶", "в†", "вњ“", "в”Ђ", "Д±", "Ã©", "â€"];
+  const MOJIBAKE = [
+    "вЂ",
+    "Гј",
+    "Гі",
+    "Гџ",
+    "Г¶",
+    "в†",
+    "вњ“",
+    "в”Ђ",
+    "Д±",
+    "Ã©",
+    "â€",
+  ];
   const roots = ["lib/data", "app/guide", "components/guide"];
 
   const walk = (dir: string): string[] =>
@@ -1433,7 +1590,10 @@ test("every country links to the body that actually sets its rules", () => {
         s.url.startsWith("https://"),
         `${d.id}: ${s.url} is not https — a rule read over http is a rule anyone can rewrite in transit`,
       );
-      assert.ok(!seen.has(s.url), `${s.url} is listed twice across destinations`);
+      assert.ok(
+        !seen.has(s.url),
+        `${s.url} is listed twice across destinations`,
+      );
       seen.add(s.url);
       // Official bodies only. An agency's page is a sales page, and a ranking
       // site is the thing this guide exists not to be.
@@ -1462,10 +1622,7 @@ test("destination fields and hub links resolve", () => {
 });
 
 test("every field reaches at least three destinations; empty in ⇒ all", () => {
-  assert.equal(
-    destinationsForFaculties([]).length,
-    STUDY_DESTINATIONS.length,
-  );
+  assert.equal(destinationsForFaculties([]).length, STUDY_DESTINATIONS.length);
   for (const f of FACULTY_VALUES) {
     assert.ok(
       destinationsForFaculties([f]).length >= 3,
@@ -1527,13 +1684,19 @@ test("a verified partner's post carries the name and the tick", () => {
 });
 
 test("verification is separate from listing — no verified_at, no tick", () => {
-  const [c] = competitionsFromRows([postRow()], [partnerRow({ verified_at: null })]);
+  const [c] = competitionsFromRows(
+    [postRow()],
+    [partnerRow({ verified_at: null })],
+  );
   assert.equal(c.partner?.name, "Astana Hub");
   assert.equal(c.partner?.verified, false);
 });
 
 test("suspending a partner removes its posts, not just its name", () => {
-  const rows = competitionsFromRows([postRow()], [partnerRow({ status: "suspended" })]);
+  const rows = competitionsFromRows(
+    [postRow()],
+    [partnerRow({ status: "suspended" })],
+  );
   assert.equal(rows.length, 0);
   // Same when the partner row is absent entirely (RLS hid it).
   assert.equal(competitionsFromRows([postRow()], []).length, 0);
@@ -1541,7 +1704,8 @@ test("suspending a partner removes its posts, not just its name", () => {
 
 test("a taken-down post is gone whatever the partner's state", () => {
   assert.equal(
-    competitionsFromRows([postRow({ published: false })], [partnerRow()]).length,
+    competitionsFromRows([postRow({ published: false })], [partnerRow()])
+      .length,
     0,
   );
 });
@@ -1567,7 +1731,10 @@ test("partner rows join the student pool as ordinary opportunities", () => {
 });
 
 test("a local partner post reaches its own country and nobody else", () => {
-  const live = competitionsFromRows([postRow({ region: "KZ" })], [partnerRow()]);
+  const live = competitionsFromRows(
+    [postRow({ region: "KZ" })],
+    [partnerRow()],
+  );
   const seen = (homeCountry: string | null) =>
     buildExtracurriculars({
       today: TODAY,
@@ -1596,7 +1763,10 @@ test("a local partner post reaches its own country and nobody else", () => {
 // ---------------------------------------------------------------------------
 
 test("a path is stored without its query string, ever", () => {
-  assert.equal(cleanPath("/auth/callback?code=SECRET&next=/x"), "/auth/callback");
+  assert.equal(
+    cleanPath("/auth/callback?code=SECRET&next=/x"),
+    "/auth/callback",
+  );
   assert.equal(cleanPath("/opportunities?ref=alibek#top"), "/opportunities");
   assert.equal(cleanPath("/guide/"), "/guide");
   assert.equal(cleanPath("/"), "/");
@@ -1625,7 +1795,10 @@ test("our own pages are never a traffic source", () => {
   assert.equal(externalHost("https://compass.app/guide", "compass.app"), null);
   assert.equal(externalHost("https://www.compass.app/x", "compass.app"), null);
   assert.equal(externalHost("https://t.me/chan", "compass.app"), "t.me");
-  assert.equal(externalHost("https://www.google.com/", "compass.app"), "google.com");
+  assert.equal(
+    externalHost("https://www.google.com/", "compass.app"),
+    "google.com",
+  );
   assert.equal(externalHost(null, "compass.app"), null);
   assert.equal(externalHost("not a url", "compass.app"), null);
 });
@@ -1721,7 +1894,10 @@ test("a visitor first seen in the comparison window is not counted as new", () =
   const rows = [
     // 10 days ago — outside the displayed 7 days, inside the loaded 14.
     view({ created_at: new Date(T0 - 10 * 86_400_000).toISOString() }),
-    view({ session_id: "s2", created_at: new Date(T0 - 3_600_000).toISOString() }),
+    view({
+      session_id: "s2",
+      created_at: new Date(T0 - 3_600_000).toISOString(),
+    }),
   ];
   const s = summarize(rows, T0, 7);
   const today = s.buckets[s.buckets.length - 1];
@@ -1731,7 +1907,11 @@ test("a visitor first seen in the comparison window is not counted as new", () =
 });
 
 test("the chart has one bucket per calendar slot, including the empty ones", () => {
-  const s = summarize([view({ created_at: new Date(T0).toISOString() })], T0, 30);
+  const s = summarize(
+    [view({ created_at: new Date(T0).toISOString() })],
+    T0,
+    30,
+  );
   assert.equal(s.buckets.length, 30);
   assert.equal(s.granularity, "day");
   assert.equal(summarize([], T0, 1).buckets.length, 24);
@@ -1760,7 +1940,10 @@ test("no referrer anywhere in a visit reads as Direct", () => {
 test("entry pages count visits that started there, not views", () => {
   const rows = [
     view({ created_at: new Date(T0).toISOString(), path: "/" }),
-    view({ created_at: new Date(T0 + 10_000).toISOString(), path: "/opportunities" }),
+    view({
+      created_at: new Date(T0 + 10_000).toISOString(),
+      path: "/opportunities",
+    }),
     view({ created_at: new Date(T0 + 20_000).toISOString(), path: "/" }),
   ];
   const s = summarize(rows, T0 + 30_000, 7);
@@ -1798,12 +1981,12 @@ test("durations are never shown as a bare number of seconds", () => {
 test("map-outlines.ts matches what the generator produces today", () => {
   const onDisk = readFileSync(
     path.join(process.cwd(), "lib", "data", "map-outlines.ts"),
-    "utf8"
+    "utf8",
   );
   assert.equal(
     renderModule().replace(/\r\n/g, "\n"),
     onDisk.replace(/\r\n/g, "\n"),
-    "public/data changed without `npm run map:outlines` — the landing map is drawing a stale coastline"
+    "public/data changed without `npm run map:outlines` — the landing map is drawing a stale coastline",
   );
 });
 
@@ -1813,16 +1996,25 @@ test("every country the map can show has an outline", () => {
     assert.ok(o, `${c.code} has no generated outline`);
     // A path that never closes a ring means the clip mask is empty, which
     // renders as a country-shaped hole rather than a country.
-    assert.ok(o.d.startsWith("M") && o.d.endsWith("Z"), `${c.code} path is malformed`);
+    assert.ok(
+      o.d.startsWith("M") && o.d.endsWith("Z"),
+      `${c.code} path is malformed`,
+    );
     assert.ok(o.img.w > 0 && o.img.h > 0, `${c.code} has no terrain box`);
     const [minLon, minLat, maxLon, maxLat] = o.bounds;
-    assert.ok(minLon < maxLon && minLat < maxLat, `${c.code} bounds are inverted`);
+    assert.ok(
+      minLon < maxLon && minLat < maxLat,
+      `${c.code} bounds are inverted`,
+    );
     // Markers are placed by inverting `bounds`, so one outside the box would be
     // drawn off the coastline entirely.
     for (const m of c.markers) {
       assert.ok(
-        m.lon >= minLon && m.lon <= maxLon && m.lat >= minLat && m.lat <= maxLat,
-        `${c.code}: ${m.name} sits outside the generated bounds`
+        m.lon >= minLon &&
+          m.lon <= maxLon &&
+          m.lat >= minLat &&
+          m.lat <= maxLat,
+        `${c.code}: ${m.name} sits outside the generated bounds`,
       );
     }
   }
@@ -1844,7 +2036,7 @@ test("every guide URL in the sitemap resolves to a real subject", () => {
   for (const url of urls) {
     assert.ok(
       url.startsWith(`${CANONICAL_URL}/`),
-      `${url} is not an absolute URL on the canonical domain`
+      `${url} is not an absolute URL on the canonical domain`,
     );
   }
 
@@ -1852,29 +2044,41 @@ test("every guide URL in the sitemap resolves to a real subject", () => {
 
   // The four steps and the section index, from the registry the tabs read.
   assert.ok(paths.includes("/guide"));
-  for (const s of GUIDE_SECTIONS) assert.ok(paths.includes(s.href), `${s.href} missing`);
+  for (const s of GUIDE_SECTIONS)
+    assert.ok(paths.includes(s.href), `${s.href} missing`);
   assert.ok(paths.includes("/"), "the landing page is missing");
   assert.ok(paths.includes("/opportunities"), "the front door is missing");
 
   const listed = (prefix: string) =>
-    paths.filter((p) => p.startsWith(prefix)).map((p) => p.slice(prefix.length));
+    paths
+      .filter((p) => p.startsWith(prefix))
+      .map((p) => p.slice(prefix.length));
 
   const areas = listed("/guide/work/");
   assert.equal(areas.length, allCareerAreas().length);
-  for (const slug of areas) assert.ok(areaBySlug(slug), `no area of work at ${slug}`);
+  for (const slug of areas)
+    assert.ok(areaBySlug(slug), `no area of work at ${slug}`);
 
   const places = listed("/guide/places/");
   assert.equal(places.length, STUDY_DESTINATIONS.length);
-  for (const id of places) assert.ok(destinationById(id), `no country at ${id}`);
+  for (const id of places)
+    assert.ok(destinationById(id), `no country at ${id}`);
 
   const cities = listed("/guide/cities/");
   assert.equal(cities.length, HUBS.length);
-  for (const id of cities) assert.ok(HUBS.some((h) => h.id === id), `no city at ${id}`);
+  for (const id of cities)
+    assert.ok(
+      HUBS.some((h) => h.id === id),
+      `no city at ${id}`,
+    );
 
   // The old country addresses are 308s, not pages: listing one would ask a
   // crawler to index a redirect.
   for (const id of LEGACY_GUIDE_PLACE_IDS) {
-    assert.ok(!paths.includes(`/guide/${id}`), `/guide/${id} is a redirect, not a page`);
+    assert.ok(
+      !paths.includes(`/guide/${id}`),
+      `/guide/${id} is a redirect, not a page`,
+    );
   }
 });
 
@@ -1887,23 +2091,31 @@ test("robots.txt does not block anything the sitemap advertises", () => {
   // how `Disallow: /partner` (the console) would also have hidden `/partners`
   // (the public list of organisations) — the exact bug this test exists for.
   const blocked = (pathname: string, rule: string) =>
-    rule.endsWith("$") ? pathname === rule.slice(0, -1) : pathname.startsWith(rule);
+    rule.endsWith("$")
+      ? pathname === rule.slice(0, -1)
+      : pathname.startsWith(rule);
 
   for (const entry of sitemapRoutes()) {
     const pathname = new URL(entry.url).pathname;
     for (const rule of disallow) {
       assert.ok(
         !blocked(pathname, rule),
-        `robots.txt rule "${rule}" blocks ${pathname}, which the sitemap lists`
+        `robots.txt rule "${rule}" blocks ${pathname}, which the sitemap lists`,
       );
     }
   }
 
   // And the private trees really are closed.
-  for (const priv of ["/dashboard", "/admin/traffic", "/api/track", "/partner"]) {
+  for (const priv of [
+    "/dashboard",
+    "/admin/traffic",
+    "/api/track",
+    "/partner",
+    "/planner",
+  ]) {
     assert.ok(
       disallow.some((rule) => blocked(priv, rule)),
-      `${priv} is crawlable`
+      `${priv} is crawlable`,
     );
   }
 });
@@ -1917,15 +2129,25 @@ test("robots.txt does not block anything the sitemap advertises", () => {
 // deterministic so it can be pinned here.
 
 const SCREEN_REGISTRY = buildRegistryIndex([
-  { id: "john-locke", name: "John Locke Essay Prize", url: "https://www.johnlockeinstitute.com/essay-competition" },
+  {
+    id: "john-locke",
+    name: "John Locke Essay Prize",
+    url: "https://www.johnlockeinstitute.com/essay-competition",
+  },
   { id: "cs50-ai", name: "CS50 AI", url: "https://cs50.harvard.edu/ai/" },
-  { id: "amc", name: "AMC 10/12 (math)", url: "https://maa.org/maa-invitational-competitions/" },
+  {
+    id: "amc",
+    name: "AMC 10/12 (math)",
+    url: "https://maa.org/maa-invitational-competitions/",
+  },
 ]);
 
 test("a URL differing only by www, trailing slash or query is the same page", () => {
   assert.equal(
     normalizeUrl("https://www.johnlockeinstitute.com/essay-competition/"),
-    normalizeUrl("https://johnlockeinstitute.com/essay-competition?utm_source=x"),
+    normalizeUrl(
+      "https://johnlockeinstitute.com/essay-competition?utm_source=x",
+    ),
   );
   assert.notEqual(
     normalizeUrl("https://cs50.harvard.edu/ai/"),
@@ -1935,10 +2157,19 @@ test("a URL differing only by www, trailing slash or query is the same page", ()
 
 test("a renamed duplicate is caught; a sibling programme on the same host is not", () => {
   // Same programme, padded name — containment catches what Jaccard misses.
-  assert.ok(nameSimilarity("John Locke Essay Prize", "John Locke Institute Essay Competition") >= 0.75);
+  assert.ok(
+    nameSimilarity(
+      "John Locke Essay Prize",
+      "John Locke Institute Essay Competition",
+    ) >= 0.75,
+  );
 
   const dup = screenDedup(
-    { id: "john-locke-institute-essay-competition", name: "John Locke Institute Essay Competition", url: "https://www.johnlockeinstitute.com/apply" },
+    {
+      id: "john-locke-institute-essay-competition",
+      name: "John Locke Institute Essay Competition",
+      url: "https://www.johnlockeinstitute.com/apply",
+    },
     SCREEN_REGISTRY,
   );
   assert.ok(shouldDrop(dup), "a renamed duplicate must not reach the queue");
@@ -1946,10 +2177,17 @@ test("a renamed duplicate is caught; a sibling programme on the same host is not
   // The old rule dropped anything sharing a HOST with the catalog, which made
   // every further course on a platform we already list undiscoverable.
   const sibling = screenDedup(
-    { id: "cs50-cybersecurity", name: "CS50 Cybersecurity", url: "https://cs50.harvard.edu/cybersecurity/" },
+    {
+      id: "cs50-cybersecurity",
+      name: "CS50 Cybersecurity",
+      url: "https://cs50.harvard.edu/cybersecurity/",
+    },
     SCREEN_REGISTRY,
   );
-  assert.ok(!shouldDrop(sibling), "a different programme on a known host must survive");
+  assert.ok(
+    !shouldDrop(sibling),
+    "a different programme on a known host must survive",
+  );
   assert.ok(
     sibling.some((w) => w.code === "same_site"),
     "…but the reviewer is told it shares a site",
@@ -1961,22 +2199,38 @@ test("a one-token overlap is not a duplicate", () => {
   // words are stripped, so a single surviving token would collapse a global
   // contest and a national one into each other.
   const index = buildRegistryIndex([
-    { id: "ioi", name: "International Olympiad in Informatics", url: "https://ioinformatics.org/" },
+    {
+      id: "ioi",
+      name: "International Olympiad in Informatics",
+      url: "https://ioinformatics.org/",
+    },
   ]);
   const res = screenDedup(
-    { id: "kazakh-informatics-olympiad", name: "Kazakhstan Informatics Olympiad", url: "https://olymp.kz/" },
+    {
+      id: "kazakh-informatics-olympiad",
+      name: "Kazakhstan Informatics Olympiad",
+      url: "https://olymp.kz/",
+    },
     index,
   );
   assert.ok(!shouldDrop(res));
 });
 
 test("a listing site is dropped; a social page depends on scope", () => {
-  assert.ok(shouldDrop(screenHost("https://opportunitydesk.org/2026/03/01/some-contest/", null)));
-  assert.ok(shouldDrop(screenHost("https://medium.com/@someone/top-10-contests", null)));
+  assert.ok(
+    shouldDrop(
+      screenHost("https://opportunitydesk.org/2026/03/01/some-contest/", null),
+    ),
+  );
+  assert.ok(
+    shouldDrop(screenHost("https://medium.com/@someone/top-10-contests", null)),
+  );
 
   // A global programme with nothing but an Instagram page is not one we can
   // stand behind; a city hackathon in Almaty announced there is.
-  assert.ok(shouldDrop(screenHost("https://www.instagram.com/some_contest/", null)));
+  assert.ok(
+    shouldDrop(screenHost("https://www.instagram.com/some_contest/", null)),
+  );
   const local = screenHost("https://www.instagram.com/almaty_hack/", "KZ");
   assert.ok(!shouldDrop(local));
   assert.ok(local.some((w) => w.code === "social_only"));
@@ -1991,7 +2245,10 @@ test("a page that says the programme has ended is flagged with the sentence", ()
     "The International Essay Contest for Young People concluded with the 2024 edition. " +
     "Thank you to everyone who took part over the years. ".repeat(6);
   const warnings = screenPage(
-    { name: "International Essay Contest for Young People", url: "https://example.org/essay" },
+    {
+      name: "International Essay Contest for Young People",
+      url: "https://example.org/essay",
+    },
     text,
   );
   const ended = warnings.find((w) => w.code === "discontinued");
@@ -2005,7 +2262,10 @@ test("a healthy competition page is not read as discontinued", () => {
   const text =
     "Registration for the 2027 cycle is closed. Applications reopen in September. " +
     "The Foo Challenge runs every year for students aged 13 to 18. ".repeat(6);
-  const warnings = screenPage({ name: "Foo Challenge", url: "https://example.org/foo" }, text);
+  const warnings = screenPage(
+    { name: "Foo Challenge", url: "https://example.org/foo" },
+    text,
+  );
   assert.ok(!warnings.some((w) => w.code === "discontinued"));
 });
 
@@ -2013,8 +2273,10 @@ test("screening quotes money instead of guessing a price", () => {
   const text =
     "The Bar Prize is open to students worldwide. There is a $25 entry fee, waived on request. " +
     "Submissions are judged by a panel. ".repeat(8);
-  const money = screenPage({ name: "Bar Prize", url: "https://example.org/bar" }, text)
-    .find((w) => w.code === "cost_signal");
+  const money = screenPage(
+    { name: "Bar Prize", url: "https://example.org/bar" },
+    text,
+  ).find((w) => w.code === "cost_signal");
   assert.ok(money, "a fee on the page must reach the reviewer");
   assert.match(money!.detail, /\$25/);
 });
@@ -2023,12 +2285,16 @@ test("a US-only page is flagged rather than silently recommended abroad", () => 
   const text =
     "The contest is open only to US citizens enrolled in a high school. " +
     "Entries are judged in three rounds. ".repeat(10);
-  const warnings = screenPage({ name: "Baz Contest", url: "https://example.org/baz" }, text);
+  const warnings = screenPage(
+    { name: "Baz Contest", url: "https://example.org/baz" },
+    text,
+  );
   assert.ok(warnings.some((w) => w.code === "country_locked"));
 });
 
 test("a page that never names the programme is flagged", () => {
-  const text = "We are a foundation supporting education across the region. ".repeat(12);
+  const text =
+    "We are a foundation supporting education across the region. ".repeat(12);
   const warnings = screenPage(
     { name: "Quux Robotics Challenge", url: "https://example.org/" },
     text,
@@ -2080,7 +2346,10 @@ test("no filter shows everything, and the neutral state is empty", () => {
 });
 
 test("options inside a group are ORed, groups are ANDed", () => {
-  const twoRegions = { ...NO_GUIDE_FILTERS, regions: ["europe", "asia_pacific"] as RegionKey[] };
+  const twoRegions = {
+    ...NO_GUIDE_FILTERS,
+    regions: ["europe", "asia_pacific"] as RegionKey[],
+  };
   // OR inside the group: both regions, not their intersection (which is empty).
   assert.equal(filterGuideRows(GROWS, twoRegions).length, 4);
   // AND across groups: those regions AND modelled.
@@ -2113,10 +2382,22 @@ test("a count from another group still reflects the filters that are on", () => 
 });
 
 test("search takes all terms in any order, and an empty query matches all", () => {
-  const q = (s: string) => filterGuideRows(GROWS, { ...NO_GUIDE_FILTERS, q: s });
-  assert.deepEqual(q("public germany").map((r) => r.id), ["germany"]);
-  assert.deepEqual(q("GERMANY").map((r) => r.id), ["germany"], "case-insensitive");
-  assert.deepEqual(q("univers").map((r) => r.id), ["germany", "japan"], "substring");
+  const q = (s: string) =>
+    filterGuideRows(GROWS, { ...NO_GUIDE_FILTERS, q: s });
+  assert.deepEqual(
+    q("public germany").map((r) => r.id),
+    ["germany"],
+  );
+  assert.deepEqual(
+    q("GERMANY").map((r) => r.id),
+    ["germany"],
+    "case-insensitive",
+  );
+  assert.deepEqual(
+    q("univers").map((r) => r.id),
+    ["germany", "japan"],
+    "substring",
+  );
   assert.equal(q("   ").length, GROWS.length, "blank query is not a filter");
   assert.equal(q("germany japan").length, 0, "terms are ANDed");
 });
@@ -2137,7 +2418,9 @@ test("filters survive a round trip through the URL", () => {
     modelledOnly: false,
   });
   // A repeated region is a hand-edited URL, not a state the panel can produce.
-  assert.deepEqual(parseGuideFilters({ r: "europe,europe" }).regions, ["europe"]);
+  assert.deepEqual(parseGuideFilters({ r: "europe,europe" }).regions, [
+    "europe",
+  ]);
 });
 
 // ── Interaction & class-composition invariants ───────────────────────────────
@@ -2155,7 +2438,9 @@ const sourceFiles = (): string[] => {
       if (e.isDirectory()) return e.name === "node_modules" ? [] : walk(full);
       return /\.tsx?$/.test(e.name) ? [full] : [];
     });
-  return ["app", "components"].flatMap((r) => walk(path.join(process.cwd(), r)));
+  return ["app", "components"].flatMap((r) =>
+    walk(path.join(process.cwd(), r)),
+  );
 };
 const rel = (f: string) =>
   path.relative(process.cwd(), f).split(path.sep).join("/");
@@ -2175,8 +2460,11 @@ test("no `!important` Tailwind escapes — they mark a component that won't let 
       .forEach((line, i) => {
         // `!` directly before a utility-shaped token (needs the dash, so `!isOpen`
         // and `!==` are not matches).
-        const hits = line.match(/(?<=[\s"'`{])!(?:[a-z-]+:)*[a-z][a-z0-9]*-[a-z0-9./[\]%-]+/g);
-        for (const h of hits ?? []) offenders.push(`${rel(file)}:${i + 1} ${h}`);
+        const hits = line.match(
+          /(?<=[\s"'`{])!(?:[a-z-]+:)*[a-z][a-z0-9]*-[a-z0-9./[\]%-]+/g,
+        );
+        for (const h of hits ?? [])
+          offenders.push(`${rel(file)}:${i + 1} ${h}`);
       });
   }
   assert.deepEqual(
@@ -2223,7 +2511,9 @@ test("every self-styled interactive element has a focus treatment", () => {
       if (!/rounded|border|bg-|shadow|px-|py-|p-\d|flex/.test(attrs)) continue;
       if (/focus-visible|focus-ring|focus:/.test(attrs)) continue;
       if (/sr-only/.test(attrs)) continue;
-      offenders.push(`${rel(file)}:${src.slice(0, m.index).split("\n").length} <${m[1]}>`);
+      offenders.push(
+        `${rel(file)}:${src.slice(0, m.index).split("\n").length} <${m[1]}>`,
+      );
     }
   }
   assert.deepEqual(
@@ -2280,7 +2570,10 @@ test("every destination we profile names at least three institutions", () => {
 test("the university registry has no key that is not a destination", () => {
   const ids = new Set(STUDY_DESTINATIONS.map((d) => d.id));
   for (const key of Object.keys(PLACE_UNIVERSITIES)) {
-    assert.ok(ids.has(key), `place-universities has "${key}", which is not a destination`);
+    assert.ok(
+      ids.has(key),
+      `place-universities has "${key}", which is not a destination`,
+    );
   }
 });
 
@@ -2293,7 +2586,10 @@ test("every named city is either a hub of that destination, or explicitly null",
     const own = new Set(d.hubs);
     for (const u of universitiesForPlace(d.id)) {
       if (u.hub === null) continue;
-      assert.ok(hubIds.has(u.hub), `${d.id}: ${u.name} points at unknown hub "${u.hub}"`);
+      assert.ok(
+        hubIds.has(u.hub),
+        `${d.id}: ${u.name} points at unknown hub "${u.hub}"`,
+      );
       assert.ok(
         own.has(u.hub),
         `${d.id}: ${u.name} sits in hub "${u.hub}", which belongs to a different destination`,
@@ -2308,9 +2604,15 @@ test("every institution states what it is studied for, in the product's own taxo
     for (const u of list) {
       assert.ok(u.name.trim().length > 0, `${place} has a nameless entry`);
       assert.ok(u.city.trim().length > 0, `${place}: ${u.name} names no city`);
-      assert.ok(u.knownFor.length > 0, `${place}: ${u.name} says nothing about what it is for`);
+      assert.ok(
+        u.knownFor.length > 0,
+        `${place}: ${u.name} says nothing about what it is for`,
+      );
       for (const f of u.knownFor) {
-        assert.ok(valid.has(f), `${place}: ${u.name} claims unknown field "${f}"`);
+        assert.ok(
+          valid.has(f),
+          `${place}: ${u.name} claims unknown field "${f}"`,
+        );
       }
     }
   }
@@ -2352,12 +2654,18 @@ test("the university layer quotes no ranking, price or superlative", () => {
 test("a hub's institutions are exactly the ones its destination puts there", () => {
   for (const d of STUDY_DESTINATIONS) {
     for (const hub of d.hubs) {
-      const viaHub = universitiesForHub(hub).map((u) => u.name).sort();
+      const viaHub = universitiesForHub(hub)
+        .map((u) => u.name)
+        .sort();
       const viaPlace = universitiesForPlace(d.id)
         .filter((u) => u.hub === hub)
         .map((u) => u.name)
         .sort();
-      assert.deepEqual(viaHub, viaPlace, `${d.id}/${hub}: city and country pages disagree`);
+      assert.deepEqual(
+        viaHub,
+        viaPlace,
+        `${d.id}/${hub}: city and country pages disagree`,
+      );
     }
   }
 });
@@ -2428,16 +2736,1143 @@ test("a local opportunity is hidden only from a country we KNOW is different", (
   const local = { region: "KZ" };
   const global_ = { region: null };
 
-  assert.equal(reachableFrom(local, "KZ"), true, "its own country cannot see it");
-  assert.equal(reachableFrom(local, "UZ"), false, "leaked to a known, different country");
+  assert.equal(
+    reachableFrom(local, "KZ"),
+    true,
+    "its own country cannot see it",
+  );
+  assert.equal(
+    reachableFrom(local, "UZ"),
+    false,
+    "leaked to a known, different country",
+  );
   // Unknown must not exclude — the same rule as empty faculties meaning "show
   // everything" and an unknown grade never removing a row.
-  assert.equal(reachableFrom(local, null), true, "hidden from an unknown country");
-  assert.equal(reachableFrom(local, undefined), true, "hidden from an unknown country");
-  assert.equal(reachableFrom(local, ""), true, "an empty string is not a country");
+  assert.equal(
+    reachableFrom(local, null),
+    true,
+    "hidden from an unknown country",
+  );
+  assert.equal(
+    reachableFrom(local, undefined),
+    true,
+    "hidden from an unknown country",
+  );
+  assert.equal(
+    reachableFrom(local, ""),
+    true,
+    "an empty string is not a country",
+  );
 
   // A row with no region tag is global and reaches everyone, always.
   for (const c of ["KZ", "UZ", null, undefined]) {
-    assert.equal(reachableFrom(global_, c), true, `a global row was hidden from ${c}`);
+    assert.equal(
+      reachableFrom(global_, c),
+      true,
+      `a global row was hidden from ${c}`,
+    );
   }
+});
+
+// ── The planner ───────────────────────────────────────────────────────────────
+//
+// Backlog #17. Two views over one list, and the rules that must hold whatever
+// is on it. Every assertion here is a product rule from docs/PLANNER_PLAN.md,
+// not a description of the implementation — in particular §7's "never place an
+// unconfirmed date on the calendar", which is the failure this surface is the
+// most able to commit and the one that costs a student's trust outright.
+
+function plannerInput(over: Partial<PlannerInputs> = {}): PlannerInputs {
+  return {
+    todayISO: "2026-08-12",
+    intents: [],
+    committed: [],
+    ownItems: [],
+    satSittings: [],
+    deadlines: [],
+    phases: [],
+    ...over,
+  };
+}
+
+test("planner: the two status vocabularies round-trip, both ways", () => {
+  for (const s of INTENT_STATUSES) {
+    assert.equal(
+      intentStatusFromPlanner(plannerStatusFromIntent(s)),
+      s,
+      `intent "${s}" did not survive the round trip`,
+    );
+  }
+  const planner: PlannerStatus[] = ["todo", "doing", "done", "dropped"];
+  for (const s of planner) {
+    assert.equal(plannerStatusFromIntent(intentStatusFromPlanner(s)), s);
+  }
+  // "applied" must keep meaning exactly what it meant before `doing` existed —
+  // every count on /admin/intents depends on it.
+  assert.equal(plannerStatusFromIntent("applied"), "done");
+  assert.equal(intentStatusFromPlanner("done"), "applied");
+});
+
+test("planner: an unconfirmed date is never given a position in time", () => {
+  const view = buildPlanner(
+    plannerInput({
+      intents: [{ opportunityId: "x", status: "planning" }],
+      committed: [
+        {
+          id: "x",
+          name: "Guessy Olympiad",
+          deadline: "2026-09-30",
+          dateConfirmed: false,
+        },
+      ],
+    }),
+  );
+
+  const item = view.items.find((i) => i.sourceId === "x");
+  assert.ok(item, "the committed opportunity is missing entirely");
+  // The rule lives in the TYPE, not in a view: there is simply no date to draw.
+  assert.equal(item.dueISO, null, "an unconfirmed deadline leaked into dueISO");
+  assert.equal(
+    item.daysLeft,
+    null,
+    "an unconfirmed deadline produced a countdown",
+  );
+  assert.equal(
+    view.months.length,
+    0,
+    "an unconfirmed date was placed in a month",
+  );
+  assert.deepEqual(
+    view.undated.map((i) => i.sourceId),
+    ["x"],
+    "an unconfirmed row must still be listed, just never dated",
+  );
+});
+
+test("planner: overdue is what is late and not finished", () => {
+  const view = buildPlanner(
+    plannerInput({
+      intents: [
+        { opportunityId: "late", status: "planning" },
+        { opportunityId: "sent", status: "applied" },
+      ],
+      committed: [
+        {
+          id: "late",
+          name: "Missed",
+          deadline: "2026-08-01",
+          dateConfirmed: true,
+        },
+        {
+          id: "sent",
+          name: "Submitted",
+          deadline: "2026-08-01",
+          dateConfirmed: true,
+        },
+      ],
+    }),
+  );
+
+  assert.deepEqual(
+    view.overdue.map((i) => i.sourceId),
+    ["late"],
+  );
+  assert.equal(
+    view.months.length,
+    0,
+    "a past date must not appear in the agenda's future months",
+  );
+});
+
+test("planner: the agenda and the board hold different things", () => {
+  const view = buildPlanner(
+    plannerInput({
+      ownItems: [
+        {
+          id: "a",
+          title: "Write the essay",
+          note: null,
+          dueISO: null,
+          status: "todo",
+          href: null,
+        },
+      ],
+      satSittings: [{ test: "2026-10-03", regDeadline: "2026-09-18" }],
+    }),
+  );
+
+  // An own task with no date belongs on the board, and nowhere in the agenda.
+  const board = [
+    ...view.columns.todo,
+    ...view.columns.doing,
+    ...view.columns.done,
+  ];
+  assert.ok(
+    board.some((i) => i.sourceId === "a"),
+    "the own task is missing from the board",
+  );
+  assert.ok(
+    !view.undated.some((i) => i.sourceId === "a"),
+    "a dateless own task must not clutter the agenda's undated block",
+  );
+
+  // A SAT sitting is a fact about the world: dated, and not a card you move.
+  const sat = view.items.find((i) => i.origin === "sat");
+  assert.ok(sat, "the SAT sitting is missing");
+  assert.equal(
+    sat.dueISO,
+    "2026-09-18",
+    "the SAT row must anchor to the REGISTRATION cutoff",
+  );
+  assert.equal(isMovable(sat), false);
+  assert.ok(
+    !board.some((i) => i.origin === "sat"),
+    "a SAT sitting reached the board, where it would render a card nobody can move",
+  );
+});
+
+test("planner: dropped is archived, not a column", () => {
+  const view = buildPlanner(
+    plannerInput({
+      intents: [{ opportunityId: "x", status: "dropped" }],
+      committed: [
+        {
+          id: "x",
+          name: "Changed my mind",
+          deadline: "2026-12-01",
+          dateConfirmed: true,
+        },
+      ],
+    }),
+  );
+
+  for (const col of PLANNER_COLUMNS) {
+    assert.equal(
+      view.columns[col].length,
+      0,
+      `a dropped row appeared in "${col}"`,
+    );
+  }
+  assert.equal(view.droppedCount, 1);
+});
+
+test("planner: one opportunity can never appear twice", () => {
+  const view = buildPlanner(
+    plannerInput({
+      intents: [
+        { opportunityId: "x", status: "planning" },
+        { opportunityId: "x", status: "applied" },
+      ],
+      committed: [
+        {
+          id: "x",
+          name: "Only once",
+          deadline: "2026-12-01",
+          dateConfirmed: true,
+        },
+      ],
+    }),
+  );
+
+  const keys = view.items.map((i) => i.key);
+  assert.equal(
+    new Set(keys).size,
+    keys.length,
+    "the planner produced a duplicate key",
+  );
+});
+
+test("planner: an empty planner is empty, not broken", () => {
+  const view = buildPlanner(plannerInput());
+  assert.deepEqual(view.items, []);
+  assert.deepEqual(view.months, []);
+  assert.deepEqual(view.overdue, []);
+  assert.deepEqual(view.undated, []);
+  assert.equal(view.droppedCount, 0);
+  for (const col of PLANNER_COLUMNS) assert.deepEqual(view.columns[col], []);
+});
+
+test("planner: same inputs, same view — twice", () => {
+  const input = plannerInput({
+    intents: [{ opportunityId: "x", status: "planning" }],
+    committed: [
+      { id: "x", name: "Stable", deadline: "2026-12-01", dateConfirmed: true },
+    ],
+    satSittings: [{ test: "2026-10-03", regDeadline: "2026-09-18" }],
+  });
+  assert.deepEqual(buildPlanner(input), buildPlanner(input));
+});
+
+test("planner: a phase is a separator, never something you can move", () => {
+  const view = buildPlanner(
+    plannerInput({
+      intents: [{ opportunityId: "x", status: "planning" }],
+      committed: [
+        {
+          id: "x",
+          name: "In September",
+          deadline: "2026-09-20",
+          dateConfirmed: true,
+        },
+      ],
+      phases: [
+        {
+          id: "focus",
+          name: "Focusing",
+          rangeLabel: "Sep-Nov 2026",
+          startISO: "2026-09-01",
+        },
+        {
+          id: "gone",
+          name: "Long past",
+          rangeLabel: "2019",
+          startISO: "2019-01-01",
+        },
+      ],
+    }),
+  );
+
+  const september = view.months.find((m) => m.key === "2026-09");
+  assert.ok(september, "the September bucket is missing");
+  assert.deepEqual(
+    september.phases.map((p) => p.id),
+    ["focus"],
+  );
+  assert.ok(
+    !view.items.some((i) => i.sourceId === "focus"),
+    "a phase became an item — it has no date and no state, so it cannot be one",
+  );
+  // A phase with no month to sit in is dropped rather than drawn as a separator
+  // over nothing.
+  assert.ok(!view.months.some((m) => m.phases.some((p) => p.id === "gone")));
+});
+
+test("planner: the move track has two ends, and dropped is off it", () => {
+  assert.equal(stepStatus("todo", -1), null);
+  assert.equal(stepStatus("todo", 1), "doing");
+  assert.equal(stepStatus("doing", -1), "todo");
+  assert.equal(stepStatus("doing", 1), "done");
+  assert.equal(stepStatus("done", 1), null);
+  assert.equal(stepStatus("dropped", 1), null);
+  assert.equal(stepStatus("dropped", -1), null);
+});
+
+test("planner: day arithmetic is date-only and direction-aware", () => {
+  assert.equal(daysBetweenISO("2026-08-12", "2026-08-12"), 0);
+  assert.equal(daysBetweenISO("2026-08-12", "2026-08-13"), 1);
+  assert.equal(daysBetweenISO("2026-08-13", "2026-08-12"), -1);
+  // Across a northern-hemisphere DST boundary — UTC arithmetic, so exactly 31.
+  assert.equal(daysBetweenISO("2026-10-15", "2026-11-15"), 31);
+});
+
+// A server action is a public HTTP endpoint and the form in front of it is a
+// convenience. None of what follows can fail a type-check or a lint — the code
+// would be perfectly valid without it — so it is asserted from source, the same
+// way the button system's four invariants are.
+test("planner actions validate on the server, not only in the form", () => {
+  const src = readFileSync(
+    path.join(process.cwd(), "app/planner/actions.ts"),
+    "utf8",
+  );
+
+  for (const bound of ["plannerTitle", "plannerNote", "plannerItems"]) {
+    assert.ok(
+      src.includes(`LIMITS.${bound}`),
+      `the action never reads LIMITS.${bound}`,
+    );
+  }
+
+  // link_href is an IN-APP path. An external URL here would route around
+  // `npm run test:links`, which is what keeps our links alive and which only
+  // knows about the catalog.
+  assert.ok(
+    src.includes('startsWith("/")'),
+    "the action does not constrain link_href to an in-app path",
+  );
+  assert.ok(
+    src.includes('startsWith("//")'),
+    "a protocol-relative //host leaves the site while looking like a path",
+  );
+
+  // The 0028 degradation path: a database without the migration must produce a
+  // readable error naming it, not a 500. Same pattern migration 0027 set.
+  assert.ok(src.includes("0028"), "no error path names the migration");
+});
+
+test("the planner is private, and its steps are a registry", () => {
+  // The section is behind a login, so it must not be advertised. The sitemap
+  // and robots are checked against each other elsewhere; this is the other
+  // half — that we never asked for it to be indexed in the first place.
+  const paths = sitemapRoutes().map((e) => new URL(e.url).pathname);
+  assert.ok(
+    !paths.some((p) => p === "/planner" || p.startsWith("/planner/")),
+    "the sitemap advertises a page that requires an account",
+  );
+
+  // Same registry rule as the guide's four steps: the tabs, the headings and
+  // any step added later read ONE array, so adding mind maps is one edit and
+  // not four that drift.
+  assert.ok(
+    PLANNER_SECTIONS.length >= 2,
+    "the planner has fewer than two steps",
+  );
+  const ids = PLANNER_SECTIONS.map((s) => s.id);
+  assert.equal(new Set(ids).size, ids.length, "two planner steps share an id");
+  for (const s of PLANNER_SECTIONS) {
+    assert.ok(
+      s.href === "/planner" || s.href.startsWith("/planner/"),
+      `${s.id} is outside the section`,
+    );
+    assert.ok(s.label.trim().length > 0, `${s.id} has no tab label`);
+    assert.ok(s.title.trim().length > 0, `${s.id} has no heading`);
+    assert.ok(
+      s.blurb.trim().length > 0,
+      `${s.id} does not say what it answers`,
+    );
+  }
+});
+
+// ── Mind maps (planner release 2) ─────────────────────────────────────────────
+//
+// The one decision everything here follows from: we store the STRUCTURE, never
+// the coordinates. So the picture is a pure function of the tree, and every
+// property a canvas would have needed a human to eyeball is asserted instead.
+//
+// Three of these guard against states the DATABASE can technically hold and a
+// renderer cannot survive: a parent pointing outside the map, a cycle, and depth
+// past the cap. None should ever happen. All three would hang or crash the page.
+
+function node(over: Partial<MapNodeRow> & { id: string }): MapNodeRow {
+  return {
+    mapId: "m1",
+    parentId: null,
+    label: over.id,
+    note: null,
+    linkHref: null,
+    position: 0,
+    ...over,
+  };
+}
+
+test("mind map: flat rows become a tree, children in position order", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root", label: "Where could I study?" }),
+      node({ id: "b", parentId: "root", label: "Korea", position: 1 }),
+      node({ id: "a", parentId: "root", label: "Germany", position: 0 }),
+      node({
+        id: "a1",
+        parentId: "a",
+        label: "Learn German to B1",
+        position: 0,
+      }),
+    ],
+    "root",
+  );
+
+  assert.ok(tree, "no tree was built");
+  assert.equal(tree.label, "Where could I study?");
+  assert.deepEqual(
+    tree.children.map((c) => c.label),
+    ["Germany", "Korea"],
+    "children must follow `position`, not insertion order",
+  );
+  assert.deepEqual(
+    tree.children[0].children.map((c) => c.id),
+    ["a1"],
+  );
+  assert.equal(tree.depth, 0);
+  assert.equal(tree.children[0].depth, 1);
+  assert.equal(tree.children[0].children[0].depth, 2);
+});
+
+test("mind map: a row from another map is never pulled in", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "mine", parentId: "root" }),
+      // Same shape, different map. The query is already scoped by map_id; the
+      // builder does not assume the query was written correctly.
+      node({ id: "theirs", parentId: "root", mapId: "m2" }),
+    ],
+    "root",
+  );
+
+  assert.deepEqual(
+    tree!.children.map((c) => c.id),
+    ["mine"],
+  );
+});
+
+test("mind map: a cycle terminates instead of recursing forever", () => {
+  // a → b → a. Reachable only through corruption, and fatal if walked naively.
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "a", parentId: "b" }),
+      node({ id: "b", parentId: "a" }),
+    ],
+    "root",
+  );
+
+  assert.ok(tree, "a cycle elsewhere in the table killed the whole map");
+  assert.deepEqual(tree.children, [], "a cycle was walked into the tree");
+});
+
+test("mind map: depth past the cap is truncated, not rendered", () => {
+  const rows: MapNodeRow[] = [node({ id: "n0" })];
+  for (let i = 1; i <= MINDMAP_MAX_DEPTH + 3; i++) {
+    rows.push(node({ id: `n${i}`, parentId: `n${i - 1}` }));
+  }
+
+  const tree = buildTree(rows, "n0")!;
+  let deepest = 0;
+  const walk = (n: MapNode) => {
+    deepest = Math.max(deepest, n.depth);
+    n.children.forEach(walk);
+  };
+  walk(tree);
+
+  assert.equal(
+    deepest,
+    MINDMAP_MAX_DEPTH,
+    `the tree went ${deepest} deep against a cap of ${MINDMAP_MAX_DEPTH}`,
+  );
+});
+
+test("mind map: the layout is deterministic", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "a", parentId: "root", position: 0 }),
+      node({ id: "b", parentId: "root", position: 1 }),
+    ],
+    "root",
+  )!;
+
+  assert.deepEqual(layoutTree(tree), layoutTree(tree));
+});
+
+test("mind map: a parent sits at the midpoint of its children", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "a", parentId: "root", position: 0 }),
+      node({ id: "b", parentId: "root", position: 1 }),
+      node({ id: "c", parentId: "root", position: 2 }),
+    ],
+    "root",
+  )!;
+
+  const { nodes } = layoutTree(tree);
+  const at = (id: string) => nodes.find((n) => n.id === id)!;
+
+  assert.equal(
+    at("root").y,
+    (at("a").y + at("c").y) / 2,
+    "the root is not centred between its first and last child",
+  );
+  // Depth drives x, and only depth.
+  assert.ok(
+    at("a").x > at("root").x,
+    "a child is not to the right of its parent",
+  );
+  assert.equal(at("a").x, at("b").x, "siblings are at different depths");
+});
+
+test("mind map: every leaf gets its own row, and nothing overlaps", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "a", parentId: "root", position: 0 }),
+      node({ id: "a1", parentId: "a", position: 0 }),
+      node({ id: "a2", parentId: "a", position: 1 }),
+      node({ id: "b", parentId: "root", position: 1 }),
+    ],
+    "root",
+  )!;
+
+  const { nodes, edges, width, height } = layoutTree(tree);
+
+  const leaves = ["a1", "a2", "b"];
+  const ys = leaves.map((id) => nodes.find((n) => n.id === id)!.y);
+  assert.equal(new Set(ys).size, leaves.length, "two leaves share a row");
+
+  // One edge per node except the root — a tree, not a graph.
+  assert.equal(edges.length, nodes.length - 1);
+  assert.ok(width > 0 && height > 0, "the canvas has no size");
+  for (const n of nodes) {
+    assert.ok(n.x >= 0 && n.y >= 0, `${n.id} is off the canvas`);
+  }
+});
+
+test("mind map: a root on its own lays out without throwing", () => {
+  const tree = buildTree(
+    [node({ id: "root", label: "Where could I study?" })],
+    "root",
+  )!;
+  const { nodes, edges, width, height } = layoutTree(tree);
+
+  assert.equal(nodes.length, 1);
+  assert.deepEqual(edges, []);
+  assert.ok(width > 0 && height > 0, "an only-child map collapsed to nothing");
+});
+
+test("mind map: the move predicates agree with what the actions permit", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "a", parentId: "root", position: 0 }),
+      node({ id: "b", parentId: "root", position: 1 }),
+      node({ id: "b1", parentId: "b", position: 0 }),
+    ],
+    "root",
+  )!;
+
+  // The root is not a card: it cannot move, indent, outdent or be deleted.
+  assert.equal(canMoveUp(tree, "root"), false);
+  assert.equal(canMoveDown(tree, "root"), false);
+  assert.equal(canIndent(tree, "root"), false);
+  assert.equal(canOutdent(tree, "root"), false);
+
+  // Indent means "become the child of the sibling above you" — so the first
+  // sibling cannot, and the second can.
+  assert.equal(
+    canIndent(tree, "a"),
+    false,
+    "the first child has nothing to indent under",
+  );
+  assert.equal(canIndent(tree, "b"), true);
+
+  // Outdent means "become a sibling of your parent" — impossible at depth 1,
+  // because the parent is the root and the root has no siblings.
+  assert.equal(canOutdent(tree, "a"), false);
+  assert.equal(canOutdent(tree, "b1"), true);
+
+  assert.equal(canMoveUp(tree, "a"), false, "the first sibling cannot move up");
+  assert.equal(canMoveDown(tree, "a"), true);
+  assert.equal(canMoveUp(tree, "b"), true);
+  assert.equal(
+    canMoveDown(tree, "b"),
+    false,
+    "the last sibling cannot move down",
+  );
+
+  // An id that is not in this map answers false rather than throwing.
+  assert.equal(canMoveUp(tree, "nope"), false);
+  assert.equal(canIndent(tree, "nope"), false);
+});
+
+test("map actions validate on the server, and never delete the thinking", () => {
+  const src = readFileSync(
+    path.join(process.cwd(), "app/planner/maps/actions.ts"),
+    "utf8",
+  );
+
+  for (const bound of ["mapLabel", "mapNodes", "maps"]) {
+    assert.ok(
+      src.includes(`LIMITS.${bound}`),
+      `the action never reads LIMITS.${bound}`,
+    );
+  }
+  assert.ok(
+    src.includes("MINDMAP_MAX_DEPTH"),
+    "nothing stops a node being nested past the depth the layout can draw",
+  );
+
+  // Same in-app-path rule as the tasks: the catalog owns external links because
+  // `npm run test:links` is what keeps them alive.
+  assert.ok(
+    src.includes('startsWith("/")'),
+    "link_href is not constrained to an in-app path",
+  );
+  assert.ok(
+    src.includes('startsWith("//")'),
+    "a protocol-relative //host would leave the site",
+  );
+
+  // A database without 0029 must name the migration rather than 500.
+  assert.ok(src.includes("0029"), "no error path names the migration");
+
+  // "Send to plan" copies the node into planner_items. It must NOT remove it:
+  // deleting the thinking at the moment you act on it is exactly backwards.
+  const promote = src.slice(
+    src.indexOf("export async function promoteNodeToTask"),
+  );
+  assert.ok(promote.length > 0, "promoteNodeToTask is missing");
+  assert.ok(
+    !/\.delete\(\)/.test(promote),
+    "sending a node to the plan deletes it — the map must keep the node",
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The hero field (#24) — the light behind the landing page's first screen.
+//
+// A background that is always on, always animating and sitting under the one
+// paragraph that carries the product's promise has exactly two ways to be
+// wrong, and neither is visible in a screenshot: it can cost frames, and it can
+// drag the text on it under AA. Both are arithmetic, so both are asserted here
+// rather than eyeballed — the same reason the palette's contrast is.
+
+/** The block of app/globals.css that owns the field. */
+function fieldCss() {
+  const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+  const start = css.indexOf("/* ── THE HERO FIELD");
+  assert.ok(start >= 0, "globals.css no longer has a hero-field block");
+  const end = css.indexOf("/* Honor reduced-motion */", start);
+  assert.ok(end > start, "the hero-field block is not where it was");
+  return css.slice(start, end);
+}
+
+/** Read one theme's scalar (non-triplet) custom properties. */
+function readAlphas(css: string, selector: string) {
+  const start = css.indexOf(selector);
+  assert.ok(start >= 0, `globals.css has no ${selector} block`);
+  const body = css.slice(start, css.indexOf("\n}", start));
+  const out: Record<string, number> = {};
+  for (const m of body.matchAll(/--([a-z-]+-alpha):\s*([\d.]+)\s*;/g)) {
+    out[m[1]] = Number(m[2]);
+  }
+  return out;
+}
+
+/** src composited over dst at alpha `a`. */
+const composite = (
+  src: [number, number, number],
+  dst: [number, number, number],
+  a: number,
+): [number, number, number] => [
+  dst[0] + (src[0] - dst[0]) * a,
+  dst[1] + (src[1] - dst[1]) * a,
+  dst[2] + (src[2] - dst[2]) * a,
+];
+
+test("the hero field cannot drag the text on it under AA, in either theme", () => {
+  const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+  const themes = {
+    light: { c: readTheme(css, ":root {"), a: readAlphas(css, ":root {") },
+    dark: {
+      c: readTheme(css, ':root[data-theme="dark"] {'),
+      a: readAlphas(css, ':root[data-theme="dark"] {'),
+    },
+  };
+
+  for (const [name, T] of Object.entries(themes)) {
+    for (const k of [
+      "field-line-alpha",
+      "field-glow-alpha",
+      "field-beam-alpha",
+      "field-spark-alpha",
+    ]) {
+      assert.ok(T.a[k] !== undefined, `${name}: --${k} is not defined`);
+    }
+
+    // The worst composite the field can produce anywhere: the beam's wash and
+    // its sweep overlapping (both are the accent at the same alpha), with the
+    // strongest blob centred on top. Every hue has to survive it, because which
+    // one lands on a given phrase is a matter of where a div was put.
+    let beam = composite(T.c.accent, T.c.surface, T.a["field-beam-alpha"]);
+    beam = composite(T.c.accent, beam, T.a["field-beam-alpha"]);
+
+    for (const hue of ["accent", "ivy", "target"]) {
+      const lit = composite(T.c[hue], beam, T.a["field-glow-alpha"]);
+
+      // NORMAL text on the field. `ink-soft` is what the hero's promise
+      // paragraph uses; it was `text-ink/60`, which is 4.53:1 on the BARE light
+      // page — a pass by three hundredths — and 3.71:1 with the field lit under
+      // it. If a fainter token is ever wanted here, this is the number saying no.
+      for (const fg of ["ink", "ink-soft"]) {
+        const r = contrast(T.c[fg], lit);
+        assert.ok(
+          r >= 4.5,
+          `${name}: ${fg} over the field's ${hue} blob is ${r.toFixed(2)}:1, under AA`,
+        );
+      }
+
+      // LARGE text — the h1 and the rotating phrase, 45-60px, which owe 3:1.
+      const r = contrast(T.c["hero-ink"], lit);
+      assert.ok(
+        r >= 3,
+        `${name}: the rotating phrase over the ${hue} blob is ${r.toFixed(2)}:1, under the 3:1 large-text bar`,
+      );
+    }
+
+    // The lattice must be VISIBLE and must not read as a rule. Both themes were
+    // first drawn at ~1.10:1 — a hairline you had to already know was there,
+    // the same failure --line was raised for — and the product's real dividers
+    // carry 1.3, which a decoration must stay under.
+    const line = composite(
+      T.c["field-line"],
+      T.c.surface,
+      T.a["field-line-alpha"],
+    );
+    const lr = contrast(line, T.c.surface);
+    assert.ok(
+      lr >= 1.15 && lr <= 1.3,
+      `${name}: the lattice is ${lr.toFixed(3)}:1 against the page — outside 1.15-1.3`,
+    );
+  }
+});
+
+test("every field token exists in all three theme blocks", () => {
+  const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+  // The media query and the attribute selector are two copies on purpose — one
+  // is today's mechanism, the other is what a future toggle would use. A token
+  // added to only one of them themes correctly for half our readers.
+  const blocks = [
+    ":root {",
+    ':root:not([data-theme="light"]) {',
+    ':root[data-theme="dark"] {',
+  ];
+  const names = blocks.map((sel) => {
+    const start = css.indexOf(sel);
+    assert.ok(start >= 0, `globals.css has no ${sel} block`);
+    const body = css.slice(start, css.indexOf("color-scheme", start));
+    return new Set([...body.matchAll(/--(field-[a-z-]+):/g)].map((m) => m[1]));
+  });
+  assert.ok(names[0].size >= 5, "the field lost its tokens");
+  for (const n of names[0]) {
+    for (let i = 1; i < blocks.length; i++) {
+      assert.ok(names[i].has(n), `--${n} is missing from ${blocks[i]}`);
+    }
+  }
+});
+
+test("the hero field animates transform and opacity only", () => {
+  // Through `stripComments` — the same helper the `!important` audit uses.
+  // Both assertions below first failed on their own footnote: the CSS comment
+  // naming `filter: blur` as the thing being avoided, and HeroField's comment
+  // naming framer-motion for the same reason. An assertion about what the code
+  // does has to read the code.
+  const block = stripComments(fieldCss());
+
+  // A `filter` here is the specific mistake this design exists to avoid: it
+  // cannot be composited, so an always-on background would re-paint every frame
+  // for as long as the tab is open. The softness is in the paint.
+  assert.ok(
+    !/\bfilter\s*:/.test(block),
+    "the hero field declares a filter — the blur must live in the gradient's falloff",
+  );
+
+  // `transparent` is rgba(0, 0, 0, 0), so a gradient running to it interpolates
+  // through BLACK and leaves a grey bruise round every blob.
+  assert.ok(
+    !/:[^;]*\btransparent\b/.test(block),
+    "a field gradient stops at `transparent`; use rgb(var(--x) / 0) or the stop drags through black",
+  );
+
+  for (const m of block.matchAll(/@keyframes\s+(field-[\w-]+)\s*\{/g)) {
+    const name = m[1];
+    const body = block.slice(m.index as number, block.indexOf("\n}", m.index));
+    const props = [...body.matchAll(/^\s{4}([a-z-]+):/gm)].map((p) => p[1]);
+    assert.ok(props.length > 0, `@keyframes ${name} declares nothing`);
+    for (const p of props) {
+      assert.ok(
+        p === "transform" || p === "opacity",
+        `@keyframes ${name} animates ${p} — only transform and opacity are composited`,
+      );
+    }
+  }
+});
+
+test("every looping field keyframe is closed, because reduced motion lands on the END state", () => {
+  const block = stripComments(fieldCss());
+
+  // The global guard forces `animation-iteration-count: 1` alongside a ~0
+  // duration, so an infinite loop does not pause where it started — it jumps to
+  // 100%. A loop whose 100% differs from its 0% therefore freezes a
+  // reduced-motion reader mid-stride, which is the one thing the guard exists
+  // to prevent.
+  const frames = new Map<string, string>();
+  for (const m of block.matchAll(/@keyframes\s+(field-[\w-]+)\s*\{/g)) {
+    frames.set(
+      m[1],
+      block.slice(m.index as number, block.indexOf("\n}", m.index)),
+    );
+  }
+  assert.ok(frames.size >= 5, "the field lost its keyframes");
+
+  let checked = 0;
+  for (const [name, body] of frames) {
+    if (!new RegExp(`animation:[^;]*\\b${name}\\b[^;]*infinite`).test(block)) {
+      continue;
+    }
+    checked++;
+
+    if (name === "field-spark-run") {
+      // The deliberate exception, and it is the RIGHT answer rather than an
+      // oversight: a spark's 100% is `opacity: 0`, so reduced motion removes
+      // the runners instead of freezing three dots in mid-flight.
+      assert.match(
+        body.slice(body.indexOf("100%")),
+        /opacity:\s*0/,
+        "field-spark-run must end at opacity 0 so reduced motion removes it",
+      );
+      continue;
+    }
+
+    if (name === "field-grid-drift") {
+      // This one closes by GEOMETRY rather than by repeating itself: it travels
+      // exactly one cell on both axes, so its end state is pixel-identical to
+      // its start and the seam does not exist. Change the distance and it does.
+      assert.match(
+        body,
+        /translate3d\(\s*calc\(var\(--field-cell\) \* -1\),\s*calc\(var\(--field-cell\) \* -1\),\s*0\s*\)/,
+        "the lattice must drift exactly one cell on both axes or the loop shows a seam",
+      );
+      continue;
+    }
+
+    assert.match(
+      body,
+      /0%,\s*100%\s*\{/,
+      `@keyframes ${name} does not share its 0% and 100% stop, so it does not return to where it started`,
+    );
+  }
+  assert.ok(
+    checked >= 5,
+    "the field's looping animations are no longer looping",
+  );
+});
+
+test("the landing hero's background costs no JavaScript and no blur", () => {
+  const field = stripComments(
+    readFileSync(
+      path.join(process.cwd(), "components/marketing/HeroField.tsx"),
+      "utf8",
+    ),
+  );
+  assert.ok(
+    !field.includes('"use client"'),
+    "HeroField became a client component — the landing page's JS budget is the point",
+  );
+  assert.ok(
+    !/framer-motion/.test(field),
+    "HeroField imports framer-motion; this page ships none and must not start",
+  );
+  // The field is the section's FIRST child and carries no z-index: a `-z-10`
+  // puts a child behind its parent's own background when the parent is
+  // `position: relative` with `z-index: auto`, which is exactly this section,
+  // and the field would paint invisibly under `bg-surface`.
+  assert.ok(
+    !/-z-10/.test(field),
+    "the field uses a negative z-index — it would paint behind bg-surface",
+  );
+
+  const page = readFileSync(
+    path.join(process.cwd(), "app/(marketing)/page.tsx"),
+    "utf8",
+  );
+  const hero = page.slice(
+    page.indexOf("<HeroField />"),
+    page.indexOf("What the list is made of"),
+  );
+  assert.ok(hero.length > 0, "the hero no longer mounts the field");
+  assert.ok(
+    !/\bblur-(sm|md|lg|xl|2xl|3xl)\b/.test(hero),
+    "a blur-* is back in the hero — that is a full re-raster of the box on every paint",
+  );
+});
+
+test("the landing page's bands ramp with the window, and no band caps at 1152", () => {
+  // Nine sections each set `max-w-6xl` on their own, which put 1152px of
+  // content inside a 1920px window — 768px of gutter, measured, i.e. 40% of the
+  // display — while the hero above them ran to 1600. `Band` carries Shell's
+  // ramp instead. A container that stops at 1152 is the thing this asserts
+  // against, and the footer is allowed to spell it out inline because it is a
+  // landmark rather than a `div`.
+  const band = readFileSync(
+    path.join(process.cwd(), "components/marketing/Band.tsx"),
+    "utf8",
+  );
+  for (const step of ["max-w-6xl", "xl:max-w-7xl", "2xl:max-w-[90rem]"]) {
+    assert.ok(band.includes(step), `Band lost its ${step} step`);
+  }
+
+  for (const rel of [
+    "app/(marketing)/page.tsx",
+    "components/marketing/HowItWorks.tsx",
+  ]) {
+    const src = readFileSync(path.join(process.cwd(), rel), "utf8");
+    for (const m of src.matchAll(/className="([^"]*\bmax-w-6xl\b[^"]*)"/g)) {
+      assert.ok(
+        m[1].includes("2xl:max-w-[90rem]"),
+        `${rel}: a container caps at max-w-6xl without ramping — "${m[1]}"`,
+      );
+    }
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Readability, measured rather than looked at (2026-08-14).
+//
+// The report was "text on our site is hard to read", next to a competitor's
+// light-theme screenshot. Contrast turned out to be fine everywhere — the
+// defects were a type scale with no steps in it, a 10px floor, and one theme's
+// optical needs being served by the other theme's settings.
+
+test("11px is the floor — no surface ships 10px type", () => {
+  // 10px uppercase with letter-spacing was the smallest type in the product and
+  // it carried real information across 21 files: the report's programme cards,
+  // four country breakdowns, the admin tables, the guide's badges and the
+  // landing's own hero preview. A floor that holds in some components is not a
+  // floor, so it is asserted over the whole tree.
+  const offenders: string[] = [];
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return walk(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+  for (const root of ["app", "components"]) {
+    for (const file of walk(path.join(process.cwd(), root))) {
+      readFileSync(file, "utf8")
+        .split("\n")
+        .forEach((line, i) => {
+          const m = line.match(/text-\[(\d+(?:\.\d+)?)px\]/);
+          if (m && Number(m[1]) < 11) {
+            offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
+          }
+        });
+    }
+  }
+  assert.deepEqual(offenders, [], `type below 11px:\n${offenders.join("\n")}`);
+});
+
+test("the accent fill is not used as a foreground on text", () => {
+  // The sibling test above covers reach/target/likely and stops there, which is
+  // how 25 call sites came to paint TEXT with `text-accent` — 4.28:1 on the
+  // page background, i.e. the exact failure that test exists to name. `accent`
+  // is the only other fill with the problem: `ivy` measures 4.95 and 6.41.
+  //
+  // Icons keep the fill, because a graphic owes 3:1 and this token clears it.
+  // They are told apart by what else is on the line: an icon carries its own
+  // box, is an <svg>, or is a form control's tick.
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return walk(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+  const ALLOW = new Set([
+    // Paints its own FIXED dark gradient in both themes, so a token that gets
+    // darker in light mode is a regression here rather than a fix.
+    "components/marketing/AuthAside.tsx",
+  ]);
+  const offenders: string[] = [];
+  for (const root of ["app", "components"]) {
+    for (const file of walk(path.join(process.cwd(), root))) {
+      const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+      if (ALLOW.has(rel)) continue;
+      const lines = readFileSync(file, "utf8").split("\n");
+      lines.forEach((line, i) => {
+        if (!/(?<![-\w:])text-accent(?![-\w])/.test(line)) return;
+        // An icon's evidence is rarely on the same line as its colour: the size
+        // can come from a `${px}` variable, and a wrapper span sits above the
+        // `ICONS[...]` it colours. Two lines either way catches both, and is
+        // narrow enough that a paragraph cannot borrow an icon's alibi.
+        const near = lines.slice(Math.max(0, i - 2), i + 3).join(" ");
+        if (
+          /\bh-\d|\bw-\d|<svg|role="img"|aria-hidden|ICONS\[|type="(checkbox|radio)"/.test(
+            near,
+          )
+        ) {
+          return;
+        }
+        offenders.push(`${rel}:${i + 1}`);
+      });
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `use text-accent-ink for foreground colour; the bare token is the fill (4.28:1 on the page):\n${offenders.join("\n")}`,
+  );
+});
+
+test("typography compensates for the theme it is rendered in", () => {
+  // Light text on a dark ground blooms — the glyphs spread into the background
+  // and the space between letters is eaten. The compensation is a property of
+  // the THEME, so it is a token, in all three blocks like every colour.
+  const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+  const track = (selector: string) => {
+    const start = css.indexOf(selector);
+    assert.ok(start >= 0, `globals.css has no ${selector} block`);
+    const body = css.slice(start, css.indexOf("color-scheme", start));
+    const m = body.match(/--type-tracking-body:\s*([\d.]+)em\s*;/);
+    assert.ok(m, `${selector} does not define --type-tracking-body`);
+    return Number(m![1]);
+  };
+  const light = track(":root {");
+  for (const dark of [
+    ':root:not([data-theme="light"]) {',
+    ':root[data-theme="dark"] {',
+  ]) {
+    assert.ok(
+      track(dark) > light,
+      `${dark}: the dark theme must open the letter-fit, not match the light one`,
+    );
+    assert.ok(
+      track(dark) <= 0.02,
+      `${dark}: ${track(dark)}em is letter-spacing a reader will see, not optical compensation`,
+    );
+  }
+  assert.equal(
+    light,
+    0,
+    "the light theme needs no compensation and should say so",
+  );
+
+  // It has to INHERIT, or the 111 places that made an explicit `tracking-*`
+  // decision would be the only ones affected — the exact inverse of the intent.
+  assert.match(
+    css,
+    /body\s*\{[^}]*letter-spacing:\s*var\(--type-tracking-body\)/,
+    "the tracking token is defined but never applied to body",
+  );
+});
+
+test("the two cards that carry the product have a real type step", () => {
+  // Both were measured flat. The opportunity card ran title 18 / body 15.2 — a
+  // step of 1.18 — and the guide card ran title 14 / body 14, a step of exactly
+  // 1.00, while being the navigation for 88 pages. Neither is a contrast
+  // problem, which is why no contrast test caught either.
+  const card = readFileSync(
+    path.join(process.cwd(), "components/opportunities/OpportunityCard.tsx"),
+    "utf8",
+  );
+  assert.match(
+    card,
+    /: "text-xl font-semibold leading-snug text-ink"/,
+    "the opportunity card's title is no longer a step above its body",
+  );
+  assert.match(
+    card,
+    /: "mt-3 text-base leading-relaxed text-ink-soft"/,
+    "the opportunity card's description left the 16px body floor",
+  );
+  // The deadline is the promise the whole product is built on. It was the
+  // faintest thing on the card, quieter than the description above it.
+  // Scoped to the deadline block: `ink-faint` is still correct on the TBA pill,
+  // which sits on `bg-surface` rather than on the card, and on the person glyph.
+  const deadline = card.slice(
+    card.indexOf("{o.dateConfirmed ? ("),
+    card.indexOf("</div>", card.indexOf("{o.dateConfirmed ? (")),
+  );
+  assert.ok(deadline.length > 0, "the deadline block moved");
+  assert.ok(
+    !/text-ink-faint/.test(deadline),
+    "the deadline is back on ink-faint — it is the product's central promise",
+  );
+
+  const guide = readFileSync(
+    path.join(process.cwd(), "components/guide/parts.tsx"),
+    "utf8",
+  );
+  assert.match(
+    guide,
+    /className="text-base font-semibold leading-snug text-ink"/,
+    "the guide card's title is back to the same size as its own description",
+  );
 });

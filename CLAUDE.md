@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Compass — a guidance tool for international students. **Opportunities is the front door**: what competitions, olympiads, courses and programmes a student can actually enter, at their age, with honest dates and costs. The admission analysis (factor scores, per-school likelihood ranges, benchmarks, gap analysis, recommendations across **US · Italy · Hong Kong · UAE · Korea**) is now one opt-in input, not the product a student arrives for. Three roles share one backend: **student** (core product), **ambassador** (referral growth), **admin/founder** (metrics). Full product spec lives in [docs/compass-project-blueprint.md](docs/compass-project-blueprint.md); setup in [docs/SETUP.md](docs/SETUP.md); a map of the codebase in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); the plan of record for the front door in [docs/OPPORTUNITIES_PLAN.md](docs/OPPORTUNITIES_PLAN.md).
+Compass — a guidance tool for international students. **Opportunities is the front door**: what competitions, olympiads, courses and programmes a student can actually enter, at their age, with honest dates and costs. The **planner** ([docs/PLANNER_PLAN.md](docs/PLANNER_PLAN.md)) is the third section, where what they committed to becomes dated work. The admission analysis (factor scores, per-school likelihood ranges, benchmarks, gap analysis, recommendations across **US · Italy · Hong Kong · UAE · Korea**) is now one opt-in input, not the product a student arrives for. Three roles share one backend: **student** (core product), **ambassador** (referral growth), **admin/founder** (metrics). Full product spec lives in [docs/compass-project-blueprint.md](docs/compass-project-blueprint.md); setup in [docs/SETUP.md](docs/SETUP.md); a map of the codebase in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); the plan of record for the front door in [docs/OPPORTUNITIES_PLAN.md](docs/OPPORTUNITIES_PLAN.md).
 
 Stack: Next.js 14 (App Router, RSC, server actions) · TypeScript (strict) · Tailwind · Supabase (Postgres + Auth + RLS) · Anthropic `claude-haiku-4-5` · Recharts · Zod · framer-motion.
 
@@ -228,6 +228,90 @@ is its own route now:
   bundles, which are server-rendered apart from two islands.
 - **The loading skeleton is on the LIST routes only, and that is load-bearing.** A `loading.tsx` is a Suspense boundary, and a boundary lets the server flush the response — status line included — before the page under it renders. One section-wide `app/guide/loading.tsx` therefore made every unknown id answer **200** carrying a not-found page. The skeleton (`components/guide/Skeleton.tsx`) now sits in six scoped files, which is why `/guide`, `/guide/work`, `/guide/places` and `/guide/cities` each live in a `(index)`/`(list)` route group — a group adds nothing to the URL but stops the subject pages inheriting the boundary. It is also where the wait actually is: a list page resolves the session (`guideView`), a subject page reads static data. Don't "tidy" the groups away or hoist the file back up.
 
+## The planner — one list, two views (read [docs/PLANNER_PLAN.md](docs/PLANNER_PLAN.md) first)
+
+The student's third section, at `/planner` (agenda) and `/planner/board`.
+Private — `robots.ts` blocks it, the sitemap does not list it, each page calls
+`requireSession` with **its own path**.
+
+- **The selection rule is one sentence: the planner holds things that have a
+  date and a state.** From that everything follows, including the split between
+  the views: **the agenda shows everything with a date, the board shows
+  everything with a state the student owns.** Committed opportunities are the
+  intersection and appear on both. SAT cutoffs and verified application
+  deadlines are dated facts about the world with no state, so they are agenda-
+  only — a card nobody can move is what breaks a board. Roadmap **phases** are
+  separators in the agenda and never items: a phase is a *period*, so it has
+  neither a single date nor a state.
+- **Nothing is duplicated. `movePlannerItem` dispatches on `origin`** — an
+  opportunity's state is written to `opportunity_intents`, a student's own task
+  to `planner_items`. One fact, one home; a snapshot table would drift from the
+  catalog the first time a deadline was corrected, and from the number
+  `/admin/intents` reads.
+- **`dueISO` is null unless the date is confirmed, and that is the whole
+  enforcement of "never show a countdown for a date we can't stand behind".**
+  The rule lives in the TYPE, not in a component, so a view added later cannot
+  forget it. Unconfirmed rows are still listed — under "Dates not announced
+  yet", with no position in time.
+- **`opportunity_intents.status` gained `doing` (migration 0028).** Not a
+  convenience for a middle column: we ask "when will you start?" and previously
+  had no way to record whether they did. `applied` keeps its exact meaning, so
+  every existing count is unchanged — but anything that *reads* status must
+  handle the new value, and `/admin/intents` counts it separately rather than
+  folding it into "planning".
+- **`dropped` is an archive line, not a column.** The row is kept (0022), but a
+  permanent column headed "gave up" on a school student's own planning screen is
+  not a neutral design choice.
+- **Moving is a button, never a drag.** Native HTML5 drag cannot be operated
+  from a keyboard and is poor on touch, and most of our students are on a phone.
+  `stepStatus` is the whole move model, and it is pure.
+- **`lib/planner/load.ts` is the ONLY place the planner touches `key-dates` or
+  `roadmap`**, it is server-only, and it reaches both through dynamic `import()`.
+  `lib/data/planner.ts` takes `PlannerCompetition` — a structural subset of
+  `Competition` — so the pure core never imports the catalog at all. Same bundle
+  rule as `guide-filter.ts`; `/planner` is 110 kB against an 87.8 kB baseline
+  because of it.
+- **No client component in the planner calls `new Date()`.** `todayISO` is
+  resolved once in the loader and passed down. That is what makes the two views
+  agree with each other, survive hydration, and stay unit-testable.
+- **A derived card cannot be deleted, only dropped** — deleting it would delete
+  the record of a commitment. Own tasks delete.
+- The views are a registry ([lib/data/planner-sections.ts](lib/data/planner-sections.ts)),
+  same as the guide's steps. Adding mind maps was one entry, as intended.
+
+### Mind maps (`/planner/maps`, migration 0029)
+
+- **We store the STRUCTURE, never the coordinates.** A node has a parent and a
+  position among its siblings; the picture is computed by `layoutTree` in
+  [lib/data/mindmap.ts](lib/data/mindmap.ts), so one tree always draws one map.
+  That is what keeps release 1's "moving is a button, never a drag" rule true
+  here (there is nothing to drag), what makes the outline keyboard-operable
+  without a second parallel interaction model, and what makes the geometry
+  unit-testable. If placement is ever really wanted, the additive answer is two
+  nullable **offset** columns on top of the computed position — never a switch
+  to stored coordinates.
+- **`buildTree` is defensive about three states the database can hold and a
+  renderer cannot survive**: a parent from another map (dropped), a cycle
+  (broken, not recursed into), and depth past `MINDMAP_MAX_DEPTH` (truncated).
+  The query is already scoped; the builder does not assume it was written right.
+- **The outline is a real ARIA tree — Tab moves in and out, arrows move within.**
+  Binding Tab to "indent" is the convention in note apps and it takes away the
+  one key a screen-reader user needs to leave the widget. Structural edits live
+  in the action bar instead, which also makes them visible rather than folklore.
+- **The action bar sits OUTSIDE the diagram's scroll container.** A dropdown
+  inside an `overflow-x: auto` ancestor is clipped; that is why there isn't one.
+  Each button is disabled exactly when its operation is impossible, using the
+  same pure predicates (`canIndent`/`canOutdent`/`canMoveUp`/`canMoveDown`) the
+  server actions check — a lit button the server then refuses teaches the
+  structure's rules wrongly.
+- **The diagram is `role="img"`; the outline is the content.** Two
+  representations of one tree, and only one of them is authoritative or
+  focusable. Two focusable copies is a worse experience, not a more accessible
+  one.
+- **"Send to plan" writes a `planner_items` row and keeps the node.** Deleting
+  the thinking at the moment you act on it is backwards, and a test asserts the
+  promote path contains no delete.
+
 ## Being findable is a feature (`sitemap.ts`, `robots.ts`, canonicals)
 
 The guide is public on purpose — a family choosing between Germany and Korea
@@ -316,6 +400,63 @@ guide) → honest by design → the report, opt-in → organisations → FAQ →
 - **The map belongs to the report section and mounts only when scrolled to.**
   It plots the universities the analysis benchmarks against — that is report
   content, and it is the most expensive thing on the page.
+
+- **The hero's background is `HeroField`, and it is four layers of paint with
+  no JavaScript** ([components/marketing/HeroField.tsx](components/marketing/HeroField.tsx),
+  the CSS under "THE HERO FIELD" in [app/globals.css](app/globals.css)). The
+  section used to paint `bg-surface` and stop, which on the dark theme is a flat
+  near-black rectangle under the badge, the `<h1>` and both calls to action. Five
+  rules, all test-enforced, and each is a bug that shipped or nearly did:
+  - **Only `transform` and `opacity` ever animate.** That rules out the two
+    recipes every tutorial leads with — a mesh animated through
+    `background-position`, and a `filter: blur` radius — because each re-paints
+    every frame. So **the softness is in the paint**: a blob is a
+    radial-gradient whose own falloff *is* the blur, and there is no `filter`
+    anywhere in the block. The field replaced two `blur-3xl` divs, so the
+    section has fewer paints than before.
+  - **Gradient stops are `rgb(var(--x) / 0)`, never `transparent`.** The keyword
+    is `rgba(0, 0, 0, 0)`, so a stop running to it interpolates through black and
+    leaves a grey bruise round every blob — worst on the light theme.
+  - **Every loop is closed (`0%` == `100%`).** The reduced-motion guard forces
+    `animation-iteration-count: 1` *as well as* a ~0 duration, so an infinite
+    animation does not pause where it started — it **jumps to its end state**.
+    The lattice is allowed to close by geometry instead: it drifts exactly one
+    cell, so its end is pixel-identical to its start and `linear infinite` has
+    no seam. The sparks are the one exception, and deliberately: their 100% is
+    `opacity: 0`, so reduced motion *removes* the runners rather than freezing
+    three dots in mid-air.
+  - **The field's strength is a solve, not a taste.** The bound: at the worst
+    composite it can produce anywhere — the beam and its sweep overlapping, the
+    strongest blob centred on top — the faintest text on it must still clear
+    4.5:1. Fixing the hero's promise paragraph was part of the same job: it was
+    `text-ink/60`, i.e. **4.53:1 on the bare light page**, AA by three
+    hundredths before any background existed. **An alpha modifier on `ink` is a
+    colour nobody has checked** — reach for `ink-soft`/`ink-faint`, which are.
+  - **Vertical anchors are `vh`, never `%` of the section.** That section is
+    ~900px on a desktop and **1635px at 375×812**, because below `lg` the
+    message and the card stack. Percentage offsets put two of the three lights
+    outside the fold on a phone while looking perfect on the display they were
+    built on.
+
+- **Every band under the hero is [Band](components/marketing/Band.tsx), which
+  carries Shell's ramp** (1152 → 1280 → 1440). Nine sections used to set
+  `max-w-6xl` on their own, so at 1920 the page held 1152px of content inside
+  768px of gutter while the hero above it ran to 1600 — it narrowed at exactly
+  the point where the reader stopped looking at the product and started reading
+  about it. Same rule as Shell: **width buys columns, never line length**, so a
+  widened band has to be answered with more cards per row, and any prose in it
+  needs its own cap. **Cap prose in `ch`, not in `rem`** — `max-w-2xl` bounds
+  the box and does not track the type inside it, which is how the partners band
+  reached 89 characters a line. And **measure in real characters, not in `ch`**:
+  a `ch` is the width of a zero and reads ~20% narrow, so "78ch" is ~94
+  characters. A test fails any landing container that caps at 1152.
+- **The planner is on this page now, and the order it appears in is the
+  product's:** what you can enter → where it leads → **then it becomes work** →
+  the report. Its three cards are read from `PLANNER_SECTIONS`, not written out,
+  for the same reason every count here is computed. It was deliberately absent
+  for two releases: this page does not describe a feature until it works, and
+  until `0028`/`0029` were applied two of the three views returned an error
+  naming a migration.
 
 Four traps that cost real seconds, all of them found by measuring:
 
@@ -459,6 +600,53 @@ names roles and reads `rgb(var(--token) / <alpha-value>)`.
   not repaint `var()`-derived colours in a throttled/hidden browser pane — the
   custom property updates and `color` does not. Audit a theme by loading the
   page under that OS setting, not by toggling the attribute.
+
+## Type is a system, and one of its axes is the theme
+
+Colour was already tokenised per theme; type was not, and the gap was the whole
+reason the dark theme read as harder work. **Contrast was never the problem** —
+every text token on `/opportunities` measured 5.48:1 or better while the
+complaint stood. Four rules, all test-enforced:
+
+- **`--type-tracking-body` is a theme token** (`app/globals.css`): 0 in light,
+  `0.008em` in dark. Light text on a dark ground **blooms** — glyphs spread into
+  the background, counters close, and the space between letters is eaten — and
+  Inter feels it more than most because its default fit is tight. It is applied
+  on `body` so it **inherits**, and so the 73 `tracking-tight` headings and the
+  38 tracked labels keep the value they chose. Nothing in the product sets
+  tracking on body copy, which is what makes that insertion point clean. Bounded
+  at 0.02em by a test: past that it stops being optical compensation and starts
+  being letter-spacing a reader can see.
+- **11px is the floor, everywhere.** 69 labels sat at 10px and four at 9px,
+  across 21 files — the report's programme cards, four country breakdowns, the
+  admin tables, the guide's badges, the landing's own hero preview. A floor that
+  holds in some components is not a floor, so the test walks the whole tree.
+- **A card needs a step, and size alone should not carry it.** The two cards
+  that carry the product both measured flat: the opportunity card ran title 18 /
+  body 15.2 (a step of **1.18**), and the guide card — the navigation for 88
+  pages — ran title 14 / body 14, a step of exactly **1.00**. Both are 1.14–1.25
+  in size *and* 200 in weight now. No contrast test could ever have caught
+  either, which is the point: "everything is nearly the same size, nearly the
+  same distance apart" is what a reader means by a wall of text.
+- **Group facts that are the same kind of fact.** The opportunity card had five
+  text tiers 4–10px apart and therefore no groups. Eligibility and the deadline
+  are both *the terms of entry*; they are one block now, set off from the
+  description by real space. Five tiers became four.
+
+**`text-accent` is a fill, not a foreground** — 4.28:1 on the page background.
+The existing "no tier fill as text" test named this exact mistake and covered
+only `reach`/`target`/`likely`, so 22 call sites were painting text with
+`accent`. It covers `accent` now, with an exemption for icons (a graphic owes
+3:1). Two traps in that exemption: an icon's evidence is often **not on the same
+line** as its colour — the size can come from a `${px}` variable and
+`role="img"` sits two lines up — and **`AuthAside` paints its own fixed dark
+gradient in both themes**, so `accent-ink` is a regression there rather than a
+fix.
+
+**The surfaces we never drew still carry the design.** Text selection was themed
+already; the **scrollbar** (the largest of them — Chrome's default on a
+near-black page is a light grey slab that is the brightest vertical object on
+screen) and the **caret** now are too, both from `--ink`.
 
 ## Tailwind classes are linted against the config
 

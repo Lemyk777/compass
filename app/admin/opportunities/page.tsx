@@ -223,7 +223,7 @@ export default async function AdminOpportunitiesPage() {
                       <p className="mt-0.5 text-xs text-ink-faint">
                         {fieldsLabel(c.fields)} · {c.level} · {c.tier} · {c.category}
                         {c.region && (
-                          <span className="ml-1.5 rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold text-accent-ink">
+                          <span className="ml-1.5 rounded-full bg-accent-soft px-1.5 py-0.5 text-[11px] font-semibold text-accent-ink">
                             Local · {c.city ?? regionLabel(c.region)}
                           </span>
                         )}
@@ -249,7 +249,7 @@ export default async function AdminOpportunitiesPage() {
                       {warnings.map((w, i) => (
                         <li key={i} className="text-xs text-ink-soft">
                           <span
-                            className={`mr-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                            className={`mr-1.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
                               WARNING_RANK[w.code] <= 2
                                 ? "bg-reach-soft text-ink"
                                 : "bg-surface text-ink-soft"

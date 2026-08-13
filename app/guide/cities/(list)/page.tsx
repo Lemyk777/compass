@@ -150,7 +150,7 @@ export default async function GuideCitiesPage({
                       {g.country}
                       <span
                         aria-hidden
-                        className="text-accent transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+                        className="text-accent-ink transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
                       >
                         &rarr;
                       </span>

@@ -64,6 +64,8 @@ almost never a prompt change.
 | --- | --- |
 | `(marketing)/` | The public landing page, told in the product's own order: Opportunities → the guide → the report. Session-aware: a signed-in visitor gets "Dashboard", not "Log in"/"Sign up". Every count on it is read from the catalog and the guide registries at request time, so the page cannot claim a number the student won't see |
 | `opportunities/` | **Public eligibility checker — the guest surface only.** A signed-in student is redirected to `/dashboard/opportunities` so there is one Opportunities experience per state, not two |
+| `planner/` | **Private**: the student's third section. `page.tsx` is the agenda (everything with a date), `board/` is the board (everything with a state they own), `maps/` is the mind maps. The first two render `lib/planner/load.ts` — the only place the planner touches the catalog or the roadmap, and it does so through dynamic `import()` |
+| `guide/` | **Public**: the four-step guide, its own route per step and per subject |
 | `onboarding/` | The full intake wizard — now **opt-in** (the analysis path), no longer where signups land; `actions.ts` holds the Zod schema that is the single source of truth for a valid profile |
 | `dashboard/` | The logged-in product. `layout.tsx` loads everything once and hands it to `DashboardContext`; each subroute is a thin view |
 | `demo/` | The same dashboard over a sample analysis, no auth |
@@ -93,6 +95,7 @@ surfaces — if two surfaces need it, it moves to `ui/`.
 | --- | --- |
 | `ai/` | The analysis pipeline. Read `prompt.ts`, `analyze.ts`, `schema.ts`, `assemble.ts` together — they only make sense as a set |
 | `data/` | Deterministic datasets and the code over them: universities, programmes, deadlines, the opportunity registry, geography, the roadmap |
+| `planner/` | `load.ts` — the planner's one loader. Server-only, and the boundary that keeps the catalog out of the section's client bundle; the pure core is `data/planner.ts`, which imports no dataset at all. `maps-load.ts` does the same for mind maps over `data/mindmap.ts`, which stores structure and computes the picture |
 | `auth/` | Session, roles, post-signup provisioning |
 | `supabase/` | Three clients — `server.ts` (respects RLS, the default), `admin.ts` (service role, bypasses RLS, server-only), `client.ts` (browser) |
 | `discovery/`, `scraper/` | Finding new opportunities and refreshing their dates |

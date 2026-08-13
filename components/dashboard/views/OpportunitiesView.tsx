@@ -879,7 +879,7 @@ function FieldPrompt({
       <button
         type="button"
         onClick={onQuiz}
-        className="mt-3 text-sm font-medium text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+        className="mt-3 text-sm font-medium text-accent-ink underline-offset-2 hover:underline focus-visible:focus-ring"
       >
         Not sure what you like? Take a 2-minute quiz &rarr;
       </button>

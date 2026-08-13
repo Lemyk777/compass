@@ -17,10 +17,7 @@ import type { DestinationCode } from "@/lib/data/destinations";
 
 export type ProgramStatus = "likely" | "target" | "reach";
 export type ScholarshipStatus =
-  | "likely_full"
-  | "likely_partial"
-  | "unlikely"
-  | "unknown";
+  "likely_full" | "likely_partial" | "unlikely" | "unknown";
 
 export function statusColor(status: ProgramStatus): string {
   switch (status) {
@@ -65,13 +62,21 @@ export function ProgramCardShell({
       {open && (
         <div className="border-t border-line bg-surface px-4 py-3 space-y-2">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint">Analysis &amp; Recommendation</p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-soft">{reasoning}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
+              Analysis &amp; Recommendation
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+              {reasoning}
+            </p>
           </div>
           {notes && (
             <div className="pt-2 border-t border-line">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint">Institution Notes</p>
-              <p className="mt-1 text-xs leading-relaxed text-ink-soft">{notes}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
+                Institution Notes
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+                {notes}
+              </p>
             </div>
           )}
         </div>
@@ -96,7 +101,9 @@ export function CountryBanner({
         <Flag code={code} size={16} className="mt-0.5 shrink-0" />
         <div>
           <p className="text-sm font-medium text-ink">{title}</p>
-          <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">{children}</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
+            {children}
+          </p>
         </div>
       </div>
     </div>
@@ -139,7 +146,7 @@ export function ScoreBar({
 
   return (
     <div className="mt-3">
-      <div className="mb-1 flex items-center justify-between text-[10px] text-ink-faint">
+      <div className="mb-1 flex items-center justify-between text-[11px] text-ink-faint">
         <span>{caption}</span>
         <span>{scaleLabel}</span>
       </div>
@@ -149,23 +156,33 @@ export function ScoreBar({
           className="absolute top-1/2 h-2.5 -translate-y-1/2 rounded bg-accent/15"
           style={{ left: `${minPct}%`, width: `${typicalPct - minPct}%` }}
         />
-        <div className="absolute top-0 h-6 w-px bg-ink-faint" style={{ left: `${minPct}%` }} />
+        <div
+          className="absolute top-0 h-6 w-px bg-ink-faint"
+          style={{ left: `${minPct}%` }}
+        />
         <p
-          className="absolute -bottom-4 text-[9px] text-ink-faint"
+          className="absolute -bottom-4 text-[11px] text-ink-faint"
           style={{ left: `${minPct}%`, transform: "translateX(-50%)" }}
         >
           Min: {fmt(min)}
         </p>
-        <div className="absolute top-0 h-6 w-px bg-accent/40" style={{ left: `${typicalPct}%` }} />
+        <div
+          className="absolute top-0 h-6 w-px bg-accent/40"
+          style={{ left: `${typicalPct}%` }}
+        />
         <p
-          className="absolute -bottom-4 text-[9px] text-accent font-medium"
+          className="absolute -bottom-4 text-[11px] text-accent-ink font-medium"
           style={{ left: `${typicalPct}%`, transform: "translateX(-50%)" }}
         >
           Typ: {fmt(typical)}
         </p>
         <div
           className={`absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow transition-transform group-hover:scale-110 ${
-            user >= typical ? "bg-likely" : user >= min ? "bg-target" : "bg-reach"
+            user >= typical
+              ? "bg-likely"
+              : user >= min
+                ? "bg-target"
+                : "bg-reach"
           }`}
           style={{ left: `${Math.max(2, Math.min(98, userPct))}%` }}
         />
@@ -203,7 +220,7 @@ export function ProgramRoadmap({
       <ol className="space-y-3">
         {steps.map((step, i) => (
           <li key={i} className="flex gap-3">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[10px] font-bold text-surface">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-bold text-surface">
               {i + 1}
             </span>
             <p className="text-xs leading-relaxed text-ink-soft">{step}</p>
@@ -224,11 +241,15 @@ export function OfficialSources({
   if (!shown.length) return null;
   return (
     <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line pt-2.5">
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
         Official
       </span>
       {shown.map((l) => (
-        <OfficialSourceLink key={l.href} href={l.href as string} label={l.label} />
+        <OfficialSourceLink
+          key={l.href}
+          href={l.href as string}
+          label={l.label}
+        />
       ))}
     </div>
   );
@@ -244,7 +265,9 @@ export function StatusPill({ status }: { status: ProgramStatus }) {
   };
   const c = config[status];
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${c.className}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${c.className}`}
+    >
       {c.label}
     </span>
   );
@@ -252,11 +275,11 @@ export function StatusPill({ status }: { status: ProgramStatus }) {
 
 export function OfferTypeBadge({ conditional }: { conditional: boolean }) {
   return conditional ? (
-    <span className="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-ink">
+    <span className="rounded bg-accent-soft px-1.5 py-0.5 text-[11px] font-medium text-ink">
       Conditional Offer
     </span>
   ) : (
-    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[10px] font-medium text-likely-ink">
+    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[11px] font-medium text-likely-ink">
       Direct Offer
     </span>
   );
@@ -264,16 +287,30 @@ export function OfferTypeBadge({ conditional }: { conditional: boolean }) {
 
 export function ScholarshipBadge({ status }: { status: ScholarshipStatus }) {
   const config = {
-    likely_full: { label: "Likely Full Scholarship", className: "text-likely-ink bg-likely-soft" },
-    likely_partial: { label: "Likely Partial Scholarship", className: "text-likely-ink bg-likely-soft" },
-    unlikely: { label: "Scholarship Unlikely", className: "text-ink-faint bg-line" },
-    unknown: { label: "Scholarship Unknown", className: "text-ink-faint bg-line" },
+    likely_full: {
+      label: "Likely Full Scholarship",
+      className: "text-likely-ink bg-likely-soft",
+    },
+    likely_partial: {
+      label: "Likely Partial Scholarship",
+      className: "text-likely-ink bg-likely-soft",
+    },
+    unlikely: {
+      label: "Scholarship Unlikely",
+      className: "text-ink-faint bg-line",
+    },
+    unknown: {
+      label: "Scholarship Unknown",
+      className: "text-ink-faint bg-line",
+    },
   };
   const c = config[status];
   return (
     <div className="text-right">
-      <p className="text-[10px] text-ink-faint">Scholarship</p>
-      <span className={`inline-block rounded px-2 py-0.5 mt-0.5 text-[10px] font-semibold ${c.className}`}>
+      <p className="text-[11px] text-ink-faint">Scholarship</p>
+      <span
+        className={`inline-block rounded px-2 py-0.5 mt-0.5 text-[11px] font-semibold ${c.className}`}
+      >
         {c.label}
       </span>
     </div>
@@ -283,8 +320,10 @@ export function ScholarshipBadge({ status }: { status: ScholarshipStatus }) {
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] text-ink-faint">{label}</p>
-      <p className="text-xs font-semibold tabular-nums text-ink mt-0.5">{value}</p>
+      <p className="text-[11px] text-ink-faint">{label}</p>
+      <p className="text-xs font-semibold tabular-nums text-ink mt-0.5">
+        {value}
+      </p>
     </div>
   );
 }

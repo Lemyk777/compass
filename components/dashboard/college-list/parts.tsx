@@ -35,7 +35,15 @@ export function SearchBar({
     <div className="sticky top-0 z-10 -mx-4 bg-surface/90 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-0 flex-1">
-          <svg className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <circle cx="11" cy="11" r="7" />
             <path d="m21 21-4.3-4.3" />
           </svg>
@@ -84,8 +92,12 @@ export function PickCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col">
-          <h3 className="text-[0.95rem] font-semibold leading-tight text-ink">{title}</h3>
-          {subtitle && <p className="mt-0.5 text-xs text-ink-soft">{subtitle}</p>}
+          <h3 className="text-[0.95rem] font-semibold leading-tight text-ink">
+            {title}
+          </h3>
+          {subtitle && (
+            <p className="mt-0.5 text-xs text-ink-soft">{subtitle}</p>
+          )}
           {badge}
         </div>
         <span
@@ -94,7 +106,15 @@ export function PickCard({
           }`}
         >
           {on && (
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-3.5 w-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M5 12l5 5L20 7" />
             </svg>
           )}
@@ -105,7 +125,9 @@ export function PickCard({
           <span key={m}>{m}</span>
         ))}
       </div>
-      {note && <p className="mt-2 line-clamp-2 text-xs text-ink-faint">{note}</p>}
+      {note && (
+        <p className="mt-2 line-clamp-2 text-xs text-ink-faint">{note}</p>
+      )}
     </button>
   );
 }
@@ -135,7 +157,15 @@ export function StickyActionBar({
         </div>
         <Button size="md" disabled={ctaDisabled} onClick={onCta}>
           {ctaLabel}
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
         </Button>
@@ -161,9 +191,15 @@ export function AnalyzingOverlay() {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-surface/90 px-6 text-center backdrop-blur-sm">
       <div className="h-11 w-11 animate-spin rounded-full border-2 border-line border-t-accent" />
-      <h2 className="mt-6 text-lg font-semibold text-ink">Building your admission odds</h2>
-      <p className="mt-1 min-h-[1.25rem] max-w-xs text-sm text-ink-soft">{MESSAGES[i]}</p>
-      <p className="mt-4 text-xs text-ink-faint">This usually takes around 30 seconds.</p>
+      <h2 className="mt-6 text-lg font-semibold text-ink">
+        Building your admission odds
+      </h2>
+      <p className="mt-1 min-h-[1.25rem] max-w-xs text-sm text-ink-soft">
+        {MESSAGES[i]}
+      </p>
+      <p className="mt-4 text-xs text-ink-faint">
+        This usually takes around 30 seconds.
+      </p>
     </div>
   );
 }
@@ -200,12 +236,14 @@ export function FieldFilterNotice({
           <span className="font-medium text-ink">{fields}</span>
         </>
       ) : (
-        <span className="text-ink-soft">Showing all {totalCount} programs.</span>
+        <span className="text-ink-soft">
+          Showing all {totalCount} programs.
+        </span>
       )}
       <button
         type="button"
         onClick={onToggle}
-        className="ml-auto font-semibold text-accent hover:underline focus-visible:focus-ring"
+        className="ml-auto font-semibold text-accent-ink hover:underline focus-visible:focus-ring"
       >
         {active ? `Show all ${totalCount}` : `Filter to my fields (${fields})`}
       </button>
@@ -231,7 +269,8 @@ export function GradeStatusField({
     <div className={className}>
       <span className="text-sm font-medium text-ink">Your grades are</span>
       <p className="mb-2 text-xs text-ink-soft">
-        Predicted grades get a conditional-offer read; achieved grades are scored as final.
+        Predicted grades get a conditional-offer read; achieved grades are
+        scored as final.
       </p>
       <div className="flex gap-2">
         {(["predicted", "achieved"] as const).map((s) => {

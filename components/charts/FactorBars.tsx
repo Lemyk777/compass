@@ -48,7 +48,7 @@ export function FactorBars({
 
             {/* Accordion for reasoning and tier */}
             <details className="mt-2 group">
-              <summary className="text-xs font-medium text-accent cursor-pointer select-none list-none hover:opacity-80 transition-opacity">
+              <summary className="text-xs font-medium text-accent-ink cursor-pointer select-none list-none hover:opacity-80 transition-opacity">
                 <span className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100">
                   <svg
                     className="w-3 h-3 transition-transform duration-200 group-open:rotate-90"
@@ -79,7 +79,7 @@ export function FactorBars({
                         key={idx}
                         className="text-xs text-ink-faint flex items-start gap-2"
                       >
-                        <span className="text-accent/50 mt-0.5">•</span>
+                        <span className="text-accent-ink/50 mt-0.5">•</span>
                         <span>{r}</span>
                       </li>
                     ))}

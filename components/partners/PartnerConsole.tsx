@@ -138,11 +138,11 @@ function PostRow({
           <p className="flex flex-wrap items-center gap-2">
             <span className="text-base font-semibold text-ink">{post.name}</span>
             {post.published ? (
-              <span className="rounded-full bg-likely-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-likely-ink">
+              <span className="rounded-full bg-likely-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-likely-ink">
                 Live
               </span>
             ) : (
-              <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+              <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                 Taken down
               </span>
             )}

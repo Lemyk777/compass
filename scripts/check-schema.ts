@@ -52,6 +52,8 @@ const EXPECTED: { migration: string; table: string; columns: string[] }[] = [
   { migration: "0025 traffic", table: "page_views", columns: ["visitor_id", "session_id", "path", "dwell_ms"] },
   { migration: "0026 discovery quality", table: "competition_candidates", columns: ["warnings"] },
   { migration: "0027 pinned", table: "competition_deadlines", columns: ["pinned"] },
+  { migration: "0028 planner", table: "planner_items", columns: ["user_id", "title", "due_date", "status", "link_href"] },
+  { migration: "0029 planner maps", table: "planner_map_nodes", columns: ["user_id", "map_id", "parent_id", "label", "position", "link_href"] },
 ];
 
 async function main() {

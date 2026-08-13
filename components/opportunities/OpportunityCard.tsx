@@ -60,7 +60,11 @@ export function OpportunityCard({
       className={
         compact
           ? "rounded-xl border border-line bg-card px-4 py-3 transition-colors duration-200 hover:border-ink/20"
-          : "rounded-2xl border border-line bg-card p-5 shadow-card transition-shadow duration-200 hover:shadow-lift"
+          : // p-6/p-7, not p-5. Measured at 720px wide the card held five
+            // stacked rows of text inside 20px of padding; the content ran
+            // closer to its own border than the rows ran to each other, which
+            // is what makes a card read as a block rather than as a card.
+            "rounded-2xl border border-line bg-card p-6 shadow-card transition-shadow duration-200 hover:shadow-lift sm:p-7"
       }
     >
       {detail && <OpportunityDetail o={o} onClose={() => setDetail(false)} />}
@@ -69,11 +73,16 @@ export function OpportunityCard({
         <div className="min-w-0 flex-1">
           {/* The name is the way in — tapping the thing you are reading about
               is what everyone tries first. */}
+          {/* 20px, not 18. The card carried five text rows at 18 / 10 / 15.2
+              / 14 / 14px — a title only 1.18× its own body — and "everything is
+              nearly the same size" is what a reader means by a wall of text.
+              The step is 1.25× now, which is the smallest one that reads as a
+              step at all. */}
           <h3
             className={
               compact
-                ? "text-sm font-semibold leading-snug text-ink"
-                : "text-lg font-semibold leading-snug text-ink"
+                ? "text-[0.9375rem] font-semibold leading-snug text-ink"
+                : "text-xl font-semibold leading-snug text-ink"
             }
           >
             <button
@@ -99,14 +108,16 @@ export function OpportunityCard({
 
           {/* Chips, in one fixed order everywhere: money first — it is the
               thing people get burned by — then how hard, then what kind. */}
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <CostPill o={o} />
             <Chip>{TIER_LABEL[o.tierResolved]}</Chip>
             <Chip>{CATEGORY_LABEL[o.categoryResolved]}</Chip>
             {o.region && (
               // Local opportunity — only ever shown to students from that
               // country, so this reads as "near you", not as a restriction.
-              <Chip tone="accent">Local · {o.city ?? regionLabel(o.region)}</Chip>
+              <Chip tone="accent">
+                Local · {o.city ?? regionLabel(o.region)}
+              </Chip>
             )}
             {o.notYetEligible && (
               // Kept on purpose: a younger student should see what to aim for.
@@ -119,8 +130,8 @@ export function OpportunityCard({
           <p
             className={
               compact
-                ? "mt-2 text-xs leading-relaxed text-ink-soft"
-                : "mt-2.5 text-[0.95rem] leading-relaxed text-ink-soft"
+                ? "mt-2 text-[0.8125rem] leading-relaxed text-ink-soft"
+                : "mt-3 text-base leading-relaxed text-ink-soft"
             }
           >
             {o.blurb}
@@ -128,37 +139,47 @@ export function OpportunityCard({
 
           {/* Who can enter — on EVERY card, so a younger student never spends a
               cycle on something they cannot join. */}
-          <p
-            className={`mt-1.5 flex items-start gap-1.5 ${
-              compact ? "text-xs" : "text-sm"
-            } text-ink-soft`}
-          >
-            <PersonIcon />
-            <span>
-              <span className="font-medium text-ink">Eligibility:</span>{" "}
-              {o.eligibility ??
-                "varies — check the age and grade rules on the official page"}
-            </span>
-          </p>
+          <div className={compact ? "mt-2" : "mt-4 space-y-1.5"}>
+            <p
+              className={`flex items-start gap-1.5 ${
+                compact ? "text-xs" : "text-sm leading-relaxed"
+              } text-ink-soft`}
+            >
+              <PersonIcon />
+              <span>
+                <span className="font-medium text-ink">Eligibility:</span>{" "}
+                {o.eligibility ??
+                  "varies — check the age and grade rules on the official page"}
+              </span>
+            </p>
 
-          <p className={`mt-1 ${compact ? "text-xs" : "text-sm"} text-ink-faint`}>
-            {o.dateConfirmed ? (
-              <>
-                Deadline{" "}
-                <span data-num className="tabular-nums">
-                  {formatDate(o.deadline)}
-                </span>{" "}
-                · {o.window}
-              </>
-            ) : o.alwaysOpen ? (
-              // Nothing to announce and nothing to miss — say what is true.
-              <>{o.window}</>
-            ) : (
-              // We never show a countdown for a date we cannot stand behind: a
-              // wrong one could make a student miss a real deadline.
-              <>Dates for the next cycle not announced — typically {o.window}</>
-            )}
-          </p>
+            {/* `ink-soft`, not `ink-faint`. The date is the promise the whole
+                product is built on — "the real deadline" — and it was the
+                faintest thing on the card at 5.48:1, quieter than the
+                description above it. */}
+            <p
+              className={`${compact ? "mt-1 text-xs" : "text-sm leading-relaxed"} text-ink-soft`}
+            >
+              {o.dateConfirmed ? (
+                <>
+                  Deadline{" "}
+                  <span data-num className="tabular-nums">
+                    {formatDate(o.deadline)}
+                  </span>{" "}
+                  · {o.window}
+                </>
+              ) : o.alwaysOpen ? (
+                // Nothing to announce and nothing to miss — say what is true.
+                <>{o.window}</>
+              ) : (
+                // We never show a countdown for a date we cannot stand behind:
+                // a wrong one could make a student miss a real deadline.
+                <>
+                  Dates for the next cycle not announced — typically {o.window}
+                </>
+              )}
+            </p>
+          </div>
         </div>
 
         <div className="shrink-0">
@@ -234,7 +255,11 @@ function Chip({
 }) {
   return (
     <span
-      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+      // 11px with real padding, not 10px with none. Uppercase at 10px with
+      // letter-spacing is the smallest type in the product and it is carrying
+      // the two facts people get burned by — what it costs, and whether they
+      // can enter.
+      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
         tone === "accent"
           ? "bg-accent-soft text-accent-ink"
           : "bg-surface text-ink-soft"
@@ -259,7 +284,12 @@ export function Countdown({
       : days <= 30
         ? "bg-target-soft text-target-ink"
         : "bg-likely-soft text-likely-ink";
-  const text = days <= 0 ? "closes today" : days === 1 ? "1 day left" : `${days} days left`;
+  const text =
+    days <= 0
+      ? "closes today"
+      : days === 1
+        ? "1 day left"
+        : `${days} days left`;
   return (
     <span
       data-num

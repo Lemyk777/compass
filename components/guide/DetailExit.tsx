@@ -106,7 +106,7 @@ export function DetailExit({
       >
         <CloseIcon />
         Close
-        <kbd className="ml-0.5 hidden rounded border border-line bg-surface px-1.5 py-0.5 text-[10px] font-medium text-ink-faint sm:inline">
+        <kbd className="ml-0.5 hidden rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] font-medium text-ink-faint sm:inline">
           Esc
         </kbd>
       </Link>

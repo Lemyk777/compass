@@ -309,7 +309,7 @@ function StatusPill({ status }: { status: Partner["status"] }) {
         ? "bg-target-soft text-target-ink"
         : "bg-reach-soft text-reach-ink";
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tone}`}>
+    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${tone}`}>
       {status}
     </span>
   );

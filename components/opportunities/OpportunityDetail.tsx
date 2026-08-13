@@ -354,7 +354,7 @@ export function CostPill({
   const cost = opportunityCost(o);
   return (
     <span
-      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
         TONE[cost.tone].pill
       } ${className}`}
     >
@@ -391,7 +391,7 @@ function Badge({
 }) {
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${className}`}
+      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${className}`}
     >
       {children}
     </span>

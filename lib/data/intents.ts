@@ -9,7 +9,22 @@
 //   • the moment must be CONCRETE — "soon" is not an implementation intention;
 //   • it must be answerable in one tap, or the friction eats the effect.
 
-export type IntentStatus = "planning" | "applied" | "dropped";
+/**
+ * The states a commitment can be in.
+ *
+ * `doing` arrived with the planner (backlog #17), and it is not a convenience
+ * for a board's middle column — it is the measurement that was missing. We ask
+ * "when will you start?" the moment someone commits, which is the whole point
+ * of migration 0022, and then had no way to record whether they DID start:
+ * between `planning` and `applied` on an olympiad there are three months of
+ * silence.
+ *
+ * `applied` keeps its exact previous meaning, so every count on /admin/intents
+ * is unchanged by this. The order here is the order of the board's track.
+ */
+export const INTENT_STATUSES = ["planning", "doing", "applied", "dropped"] as const;
+
+export type IntentStatus = (typeof INTENT_STATUSES)[number];
 
 export type OpportunityIntent = {
   opportunityId: string;
@@ -53,7 +68,7 @@ export const INTENT_TEXT_MAX = 120;
 export const WHY_MATTERS_MAX = 200;
 
 export function isIntentStatus(v: unknown): v is IntentStatus {
-  return v === "planning" || v === "applied" || v === "dropped";
+  return INTENT_STATUSES.includes(v as IntentStatus);
 }
 
 /**
@@ -80,6 +95,7 @@ export function cleanIntentText(
  */
 export function intentSentence(intent: OpportunityIntent): string {
   if (intent.status === "applied") return "You entered this.";
+  if (intent.status === "doing") return "You've started this.";
   if (intent.status === "dropped") return "You decided against this one.";
   const when = cleanIntentText(intent.startWhen);
   if (!when) return "You're doing this.";

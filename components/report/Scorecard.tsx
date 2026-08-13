@@ -18,17 +18,18 @@ const OverallGauge = dynamic(
         <div className="h-28 w-28 rounded-full bg-card" />
       </div>
     ),
-  }
+  },
 );
 
 const RadarScorecard = dynamic(
-  () => import("@/components/charts/RadarScorecard").then((m) => m.RadarScorecard),
+  () =>
+    import("@/components/charts/RadarScorecard").then((m) => m.RadarScorecard),
   {
     ssr: false,
     loading: () => (
       <div className="h-64 w-full animate-pulse rounded-xl bg-line/20" />
     ),
-  }
+  },
 );
 import { Logo } from "@/components/ui/Logo";
 import { DESTINATIONS, type DestinationCode } from "@/lib/data/destinations";
@@ -57,7 +58,11 @@ export const Scorecard = forwardRef<
   const t = useT();
 
   const overall = country
-    ? countryOverall(country, analysis.factors, analysis.italy_financial_fit_score)
+    ? countryOverall(
+        country,
+        analysis.factors,
+        analysis.italy_financial_fit_score,
+      )
     : analysis.overall_score;
   // HK/AE/KR read a profile through their own native factor set (see
   // country-scorecard.ts), so their bars and radar use it — not the US seven.
@@ -73,13 +78,15 @@ export const Scorecard = forwardRef<
           : null;
   const orderedFactors =
     nativeSet ??
-    (country ? factorsByCountryRelevance(country, analysis.factors) : analysis.factors);
+    (country
+      ? factorsByCountryRelevance(country, analysis.factors)
+      : analysis.factors);
   const mutedKeys =
     country && !nativeSet
       ? new Set(
           analysis.factors
             .filter((f) => !factorMattersForCountry(country, f.key))
-            .map((f) => f.key)
+            .map((f) => f.key),
         )
       : undefined;
   const italyFinancialFitScore =
@@ -109,7 +116,7 @@ export const Scorecard = forwardRef<
             {t("report.overall")}
           </p>
           {country && (
-            <p className="mt-0.5 text-center text-[0.7rem] font-medium text-accent">
+            <p className="mt-0.5 text-center text-[0.7rem] font-medium text-accent-ink">
               {t("report.weightedFor")} {countryLabel}
             </p>
           )}

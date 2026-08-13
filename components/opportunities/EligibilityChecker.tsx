@@ -8,7 +8,11 @@ import type {
 } from "@/lib/data/key-dates";
 import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
 import { graduationYearFromGrade } from "@/lib/data/eligibility";
-import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
+import {
+  FACULTIES,
+  FACULTY_LABEL,
+  type FacultyValue,
+} from "@/lib/data/faculties";
 import { downloadIcs } from "@/lib/calendar/ics";
 
 // The public eligibility checker.
@@ -91,15 +95,15 @@ export function EligibilityChecker({
   // page is "and when they close"), then the ones with no deadline at all —
   // which a student can start tonight — and only then the "dates TBA" rows we
   // cannot say anything useful about yet.
-  const rank = (o: Opportunity) =>
-    o.dateConfirmed ? 0 : o.alwaysOpen ? 1 : 2;
+  const rank = (o: Opportunity) => (o.dateConfirmed ? 0 : o.alwaysOpen ? 1 : 2);
   const shown = [...openNow].sort((a, b) => rank(a) - rank(b)).slice(0, SHOWN);
   // The soonest real deadline on screen — the minimum, not the first one we
   // happen to render.
   const nearest = shown
     .filter((o) => o.dateConfirmed)
     .reduce<Opportunity | null>(
-      (best, o) => (best == null || o.daysToDeadline < best.daysToDeadline ? o : best),
+      (best, o) =>
+        best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
       null,
     );
 
@@ -139,8 +143,8 @@ export function EligibilityChecker({
         </h1>
         <p className="mt-4 max-w-xl text-pretty text-base leading-relaxed text-ink-soft sm:text-lg">
           Real competitions with real judges — some of them have been won by
-          twelve-year-olds. Tell us one thing and we&rsquo;ll tell you which ones
-          are open to you, and when they close.
+          twelve-year-olds. Tell us one thing and we&rsquo;ll tell you which
+          ones are open to you, and when they close.
         </p>
 
         <fieldset className="mt-9">
@@ -207,7 +211,10 @@ export function EligibilityChecker({
                     className="animate-fade-up"
                     // Stagger by 45ms — enough to read as a sequence, short
                     // enough that the fifth card is not late.
-                    style={{ animationDelay: `${i * 45}ms`, animationFillMode: "backwards" }}
+                    style={{
+                      animationDelay: `${i * 45}ms`,
+                      animationFillMode: "backwards",
+                    }}
                   >
                     <OpportunityCard o={o} />
                   </li>
@@ -331,7 +338,7 @@ function FieldFilter({
         <button
           type="button"
           onClick={() => onChange([])}
-          className="mt-2.5 text-sm font-semibold text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+          className="mt-2.5 text-sm font-semibold text-accent-ink underline-offset-2 hover:underline focus-visible:focus-ring"
         >
           Clear the subjects
         </button>
@@ -411,4 +418,3 @@ function CalendarCta({ items }: { items: Opportunity[] }) {
     </div>
   );
 }
-

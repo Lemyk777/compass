@@ -26,7 +26,7 @@ export function Recommendations({ schools }: { schools: RecommendedSchool[] }) {
                   {s.name}
                 </h3>
                 {branch && (
-                  <span className="mt-1.5 inline-flex w-fit items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent-ink">
+                  <span className="mt-1.5 inline-flex w-fit items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent-ink">
                     <Flag code={branch.host_code} size={10} className="shrink-0" />
                     Campus in {branch.host_country.replace(/^the /, "")} ·
                     US-system admissions

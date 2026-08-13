@@ -111,7 +111,7 @@ export function AuthAside({ t }: { t: TFunc }) {
             </svg>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
               <span data-num className="font-display text-3xl font-semibold leading-none text-ink">82</span>
-              <span className="mt-1 text-[10px] font-medium uppercase tracking-wide text-accent">
+              <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-accent">
                 {t("band.exceptional")}
               </span>
             </div>
