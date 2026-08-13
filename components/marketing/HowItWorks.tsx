@@ -1,4 +1,5 @@
 import Link from "@/components/ui/Link";
+import { Band } from "@/components/marketing/Band";
 
 // The three steps of the FRONT DOOR — not of the admission report.
 //
@@ -30,7 +31,7 @@ export function HowItWorks() {
 
   return (
     <section className="w-full px-5 py-24 md:px-12 md:py-28 lg:px-20">
-      <div className="mx-auto max-w-6xl">
+      <Band>
         <div className="mb-14 max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ivy">
             How it works
@@ -39,9 +40,9 @@ export function HowItWorks() {
             Two questions, then the list.
           </h2>
           <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink/60">
-            No account, no questionnaire, no waiting on a model to think.
-            The matching is plain arithmetic against rules we&rsquo;ve read off
-            the organisers&rsquo; own pages.
+            No account, no questionnaire, no waiting on a model to think. The
+            matching is plain arithmetic against rules we&rsquo;ve read off the
+            organisers&rsquo; own pages.
           </p>
         </div>
 
@@ -74,7 +75,7 @@ export function HowItWorks() {
             Start here — it takes about ten seconds
           </Link>
         </p>
-      </div>
+      </Band>
     </section>
   );
 }
