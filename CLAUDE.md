@@ -438,6 +438,26 @@ guide) → honest by design → the report, opt-in → organisations → FAQ →
     outside the fold on a phone while looking perfect on the display they were
     built on.
 
+- **Every band under the hero is [Band](components/marketing/Band.tsx), which
+  carries Shell's ramp** (1152 → 1280 → 1440). Nine sections used to set
+  `max-w-6xl` on their own, so at 1920 the page held 1152px of content inside
+  768px of gutter while the hero above it ran to 1600 — it narrowed at exactly
+  the point where the reader stopped looking at the product and started reading
+  about it. Same rule as Shell: **width buys columns, never line length**, so a
+  widened band has to be answered with more cards per row, and any prose in it
+  needs its own cap. **Cap prose in `ch`, not in `rem`** — `max-w-2xl` bounds
+  the box and does not track the type inside it, which is how the partners band
+  reached 89 characters a line. And **measure in real characters, not in `ch`**:
+  a `ch` is the width of a zero and reads ~20% narrow, so "78ch" is ~94
+  characters. A test fails any landing container that caps at 1152.
+- **The planner is on this page now, and the order it appears in is the
+  product's:** what you can enter → where it leads → **then it becomes work** →
+  the report. Its three cards are read from `PLANNER_SECTIONS`, not written out,
+  for the same reason every count here is computed. It was deliberately absent
+  for two releases: this page does not describe a feature until it works, and
+  until `0028`/`0029` were applied two of the three views returned an error
+  naming a migration.
+
 Four traps that cost real seconds, all of them found by measuring:
 
 1. **Never preload every country's terrain.** `MapView` used to warm all five

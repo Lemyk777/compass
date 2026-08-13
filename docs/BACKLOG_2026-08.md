@@ -15,8 +15,8 @@ holds only what is **specific to this backlog** and not already written there.
 |---|---|
 | `main` and `develop` | **in sync**, everything merged and deployed |
 | PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
-| Progress | **17 of 23 done, 2 half-done, 4 untouched**, plus **#24 done** 2026-08-13 — see §3 and §4 |
-| Unit tests | **156** (`npm run test:unit`) |
+| Progress | **19 of 23 done, 1 half-done, 3 untouched**, plus **#24 done** 2026-08-13 — see §3 and §4 |
+| Unit tests | **157** (`npm run test:unit`) |
 
 ### The migrations are applied — verified 2026-08-13
 
@@ -91,6 +91,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 | 9 | 79 institutions, named and never ranked. See §4. |
 | 23 (buttons) | The button system was being bypassed by the page that mattered most, and three call sites had `!important` escapes pointing at why. See §5.9. |
 | 24 | **The hero background.** Two bugs, neither of them the one reported. See §5.14. |
+| 22 | **CLOSED.** The planner is advertised now that it works; the bands below the hero ramp with the window. See §5.15. |
 | 17 | **The planner, COMPLETE** — `/planner` (agenda) + `/planner/board` + `/planner/maps`. Delivered in two releases; both shipped. See §5.12 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
 
 **Not on the founder's list, added because it was needed:**
@@ -106,8 +107,9 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 ## 4. What is left, in detail
 
-**Four untouched (#11, #14, #15, #16), two half-done (#22, #23).** By item count
-that is ~78% complete; by effort it is nearer two thirds, because **#16** (the
+**Three untouched (#11, #14, #15), one half-done (#23).** #22 closed on
+2026-08-13; #16 is the spine and is what is left of the big work. By item count
+that is ~83% complete; by effort it is nearer two thirds, because **#16** (the
 coherent spine) is now the largest thing left, and it could not have been started
 earlier because it depends on #9 and #14.
 
@@ -199,7 +201,7 @@ Two bugs surfaced only by measuring, both written up in §5.14: the hero's promi
 paragraph was at 4.53:1 before any of this existed, and the blobs were anchored
 in percentages of a section that is 900px on a desktop and 1635px on a phone.
 
-### #22 — the landing page (hero DONE 2026-08-11, rest below)
+### #22 — the landing page — DONE 2026-08-13
 
 The confirmed finding: the rotating-headline bug and the "too much gutter, the
 gap between the columns is too big" complaint were **the same problem**. Three
@@ -220,17 +222,17 @@ reverted, and the reason is worth keeping: **neither was a layout change.** The
 column was narrower than the copy, so nothing done inside the component could
 help. Fixed by making the type and the column agree — see §5.8.
 
-**Still open in #22:**
+**Both remaining halves closed on 2026-08-13:**
 
-- **Do not add the progress-tracker copy yet.** The founder asked for it, but
-  #17 does not exist. Advertising a feature that is not built is exactly what
-  this product's own rules forbid. This half of #22 is blocked on #17.
-- Everything below the hero is untouched: the counts band, `HowItWorks`, the
-  problem band, the guide cards, the report section. Nobody has audited those
-  against the founder's "gutters are too big" complaint at 1440+, and the
-  `max-w-6xl` on all of them is the same class of cap that was wrong in the hero
-  — 1152px of content inside a 1440px window. Measure before changing: the
-  Shell rule is that width buys **columns**, never line length.
+- **The planner is on the page.** It was held back because advertising a feature
+  that is not built is what this product's own rules forbid — and until
+  `0028`/`0029` were applied, two of the three views returned an error naming a
+  migration. `npm run db:check` reports 31/31, so the third door is now stated
+  in the page's own order: Opportunities → the guide → **the planner** → the
+  report. The three cards are read from `PLANNER_SECTIONS`, not written out.
+- **The gutters below the hero.** Measured, fixed, and pinned. See §5.15 — the
+  finding is that the complaint was right and the number was worse than anyone
+  had said: 768px of gutter at 1920, on a page whose hero runs to 1600.
 
 ### #23 — animations, interactions, and the button system
 
@@ -967,6 +969,40 @@ both re-paint every frame.
 **Cost:** `/` is still **107 kB** of first-load JS, and the section now has
 *fewer* paints than before — the two `blur-3xl` blobs the field replaced were
 the only `filter` on the page.
+
+### 5.15 The gutters below the hero, and the measure that is not `ch`
+
+The founder's "the gutters are too big" was fixed in the hero on 2026-08-11 and
+never checked below it. At **1920 every section under the hero was 1152px of
+content — 768px of gutter, 40% of the display** — while the hero above ran to
+1600. The page did not look wide and then narrow by accident; it did that at
+exactly the point where the reader stopped looking at the product and started
+reading about it.
+
+Nine sections set `max-w-6xl` independently, which is the same duplication
+`Shell.tsx` exists to remove for the student's section, so the fix is the same
+shape: one `Band`, carrying Shell's own ramp (1152 → 1280 → 1440, stopping
+there). Gutter at 1920 is now 480.
+
+**The part worth keeping is how the prose was checked.** Widening a container is
+only an improvement if the extra width goes into columns; the failure mode is
+that a paragraph quietly stretches with it, which is how the country page
+reached 131 characters a line. So every paragraph on the page was measured in
+**real characters per line — text length over rendered line count**, and not in
+`ch`:
+
+> `ch` is the width of a ZERO, and reads about 20% narrow in this font. A
+> measurement of "78ch" is ~94 real characters. Measuring in the unit you are
+> capping in will tell you the cap is fine.
+
+One paragraph had gone over: the partners band, at **89 characters**. Its parent
+carried `max-w-2xl`, which is a rem measure and therefore does not track the
+16px type inside it — a cap in `rem` bounds the BOX, not the line. It carries
+`max-w-[60ch]` now (the repo's idiom, ~70 real characters) and the page has zero
+paragraphs over 75 at either 1440 or 1920.
+
+A test pins both halves: `Band` must keep all three steps, and no container in
+the landing files may cap at `max-w-6xl` without ramping past it.
 
 ## 6. Verification
 
