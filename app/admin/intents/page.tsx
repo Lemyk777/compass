@@ -100,6 +100,11 @@ export default async function AdminIntentsPage() {
 
   const byStatus = (s: string) => intents.filter((i) => i.status === s);
   const planning = byStatus("planning");
+  // `doing` arrived with the planner (migration 0028). It is counted separately
+  // rather than folded into "planning" on purpose: the whole reason it exists is
+  // that we could not previously see the gap between saying you would start and
+  // starting, and a state that is invisible here is a state we did not add.
+  const doing = byStatus("doing");
   const applied = byStatus("applied");
   const dropped = byStatus("dropped");
   const committedUsers = new Set(intents.map((i) => i.user_id)).size;
@@ -138,14 +143,15 @@ export default async function AdminIntentsPage() {
   // What students actually commit to, most-committed first.
   const perOpportunity = new Map<
     string,
-    { planning: number; applied: number; dropped: number }
+    { planning: number; doing: number; applied: number; dropped: number }
   >();
   for (const i of intents) {
     const row =
       perOpportunity.get(i.opportunity_id) ??
-      { planning: 0, applied: 0, dropped: 0 };
+      { planning: 0, doing: 0, applied: 0, dropped: 0 };
     if (i.status === "applied") row.applied++;
     else if (i.status === "dropped") row.dropped++;
+    else if (i.status === "doing") row.doing++;
     else row.planning++;
     perOpportunity.set(i.opportunity_id, row);
   }
@@ -159,7 +165,8 @@ export default async function AdminIntentsPage() {
         // rendering a bare key that looks like a bug.
         known: Boolean(c),
         cost: c ? opportunityCost(c) : null,
-        total: counts.planning + counts.applied + counts.dropped,
+        total:
+          counts.planning + counts.doing + counts.applied + counts.dropped,
         ...counts,
       };
     })
@@ -237,6 +244,7 @@ export default async function AdminIntentsPage() {
               <Stat label="Students committing" value={committedUsers} />
               <Stat label="Entered it" value={applied.length} />
               <Stat label="Still planning" value={planning.length} />
+              <Stat label="Started" value={doing.length} />
               <Stat label="Dropped" value={dropped.length} />
               <Stat label="Planning → entered" value={`${conversion}%`} />
             </div>
@@ -316,8 +324,8 @@ export default async function AdminIntentsPage() {
                           )}
                         </span>
                         <span data-num className="shrink-0 text-xs tabular-nums text-ink-soft">
-                          {o.planning} planning · {o.applied} entered ·{" "}
-                          {o.dropped} dropped
+                          {o.planning} planning · {o.doing} started ·{" "}
+                          {o.applied} entered · {o.dropped} dropped
                         </span>
                       </li>
                     ))}
