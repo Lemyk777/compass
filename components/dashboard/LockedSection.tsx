@@ -65,7 +65,7 @@ export function LockedSection({
                   <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
                     {eyebrow}
                   </span>
-                  <span className="rounded-full border border-accent/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                  <span className="rounded-full border border-accent/30 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent">
                     Locked
                   </span>
                 </div>

@@ -285,7 +285,7 @@ function RowItem({
           <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink">
             {r.name}
             {me && (
-              <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-on-fill">
+              <span className="rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-on-fill">
                 You
               </span>
             )}
@@ -330,7 +330,7 @@ function StandingBadge({
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-line bg-card px-4 py-2.5 shadow-card">
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
           Your standing · {countryLabel(country)}
         </p>
         <p className="leading-tight">

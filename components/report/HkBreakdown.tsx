@@ -81,7 +81,7 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
     <ProgramCardShell status={p.status} reasoning={p.reasoning} notes={p.notes}>
       {/* University + program */}
       <div className="mb-3">
-        <p className="text-[10px] font-medium uppercase tracking-widest text-ink-faint">
+        <p className="text-[11px] font-medium uppercase tracking-widest text-ink-faint">
           {p.field}
         </p>
         <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">{p.university}</p>
@@ -92,7 +92,7 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
       <div className="mb-3 flex items-center justify-between">
         <StatusPill status={p.status} />
         <div className="text-right">
-          <p className="text-[10px] text-ink-faint">
+          <p className="text-[11px] text-ink-faint">
             {view.kind === "sat" ? "Your SAT" : view.kind === "ib" ? "Your IB" : "Academic standing"}
           </p>
           <p className="text-base font-bold tabular-nums text-ink">
@@ -164,11 +164,11 @@ function HkScoreBar({ program: p }: { program: HkProgramAnalysis }) {
 
 function InterviewBadge({ required }: { required: boolean }) {
   return required ? (
-    <span className="rounded bg-target-soft px-1.5 py-0.5 text-[10px] font-medium text-target-ink">
+    <span className="rounded bg-target-soft px-1.5 py-0.5 text-[11px] font-medium text-target-ink">
       Interview Compulsory
     </span>
   ) : (
-    <span className="rounded bg-line px-1.5 py-0.5 text-[10px] font-medium text-ink-soft">
+    <span className="rounded bg-line px-1.5 py-0.5 text-[11px] font-medium text-ink-soft">
       No Interview
     </span>
   );
@@ -182,7 +182,7 @@ function EnglishBadge({ status }: { status: HkProgramAnalysis["english"] }) {
   };
   const c = config[status];
   return (
-    <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${c.className}`}>
+    <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.className}`}>
       {c.label}
     </span>
   );

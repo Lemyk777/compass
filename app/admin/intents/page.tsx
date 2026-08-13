@@ -318,7 +318,7 @@ export default async function AdminIntentsPage() {
                             </span>
                           )}
                           {o.cost && (
-                            <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                            <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
                               {o.cost.short}
                             </span>
                           )}

@@ -70,7 +70,7 @@ export function LikelihoodGauge({
           }}
         />
       </div>
-      <div className="mt-1 flex justify-between text-[10px] text-ink-faint">
+      <div className="mt-1 flex justify-between text-[11px] text-ink-faint">
         <span>0%</span>
         <span>50%</span>
         <span>100%</span>
@@ -84,7 +84,7 @@ export function LikelihoodGauge({
 
       {deadlines.length > 0 && (
         <div className="mt-3 border-t border-line pt-2.5">
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
             Application deadlines
           </p>
           <ul className="space-y-1.5">
@@ -96,7 +96,7 @@ export function LikelihoodGauge({
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span className="font-medium text-ink">{d.short}</span>
                   {d.binding && (
-                    <span className="shrink-0 rounded bg-reach-soft px-1.5 py-0.5 text-[10px] font-semibold text-reach-ink">
+                    <span className="shrink-0 rounded bg-reach-soft px-1.5 py-0.5 text-[11px] font-semibold text-reach-ink">
                       Binding
                     </span>
                   )}
@@ -124,7 +124,7 @@ export function LikelihoodGauge({
 function BranchCampusPanel({ branch }: { branch: BranchCampus }) {
   return (
     <div className="mt-3 rounded-xl border border-accent/20 bg-accent-soft/50 p-3">
-      <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-accent-ink">
+      <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
         <Flag code={branch.host_code} size={11} className="shrink-0" />
         Campus in {branch.host_country.replace(/^the /, "")} · US-system
         admissions
@@ -151,7 +151,7 @@ function DeadlinePill({ days }: { days: number }) {
   return (
     <span
       data-num
-      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums ${tone}`}
+      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${tone}`}
     >
       {text}
     </span>

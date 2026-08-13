@@ -63,7 +63,7 @@ function UaeProgramCard({ program: p }: { program: UaeProgramAnalysis }) {
     <ProgramCardShell status={p.status} reasoning={p.reasoning} notes={p.notes}>
       {/* University + program */}
       <div className="mb-3">
-        <p className="text-[10px] font-medium uppercase tracking-widest text-ink-faint">
+        <p className="text-[11px] font-medium uppercase tracking-widest text-ink-faint">
           {p.field} · {p.emirate}
         </p>
         <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">{p.university}</p>
@@ -74,7 +74,7 @@ function UaeProgramCard({ program: p }: { program: UaeProgramAnalysis }) {
           system, not the grades-first UAE process this tab models. */}
       {branch && (
         <div className="mb-3 rounded-xl border border-accent/20 bg-accent-soft/50 p-2.5">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-accent-ink">
+          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
             <Flag code="US" size={11} className="shrink-0" />
             US university abroad · evaluated differently
           </p>
@@ -91,11 +91,11 @@ function UaeProgramCard({ program: p }: { program: UaeProgramAnalysis }) {
       <div className="mb-3 flex items-center justify-between">
         <StatusPill status={p.status} />
         <div className="text-right">
-          <p className="text-[10px] text-ink-faint">SAT Index</p>
+          <p className="text-[11px] text-ink-faint">SAT Index</p>
           <p className="text-base font-bold tabular-nums text-ink">
             {p.user_index}
             {p.index_source !== "sat" && (
-              <span className="ml-1 text-[10px] font-medium text-ink-faint">
+              <span className="ml-1 text-[11px] font-medium text-ink-faint">
                 {p.index_source === "gpa" ? "est. from GPA" : "est."}
               </span>
             )}
@@ -144,13 +144,13 @@ function UaeProgramCard({ program: p }: { program: UaeProgramAnalysis }) {
 function InterviewBadge({ required, needBlind }: { required: boolean; needBlind: boolean }) {
   if (!required) {
     return (
-      <span className="rounded bg-line px-1.5 py-0.5 text-[10px] font-medium text-ink-soft">
+      <span className="rounded bg-line px-1.5 py-0.5 text-[11px] font-medium text-ink-soft">
         No Interview
       </span>
     );
   }
   return (
-    <span className="rounded bg-target-soft px-1.5 py-0.5 text-[10px] font-medium text-target-ink">
+    <span className="rounded bg-target-soft px-1.5 py-0.5 text-[11px] font-medium text-target-ink">
       {needBlind ? "Candidate Weekend" : "Interview Required"}
     </span>
   );
@@ -164,7 +164,7 @@ function EnglishBadge({ status }: { status: UaeProgramAnalysis["english"] }) {
   };
   const c = config[status];
   return (
-    <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${c.className}`}>
+    <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.className}`}>
       {c.label}
     </span>
   );
@@ -172,7 +172,7 @@ function EnglishBadge({ status }: { status: UaeProgramAnalysis["english"] }) {
 
 function NeedBlindBadge() {
   return (
-    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[10px] font-medium text-likely-ink">
+    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[11px] font-medium text-likely-ink">
       Need-Blind · Full Need Met
     </span>
   );

@@ -174,7 +174,7 @@ export function GuideCard({
       )}
       {badge && (
         <span
-          className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+          className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
             emphasis ? "bg-accent text-on-fill" : "bg-accent-soft text-accent-ink"
           }`}
         >

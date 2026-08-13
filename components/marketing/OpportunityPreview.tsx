@@ -208,7 +208,7 @@ function Row({
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="whitespace-nowrap rounded-full bg-card px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-soft">
+    <span className="whitespace-nowrap rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
       {children}
     </span>
   );
@@ -225,7 +225,7 @@ function CostChip({ tone, label }: { tone: string; label: string }) {
           : "bg-card text-ink-faint";
   return (
     <span
-      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}
+      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${cls}`}
     >
       {label}
     </span>
