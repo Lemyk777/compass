@@ -15,7 +15,7 @@ holds only what is **specific to this backlog** and not already written there.
 |---|---|
 | `main` and `develop` | **in sync**, everything merged and deployed |
 | PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
-| Progress | **17 of 23 done, 2 half-done, 4 untouched** — see §3 and §4 |
+| Progress | **17 of 23 done, 2 half-done, 4 untouched**, plus **#24** added 2026-08-13 — see §3 and §4 |
 | Unit tests | **151** (`npm run test:unit`) |
 
 ### ⚠️ One thing is pending and it is not code
@@ -119,21 +119,79 @@ earlier because it depends on #9 and #14.
 
 Suggested order, and the reason for it:
 
-1. **#14** — Malaysia and Australia. Self-contained, and #16 needs it.
-2. **#15** — verify the unconfirmed dates. Pure verification, no design decisions,
+1. **#24** — the hero background. New on 2026-08-13, and the founder asked for
+   it directly, which outranks the rest of this list. It is also the natural way
+   in to the animation half of #23: the open question there was always *which*
+   moment has earned an authored one, and the answer arrived as a complaint.
+2. **#14** — Malaysia and Australia. Self-contained, and #16 needs it.
+3. **#15** — verify the unconfirmed dates. Pure verification, no design decisions,
    and it protects the product's central promise. It is also worth more than it
    was: an unconfirmed date now costs a row its place in the planner's calendar
    as well as its countdown, so every one verified moves a card onto the agenda.
-3. **#11** — careers depth and the quiz. Two separable halves: re-tune the weights,
+4. **#11** — careers depth and the quiz. Two separable halves: re-tune the weights,
    rewrite the content in the direct tone already chosen.
-4. **#16** — the spine. Unblocked by #9, better after #14.
-5. The animation half of **#23**, and then the progress-tracker copy in **#22** —
+5. **#16** — the spine. Unblocked by #9, better after #14.
+6. The rest of the animation half of **#23**, and then the progress-tracker copy in **#22** —
    **no longer blocked**, because #17 now exists and can honestly be advertised.
-6. The planner's **release 2**: mind maps, and the drag-and-drop enhancement over
+7. The planner's **release 2**: mind maps, and the drag-and-drop enhancement over
    the existing move action. See [PLANNER_PLAN.md](PLANNER_PLAN.md) §10.
 
 Each entry below states the ask, what is already known, the files, and the
 decision needed.
+
+### #24 — the hero background — NEW 2026-08-13
+
+**The ask, verbatim:** the landing background at the top is "just dark, empty
+somehow"; make it more creative, and animate it properly.
+
+It is a fair report and it names a real hole. The hero paints `bg-surface` and
+nothing else. In light mode that is off-white and reads as clean; in dark mode
+`--surface` is `11 17 28`, so the top of the page — the header strip, the
+badge, the `<h1>`, the whole left 56% — is a **flat near-black rectangle**. The
+only light in the section was two blurred blobs, and both sat in the RIGHT
+column behind the opportunity card, i.e. nowhere near the part that was
+reported.
+
+So this is not "add a nice background". It is: the hero has a lit half and an
+unlit half, and the unlit half is the half carrying the promise.
+
+**What it must not become.** Every constraint from #23 still binds, and they are
+what make this hard rather than a copy-paste:
+
+- **No framer-motion on this page**, and no new client component. `/` is 107 kB
+  of first-load JS and that was hard-won (§5.8, and the landing section of
+  CLAUDE.md). A background is decoration; decoration does not get to cost
+  hydration.
+- **No animated `filter: blur`.** It cannot be composited, and the old rotating
+  headline already taught this lesson the expensive way — a 60px `<h1>`
+  re-rasterised on a 2.6s loop for as long as the tab was open. Softness has to
+  be baked into the *paint* (a radial-gradient falloff) so the only thing that
+  ever animates is a transform.
+- **Transform and opacity only.** That rules out the two techniques every
+  tutorial reaches for first: animating `background-position` across a mesh of
+  radial gradients, and animating a `filter` radius. Both run on the main
+  thread every frame.
+- **Both themes, from tokens.** A field tuned by eye on a dark monitor is
+  invisible on the light one, and vice versa. The strengths have to be per-theme
+  values, not one alpha that "looks about right".
+- **Reduced motion is already guarded, but the guard changes the design.**
+  `globals.css` zeroes `animation-duration`, `animation-delay` **and forces
+  `animation-iteration-count: 1`** — so an infinite loop does not stop where it
+  started, it jumps to its **end state** and stays there. Every looping keyframe
+  here therefore has to be **closed** (`0%` and `100%` identical), or a reader
+  who asked their system for less motion gets the composition frozen mid-stride.
+
+**What was looked at, and why it was not chosen.** The current vocabulary for
+this on the web is four things: an aurora / mesh gradient, a masked dot-or-line
+lattice, a cursor spotlight, and a particle field. The **cursor spotlight is the
+one that gets recommended most and it is the one that fits this product least** —
+it needs a pointer, it needs JS, and most of our students read us on a phone
+where it renders as nothing at all. A particle canvas is the same trade one step
+worse. That leaves aurora + lattice, which are both pure paint, and the whole
+craft is in not doing them the way the tutorials do.
+
+**Files:** `app/globals.css` (tokens + keyframes),
+`components/marketing/HeroField.tsx`, `app/(marketing)/page.tsx`.
 
 ### #22 — the landing page (hero DONE 2026-08-11, rest below)
 
