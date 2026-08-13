@@ -15,8 +15,8 @@ holds only what is **specific to this backlog** and not already written there.
 |---|---|
 | `main` and `develop` | **in sync**, everything merged and deployed |
 | PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
-| Progress | **17 of 23 done, 2 half-done, 4 untouched**, plus **#24** added 2026-08-13 — see §3 and §4 |
-| Unit tests | **151** (`npm run test:unit`) |
+| Progress | **17 of 23 done, 2 half-done, 4 untouched**, plus **#24 done** 2026-08-13 — see §3 and §4 |
+| Unit tests | **156** (`npm run test:unit`) |
 
 ### ⚠️ One thing is pending and it is not code
 
@@ -97,6 +97,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 | 8 | A question, not a task — and answering it exposed that #5 and #7 had been fixed one way and four other cities left the other way. 34 → 38 hubs. See the #8 entry in §4. |
 | 9 | 79 institutions, named and never ranked. See §4. |
 | 23 (buttons) | The button system was being bypassed by the page that mattered most, and three call sites had `!important` escapes pointing at why. See §5.9. |
+| 24 | **The hero background.** Two bugs, neither of them the one reported. See §5.14. |
 | 17 | **The planner, COMPLETE** — `/planner` (agenda) + `/planner/board` + `/planner/maps`. Delivered in two releases; both shipped. See §5.12 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
 
 **Not on the founder's list, added because it was needed:**
@@ -119,27 +120,28 @@ earlier because it depends on #9 and #14.
 
 Suggested order, and the reason for it:
 
-1. **#24** — the hero background. New on 2026-08-13, and the founder asked for
-   it directly, which outranks the rest of this list. It is also the natural way
-   in to the animation half of #23: the open question there was always *which*
-   moment has earned an authored one, and the answer arrived as a complaint.
-2. **#14** — Malaysia and Australia. Self-contained, and #16 needs it.
-3. **#15** — verify the unconfirmed dates. Pure verification, no design decisions,
+**#24 is done** — it was taken first because the founder asked for it directly
+on 2026-08-13, and it turned out to be the natural way in to the animation half
+of #23: the open question there was always *which* moment had earned an authored
+one, and the answer arrived as a complaint. What is left:
+
+1. **#14** — Malaysia and Australia. Self-contained, and #16 needs it.
+2. **#15** — verify the unconfirmed dates. Pure verification, no design decisions,
    and it protects the product's central promise. It is also worth more than it
    was: an unconfirmed date now costs a row its place in the planner's calendar
    as well as its countdown, so every one verified moves a card onto the agenda.
-4. **#11** — careers depth and the quiz. Two separable halves: re-tune the weights,
+3. **#11** — careers depth and the quiz. Two separable halves: re-tune the weights,
    rewrite the content in the direct tone already chosen.
-5. **#16** — the spine. Unblocked by #9, better after #14.
-6. The rest of the animation half of **#23**, and then the progress-tracker copy in **#22** —
+4. **#16** — the spine. Unblocked by #9, better after #14.
+5. The rest of the animation half of **#23**, and then the progress-tracker copy in **#22** —
    **no longer blocked**, because #17 now exists and can honestly be advertised.
-7. The planner's **release 2**: mind maps, and the drag-and-drop enhancement over
+6. The planner's **release 2**: mind maps, and the drag-and-drop enhancement over
    the existing move action. See [PLANNER_PLAN.md](PLANNER_PLAN.md) §10.
 
 Each entry below states the ask, what is already known, the files, and the
 decision needed.
 
-### #24 — the hero background — NEW 2026-08-13
+### #24 — the hero background — DONE 2026-08-13
 
 **The ask, verbatim:** the landing background at the top is "just dark, empty
 somehow"; make it more creative, and animate it properly.
@@ -192,6 +194,17 @@ craft is in not doing them the way the tutorials do.
 
 **Files:** `app/globals.css` (tokens + keyframes),
 `components/marketing/HeroField.tsx`, `app/(marketing)/page.tsx`.
+
+**Shipped.** `HeroField` — a server component, four layers, zero JavaScript.
+The beam and its sweep along the top edge, a masked lattice drifting exactly one
+cell, three radial-gradient blobs on unrelated periods weighted LEFT, and three
+points travelling the lattice. `/` is still **107 kB**, and the section now has
+*fewer* paints than before: the two `blur-3xl` blobs it replaced were the only
+`filter` on the page.
+
+Two bugs surfaced only by measuring, both written up in §5.14: the hero's promise
+paragraph was at 4.53:1 before any of this existed, and the blobs were anchored
+in percentages of a section that is 900px on a desktop and 1635px on a phone.
 
 ### #22 — the landing page (hero DONE 2026-08-11, rest below)
 
@@ -882,6 +895,85 @@ Three things worth not re-discovering:
   would be the inconsistency, not the fix.
 
 ---
+
+### 5.14 The hero background, and the two bugs that were not the one reported
+
+The report was "the top is just dark, empty somehow". Both real defects found
+while fixing it were *underneath* that sentence, and neither is visible in a
+screenshot.
+
+**1. The hero's promise paragraph was already failing AA, before any background
+existed.** It was `text-ink/60`, which measures **4.53:1** on the bare light
+page — AA by three hundredths, with no headroom at all. Put anything behind it
+and it goes under: with the field lit it measured 3.71:1 light and 3.99:1 dark.
+It is `text-ink-soft` now, the token that exists for secondary copy, worth
+8.87:1 and 10.52:1 bare.
+
+The general lesson, and it is the one worth keeping: **an alpha modifier on
+`ink` is a colour nobody has checked.** `text-ink/60` looks like a design
+decision and is arithmetic — it lands wherever the surface happens to be. The
+named tokens are checked, in both themes, by a test that has been there for
+months. Reach for `ink-soft`/`ink-faint`, not for `/60`.
+
+That is also why the field's strengths are a **solve** rather than a taste. The
+bound is the worst composite the field can produce anywhere — the beam and its
+sweep overlapping, with the strongest blob centred on top — at which the
+faintest text on it must still clear 4.5:1. That fixes the glow at 0.20 light /
+0.22 dark and the beam at 0.12 / 0.13. Tuning by eye would have picked 0.30,
+which measures 4.14:1 in dark, and nothing on screen would have looked wrong.
+
+**2. The blobs were anchored in percentages of a box whose height doubles.**
+The hero section is ~900px on a desktop and **1635px at 375×812**, because below
+`lg` the message and the opportunity card stop sitting side by side and stack.
+So `-top-[18%]` put the accent blob's centre 774px above the fold, and
+`-bottom-[22%]` put the ivy one 90px *below* the section it is clipped to. Two
+of the three lights did not exist on a phone — while looking perfect on the
+display they were built on.
+
+They are anchored in `vh` now. A viewport unit is the only frame that means the
+same thing in both layouts. **Any decorative layer inside a container that
+reflows should be measured on the reflowed layout, not the built one**, and a
+percentage offset is the specific spelling that hides it.
+
+**What the design turned out to be.** Four layers, all paint, all composited:
+
+| layer | what it does | why it is that and not the obvious thing |
+|---|---|---|
+| beam + sweep | lights the top edge, behind the header | the literal rectangle that was reported |
+| lattice | hairline grid, masked at top-centre, drifting | drifts exactly ONE cell, so the end state is pixel-identical to the start and `linear infinite` has no seam |
+| aurora | three blobs, three unrelated periods | softness is the gradient's own falloff — **there is no `filter` anywhere**, so only transforms animate |
+| sparks | three points travelling the lattice | the page is about routes; something moves along them |
+
+Three details that only exist because they were got wrong first:
+
+- **Gradient stops are `rgb(var(--x) / 0)`, never `transparent`.** The keyword is
+  `rgba(0, 0, 0, 0)`, so a stop running to it interpolates through black and
+  leaves a grey bruise round every blob — worst on the light theme.
+- **Every loop is closed.** The reduced-motion guard forces
+  `animation-iteration-count: 1` *as well as* a ~0 duration, so an infinite
+  animation does not pause where it started — it **jumps to its end state**. A
+  loop whose 100% differs from its 0% therefore freezes a reduced-motion reader
+  mid-stride, which is precisely what the guard exists to prevent. The sparks
+  are the one deliberate exception: their 100% is `opacity: 0`, so reduced
+  motion *removes* the runners rather than freezing three dots in mid-air.
+- **Stacking is DOM order, not `-z-10`.** A negative z-index puts a child behind
+  its parent's own background whenever the parent is `position: relative` with
+  `z-index: auto` — which is exactly this section — so the field would have
+  painted invisibly under `bg-surface`. It is the section's first child and
+  carries no z-index; the content grid beside it gained `relative`.
+
+**What was surveyed and rejected.** The four live techniques are aurora/mesh, a
+masked lattice, a cursor spotlight, and a particle field. The **cursor spotlight
+is the most recommended and the worst fit here** — it needs a pointer, it needs
+JS, and it renders as nothing at all on the phone most of our students read us
+on. A particle canvas is the same trade one step worse. The two that survived
+are pure paint, and the craft is in not doing them the way the tutorials do:
+both standard recipes animate `background-position` or a `filter` radius, and
+both re-paint every frame.
+
+**Cost:** `/` is still **107 kB** of first-load JS, and the section now has
+*fewer* paints than before — the two `blur-3xl` blobs the field replaced were
+the only `filter` on the page.
 
 ## 6. Verification
 
