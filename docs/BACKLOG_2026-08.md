@@ -18,28 +18,21 @@ holds only what is **specific to this backlog** and not already written there.
 | Progress | **17 of 23 done, 2 half-done, 4 untouched**, plus **#24 done** 2026-08-13 — see §3 and §4 |
 | Unit tests | **156** (`npm run test:unit`) |
 
-### ⚠️ One thing is pending and it is not code
+### The migrations are applied — verified 2026-08-13
 
-**Migrations `0028_planner.sql` and `0029_planner_maps.sql` have not been
-applied.** (`0027` now has been — `npm run db:check` on 2026-08-12 reported only
-0028 missing at that point.) Migrations in this project are run by hand in the
-Supabase SQL editor. Apply **0028 first**: `0029`'s "Send to plan" writes into
-the table 0028 creates. Until 0029 is applied, `/planner/maps` reads as "no
-maps" and starting one returns a readable error naming the migration.
+`npm run db:check` reports **all 31 checks pass**, which includes
+`planner_items` (0028) and `planner_map_nodes` (0029). The warning that used
+to stand here is gone: the agenda, the board, the student's own tasks, "In
+progress" and the mind maps are all live against a real schema.
 
-Until 0028 is applied:
+That is what unblocked the planner being **advertised** on the landing page —
+this product's own rule is that a feature is not described until it works, and
+until today two of the three planner surfaces would have returned a readable
+error naming a migration.
 
-- the **agenda still works in full** — it is built from `opportunity_intents`,
-  the catalog and the roadmap, none of which are new;
-- **the student's own tasks do not save.** `planner_items` does not exist, so
-  the board shows only committed opportunities and "Add" returns a readable
-  error naming the migration rather than a 500. The loader reads the missing
-  table as "no tasks of your own" instead of throwing.
-- **and nothing can be moved to "In progress"**, because that writes
-  `status = 'doing'`, which the old CHECK constraint rejects. Same treatment: a
-  named error, not a crash.
-
-Run it, then `npm run db:check`.
+Re-run `npm run db:check` before believing any note about what is applied,
+including this one. It is read-only, takes a couple of seconds, and it is the
+only thing here that cannot go stale silently — a note can.
 
 ### The one trap that will waste an hour
 
