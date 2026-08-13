@@ -82,6 +82,30 @@ import {
   guideMorph,
   nextGuideSection,
 } from "@/lib/data/guide-sections";
+import { INTENT_STATUSES } from "@/lib/data/intents";
+import { PLANNER_SECTIONS } from "@/lib/data/planner-sections";
+import {
+  MINDMAP_MAX_DEPTH,
+  buildTree,
+  canIndent,
+  canMoveDown,
+  canMoveUp,
+  canOutdent,
+  layoutTree,
+  type MapNode,
+  type MapNodeRow,
+} from "@/lib/data/mindmap";
+import {
+  PLANNER_COLUMNS,
+  buildPlanner,
+  daysBetweenISO,
+  intentStatusFromPlanner,
+  isMovable,
+  plannerStatusFromIntent,
+  stepStatus,
+  type PlannerInputs,
+  type PlannerStatus,
+} from "@/lib/data/planner";
 import {
   VALUE_LABEL,
   rankAreasByValues,
@@ -1900,7 +1924,7 @@ test("robots.txt does not block anything the sitemap advertises", () => {
   }
 
   // And the private trees really are closed.
-  for (const priv of ["/dashboard", "/admin/traffic", "/api/track", "/partner"]) {
+  for (const priv of ["/dashboard", "/admin/traffic", "/api/track", "/partner", "/planner"]) {
     assert.ok(
       disallow.some((rule) => blocked(priv, rule)),
       `${priv} is crawlable`
@@ -2440,4 +2464,494 @@ test("a local opportunity is hidden only from a country we KNOW is different", (
   for (const c of ["KZ", "UZ", null, undefined]) {
     assert.equal(reachableFrom(global_, c), true, `a global row was hidden from ${c}`);
   }
+});
+
+// ── The planner ───────────────────────────────────────────────────────────────
+//
+// Backlog #17. Two views over one list, and the rules that must hold whatever
+// is on it. Every assertion here is a product rule from docs/PLANNER_PLAN.md,
+// not a description of the implementation — in particular §7's "never place an
+// unconfirmed date on the calendar", which is the failure this surface is the
+// most able to commit and the one that costs a student's trust outright.
+
+function plannerInput(over: Partial<PlannerInputs> = {}): PlannerInputs {
+  return {
+    todayISO: "2026-08-12",
+    intents: [],
+    committed: [],
+    ownItems: [],
+    satSittings: [],
+    deadlines: [],
+    phases: [],
+    ...over,
+  };
+}
+
+test("planner: the two status vocabularies round-trip, both ways", () => {
+  for (const s of INTENT_STATUSES) {
+    assert.equal(
+      intentStatusFromPlanner(plannerStatusFromIntent(s)),
+      s,
+      `intent "${s}" did not survive the round trip`
+    );
+  }
+  const planner: PlannerStatus[] = ["todo", "doing", "done", "dropped"];
+  for (const s of planner) {
+    assert.equal(plannerStatusFromIntent(intentStatusFromPlanner(s)), s);
+  }
+  // "applied" must keep meaning exactly what it meant before `doing` existed —
+  // every count on /admin/intents depends on it.
+  assert.equal(plannerStatusFromIntent("applied"), "done");
+  assert.equal(intentStatusFromPlanner("done"), "applied");
+});
+
+test("planner: an unconfirmed date is never given a position in time", () => {
+  const view = buildPlanner(
+    plannerInput({
+      intents: [{ opportunityId: "x", status: "planning" }],
+      committed: [
+        { id: "x", name: "Guessy Olympiad", deadline: "2026-09-30", dateConfirmed: false },
+      ],
+    })
+  );
+
+  const item = view.items.find((i) => i.sourceId === "x");
+  assert.ok(item, "the committed opportunity is missing entirely");
+  // The rule lives in the TYPE, not in a view: there is simply no date to draw.
+  assert.equal(item.dueISO, null, "an unconfirmed deadline leaked into dueISO");
+  assert.equal(item.daysLeft, null, "an unconfirmed deadline produced a countdown");
+  assert.equal(view.months.length, 0, "an unconfirmed date was placed in a month");
+  assert.deepEqual(
+    view.undated.map((i) => i.sourceId),
+    ["x"],
+    "an unconfirmed row must still be listed, just never dated"
+  );
+});
+
+test("planner: overdue is what is late and not finished", () => {
+  const view = buildPlanner(
+    plannerInput({
+      intents: [
+        { opportunityId: "late", status: "planning" },
+        { opportunityId: "sent", status: "applied" },
+      ],
+      committed: [
+        { id: "late", name: "Missed", deadline: "2026-08-01", dateConfirmed: true },
+        { id: "sent", name: "Submitted", deadline: "2026-08-01", dateConfirmed: true },
+      ],
+    })
+  );
+
+  assert.deepEqual(view.overdue.map((i) => i.sourceId), ["late"]);
+  assert.equal(
+    view.months.length,
+    0,
+    "a past date must not appear in the agenda's future months"
+  );
+});
+
+test("planner: the agenda and the board hold different things", () => {
+  const view = buildPlanner(
+    plannerInput({
+      ownItems: [
+        { id: "a", title: "Write the essay", note: null, dueISO: null, status: "todo", href: null },
+      ],
+      satSittings: [{ test: "2026-10-03", regDeadline: "2026-09-18" }],
+    })
+  );
+
+  // An own task with no date belongs on the board, and nowhere in the agenda.
+  const board = [...view.columns.todo, ...view.columns.doing, ...view.columns.done];
+  assert.ok(board.some((i) => i.sourceId === "a"), "the own task is missing from the board");
+  assert.ok(
+    !view.undated.some((i) => i.sourceId === "a"),
+    "a dateless own task must not clutter the agenda's undated block"
+  );
+
+  // A SAT sitting is a fact about the world: dated, and not a card you move.
+  const sat = view.items.find((i) => i.origin === "sat");
+  assert.ok(sat, "the SAT sitting is missing");
+  assert.equal(sat.dueISO, "2026-09-18", "the SAT row must anchor to the REGISTRATION cutoff");
+  assert.equal(isMovable(sat), false);
+  assert.ok(
+    !board.some((i) => i.origin === "sat"),
+    "a SAT sitting reached the board, where it would render a card nobody can move"
+  );
+});
+
+test("planner: dropped is archived, not a column", () => {
+  const view = buildPlanner(
+    plannerInput({
+      intents: [{ opportunityId: "x", status: "dropped" }],
+      committed: [{ id: "x", name: "Changed my mind", deadline: "2026-12-01", dateConfirmed: true }],
+    })
+  );
+
+  for (const col of PLANNER_COLUMNS) {
+    assert.equal(view.columns[col].length, 0, `a dropped row appeared in "${col}"`);
+  }
+  assert.equal(view.droppedCount, 1);
+});
+
+test("planner: one opportunity can never appear twice", () => {
+  const view = buildPlanner(
+    plannerInput({
+      intents: [
+        { opportunityId: "x", status: "planning" },
+        { opportunityId: "x", status: "applied" },
+      ],
+      committed: [{ id: "x", name: "Only once", deadline: "2026-12-01", dateConfirmed: true }],
+    })
+  );
+
+  const keys = view.items.map((i) => i.key);
+  assert.equal(new Set(keys).size, keys.length, "the planner produced a duplicate key");
+});
+
+test("planner: an empty planner is empty, not broken", () => {
+  const view = buildPlanner(plannerInput());
+  assert.deepEqual(view.items, []);
+  assert.deepEqual(view.months, []);
+  assert.deepEqual(view.overdue, []);
+  assert.deepEqual(view.undated, []);
+  assert.equal(view.droppedCount, 0);
+  for (const col of PLANNER_COLUMNS) assert.deepEqual(view.columns[col], []);
+});
+
+test("planner: same inputs, same view — twice", () => {
+  const input = plannerInput({
+    intents: [{ opportunityId: "x", status: "planning" }],
+    committed: [{ id: "x", name: "Stable", deadline: "2026-12-01", dateConfirmed: true }],
+    satSittings: [{ test: "2026-10-03", regDeadline: "2026-09-18" }],
+  });
+  assert.deepEqual(buildPlanner(input), buildPlanner(input));
+});
+
+test("planner: a phase is a separator, never something you can move", () => {
+  const view = buildPlanner(
+    plannerInput({
+      intents: [{ opportunityId: "x", status: "planning" }],
+      committed: [{ id: "x", name: "In September", deadline: "2026-09-20", dateConfirmed: true }],
+      phases: [
+        { id: "focus", name: "Focusing", rangeLabel: "Sep-Nov 2026", startISO: "2026-09-01" },
+        { id: "gone", name: "Long past", rangeLabel: "2019", startISO: "2019-01-01" },
+      ],
+    })
+  );
+
+  const september = view.months.find((m) => m.key === "2026-09");
+  assert.ok(september, "the September bucket is missing");
+  assert.deepEqual(september.phases.map((p) => p.id), ["focus"]);
+  assert.ok(
+    !view.items.some((i) => i.sourceId === "focus"),
+    "a phase became an item — it has no date and no state, so it cannot be one"
+  );
+  // A phase with no month to sit in is dropped rather than drawn as a separator
+  // over nothing.
+  assert.ok(!view.months.some((m) => m.phases.some((p) => p.id === "gone")));
+});
+
+test("planner: the move track has two ends, and dropped is off it", () => {
+  assert.equal(stepStatus("todo", -1), null);
+  assert.equal(stepStatus("todo", 1), "doing");
+  assert.equal(stepStatus("doing", -1), "todo");
+  assert.equal(stepStatus("doing", 1), "done");
+  assert.equal(stepStatus("done", 1), null);
+  assert.equal(stepStatus("dropped", 1), null);
+  assert.equal(stepStatus("dropped", -1), null);
+});
+
+test("planner: day arithmetic is date-only and direction-aware", () => {
+  assert.equal(daysBetweenISO("2026-08-12", "2026-08-12"), 0);
+  assert.equal(daysBetweenISO("2026-08-12", "2026-08-13"), 1);
+  assert.equal(daysBetweenISO("2026-08-13", "2026-08-12"), -1);
+  // Across a northern-hemisphere DST boundary — UTC arithmetic, so exactly 31.
+  assert.equal(daysBetweenISO("2026-10-15", "2026-11-15"), 31);
+});
+
+// A server action is a public HTTP endpoint and the form in front of it is a
+// convenience. None of what follows can fail a type-check or a lint — the code
+// would be perfectly valid without it — so it is asserted from source, the same
+// way the button system's four invariants are.
+test("planner actions validate on the server, not only in the form", () => {
+  const src = readFileSync(path.join(process.cwd(), "app/planner/actions.ts"), "utf8");
+
+  for (const bound of ["plannerTitle", "plannerNote", "plannerItems"]) {
+    assert.ok(src.includes(`LIMITS.${bound}`), `the action never reads LIMITS.${bound}`);
+  }
+
+  // link_href is an IN-APP path. An external URL here would route around
+  // `npm run test:links`, which is what keeps our links alive and which only
+  // knows about the catalog.
+  assert.ok(
+    src.includes('startsWith("/")'),
+    "the action does not constrain link_href to an in-app path"
+  );
+  assert.ok(
+    src.includes('startsWith("//")'),
+    "a protocol-relative //host leaves the site while looking like a path"
+  );
+
+  // The 0028 degradation path: a database without the migration must produce a
+  // readable error naming it, not a 500. Same pattern migration 0027 set.
+  assert.ok(src.includes("0028"), "no error path names the migration");
+});
+
+test("the planner is private, and its steps are a registry", () => {
+  // The section is behind a login, so it must not be advertised. The sitemap
+  // and robots are checked against each other elsewhere; this is the other
+  // half — that we never asked for it to be indexed in the first place.
+  const paths = sitemapRoutes().map((e) => new URL(e.url).pathname);
+  assert.ok(
+    !paths.some((p) => p === "/planner" || p.startsWith("/planner/")),
+    "the sitemap advertises a page that requires an account"
+  );
+
+  // Same registry rule as the guide's four steps: the tabs, the headings and
+  // any step added later read ONE array, so adding mind maps is one edit and
+  // not four that drift.
+  assert.ok(PLANNER_SECTIONS.length >= 2, "the planner has fewer than two steps");
+  const ids = PLANNER_SECTIONS.map((s) => s.id);
+  assert.equal(new Set(ids).size, ids.length, "two planner steps share an id");
+  for (const s of PLANNER_SECTIONS) {
+    assert.ok(s.href === "/planner" || s.href.startsWith("/planner/"), `${s.id} is outside the section`);
+    assert.ok(s.label.trim().length > 0, `${s.id} has no tab label`);
+    assert.ok(s.title.trim().length > 0, `${s.id} has no heading`);
+    assert.ok(s.blurb.trim().length > 0, `${s.id} does not say what it answers`);
+  }
+});
+
+// ── Mind maps (planner release 2) ─────────────────────────────────────────────
+//
+// The one decision everything here follows from: we store the STRUCTURE, never
+// the coordinates. So the picture is a pure function of the tree, and every
+// property a canvas would have needed a human to eyeball is asserted instead.
+//
+// Three of these guard against states the DATABASE can technically hold and a
+// renderer cannot survive: a parent pointing outside the map, a cycle, and depth
+// past the cap. None should ever happen. All three would hang or crash the page.
+
+function node(over: Partial<MapNodeRow> & { id: string }): MapNodeRow {
+  return {
+    mapId: "m1",
+    parentId: null,
+    label: over.id,
+    note: null,
+    linkHref: null,
+    position: 0,
+    ...over,
+  };
+}
+
+test("mind map: flat rows become a tree, children in position order", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root", label: "Where could I study?" }),
+      node({ id: "b", parentId: "root", label: "Korea", position: 1 }),
+      node({ id: "a", parentId: "root", label: "Germany", position: 0 }),
+      node({ id: "a1", parentId: "a", label: "Learn German to B1", position: 0 }),
+    ],
+    "root"
+  );
+
+  assert.ok(tree, "no tree was built");
+  assert.equal(tree.label, "Where could I study?");
+  assert.deepEqual(
+    tree.children.map((c) => c.label),
+    ["Germany", "Korea"],
+    "children must follow `position`, not insertion order"
+  );
+  assert.deepEqual(tree.children[0].children.map((c) => c.id), ["a1"]);
+  assert.equal(tree.depth, 0);
+  assert.equal(tree.children[0].depth, 1);
+  assert.equal(tree.children[0].children[0].depth, 2);
+});
+
+test("mind map: a row from another map is never pulled in", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "mine", parentId: "root" }),
+      // Same shape, different map. The query is already scoped by map_id; the
+      // builder does not assume the query was written correctly.
+      node({ id: "theirs", parentId: "root", mapId: "m2" }),
+    ],
+    "root"
+  );
+
+  assert.deepEqual(tree!.children.map((c) => c.id), ["mine"]);
+});
+
+test("mind map: a cycle terminates instead of recursing forever", () => {
+  // a → b → a. Reachable only through corruption, and fatal if walked naively.
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "a", parentId: "b" }),
+      node({ id: "b", parentId: "a" }),
+    ],
+    "root"
+  );
+
+  assert.ok(tree, "a cycle elsewhere in the table killed the whole map");
+  assert.deepEqual(tree.children, [], "a cycle was walked into the tree");
+});
+
+test("mind map: depth past the cap is truncated, not rendered", () => {
+  const rows: MapNodeRow[] = [node({ id: "n0" })];
+  for (let i = 1; i <= MINDMAP_MAX_DEPTH + 3; i++) {
+    rows.push(node({ id: `n${i}`, parentId: `n${i - 1}` }));
+  }
+
+  const tree = buildTree(rows, "n0")!;
+  let deepest = 0;
+  const walk = (n: MapNode) => {
+    deepest = Math.max(deepest, n.depth);
+    n.children.forEach(walk);
+  };
+  walk(tree);
+
+  assert.equal(
+    deepest,
+    MINDMAP_MAX_DEPTH,
+    `the tree went ${deepest} deep against a cap of ${MINDMAP_MAX_DEPTH}`
+  );
+});
+
+test("mind map: the layout is deterministic", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "a", parentId: "root", position: 0 }),
+      node({ id: "b", parentId: "root", position: 1 }),
+    ],
+    "root"
+  )!;
+
+  assert.deepEqual(layoutTree(tree), layoutTree(tree));
+});
+
+test("mind map: a parent sits at the midpoint of its children", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "a", parentId: "root", position: 0 }),
+      node({ id: "b", parentId: "root", position: 1 }),
+      node({ id: "c", parentId: "root", position: 2 }),
+    ],
+    "root"
+  )!;
+
+  const { nodes } = layoutTree(tree);
+  const at = (id: string) => nodes.find((n) => n.id === id)!;
+
+  assert.equal(
+    at("root").y,
+    (at("a").y + at("c").y) / 2,
+    "the root is not centred between its first and last child"
+  );
+  // Depth drives x, and only depth.
+  assert.ok(at("a").x > at("root").x, "a child is not to the right of its parent");
+  assert.equal(at("a").x, at("b").x, "siblings are at different depths");
+});
+
+test("mind map: every leaf gets its own row, and nothing overlaps", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "a", parentId: "root", position: 0 }),
+      node({ id: "a1", parentId: "a", position: 0 }),
+      node({ id: "a2", parentId: "a", position: 1 }),
+      node({ id: "b", parentId: "root", position: 1 }),
+    ],
+    "root"
+  )!;
+
+  const { nodes, edges, width, height } = layoutTree(tree);
+
+  const leaves = ["a1", "a2", "b"];
+  const ys = leaves.map((id) => nodes.find((n) => n.id === id)!.y);
+  assert.equal(new Set(ys).size, leaves.length, "two leaves share a row");
+
+  // One edge per node except the root — a tree, not a graph.
+  assert.equal(edges.length, nodes.length - 1);
+  assert.ok(width > 0 && height > 0, "the canvas has no size");
+  for (const n of nodes) {
+    assert.ok(n.x >= 0 && n.y >= 0, `${n.id} is off the canvas`);
+  }
+});
+
+test("mind map: a root on its own lays out without throwing", () => {
+  const tree = buildTree([node({ id: "root", label: "Where could I study?" })], "root")!;
+  const { nodes, edges, width, height } = layoutTree(tree);
+
+  assert.equal(nodes.length, 1);
+  assert.deepEqual(edges, []);
+  assert.ok(width > 0 && height > 0, "an only-child map collapsed to nothing");
+});
+
+test("mind map: the move predicates agree with what the actions permit", () => {
+  const tree = buildTree(
+    [
+      node({ id: "root" }),
+      node({ id: "a", parentId: "root", position: 0 }),
+      node({ id: "b", parentId: "root", position: 1 }),
+      node({ id: "b1", parentId: "b", position: 0 }),
+    ],
+    "root"
+  )!;
+
+  // The root is not a card: it cannot move, indent, outdent or be deleted.
+  assert.equal(canMoveUp(tree, "root"), false);
+  assert.equal(canMoveDown(tree, "root"), false);
+  assert.equal(canIndent(tree, "root"), false);
+  assert.equal(canOutdent(tree, "root"), false);
+
+  // Indent means "become the child of the sibling above you" — so the first
+  // sibling cannot, and the second can.
+  assert.equal(canIndent(tree, "a"), false, "the first child has nothing to indent under");
+  assert.equal(canIndent(tree, "b"), true);
+
+  // Outdent means "become a sibling of your parent" — impossible at depth 1,
+  // because the parent is the root and the root has no siblings.
+  assert.equal(canOutdent(tree, "a"), false);
+  assert.equal(canOutdent(tree, "b1"), true);
+
+  assert.equal(canMoveUp(tree, "a"), false, "the first sibling cannot move up");
+  assert.equal(canMoveDown(tree, "a"), true);
+  assert.equal(canMoveUp(tree, "b"), true);
+  assert.equal(canMoveDown(tree, "b"), false, "the last sibling cannot move down");
+
+  // An id that is not in this map answers false rather than throwing.
+  assert.equal(canMoveUp(tree, "nope"), false);
+  assert.equal(canIndent(tree, "nope"), false);
+});
+
+test("map actions validate on the server, and never delete the thinking", () => {
+  const src = readFileSync(path.join(process.cwd(), "app/planner/maps/actions.ts"), "utf8");
+
+  for (const bound of ["mapLabel", "mapNodes", "maps"]) {
+    assert.ok(src.includes(`LIMITS.${bound}`), `the action never reads LIMITS.${bound}`);
+  }
+  assert.ok(
+    src.includes("MINDMAP_MAX_DEPTH"),
+    "nothing stops a node being nested past the depth the layout can draw"
+  );
+
+  // Same in-app-path rule as the tasks: the catalog owns external links because
+  // `npm run test:links` is what keeps them alive.
+  assert.ok(src.includes('startsWith("/")'), "link_href is not constrained to an in-app path");
+  assert.ok(src.includes('startsWith("//")'), "a protocol-relative //host would leave the site");
+
+  // A database without 0029 must name the migration rather than 500.
+  assert.ok(src.includes("0029"), "no error path names the migration");
+
+  // "Send to plan" copies the node into planner_items. It must NOT remove it:
+  // deleting the thinking at the moment you act on it is exactly backwards.
+  const promote = src.slice(src.indexOf("export async function promoteNodeToTask"));
+  assert.ok(promote.length > 0, "promoteNodeToTask is missing");
+  assert.ok(
+    !/\.delete\(\)/.test(promote),
+    "sending a node to the plan deletes it — the map must keep the node"
+  );
 });
