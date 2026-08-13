@@ -190,7 +190,14 @@ export default async function LandingPage() {
                 />
               </h1>
               <p
-                className="rise-in mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-ink/60 lg:max-w-[34rem]"
+                // `text-ink-soft`, not `text-ink/60`. This paragraph is the
+                // product's promise, it is 18px `font-light`, and it is the
+                // only normal-sized text in the hero sitting directly on the
+                // field rather than on an opaque card. At /60 it measured
+                // 4.53:1 on the bare page — AA by three hundredths — and 3.71:1
+                // with the field lit under it. `ink-soft` is the token that
+                // exists for secondary copy and is worth 8.87:1 bare.
+                className="rise-in mt-6 max-w-md text-pretty text-lg font-light leading-relaxed text-ink-soft lg:max-w-[34rem]"
                 style={{ animationDelay: "0.08s" }}
               >
                 Competitions, olympiads, courses and programmes you can actually

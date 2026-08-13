@@ -117,16 +117,36 @@
      "looks about right", because a field tuned on a dark monitor is invisible
      on the light one and a field tuned on the light one is a smear on the dark.
 
+     Every number here is the output of a SOLVE, not a taste, because a
+     background that lifts the page also drags the text on it toward the page.
+     The bound: at the worst composite this field can produce — the beam and
+     its sweep overlapping, with the strongest blob centred on top — the
+     faintest text the hero uses must still clear AA. That is asserted in
+     scripts/test-engine.ts against the classes the hero actually carries, so
+     dropping a fainter one in later fails the build rather than shipping.
+
+     The measurement that forced it: the hero's copy was `text-ink/60`, which
+     is 4.53:1 on the bare light page — a pass by three hundredths and with no
+     headroom whatever. Under even a gentle field it fell to 3.8, and in dark
+     mode to 3.57. It is `text-ink-soft` now: the token that exists for exactly
+     this, worth 8.87:1 and 10.52:1 bare.
+
+     The two alphas are then the largest that keep `ink-soft` over 4.7:1 at
+     that worst composite, and the lattice is solved separately so that it
+     weighs the SAME in both themes — 1.20:1 against the page, deliberately
+     under the 1.3 the product's real dividers carry, because a decoration must
+     not read as a rule.
+
      --field-line is the lattice. On an off-white page it is the page's own ink
      at a whisper: graph paper, not a table. */
   --field-line: 16 25 43;
-  --field-line-alpha: 0.055;
+  --field-line-alpha: 0.091;
   /* The aurora blobs. Their softness is baked into the radial-gradient's own
      falloff — there is no filter here to animate, on purpose. */
-  --field-glow-alpha: 0.18;
+  --field-glow-alpha: 0.2;
   /* The strip along the very top, behind the header. This is the half of the
      hero that was reported as empty. */
-  --field-beam-alpha: 0.1;
+  --field-beam-alpha: 0.12;
   /* The points that travel the lattice. Small, so they need to be nearly
      opaque to register at all. */
   --field-spark-alpha: 0.45;
@@ -195,9 +215,9 @@
        light, which is a different token and not the same one at a different
        alpha. */
     --field-line: 132 160 208;
-    --field-line-alpha: 0.075;
-    --field-glow-alpha: 0.26;
-    --field-beam-alpha: 0.16;
+    --field-line-alpha: 0.127;
+    --field-glow-alpha: 0.22;
+    --field-beam-alpha: 0.13;
     --field-spark-alpha: 0.75;
 
     /* Pure black at 40–80%, not the navy at 4–22% the light theme uses. A
@@ -257,9 +277,9 @@
      light, which is a different token and not the same one at a different
      alpha. */
   --field-line: 132 160 208;
-  --field-line-alpha: 0.075;
-  --field-glow-alpha: 0.26;
-  --field-beam-alpha: 0.16;
+  --field-line-alpha: 0.127;
+  --field-glow-alpha: 0.22;
+  --field-beam-alpha: 0.13;
   --field-spark-alpha: 0.75;
 
   --shadow-card:
