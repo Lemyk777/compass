@@ -18,6 +18,8 @@ import {
   universitiesForHub,
 } from "@/lib/data/place-universities";
 import { statedGuideFields } from "@/lib/guide/student-fields";
+import { WorkFromHere } from "@/components/guide/Spine";
+import { areasForHub } from "@/lib/data/spine";
 import { pageMeta } from "@/lib/seo";
 
 // One city, in full. Same three facts as everywhere in world.ts and in the same
@@ -102,10 +104,15 @@ export default function GuideHubPage({
     {
       id: "work",
       title: "The work that clusters here",
+      // Was a list of field LABELS and nothing else — it named the fields and
+      // gave no way to read what any of them means, which is the dead end the
+      // spine exists to close. Every area is a page now.
       body: (
-        <GuideBlock label="Fields with a real market in this city">
-          {hub.fields.map((f) => FACULTY_LABEL[f]).join(" · ")}
-        </GuideBlock>
+        <WorkFromHere
+          areas={areasForHub(hub)}
+          stated={stated}
+          where={hub.city}
+        />
       ),
     },
   ];
@@ -121,8 +128,8 @@ export default function GuideHubPage({
         <>
           <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
             Not a ranking and not in order of merit — the places a subject is
-            actually studied and taught at in this city, so you have something to
-            search for.
+            actually studied and taught at in this city, so you have something
+            to search for.
           </p>
           <ul className="grid gap-2.5 sm:grid-cols-2">
             {named.map((u) => (

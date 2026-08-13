@@ -199,6 +199,23 @@ is its own route now:
   level with strengths. On mobile the columns stack, so each answer is labelled
   with its country — an unlabelled stack is not a comparison.
 
+- **The four steps are JOINED, and the join is a function**
+  ([lib/data/spine.ts](lib/data/spine.ts), rendered by
+  [components/guide/Spine.tsx](components/guide/Spine.tsx)). Every layer already
+  carried `FacultyValue` — `CAREER_AREAS_BY_FACULTY` is keyed by it,
+  `Hub.fields`, `StudyDestination.fields`, `NamedUniversity.knownFor` and
+  `HomeRoute.fields` are all lists of it — so the chain needed no new content,
+  only deriving. **Never store it**: a saved spine is a sixth copy of the same
+  relationships and drifts the first time a city gains a field, the same reason
+  the planner refuses to snapshot the catalog. Four rules live in the module so
+  a new view cannot forget them: the **home region leads** (`REGION_ORDER`);
+  **every stop has a page behind it**, or it is a name a student cannot click;
+  institutions appear **only under a field they are `knownFor`, in the
+  registry's order** — never sorted by anything, which would be a ranking; and a
+  country we merely NAME is plain text, not a link. It is **server-only in
+  practice** (five prose registries, ~4,000 lines) and a test fails any client
+  component that imports it. The round trip is asserted: a city on a field's
+  chain must lead back to that field's areas.
 - **The steps live in one registry** ([lib/data/guide-sections.ts](lib/data/guide-sections.ts)) that the tabs, the index cards and the "next step" footer all read. Add or rename a step there, not in four places.
 - **One session read per request.** `guideView()`/`guideSession()` in [lib/guide/student-fields.ts](lib/guide/student-fields.ts) are `cache()`d, because the layout (picking a shell), the page (labelling the filter) and the filter's default each used to call `getSession()` — three `auth.getUser()` round trips and three `profiles` reads before a page drew anything. Ask through `guideView`, not `getSession`, inside the guide.
 - **The field filter is `?f=`, not state** ([lib/data/guide-fields.ts](lib/data/guide-fields.ts) + [lib/guide/student-fields.ts](lib/guide/student-fields.ts)). Three states, and the last two are NOT the same: absent = "not stated" (falls back to the student's own fields), `f=all` = the student deliberately widened it, `f=a,b` = those fields. Collapsing them re-applies the profile on every navigation. Every in-section link carries it via `withFields`.
