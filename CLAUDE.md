@@ -401,6 +401,43 @@ guide) → honest by design → the report, opt-in → organisations → FAQ →
   It plots the universities the analysis benchmarks against — that is report
   content, and it is the most expensive thing on the page.
 
+- **The hero's background is `HeroField`, and it is four layers of paint with
+  no JavaScript** ([components/marketing/HeroField.tsx](components/marketing/HeroField.tsx),
+  the CSS under "THE HERO FIELD" in [app/globals.css](app/globals.css)). The
+  section used to paint `bg-surface` and stop, which on the dark theme is a flat
+  near-black rectangle under the badge, the `<h1>` and both calls to action. Five
+  rules, all test-enforced, and each is a bug that shipped or nearly did:
+  - **Only `transform` and `opacity` ever animate.** That rules out the two
+    recipes every tutorial leads with — a mesh animated through
+    `background-position`, and a `filter: blur` radius — because each re-paints
+    every frame. So **the softness is in the paint**: a blob is a
+    radial-gradient whose own falloff *is* the blur, and there is no `filter`
+    anywhere in the block. The field replaced two `blur-3xl` divs, so the
+    section has fewer paints than before.
+  - **Gradient stops are `rgb(var(--x) / 0)`, never `transparent`.** The keyword
+    is `rgba(0, 0, 0, 0)`, so a stop running to it interpolates through black and
+    leaves a grey bruise round every blob — worst on the light theme.
+  - **Every loop is closed (`0%` == `100%`).** The reduced-motion guard forces
+    `animation-iteration-count: 1` *as well as* a ~0 duration, so an infinite
+    animation does not pause where it started — it **jumps to its end state**.
+    The lattice is allowed to close by geometry instead: it drifts exactly one
+    cell, so its end is pixel-identical to its start and `linear infinite` has
+    no seam. The sparks are the one exception, and deliberately: their 100% is
+    `opacity: 0`, so reduced motion *removes* the runners rather than freezing
+    three dots in mid-air.
+  - **The field's strength is a solve, not a taste.** The bound: at the worst
+    composite it can produce anywhere — the beam and its sweep overlapping, the
+    strongest blob centred on top — the faintest text on it must still clear
+    4.5:1. Fixing the hero's promise paragraph was part of the same job: it was
+    `text-ink/60`, i.e. **4.53:1 on the bare light page**, AA by three
+    hundredths before any background existed. **An alpha modifier on `ink` is a
+    colour nobody has checked** — reach for `ink-soft`/`ink-faint`, which are.
+  - **Vertical anchors are `vh`, never `%` of the section.** That section is
+    ~900px on a desktop and **1635px at 375×812**, because below `lg` the
+    message and the card stack. Percentage offsets put two of the three lights
+    outside the fold on a phone while looking perfect on the display they were
+    built on.
+
 Four traps that cost real seconds, all of them found by measuring:
 
 1. **Never preload every country's terrain.** `MapView` used to warm all five
