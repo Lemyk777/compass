@@ -5,6 +5,7 @@ import { UniversityLogos } from "@/components/marketing/UniversityMarquee";
 import { MiniScorecard } from "@/components/marketing/MiniScorecard";
 import { MapScene } from "@/components/marketing/MapScene";
 import { RotatingHeadline } from "@/components/marketing/RotatingHeadline";
+import { HeroField } from "@/components/marketing/HeroField";
 import { HowItWorks } from "@/components/marketing/HowItWorks";
 import { FAQ } from "@/components/marketing/FAQ";
 import { FinalCTA } from "@/components/marketing/FinalCTA";
@@ -138,6 +139,11 @@ export default async function LandingPage() {
           image, no chart, no JS. Content is visible by default (CSS reveal),
           never gated by a scroll animation. */}
         <section className="relative flex min-h-[100svh] w-full items-center overflow-hidden bg-surface">
+          {/* The section's light, and the first child on purpose. It is
+            positioned with NO z-index, and so is the content grid below it, so
+            paint order is DOM order — no negative z-index, which would have put
+            it behind the section's own background and rendered it invisible. */}
+          <HeroField />
           {/* The split is 56/44 with a 56px gap, and both numbers are load-bearing.
             It used to be a fixed 560px track beside `1fr`, with the card capped at
             `max-w-lg` and pushed to the far edge — which spent 80px of gap plus
@@ -147,7 +153,7 @@ export default async function LandingPage() {
             second line reserved two lines and rendered one: a 63px hole that
             appeared and vanished every 2.6 seconds. Fractional tracks close the
             gap, the card fills its own column, and the type below fits. */}
-          <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 px-6 py-24 md:px-12 lg:grid-cols-[minmax(0,56fr)_minmax(0,44fr)] lg:gap-14 lg:py-28 xl:px-20">
+          <div className="relative mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 px-6 py-24 md:px-12 lg:grid-cols-[minmax(0,56fr)_minmax(0,44fr)] lg:gap-14 lg:py-28 xl:px-20">
             {/* Left — the message */}
             <div className="relative z-10 max-w-xl lg:max-w-none">
               <span className="rise-in inline-flex items-center rounded-full border border-ink/10 bg-card px-3.5 py-1.5 text-xs font-medium text-ink/60">
@@ -253,13 +259,6 @@ export default async function LandingPage() {
               className="rise-in relative w-full"
               style={{ animationDelay: "0.1s" }}
             >
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 -z-10"
-              >
-                <div className="absolute right-[8%] top-[6%] h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
-                <div className="absolute bottom-[4%] left-[12%] h-64 w-64 rounded-full bg-ivy/10 blur-3xl" />
-              </div>
               {/* `max-w-lg` stays below lg, where the card is centred under the
                 message and 512px is a sensible measure. From lg it must go: the
                 cap was leaving 113px of its own column empty. */}
