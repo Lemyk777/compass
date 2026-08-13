@@ -3674,3 +3674,32 @@ test("the landing hero's background costs no JavaScript and no blur", () => {
     "a blur-* is back in the hero — that is a full re-raster of the box on every paint",
   );
 });
+
+test("the landing page's bands ramp with the window, and no band caps at 1152", () => {
+  // Nine sections each set `max-w-6xl` on their own, which put 1152px of
+  // content inside a 1920px window — 768px of gutter, measured, i.e. 40% of the
+  // display — while the hero above them ran to 1600. `Band` carries Shell's
+  // ramp instead. A container that stops at 1152 is the thing this asserts
+  // against, and the footer is allowed to spell it out inline because it is a
+  // landmark rather than a `div`.
+  const band = readFileSync(
+    path.join(process.cwd(), "components/marketing/Band.tsx"),
+    "utf8",
+  );
+  for (const step of ["max-w-6xl", "xl:max-w-7xl", "2xl:max-w-[90rem]"]) {
+    assert.ok(band.includes(step), `Band lost its ${step} step`);
+  }
+
+  for (const rel of [
+    "app/(marketing)/page.tsx",
+    "components/marketing/HowItWorks.tsx",
+  ]) {
+    const src = readFileSync(path.join(process.cwd(), rel), "utf8");
+    for (const m of src.matchAll(/className="([^"]*\bmax-w-6xl\b[^"]*)"/g)) {
+      assert.ok(
+        m[1].includes("2xl:max-w-[90rem]"),
+        `${rel}: a container caps at max-w-6xl without ramping — "${m[1]}"`,
+      );
+    }
+  }
+});
