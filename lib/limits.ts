@@ -32,4 +32,16 @@ export const LIMITS = {
   // Country-first intake: destinations applied to, and fields of study.
   destinations: 6,
   faculties: 3,
+  // Planner (migration 0028). `plannerItems` is the abuse bound, not a product
+  // opinion: a server action is a public HTTP endpoint, and without a ceiling
+  // one authenticated request loop fills the table.
+  plannerTitle: 120,
+  plannerNote: 500,
+  plannerItems: 100,
+  // Mind maps (migration 0029). `mapNodes` and the depth cap in
+  // lib/data/mindmap.ts are also the bound on the LAYOUT — they are what keeps
+  // the diagram drawable, not just the table small.
+  mapLabel: 80,
+  mapNodes: 60,
+  maps: 12,
 } as const;
