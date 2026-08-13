@@ -12,6 +12,7 @@ import { Shell } from "@/components/ui/Shell";
 
 const LINKS: { href: string; label: string; hint: string }[] = [
   { href: "/opportunities", label: "Opportunities", hint: "What you can enter" },
+  { href: "/planner", label: "Plan", hint: "What to do next" },
   { href: "/guide", label: "Guide", hint: "Where it leads" },
 ];
 
