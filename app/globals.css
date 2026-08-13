@@ -238,6 +238,16 @@
     @apply bg-surface text-ink font-body antialiased;
     text-rendering: optimizeLegibility;
   }
+  /* The surfaces we did not draw still carry the design. A browser's default
+     selection is a system blue that belongs to no palette and looks wrong in
+     both of ours — and on the dark theme it drops the text under it to roughly
+     2:1. Tinted from the accent, with `ink` kept as the text so the contrast is
+     the one already verified. Deliberately not `--accent` at full strength: a
+     saturated fill behind body copy is a highlighter, not a selection. */
+  ::selection {
+    background-color: rgb(var(--accent-soft));
+    color: rgb(var(--ink));
+  }
   h1,
   h2,
   h3,
