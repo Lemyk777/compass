@@ -1,22 +1,47 @@
-# The 23-item backlog — state, findings, and what to do next
+# The backlog — state, findings, and what to do next
 
-The founder gave a 23-item fix/redesign list on 2026-08-10. **Last updated
-2026-08-12.** This file carries everything a fresh session needs to finish the
-rest without re-deriving it.
+The founder gave a 23-item fix/redesign list on 2026-08-10; items #24, #26 and
+#27 were added after. **Last updated 2026-08-14.** This file carries everything
+a fresh session needs to continue without re-deriving it.
 
 Read [CLAUDE.md](../CLAUDE.md) first — it holds the product rules. This file
 holds only what is **specific to this backlog** and not already written there.
+The planner's own design of record is [PLANNER_PLAN.md](PLANNER_PLAN.md).
 
 ---
 
-## 1. Where the repository stands
+## 1. Where the repository stands — READ THIS FIRST
+
+**As of 2026-08-14 the branch is AHEAD of production. Check this before
+assuming anything is live.**
 
 | | |
 |---|---|
-| `main` and `develop` | **in sync**, everything merged and deployed |
-| PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
-| Progress | **20 of 23 done, 1 half-done, 2 untouched** (#11, #14), plus **#24** and **#27** done. **#26 — the planner rebuilt as one connected thing — is next and is the biggest.** See §4 |
-| Unit tests | **173** (`npm run test:unit`) |
+| On `main` (deployed) | everything up to and including the **spine** (#16). PR [#106](https://github.com/Lemyk777/compass/pull/106) merged 2026-08-13 20:04 UTC at `7e9bec5` |
+| **NOT deployed** | 10 commits in PR [#107](https://github.com/Lemyk777/compass/pull/107) — community + catalog 173, the planner's release 3, and the brand-link fix |
+| Branch | `feat/guide-spine` (misnamed by now — it carries three releases' worth) |
+| Progress | **20 of 23 done**, 1 half-done (#23 animation), 2 untouched (**#11**, **#14**), plus **#24**, **#26**, **#27** done |
+| Unit tests | **175** (`npm run test:unit`) |
+| Catalog | **173 entries · 0 broken links** (`npm run test:links`) |
+
+### The mistake that produced that split, so it is not repeated
+
+PR #106 was merged by the founder while work continued on the same branch. A
+merged PR is closed and does not take new commits, so everything pushed after
+the merge silently accumulated on the branch instead of shipping — and the PR's
+title was edited *after* the merge to mention work that was never in it.
+
+**The rule: check `gh pr view <n> --json state` before pushing to a branch that
+has an open PR, and open a new PR the moment the old one merges.** Never edit a
+merged PR's title or body to describe later work.
+
+### How to see the real state in ten seconds
+
+```bash
+git fetch origin && git log --oneline origin/main..HEAD
+```
+
+Empty means everything is deployed. Anything listed is not.
 
 ### The migrations are applied — verified 2026-08-13
 
@@ -1260,6 +1285,120 @@ Also fixed **`ijso`**, broken before any of this — a dead TLS handshake on
 `ijso-official.org`, live on `ijsoweb.org`. **172 links, 0 broken.** Two sit
 behind bot walls, which the rules already treat as answered.
 
+### 5.19 The empty planner: what "a choice" has to be to be worth anything
+
+The founder's call was a CHOICE rather than one recommended next move, and the
+reason it beats a recommendation is worth keeping: **a single recommendation is
+a judgement about a student we have not met.** Four options cost the same one
+tap, and the pick itself is the first piece of revealed preference we get.
+
+The research adds the constraint that makes it work at all:
+
+> **Every option must be a thing that HAPPENS, not a category.**
+
+"Pick a field" is a form with different paint — and a form is exactly what a
+student who cannot answer "what do I want to study" is unable to fill in. Each
+option ends somewhere they can act, and each says what it will TELL them, which
+is the part that makes choosing possible *without already knowing*.
+
+A test enforces it by failing any label that is a noun phrase. That sounds
+crude and it is the right shape: the failure mode here is not a bad label, it is
+a slow drift from verbs back into taxonomy, and taxonomy is what the student
+cannot navigate.
+
+The order is an argument, not a layout — most concrete first:
+
+1. something you can enter now (needs no self-knowledge at all);
+2. what a kind of work is really like (the question under "what do I want to
+   study", asked in a form that has an answer);
+3. what a country actually costs and demands;
+4. think it through on a map — **last on purpose**: it is the only one that asks
+   the student to supply the structure, so it is the wrong first step for
+   exactly the person this screen is for.
+
+**The bridge is the counts.** The four options carry numbers walked out of the
+spine — the areas of work and countries *this student's own fields* reach. That
+one detail is what makes the plan an extension of the guide rather than a second
+opinion about it, and it needed no new data. Before it, the planner knew nothing
+about the guide at all.
+
+### 5.20 Derive the type from the address
+
+A map node pointing at `/guide/places/germany` **is** a country. Nothing else
+could live at that address. So `mapNodeKind` reads the href and there is no
+`kind` column, no migration, nothing to keep in step, and no way for a label and
+a type to disagree.
+
+It also cannot be forged: the type is a fact about where the node leads, and
+`link_href` is already constrained to an in-app path by the server action.
+
+**The generalisation:** when a thing already carries an identifier that is
+unique to its category, the category is derived, not stored. This is the third
+time the same move has paid — the spine (relationships from `FacultyValue`), the
+planner (state from `origin`), and now this. The counter-case is worth naming
+too: derive only when the address is *canonical*. If two paths could mean the
+same category, storing it is correct.
+
+Prefix order matters and a test pins it: `/guide/work/…` must be tested before
+any looser guide prefix, or every guide link answers "country". Unknown paths
+fall back to untyped rather than guessing — **a wrong badge is worse than none**,
+because the badge is what tells a student what kind of decision they are making.
+
+### 5.21 The logo did seven different things
+
+Prompted by comparing our header with a competitor's. The comparison found
+something worse than a layout difference: the brand mark had **seven behaviours
+across seven headers** — not a link at all on the landing page, on `/guide` and
+on the signed-out `/opportunities`; to `/opportunities` in the student nav; to
+`/dashboard` in the report's header; nowhere in the report's sidebar; and to `/`
+on `/partners` alone.
+
+One in seven did what everyone tries first.
+
+Three things worth keeping:
+
+- **`/` is right even for a signed-in student**, because the landing page is
+  session-aware — it already shows "Dashboard" instead of "Log in". A logo that
+  leads to a *section* rather than to the front door quietly tells a reader they
+  are stuck in one.
+- **It is a touch target before it is a logo.** The mark is 24px and the control
+  around it was not sized at all, while every other control in the product
+  clears 44px. The one people aim at most did not.
+- **The exception is not a header.** `Scorecard` draws the mark inside the
+  report card it renders; a link there would be a link in a picture of a
+  document. Exceptions to a global rule should be justifiable in one sentence
+  like that, or they are not exceptions.
+
+**Sign out was a permanent top-level button** — the most destructive action on
+the page, one stray tap from a student's session, sitting beside the links they
+actually want. It is behind the account menu now. A native `<details>` does the
+disclosure and the keyboard for free; the two things it does not give were added
+because a menu without them is a trap — **Escape closes it and returns focus to
+the trigger, and a click outside closes it** — and both listeners are removed
+when it shuts.
+
+### 5.22 A test that reads one match per line is not a test
+
+The 11px floor test used `line.match(...)`, which returns the **first** match
+only. A ternary carrying three sizes on one line — `text-[11px]` before
+`text-[9px]` — therefore passed, and a 9px partner monogram survived the entire
+floor sweep that the test existed to enforce.
+
+It was found by accident: prettier happened to split that line, and the second
+class became visible.
+
+**The general form, and it is the more useful half:** a scan over source text
+must ask what it does when the pattern occurs more than once in a unit. `match`
+vs `matchAll`, `find` vs `filter`, `indexOf` vs a loop. A gate that reports
+*fewer* offenders than exist is worse than no gate, because its green is read as
+proof.
+
+Related, from the same session: two assertions failed on **their own explanatory
+comments** — a CSS comment naming `filter: blur` as the thing being avoided, and
+a component comment naming framer-motion. Anything asserting about what code
+*does* must read the code, not the prose around it. `stripComments` exists for
+that and should be the default for this class of test.
+
 ## 6. Verification
 
 ```bash
@@ -1388,6 +1527,96 @@ still nearly broke:
   timed out, or unresolvable — because each licenses a different action and two of
   them look identical in a one-line report (§5.11).
 
+### The complaint is a symptom; measure before believing it
+
+Four times now the reported problem was not the actual defect, and each time
+measuring found something the report could not have named:
+
+| reported | actually wrong |
+|---|---|
+| "the hero is dark and empty" | the hero's promise paragraph was **4.53:1 before any background existed**, and the blobs were anchored in % of a section that doubles in height on a phone |
+| "the gutters are too big" | true — 768px at 1920 — but the fix exposed a paragraph at **89 real characters** a line |
+| "the text is hard to read" | contrast was fine everywhere (5.48:1+). The defects were **no type step** (a guide card whose title and body were both 14px), a 10px floor, and one typographic setting serving two themes with opposite optical needs |
+| "their logo goes to the landing" | ours did **seven different things in seven headers** |
+
+**So: reproduce the complaint as a number before touching anything.** The
+founder is reporting a feeling accurately; the cause is usually one layer down
+and usually worse. Fixing the reported thing without measuring means fixing the
+symptom and shipping the cause.
+
+### One list, or the compiler cannot help you
+
+The kinds of opportunity existed **five times** — the type union, the partner
+form's Zod enum, the admin quick-add's const, the partner option list, and the
+session checks — with nothing making them agree. Adding a sixth broke three of
+the five, which is the only reason anyone found out.
+
+Collapsed to one `as const` array with the union derived from it. The payoff was
+immediate and measurable: adding a **seventh** kind later the same day was one
+line, and the compiler found every place that had to answer.
+
+**The tell that you have this problem:** a change in one file produces a type
+error in a file you did not expect to touch. That error is not an obstacle, it
+is the design working — but if it *doesn't* appear when it should have, there
+are two lists.
+
+### Verification failures are answered by dropping, not by softening
+
+Under time pressure the instinct is to keep the row and weaken the claim: make
+the blurb vaguer, drop the countdown, say "check the site". That inverts the
+product — the claim IS the product.
+
+Eight rows failed verification across two days and every one was dropped and
+replaced rather than softened:
+
+- **eBird** bounced anonymous visitors into a login loop — a card that lands a
+  student on a sign-in wall lied about "you can start today";
+- **THIMUN**'s TLS chain does not validate — a browser security warning is worse
+  than a 404 because it teaches a student to click through those;
+- **UNICEF Voices of Youth** answered 200 and redirected to a different product;
+- **five Forage company pages** are demonstrably live (curl, 200, five for five,
+  sequential with delays — not rate limiting) and `test:links` still cannot
+  reach them, because they sit behind connection-level bot protection. **A link
+  the gate cannot stand behind does not ship**, even when you personally know it
+  is fine. The catalogue page reaches all five and IS verifiable, so it carries
+  their names in its blurb instead.
+
+What is given up is the ability to name a company on a card. What is kept is a
+gate whose green means something.
+
+### Research the question, not the feature
+
+When the founder said plainly that they did not know how the planner should
+look, "build what was asked" was the wrong reflex — what was asked was a
+direction. Six searches on career indecision produced two findings that
+invalidated the obvious design:
+
+- career indecision is **four profiles, not one state** (39/31/23/7), so a
+  product treating every arrival as completely lost is wrong for seven in ten;
+- **brief interventions barely move 11–16-year-olds; sustained ones do**, so
+  "what do I want to study" cannot be a screen at all.
+
+That reframed the work: the thing here that IS sustained is the plan, so **the
+planner is the intervention** — not where a finished answer is recorded, but
+where it is assembled over months out of what the student does.
+
+It also produced a refusal worth keeping. A RIASEC-style interest inventory is
+the obvious feature and is **explicitly rejected**: the structure is valid, but
+the scales are confounded with **prestige and gender** and culturally caveated.
+For readers choosing under family and status pressure it would launder the exact
+pressures we exist to counteract into something that looks like a measurement.
+
+**Write the sources into the doc.** A decision with its evidence attached can be
+disagreed with on the evidence; one without can only be re-argued from taste.
+
+### The owner's call outranks the research, and the doc says which is which
+
+Three decisions were taken from evidence and then settled differently by the
+founder. Their calls stand, and `PLANNER_PLAN.md` marks each one as an owner's
+call with the reason it is better — not as a correction of the research, and not
+silently overwriting it. A future session must be able to see that a human chose
+this, or it will "fix" it back.
+
 ### Process notes that cost time here
 
 - Commit in logical units, and order them so each one is green on its own.
@@ -1395,3 +1624,136 @@ still nearly broke:
   `<thatDir>/types/**/*.ts` into `include` and reformats the file. Revert it.
 - The doc you are reading goes stale fastest at the top. §1 claimed an open PR
   and an unpushed commit for a day after both were false.
+
+---
+
+## 8. What to do next — the ordered list, 2026-08-14
+
+**Before anything: merge PR [#107](https://github.com/Lemyk777/compass/pull/107)
+or the next session builds on ten commits that are not in production.**
+
+### The two gaps release 3 left open, and they are the top of the list
+
+**8.1 — Adding a typed node to a map FROM the guide.** The map can now display
+the structure of a decision (a node knows it is a country, a field, a kind of
+work) and can send a branch to the plan. What it cannot do is receive one: there
+is no way to be reading about Germany and put it on your map. Until that exists,
+the map displays structure it cannot help you build, and the guide→map half of
+the bridge is missing while the guide→plan half is done.
+
+Shape: a small "add to a map" control on the guide's subject pages, writing a
+`planner_map_nodes` row with `link_href` set to the page you are on — which is
+all `mapNodeKind` needs to type it. No migration. The hard part is not the write,
+it is **not turning every guide page into a page about the map**.
+
+**8.2 — Majors do not exist as a layer, and the founder asked for them twice.**
+The chain today is: area of work → **field** (`FacultyValue`, 8 of them) →
+country → city → university-`knownFor`-that-field. There is no per-university
+programme list, and `knownFor` is field-level.
+
+This is the biggest remaining *content* decision, and it needs one answer before
+any code:
+
+> Is a "major" a **named degree programme at a named university** ("BSc
+> Mechanical Engineering, TUM"), or a **field of study one level finer than our
+> eight** ("mechanical engineering" under "engineering")?
+
+They imply completely different work. The first is a large, fast-rotting dataset
+per institution and would need a yearly verification pass we do not have
+capacity for — the same class of claim as `englishTaught`, but a hundred times
+larger. The second is a taxonomy edit: one more level under `FacultyValue`,
+which every registry already keys on, and it would sharpen matching, the spine
+and the guide's filters at once **without any per-university promise**.
+
+**The second is almost certainly right** and should be proposed as such. It also
+composes with everything already built, whereas the first would need a new
+verification gate before a single row could ship.
+
+### Then, in order
+
+1. **#14 — Malaysia and Australia.** Two country profiles. Self-contained, and
+   it widens the spine's chain immediately. Rules are test-enforced: trade-offs
+   must outnumber strengths, `notForYou` is mandatory, no prices or rankings,
+   `sources` must be official bodies over https and must answer
+   (`npm run test:guide-links`). Each new country needs its cities in `hubs` or
+   the containment test fails.
+2. **#15 — verify the unconfirmed dates.** Pure verification, no design calls,
+   and it protects the product's central promise. Worth more than it was: an
+   unconfirmed date now also costs a row its place on the planner's agenda, so
+   each one verified moves a card into a period.
+3. **#11 — careers depth and the interest quiz.** Two separable halves. The
+   content half is the direct tone already agreed. **The quiz half now has a
+   constraint from §7:** it may inform an offer, it may never be the answer, and
+   it must not become a RIASEC clone.
+4. **The rest of #23's animation half.** The open question was always *which*
+   moment has earned an authored one. Two are now obvious candidates and both
+   are in the planner: the period stepping, and a card moving between columns.
+5. **Local (KZ / Central Asia) catalog rows.** `region` exists exactly for this
+   and NAO Cup is still the only one. The highest-value widening we can do for
+   the students the product is actually for.
+
+### Standing debts worth knowing about
+
+- **The branch name lies.** `feat/guide-spine` carries the spine, the catalog
+  work, release 3 and the nav fix. Cut a fresh branch after #107 merges.
+- **The guide is still `force-dynamic` and uncacheable**, deliberately — two
+  measured causes, both owner calls, written up in CLAUDE.md.
+- **`ijso` was broken before anyone noticed**, which means the link gate is only
+  as good as the frequency it is run at. It is not in CI (it makes ~173 network
+  calls); run it after any catalog edit.
+- **Nothing in the planner can be verified in a browser by an agent** — it is
+  behind a session and entering credentials is not permitted. That is *why* the
+  planner's logic keeps being pushed into pure functions in `lib/data/planner.ts`
+  and `lib/data/planner-start.ts`. Keep doing that: it is the only verification
+  available.
+
+---
+
+## 9. Session log — 2026-08-13 / 14
+
+Kept because the ORDER things happened in is itself information: three of these
+were found only because the previous one was done first.
+
+| # | what | why it mattered |
+|---|---|---|
+| 1 | **#24 the hero field** — 4 layers of paint, zero JS | founder: "the top is dark and empty". Measuring found the promise paragraph at 4.53:1 *before* any background, and blobs anchored in % of a section that doubles on a phone |
+| 2 | **#22 the landing, closed** — `Band`, the planner section | 768px of gutter at 1920; one paragraph at 89 real characters |
+| 3 | **readability pass** — type step, 11px floor, theme tracking | contrast was never the problem. A guide card whose title and body were the same size; `text-accent` painting text at 22 sites (4.28:1) |
+| 4 | **#16 the spine** — `lib/data/spine.ts` | needed no new content: every layer already carried `FacultyValue`. A test caught the home-region rule being true of each pass and false of the result |
+| 5 | **#27 community + catalog 157 → 173** | a kind the catalog had no shape for. Found the category list existing five times |
+| 6 | **#26 release 3** — designed from evidence, then 5 items built | "what do I want to study" cannot be a screen. The planner is the intervention |
+| 7 | **the logo goes home** | comparing headers with a competitor found seven behaviours, not one layout difference |
+
+**Tests: 151 → 175.** Every new assertion was failed deliberately before being
+trusted. Three of those deliberate failures found real bugs rather than
+confirming the test: the spine's region ordering, the 11px floor's
+one-match-per-line hole, and the two assertions that failed on their own
+comments.
+
+**Catalog: 156 → 173, and 0 broken links** — including `ijso`, which had been
+broken before this session started.
+
+### What was NOT done, and why
+
+- **#11, #14, #15** — content and verification work, untouched. Named in §8.
+- **Visual verification of the planner** — impossible for an agent: it is behind
+  a session and entering credentials is not permitted. Everything there was
+  verified by types, lint, production build, and pure functions under test.
+- **Screenshots, for most of the session** — the browser pane was not displayed,
+  so it could not composite frames. All layout work was verified numerically
+  instead (computed styles, geometry, contrast arithmetic at 375 / 1440 / 1920
+  in both themes). This turned out to be *better* than looking, which is now
+  written up in §7.
+
+### The mistakes made here, so they are not repeated
+
+1. **Pushed to a branch whose PR had already merged**, ten times, so ten commits
+   silently sat unshipped. Check `gh pr view <n> --json state` before pushing.
+2. **Edited a merged PR's title** to describe work that was never in it. Never
+   do this; open a new PR.
+3. **A sweep replaced `text-accent` on three icons**, including `AuthAside`,
+   which paints its own fixed dark gradient in both themes — so a token that
+   gets darker in light mode was a regression there. **A codemod over a styling
+   token needs the exceptions checked by hand**, and the test that codifies it
+   needs an allowlist with a stated reason.
+4. **Wrote a test whose scan read one match per line.** See §5.22.
