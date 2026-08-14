@@ -104,7 +104,9 @@ export function buildTree(rows: MapNodeRow[], rootId: string): MapNode | null {
 
 /** Position first, then id — a total order, so the tree is deterministic. */
 function byPosition(a: MapNodeRow, b: MapNodeRow): number {
-  return a.position === b.position ? a.id.localeCompare(b.id) : a.position - b.position;
+  return a.position === b.position
+    ? a.id.localeCompare(b.id)
+    : a.position - b.position;
 }
 
 /** Every node of a tree, depth-first — the order the outline renders in. */
@@ -140,7 +142,14 @@ export type PlacedNode = {
   y: number;
 };
 
-export type MapEdge = { from: string; to: string; x1: number; y1: number; x2: number; y2: number };
+export type MapEdge = {
+  from: string;
+  to: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+};
 
 export type MapLayout = {
   nodes: PlacedNode[];
@@ -272,3 +281,62 @@ export function canOutdent(root: MapNode, id: string): boolean {
   if (!p) return false;
   return p.id !== root.id;
 }
+
+// ── What a node IS ────────────────────────────────────────────────────────────
+//
+// The owner's call for release 3: the map is **the structure of a decision**,
+// not a free canvas. Branches are the real things — a country, a field, a kind
+// of work, something you can enter — and the plan assembles out of them.
+//
+// The kind is DERIVED FROM THE LINK, and that is the whole design. A node that
+// points at `/guide/places/germany` IS a country; nothing else it could be would
+// also live at that address. So there is no `kind` column, nothing to keep in
+// step, and no way for the label and the type to disagree — the same reason the
+// spine is a function rather than a table.
+//
+// It also means a typed node cannot be forged: the type is a fact about where
+// the node leads, and `link_href` is already constrained to an in-app path by
+// the server action.
+
+export type MapNodeKind =
+  | "country"
+  | "city"
+  | "work"
+  | "opportunity"
+  | "plan"
+  /** A thought that has no type yet, which is most of them and must stay easy. */
+  | "note";
+
+/**
+ * What this node is, from where it points.
+ *
+ * Order matters: `/guide/work` must be tested before any looser guide prefix, or
+ * every guide link would answer "country". Unknown in-app paths fall back to
+ * `note` rather than guessing — a wrong badge is worse than none, because the
+ * badge is the thing telling a student what kind of decision they are making.
+ */
+export function mapNodeKind(linkHref: string | null): MapNodeKind {
+  if (!linkHref) return "note";
+  if (linkHref.startsWith("/guide/places/")) return "country";
+  if (linkHref.startsWith("/guide/cities/")) return "city";
+  if (linkHref.startsWith("/guide/work/")) return "work";
+  if (linkHref.startsWith("/opportunities/")) return "opportunity";
+  if (linkHref.startsWith("/planner")) return "plan";
+  return "note";
+}
+
+/**
+ * The word for it, in the student's language rather than the data model's.
+ *
+ * `note` deliberately has no label: an untyped thought is the ordinary case and
+ * badging it "note" would put a word on every node in the map, which is how a
+ * structure stops reading as one.
+ */
+export const MAP_NODE_KIND_LABEL: Record<MapNodeKind, string | null> = {
+  country: "Country",
+  city: "City",
+  work: "Kind of work",
+  opportunity: "Can enter",
+  plan: "In your plan",
+  note: null,
+};

@@ -88,6 +88,8 @@ import {
 import { INTENT_STATUSES } from "@/lib/data/intents";
 import { PLANNER_SECTIONS } from "@/lib/data/planner-sections";
 import {
+  MAP_NODE_KIND_LABEL,
+  mapNodeKind,
   MINDMAP_MAX_DEPTH,
   buildTree,
   canIndent,
@@ -4212,4 +4214,45 @@ test("with no field stated the choice widens rather than shortening", () => {
   // Already has maps — the label acknowledges it rather than inviting them to
   // start over.
   assert.match(none.find((s) => s.id === "map")!.label, /back/i);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Typed map nodes (release 3, #26 item 4).
+//
+// The owner's call: the map is the STRUCTURE OF A DECISION, not a free canvas.
+// A node's kind is derived from where it points, so there is no column to keep
+// in step and no way for a label and a type to disagree — the same reason the
+// spine is a function rather than a table.
+
+test("what a map node IS comes from where it points", () => {
+  assert.equal(mapNodeKind("/guide/places/germany"), "country");
+  assert.equal(mapNodeKind("/guide/cities/berlin"), "city");
+  assert.equal(mapNodeKind("/guide/work/data-and-ai"), "work");
+  assert.equal(mapNodeKind("/opportunities/promys"), "opportunity");
+  assert.equal(mapNodeKind("/planner/board"), "plan");
+
+  // The ordinary case, and it has to stay the cheap one: an untyped thought.
+  assert.equal(mapNodeKind(null), "note");
+  assert.equal(
+    MAP_NODE_KIND_LABEL.note,
+    null,
+    "an untyped thought must not be badged",
+  );
+
+  // A guide path we do not recognise falls back rather than guessing. A wrong
+  // badge is worse than none: the badge is the thing telling a student what
+  // kind of decision they are making.
+  assert.equal(mapNodeKind("/guide/from-home"), "note");
+  assert.equal(mapNodeKind("/guide"), "note");
+
+  // Prefix order matters. `/guide/work/...` must not be swallowed by a looser
+  // guide test — this is the assertion that fails if anyone reorders them.
+  assert.notEqual(mapNodeKind("/guide/work/games-and-interactive"), "country");
+
+  // Every kind except the untyped one is nameable, or a node could be typed and
+  // still render as nothing.
+  for (const [kind, label] of Object.entries(MAP_NODE_KIND_LABEL)) {
+    if (kind === "note") continue;
+    assert.ok(label && label.length > 0, `${kind} has no label`);
+  }
 });

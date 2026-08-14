@@ -1,7 +1,12 @@
 "use client";
 
 import { useRef } from "react";
-import { flattenTree, type MapNode } from "@/lib/data/mindmap";
+import {
+  MAP_NODE_KIND_LABEL,
+  flattenTree,
+  mapNodeKind,
+  type MapNode,
+} from "@/lib/data/mindmap";
 
 // The outline — the map's real content, and the surface a keyboard and a screen
 // reader work with.
@@ -118,9 +123,16 @@ export function MapOutline({
               {n.depth === 0 ? "◆" : "•"}
             </span>
             <span className="min-w-0 flex-1 truncate">{n.label}</span>
-            {n.linkHref && (
-              <span aria-hidden className="shrink-0 text-xs text-ink-faint">
-                ↗
+            {/* WHAT it is, not merely that it links somewhere. The bare ↗ said
+                "this goes to a page" — true of every typed node and therefore
+                worth nothing to a student trying to see the shape of their own
+                decision. The kind is derived from the href, so it cannot
+                disagree with where the node actually leads. An untyped thought
+                shows nothing: badging every node would stop the structure
+                reading as one. */}
+            {MAP_NODE_KIND_LABEL[mapNodeKind(n.linkHref)] && (
+              <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
+                {MAP_NODE_KIND_LABEL[mapNodeKind(n.linkHref)]}
               </span>
             )}
           </div>
