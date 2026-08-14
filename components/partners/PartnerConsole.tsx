@@ -43,11 +43,17 @@ export function PartnerConsole({
     return (
       <section>
         <h2 className="mb-4 text-lg font-semibold tracking-tight text-ink">
-          {editing.mode === "new" ? "Post an opportunity" : `Editing ${editing.post.name}`}
+          {editing.mode === "new"
+            ? "Post an opportunity"
+            : `Editing ${editing.post.name}`}
         </h2>
         <OpportunityForm
           partner={partner}
-          initial={editing.mode === "edit" ? valuesFromPost(editing.post) : EMPTY_OPPORTUNITY}
+          initial={
+            editing.mode === "edit"
+              ? valuesFromPost(editing.post)
+              : EMPTY_OPPORTUNITY
+          }
           submitLabel={editing.mode === "new" ? "Publish it" : "Save changes"}
           onSubmit={(values) =>
             editing.mode === "new"
@@ -104,7 +110,9 @@ export function PartnerConsole({
           onClick={() => setShowProfile((s) => !s)}
           className="text-sm font-semibold text-ink underline-offset-2 hover:underline focus-visible:focus-ring"
         >
-          {showProfile ? "Hide your public profile" : "Edit your public profile"}
+          {showProfile
+            ? "Hide your public profile"
+            : "Edit your public profile"}
         </button>
         {showProfile && <ProfileForm partner={partner} />}
       </section>
@@ -136,7 +144,9 @@ function PostRow({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-2">
-            <span className="text-base font-semibold text-ink">{post.name}</span>
+            <span className="text-base font-semibold text-ink">
+              {post.name}
+            </span>
             {post.published ? (
               <span className="rounded-full bg-likely-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-likely-ink">
                 Live
@@ -203,7 +213,13 @@ function ProfileForm({ partner }: { partner: Partner }) {
 
   function save() {
     startTransition(async () => {
-      const res = await savePartnerProfile({ about, website, logoUrl, city, contactEmail });
+      const res = await savePartnerProfile({
+        about,
+        website,
+        logoUrl,
+        city,
+        contactEmail,
+      });
       if (res.ok) {
         setMsg("Saved.");
         setError(null);
@@ -234,16 +250,33 @@ function ProfileForm({ partner }: { partner: Partner }) {
         />
       </Field>
       <Field label="Website">
-        <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://" />
+        <Input
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          placeholder="https://"
+        />
       </Field>
-      <Field label="Logo URL" hint="An https:// link to your logo — square works best.">
-        <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://" />
+      <Field
+        label="Logo URL"
+        hint="An https:// link to your logo — square works best."
+      >
+        <Input
+          value={logoUrl}
+          onChange={(e) => setLogoUrl(e.target.value)}
+          placeholder="https://"
+        />
       </Field>
       <Field label="City">
         <Input value={city} onChange={(e) => setCity(e.target.value)} />
       </Field>
-      <Field label="Contact email" hint="Only we see this — it is how we reach you.">
-        <Input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+      <Field
+        label="Contact email"
+        hint="Only we see this — it is how we reach you."
+      >
+        <Input
+          value={contactEmail}
+          onChange={(e) => setContactEmail(e.target.value)}
+        />
       </Field>
 
       <p className="text-xs text-ink-faint">
@@ -272,12 +305,20 @@ function valuesFromPost(post: PartnerPost): OpportunityFormValues {
     name: post.name,
     url: post.url,
     blurb: post.blurb,
-    category: (post.category as OpportunityFormValues["category"]) ?? "competition",
+    category:
+      (post.category as OpportunityFormValues["category"]) ?? "competition",
     tier: (post.tier as OpportunityFormValues["tier"]) ?? "accessible",
     level: (post.level as OpportunityFormValues["level"]) ?? "regional",
-    fields: post.fields === "all" ? [] : (post.fields as OpportunityFormValues["fields"]),
+    fields:
+      post.fields === "all"
+        ? []
+        : (post.fields as OpportunityFormValues["fields"]),
     eligibility: post.eligibility ?? "",
-    timing: post.dateConfirmed ? "deadline" : post.alwaysOpen ? "always_open" : "tba",
+    timing: post.dateConfirmed
+      ? "deadline"
+      : post.alwaysOpen
+        ? "always_open"
+        : "tba",
     // A placeholder date is never shown back to the partner as if it were
     // theirs — an unconfirmed row starts the date field empty.
     deadline: post.dateConfirmed ? post.deadline : "",

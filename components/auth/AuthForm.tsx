@@ -118,7 +118,9 @@ export function AuthForm({
   if (checkEmail) {
     return (
       <div className="rounded-2xl border border-line bg-card p-6 text-center shadow-card">
-        <h2 className="text-lg font-semibold text-ink">{t("auth.checkInbox")}</h2>
+        <h2 className="text-lg font-semibold text-ink">
+          {t("auth.checkInbox")}
+        </h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
           {t("auth.checkInboxBody")} <strong>{email}</strong>.{" "}
           {t("auth.checkInboxBody2")}

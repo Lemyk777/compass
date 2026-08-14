@@ -11,7 +11,11 @@ export function Benchmarks({ benchmarks }: { benchmarks: Benchmark[] }) {
   if (!benchmarks.length) return null;
 
   // Shared scale across rows for visual comparability.
-  const all = benchmarks.flatMap((b) => [b.admit_p25, b.admit_p75, b.student_value]);
+  const all = benchmarks.flatMap((b) => [
+    b.admit_p25,
+    b.admit_p75,
+    b.student_value,
+  ]);
   const min = Math.min(...all);
   const max = Math.max(...all);
   const pad = (max - min) * 0.12 || 10;
@@ -22,7 +26,8 @@ export function Benchmarks({ benchmarks }: { benchmarks: Benchmark[] }) {
   return (
     <ul className="space-y-4">
       {benchmarks.map((b, i) => {
-        const inRange = b.student_value >= b.admit_p25 && b.student_value <= b.admit_p75;
+        const inRange =
+          b.student_value >= b.admit_p25 && b.student_value <= b.admit_p75;
         const above = b.student_value > b.admit_p75;
         return (
           <li key={i}>
@@ -44,7 +49,9 @@ export function Benchmarks({ benchmarks }: { benchmarks: Benchmark[] }) {
               {/* student marker */}
               <div
                 className="absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
-                style={{ left: `${Math.max(2, Math.min(98, pct(b.student_value)))}%` }}
+                style={{
+                  left: `${Math.max(2, Math.min(98, pct(b.student_value)))}%`,
+                }}
               >
                 <span
                   className="h-4 w-4 rounded-full border-2 border-white shadow"

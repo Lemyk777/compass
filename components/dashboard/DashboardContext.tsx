@@ -10,13 +10,15 @@ import {
 } from "react";
 import { useTransitionRouter } from "@/components/ui/ViewTransitions";
 import type { Analysis } from "@/lib/ai/schema";
-import { AVAILABLE_DESTINATION_CODES, type DestinationCode } from "@/lib/data/destinations";
+import {
+  AVAILABLE_DESTINATION_CODES,
+  type DestinationCode,
+} from "@/lib/data/destinations";
 import { analysisHasCountry } from "@/lib/data/country-content";
 import type { SatSitting, Competition } from "@/lib/data/key-dates";
 import { indexIntents, type OpportunityIntent } from "@/lib/data/intents";
 import type { Readiness } from "@/lib/data/readiness";
 import { useT } from "@/lib/i18n/client";
-
 
 // Shared state for the whole dashboard. The layout fetches the analysis once and
 // drops it in here; every section page (overview, standing, odds, …) reads from
@@ -76,7 +78,8 @@ const Ctx = createContext<DashboardCtx | null>(null);
 
 export function useDashboard(): DashboardCtx {
   const ctx = useContext(Ctx);
-  if (!ctx) throw new Error("useDashboard must be used within DashboardProvider");
+  if (!ctx)
+    throw new Error("useDashboard must be used within DashboardProvider");
   return ctx;
 }
 
@@ -90,11 +93,11 @@ export function useDashboard(): DashboardCtx {
 // destinations we actually analyze (US/IT/HK) and emitted in canonical order.
 function tabsFor(
   analysis: Analysis | null,
-  destinations: DestinationCode[]
+  destinations: DestinationCode[],
 ): DestinationCode[] {
   if (!analysis) return [];
   return AVAILABLE_DESTINATION_CODES.filter(
-    (c) => destinations.includes(c) || analysisHasCountry(analysis, c)
+    (c) => destinations.includes(c) || analysisHasCountry(analysis, c),
   );
 }
 
@@ -136,21 +139,27 @@ export function DashboardProvider({
   const [analysis, setAnalysis] = useState<Analysis | null>(initialAnalysis);
 
   const [intents, setIntents] = useState<IntentMap>(() =>
-    indexIntents(initialIntents)
+    indexIntents(initialIntents),
   );
-  const setIntent = useCallback((id: string, intent: OpportunityIntent | null) => {
-    setIntents((prev) => {
-      const next = { ...prev };
-      if (intent) next[id] = intent;
-      else delete next[id];
-      return next;
-    });
-  }, []);
+  const setIntent = useCallback(
+    (id: string, intent: OpportunityIntent | null) => {
+      setIntents((prev) => {
+        const next = { ...prev };
+        if (intent) next[id] = intent;
+        else delete next[id];
+        return next;
+      });
+    },
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const running = useRef(false);
 
-  const tabs = useMemo(() => tabsFor(analysis, destinations), [analysis, destinations]);
+  const tabs = useMemo(
+    () => tabsFor(analysis, destinations),
+    [analysis, destinations],
+  );
   const [country, setCountry] = useState<DestinationCode>(tabs[0] ?? "US");
   const activeCountry = tabs.includes(country) ? country : (tabs[0] ?? "US");
 
@@ -229,7 +238,7 @@ export function DashboardProvider({
       liveDates,
       intents,
       setIntent,
-    ]
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

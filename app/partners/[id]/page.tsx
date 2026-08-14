@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { notFound } from "next/navigation";
 import Link from "@/components/ui/Link";
-import { Logo } from "@/components/ui/Logo";
+import { BrandLink } from "@/components/ui/BrandLink";
 import { ButtonLink } from "@/components/ui/Button";
 import { getActivePartner, partnerOpportunities } from "@/lib/partners/queries";
 import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
@@ -54,7 +54,7 @@ export default async function PartnerProfilePage({
       <header className="border-b border-line/70">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-5 sm:px-6">
           <Link href="/" className="shrink-0 focus-visible:focus-ring">
-            <Logo className="text-ink" />
+            <BrandLink transition={false} />
           </Link>
           <ButtonLink href="/partners" variant="subtle" size="sm">
             All partners

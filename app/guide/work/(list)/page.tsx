@@ -49,14 +49,16 @@ export default async function GuideWorkPage({
   return (
     <div className="space-y-6">
       <ListHead
-        intro={<SectionIntro
-          step={SECTION.step}
-          title={SECTION.title}
-          blurb={SECTION.blurb}
-          count={`${total} areas across ${groups.length} ${
-            groups.length === 1 ? "field" : "fields"
-          }. Open any one for the actual job titles inside it and the path in.`}
-        />}
+        intro={
+          <SectionIntro
+            step={SECTION.step}
+            title={SECTION.title}
+            blurb={SECTION.blurb}
+            count={`${total} areas across ${groups.length} ${
+              groups.length === 1 ? "field" : "fields"
+            }. Open any one for the actual job titles inside it and the path in.`}
+          />
+        }
         aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
       />
 

@@ -74,10 +74,17 @@ export function QuickAddOpportunity() {
   if (!open) {
     return (
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <Button variant="subtle" size="sm" shape="pill" onClick={() => setOpen(true)}>
+        <Button
+          variant="subtle"
+          size="sm"
+          shape="pill"
+          onClick={() => setOpen(true)}
+        >
           + Add an opportunity
         </Button>
-        <span className="text-xs text-ink-faint">Admin — publishes immediately</span>
+        <span className="text-xs text-ink-faint">
+          Admin — publishes immediately
+        </span>
         {done && (
           <span
             role="status"
@@ -114,7 +121,11 @@ export function QuickAddOpportunity() {
             placeholder="NAO Cup — debate tournament"
           />
         </Field>
-        <Field label="Link students open" htmlFor="qa-url" hint="Must be https, and must actually be open to them.">
+        <Field
+          label="Link students open"
+          htmlFor="qa-url"
+          hint="Must be https, and must actually be open to them."
+        >
           <Input
             id="qa-url"
             value={form.url}
@@ -166,7 +177,9 @@ export function QuickAddOpportunity() {
           <select
             id="qa-level"
             value={form.level}
-            onChange={(e) => set("level", e.target.value as QuickAddInput["level"])}
+            onChange={(e) =>
+              set("level", e.target.value as QuickAddInput["level"])
+            }
             className="h-11 w-full rounded-xl border border-line bg-card px-3 text-[0.95rem] text-ink focus-visible:focus-ring"
           >
             {["school", "regional", "national", "international"].map((l) => (
@@ -180,10 +193,18 @@ export function QuickAddOpportunity() {
           <select
             id="qa-cat"
             value={form.category}
-            onChange={(e) => set("category", e.target.value as QuickAddInput["category"])}
+            onChange={(e) =>
+              set("category", e.target.value as QuickAddInput["category"])
+            }
             className="h-11 w-full rounded-xl border border-line bg-card px-3 text-[0.95rem] text-ink focus-visible:focus-ring"
           >
-            {["competition", "olympiad", "course", "research_program", "summer_program"].map((c) => (
+            {[
+              "competition",
+              "olympiad",
+              "course",
+              "research_program",
+              "summer_program",
+            ].map((c) => (
               <option key={c} value={c}>
                 {c.replace("_", " ")}
               </option>
@@ -193,7 +214,11 @@ export function QuickAddOpportunity() {
       </div>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        <Field label="Country code" htmlFor="qa-region" hint="Empty = worldwide. “KZ” shows it only to students in Kazakhstan.">
+        <Field
+          label="Country code"
+          htmlFor="qa-region"
+          hint="Empty = worldwide. “KZ” shows it only to students in Kazakhstan."
+        >
           <Input
             id="qa-region"
             value={form.region}
@@ -210,14 +235,30 @@ export function QuickAddOpportunity() {
             placeholder="Shymkent"
           />
         </Field>
-        <Field label="Cost" htmlFor="qa-cost" hint="Leave as unknown unless you have checked.">
+        <Field
+          label="Cost"
+          htmlFor="qa-cost"
+          hint="Leave as unknown unless you have checked."
+        >
           <select
             id="qa-cost"
             value={form.cost}
-            onChange={(e) => set("cost", e.target.value as QuickAddInput["cost"])}
+            onChange={(e) =>
+              set("cost", e.target.value as QuickAddInput["cost"])
+            }
             className="h-11 w-full rounded-xl border border-line bg-card px-3 text-[0.95rem] text-ink focus-visible:focus-ring"
           >
-            {["unknown", "free", "free_cert_paid", "free_then_paid", "freemium", "subscription", "one_time", "paid_aid", "varies"].map((c) => (
+            {[
+              "unknown",
+              "free",
+              "free_cert_paid",
+              "free_then_paid",
+              "freemium",
+              "subscription",
+              "one_time",
+              "paid_aid",
+              "varies",
+            ].map((c) => (
               <option key={c} value={c}>
                 {c.replace(/_/g, " ")}
               </option>
@@ -228,7 +269,10 @@ export function QuickAddOpportunity() {
 
       <fieldset className="mt-4">
         <legend className="text-xs font-medium text-ink">
-          Fields <span className="font-normal text-ink-faint">— none selected means every field</span>
+          Fields{" "}
+          <span className="font-normal text-ink-faint">
+            — none selected means every field
+          </span>
         </legend>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {FACULTIES.map((f) => {

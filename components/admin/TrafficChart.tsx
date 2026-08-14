@@ -52,7 +52,10 @@ export function TrafficChart({ data }: { data: ChartRow[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={240}>
-      <ComposedChart data={data} margin={{ left: -22, right: -18, top: 8, bottom: 0 }}>
+      <ComposedChart
+        data={data}
+        margin={{ left: -22, right: -18, top: 8, bottom: 0 }}
+      >
         <CartesianGrid stroke="rgb(var(--line))" vertical={false} />
         <XAxis dataKey="label" {...AXIS} interval={every} minTickGap={4} />
         <YAxis allowDecimals={false} width={34} {...AXIS} />

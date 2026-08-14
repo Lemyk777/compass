@@ -33,7 +33,10 @@ export default function RankingsLoading() {
         </div>
         <ul className="divide-y divide-line">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <li key={i} className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-5">
+            <li
+              key={i}
+              className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-5"
+            >
               <div className="h-8 w-8 shrink-0 rounded-full bg-line/40" />
               <div className="h-9 w-9 shrink-0 rounded-full bg-line/30" />
               <div className="min-w-0 flex-1">
@@ -42,7 +45,10 @@ export default function RankingsLoading() {
               </div>
               <div className="hidden h-7 shrink-0 items-end gap-[3px] sm:flex">
                 {[1, 2, 3, 4].map((j) => (
-                  <span key={j} className="block h-full w-[5px] rounded-full bg-line/50" />
+                  <span
+                    key={j}
+                    className="block h-full w-[5px] rounded-full bg-line/50"
+                  />
                 ))}
               </div>
               <div className="h-6 w-[3.25rem] shrink-0 rounded bg-line/40" />

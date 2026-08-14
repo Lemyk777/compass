@@ -3740,9 +3740,14 @@ test("11px is the floor — no surface ships 10px type", () => {
       readFileSync(file, "utf8")
         .split("\n")
         .forEach((line, i) => {
-          const m = line.match(/text-\[(\d+(?:\.\d+)?)px\]/);
-          if (m && Number(m[1]) < 11) {
-            offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
+          // matchAll, not match: a ternary can carry three sizes on one
+          // line, and reading only the first is how a 9px monogram sat behind
+          // an 11px one for a whole release. Found when prettier happened to
+          // split the line.
+          for (const m of line.matchAll(/text-[(d+(?:.d+)?)px]/g)) {
+            if (Number(m[1]) < 11) {
+              offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
+            }
           }
         });
     }
@@ -4255,4 +4260,81 @@ test("what a map node IS comes from where it points", () => {
     if (kind === "note") continue;
     assert.ok(label && label.length > 0, `${kind} has no label`);
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The brand mark, and where a header sends you.
+
+test("the logo is always a link, and it always goes home", () => {
+  // It was seven different behaviours across seven headers: not a link at all
+  // on the landing page, on /guide and on the signed-out /opportunities; to
+  // /opportunities in the student nav; to /dashboard in the report's header;
+  // nowhere in the report's sidebar; and to `/` on /partners alone. The single
+  // most-clicked affordance on the site did something different depending on
+  // which page you were reading, and six times out of seven it was not what
+  // everyone tries first.
+  const offenders: string[] = [];
+  for (const file of sourceFiles()) {
+    const rel_ = rel(file);
+    // BrandLink is the one place allowed to render the mark directly.
+    if (rel_.endsWith("components/ui/BrandLink.tsx")) continue;
+    if (rel_.endsWith("components/ui/Logo.tsx")) continue;
+    // The one legitimate exception, and it is not a header: Scorecard renders
+    // the mark INSIDE the report card it draws. A link there would be a link in
+    // a picture of a document.
+    if (rel_.endsWith("components/report/Scorecard.tsx")) continue;
+    const src = stripComments(readFileSync(file, "utf8"));
+    if (!/<Logo\b/.test(src)) continue;
+    offenders.push(rel_);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `render <BrandLink/>, not <Logo/> — the mark must be a link home:\n${offenders.join("\n")}`,
+  );
+
+  const brand = readFileSync(
+    path.join(process.cwd(), "components/ui/BrandLink.tsx"),
+    "utf8",
+  );
+  assert.match(brand, /href="\/"/, "the brand link no longer points home");
+  // It is a touch target before it is a logo, and the mark itself is 24px.
+  assert.match(brand, /min-h-11/, "the brand link lost its 44px touch target");
+  assert.match(brand, /aria-label=/, "the brand link has no accessible name");
+});
+
+test("the student nav runs in the product's own order", () => {
+  // Opportunities → Guide → Plan: what you can enter, where it leads, then it
+  // becomes work. It shipped as Opportunities → Plan → Guide, which disagreed
+  // with the landing page, with the guide's own "next step" footer, and with
+  // the sentence we use to explain ourselves.
+  const src = readFileSync(
+    path.join(process.cwd(), "components/student/StudentNav.tsx"),
+    "utf8",
+  );
+  const order = [...src.matchAll(/href: "(\/[a-z]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(order, ["/opportunities", "/guide", "/planner"]);
+
+  // Sign out was a permanent top-level button: the most destructive action on
+  // the page, one stray tap from a student's session, beside the links they
+  // actually want. It belongs behind the account menu.
+  const nav = src.slice(0, src.indexOf("function AccountMenu"));
+  assert.ok(
+    !/signout/i.test(nav),
+    "sign out is back in the header's top level",
+  );
+
+  // A menu without these is a trap.
+  assert.match(
+    src,
+    /"Escape"/,
+    "the account menu cannot be closed with Escape",
+  );
+  assert.match(
+    src,
+    /pointerdown/,
+    "the account menu does not close on a click outside",
+  );
+  // And a closed menu must carry no listeners at all.
+  assert.match(src, /removeEventListener/, "the menu leaks its listeners");
 });

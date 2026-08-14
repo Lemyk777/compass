@@ -25,7 +25,7 @@ const f = (scores: Record<string, number>) =>
       key,
       label: LABELS[key] ?? key,
       score,
-    }))
+    })),
   );
 
 // Country-native breakdowns (same shape the live page derives from the Italy/HK
@@ -55,7 +55,15 @@ const SAMPLE: LeaderboardRow[] = [
     major: "Computer Science",
     overall: 91,
     countries: ["US"],
-    factors: f({ academics: 10, test_scores: 10, course_rigor: 9, leadership: 9, extracurricular_depth: 9, awards: 9, narrative_fit: 8 }),
+    factors: f({
+      academics: 10,
+      test_scores: 10,
+      course_rigor: 9,
+      leadership: 9,
+      extracurricular_depth: 9,
+      awards: 9,
+      narrative_fit: 8,
+    }),
   },
   {
     userId: "u2",
@@ -63,7 +71,15 @@ const SAMPLE: LeaderboardRow[] = [
     major: "Business & Economics",
     overall: 90,
     countries: ["US", "HK"],
-    factors: f({ academics: 9, test_scores: 9, course_rigor: 8, leadership: 9, extracurricular_depth: 9, awards: 8, narrative_fit: 9 }),
+    factors: f({
+      academics: 9,
+      test_scores: 9,
+      course_rigor: 8,
+      leadership: 9,
+      extracurricular_depth: 9,
+      awards: 8,
+      narrative_fit: 9,
+    }),
     factorsByCountry: { HK: hkf(9, 9, 8, 8) },
   },
   {
@@ -72,7 +88,15 @@ const SAMPLE: LeaderboardRow[] = [
     major: "Engineering (Italy)",
     overall: 88,
     countries: ["IT"],
-    factors: f({ academics: 9, test_scores: 10, course_rigor: 8, leadership: 7, extracurricular_depth: 6, awards: 7, narrative_fit: 7 }),
+    factors: f({
+      academics: 9,
+      test_scores: 10,
+      course_rigor: 8,
+      leadership: 7,
+      extracurricular_depth: 6,
+      awards: 7,
+      narrative_fit: 7,
+    }),
     factorsByCountry: { IT: itf(9, 7, 6) },
   },
   {
@@ -81,7 +105,15 @@ const SAMPLE: LeaderboardRow[] = [
     major: "Engineering",
     overall: 85,
     countries: ["US"],
-    factors: f({ academics: 9, test_scores: 8, course_rigor: 9, leadership: 9, extracurricular_depth: 9, awards: 9, narrative_fit: 8 }),
+    factors: f({
+      academics: 9,
+      test_scores: 8,
+      course_rigor: 9,
+      leadership: 9,
+      extracurricular_depth: 9,
+      awards: 9,
+      narrative_fit: 8,
+    }),
   },
   {
     userId: "u-aizhan",
@@ -89,7 +121,15 @@ const SAMPLE: LeaderboardRow[] = [
     major: "Business & Economics",
     overall: 76,
     countries: ["US", "HK"],
-    factors: f({ academics: 8, test_scores: 7, course_rigor: 7, leadership: 8, extracurricular_depth: 7, awards: 6, narrative_fit: 7 }),
+    factors: f({
+      academics: 8,
+      test_scores: 7,
+      course_rigor: 7,
+      leadership: 8,
+      extracurricular_depth: 7,
+      awards: 6,
+      narrative_fit: 7,
+    }),
     factorsByCountry: { HK: hkf(8, 7, 7, 7) },
   },
   {
@@ -98,7 +138,15 @@ const SAMPLE: LeaderboardRow[] = [
     major: "Natural Sciences",
     overall: 74,
     countries: ["US"],
-    factors: f({ academics: 8, test_scores: 8, course_rigor: 7, leadership: 7, extracurricular_depth: 8, awards: 6, narrative_fit: 6 }),
+    factors: f({
+      academics: 8,
+      test_scores: 8,
+      course_rigor: 7,
+      leadership: 7,
+      extracurricular_depth: 8,
+      awards: 6,
+      narrative_fit: 6,
+    }),
   },
   {
     userId: "u7",
@@ -106,7 +154,15 @@ const SAMPLE: LeaderboardRow[] = [
     major: "Humanities & Social Sciences",
     overall: 71,
     countries: ["US"],
-    factors: f({ academics: 8, test_scores: 7, course_rigor: 7, leadership: 7, extracurricular_depth: 8, awards: 6, narrative_fit: 7 }),
+    factors: f({
+      academics: 8,
+      test_scores: 7,
+      course_rigor: 7,
+      leadership: 7,
+      extracurricular_depth: 8,
+      awards: 6,
+      narrative_fit: 7,
+    }),
   },
   {
     userId: "u8",
@@ -114,7 +170,15 @@ const SAMPLE: LeaderboardRow[] = [
     major: "Arts & Design",
     overall: 68,
     countries: ["HK"],
-    factors: f({ academics: 7, test_scores: 6, course_rigor: 6, leadership: 7, extracurricular_depth: 8, awards: 5, narrative_fit: 8 }),
+    factors: f({
+      academics: 7,
+      test_scores: 6,
+      course_rigor: 6,
+      leadership: 7,
+      extracurricular_depth: 8,
+      awards: 5,
+      narrative_fit: 8,
+    }),
     factorsByCountry: { HK: hkf(7, 6, 6, 6) },
   },
   {
@@ -123,7 +187,15 @@ const SAMPLE: LeaderboardRow[] = [
     major: "Medicine & Health (Italy)",
     overall: 65,
     countries: ["IT"],
-    factors: f({ academics: 8, test_scores: 7, course_rigor: 6, leadership: 5, extracurricular_depth: 6, awards: 5, narrative_fit: 5 }),
+    factors: f({
+      academics: 8,
+      test_scores: 7,
+      course_rigor: 6,
+      leadership: 5,
+      extracurricular_depth: 6,
+      awards: 5,
+      narrative_fit: 5,
+    }),
     factorsByCountry: { IT: itf(7, 4, 8) },
   },
 ];
@@ -135,7 +207,9 @@ const ROWS: LeaderboardRow[] = SAMPLE.map((r) => {
   if (!r.factorsByCountry) return r;
   const overallByCountry: LeaderboardRow["overallByCountry"] = {};
   if (r.factorsByCountry.IT) {
-    const fin = r.factorsByCountry.IT.find((f) => f.key === "it_finance")?.score;
+    const fin = r.factorsByCountry.IT.find(
+      (f) => f.key === "it_finance",
+    )?.score;
     overallByCountry.IT = countryOverall("IT", r.factors, fin);
   }
   if (r.factorsByCountry.HK) {

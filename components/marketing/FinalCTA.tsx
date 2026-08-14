@@ -34,7 +34,13 @@ export function FinalCTA({ signedIn = false }: { signedIn?: boolean }) {
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <ButtonLink href="/opportunities" size="lg" shape="pill">
             {signedIn ? "Open my opportunities" : "See what you can enter"}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
               <path
                 d="M5 12h14M13 6l6 6-6 6"
                 stroke="currentColor"

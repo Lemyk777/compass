@@ -3,26 +3,64 @@
 // modal). Pure decoration — never real data.
 
 const FAUX_SCHOOLS = [
-  { name: "Northwestern University", tier: "Reach", color: "rgb(var(--reach))", lo: 18, hi: 64 },
-  { name: "University of Michigan", tier: "Target", color: "rgb(var(--target))", lo: 38, hi: 78 },
-  { name: "Boston University", tier: "Likely", color: "rgb(var(--likely))", lo: 58, hi: 86 },
-  { name: "University of Rochester", tier: "Target", color: "rgb(var(--target))", lo: 34, hi: 70 },
+  {
+    name: "Northwestern University",
+    tier: "Reach",
+    color: "rgb(var(--reach))",
+    lo: 18,
+    hi: 64,
+  },
+  {
+    name: "University of Michigan",
+    tier: "Target",
+    color: "rgb(var(--target))",
+    lo: 38,
+    hi: 78,
+  },
+  {
+    name: "Boston University",
+    tier: "Likely",
+    color: "rgb(var(--likely))",
+    lo: 58,
+    hi: 86,
+  },
+  {
+    name: "University of Rochester",
+    tier: "Target",
+    color: "rgb(var(--target))",
+    lo: 34,
+    hi: 70,
+  },
 ];
 
 function FauxOddsCard({ s }: { s: (typeof FAUX_SCHOOLS)[number] }) {
   return (
     <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-[0.95rem] font-semibold leading-tight text-ink">{s.name}</h3>
-        <span className="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium" style={{ backgroundColor: s.color, color: "#fff" }}>
+        <h3 className="text-[0.95rem] font-semibold leading-tight text-ink">
+          {s.name}
+        </h3>
+        <span
+          className="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium"
+          style={{ backgroundColor: s.color, color: "#fff" }}
+        >
           {s.tier}
         </span>
       </div>
       <div className="mt-3 flex items-baseline gap-2">
-        <span className="text-2xl font-semibold text-ink">{s.lo}–{s.hi}%</span>
+        <span className="text-2xl font-semibold text-ink">
+          {s.lo}–{s.hi}%
+        </span>
       </div>
       <div className="mt-3 h-2 w-full rounded-full bg-line">
-        <div className="h-full rounded-full" style={{ marginLeft: `${s.lo}%`, width: `${s.hi - s.lo}%`, backgroundColor: s.color }} />
+        <div
+          className="h-full rounded-full"
+          style={{
+            marginLeft: `${s.lo}%`,
+            width: `${s.hi - s.lo}%`,
+            backgroundColor: s.color,
+          }}
+        />
       </div>
     </div>
   );
@@ -44,11 +82,22 @@ export function OddsArt() {
       {FAUX_SCHOOLS.slice(0, 3).map((s) => (
         <div key={s.name} className="rounded-xl border border-line bg-card p-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-ink">{s.name.split(" ").slice(0, 2).join(" ")}</span>
-            <span className="text-xs font-semibold text-ink">{s.lo}–{s.hi}%</span>
+            <span className="text-xs font-medium text-ink">
+              {s.name.split(" ").slice(0, 2).join(" ")}
+            </span>
+            <span className="text-xs font-semibold text-ink">
+              {s.lo}–{s.hi}%
+            </span>
           </div>
           <div className="mt-2 h-1.5 w-full rounded-full bg-line">
-            <div className="h-full rounded-full" style={{ marginLeft: `${s.lo}%`, width: `${s.hi - s.lo}%`, backgroundColor: s.color }} />
+            <div
+              className="h-full rounded-full"
+              style={{
+                marginLeft: `${s.lo}%`,
+                width: `${s.hi - s.lo}%`,
+                backgroundColor: s.color,
+              }}
+            />
           </div>
         </div>
       ))}
@@ -87,8 +136,13 @@ export function CostsArt() {
     <div className="rounded-xl border border-line bg-card p-3">
       <ul className="space-y-2.5">
         {FAUX_FEES.slice(0, 3).map((f) => (
-          <li key={f.name} className="flex items-center justify-between text-xs">
-            <span className="text-ink">{f.name.split(" ").slice(0, 2).join(" ")}</span>
+          <li
+            key={f.name}
+            className="flex items-center justify-between text-xs"
+          >
+            <span className="text-ink">
+              {f.name.split(" ").slice(0, 2).join(" ")}
+            </span>
             <span className="font-semibold text-ink">{f.fee}</span>
           </li>
         ))}

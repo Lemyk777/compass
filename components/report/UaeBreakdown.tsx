@@ -26,17 +26,21 @@ export function UaeBreakdown({ programs }: Props) {
   return (
     <div className="space-y-10">
       <CountryBanner code="AE" title="UAE Admission Rules">
-        UAE university admission is grades-first and SAT-driven for international applicants, with
-        generous merit scholarships. The most selective seats (NYU Abu Dhabi, direct-entry Medicine)
-        interview shortlisted applicants, and predicted-grade offers come as Conditional Offers.
-        Check each program&apos;s scorecard below.
+        UAE university admission is grades-first and SAT-driven for
+        international applicants, with generous merit scholarships. The most
+        selective seats (NYU Abu Dhabi, direct-entry Medicine) interview
+        shortlisted applicants, and predicted-grade offers come as Conditional
+        Offers. Check each program&apos;s scorecard below.
       </CountryBanner>
 
       <div className="space-y-4">
         <div className="space-y-1">
-          <h3 className="text-base font-semibold tracking-tight text-ink">UAE Target Programs</h3>
+          <h3 className="text-base font-semibold tracking-tight text-ink">
+            UAE Target Programs
+          </h3>
           <p className="text-xs leading-relaxed text-ink-faint">
-            Your competitive standing, SAT comparison, scholarship range, and specific entry gates.
+            Your competitive standing, SAT comparison, scholarship range, and
+            specific entry gates.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -66,7 +70,9 @@ function UaeProgramCard({ program: p }: { program: UaeProgramAnalysis }) {
         <p className="text-[11px] font-medium uppercase tracking-widest text-ink-faint">
           {p.field} · {p.emirate}
         </p>
-        <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">{p.university}</p>
+        <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">
+          {p.university}
+        </p>
         <p className="text-xs text-ink-soft">{p.program_name}</p>
       </div>
 
@@ -80,9 +86,9 @@ function UaeProgramCard({ program: p }: { program: UaeProgramAnalysis }) {
           </p>
           <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
             {p.university} is {branch.parent_name}&apos;s campus — you apply
-            through {branch.application} with US-style holistic review, not
-            the grades-first process used by the other UAE universities. For
-            the full US-methodology read, also add it on your US list.
+            through {branch.application} with US-style holistic review, not the
+            grades-first process used by the other UAE universities. For the
+            full US-methodology read, also add it on your US list.
           </p>
         </div>
       )}
@@ -115,14 +121,20 @@ function UaeProgramCard({ program: p }: { program: UaeProgramAnalysis }) {
       {/* Specific entry gates and details */}
       <div className="mt-4 space-y-2 border-t border-line pt-3">
         <div className="flex flex-wrap gap-1.5">
-          <InterviewBadge required={p.interview_required} needBlind={p.need_blind} />
+          <InterviewBadge
+            required={p.interview_required}
+            needBlind={p.need_blind}
+          />
           <EnglishBadge status={p.english} />
           <OfferTypeBadge conditional={p.conditional_offer} />
           {p.need_blind && <NeedBlindBadge />}
         </div>
 
         <div className="flex items-center justify-between gap-4 pt-1">
-          <Stat label="Annual Tuition" value={`$${p.annual_fee_usd.toLocaleString()}`} />
+          <Stat
+            label="Annual Tuition"
+            value={`$${p.annual_fee_usd.toLocaleString()}`}
+          />
           <ScholarshipBadge status={p.scholarship} />
         </div>
       </div>
@@ -141,7 +153,13 @@ function UaeProgramCard({ program: p }: { program: UaeProgramAnalysis }) {
 
 // ── UAE-specific badges ───────────────────────────────────────────────────────
 
-function InterviewBadge({ required, needBlind }: { required: boolean; needBlind: boolean }) {
+function InterviewBadge({
+  required,
+  needBlind,
+}: {
+  required: boolean;
+  needBlind: boolean;
+}) {
   if (!required) {
     return (
       <span className="rounded bg-line px-1.5 py-0.5 text-[11px] font-medium text-ink-soft">
@@ -158,13 +176,21 @@ function InterviewBadge({ required, needBlind }: { required: boolean; needBlind:
 
 function EnglishBadge({ status }: { status: UaeProgramAnalysis["english"] }) {
   const config = {
-    meets: { label: "English Met ✓", className: "bg-likely-soft text-likely-ink" },
-    below: { label: "English Below Bar ⚠", className: "bg-reach-soft text-reach-ink" },
+    meets: {
+      label: "English Met ✓",
+      className: "bg-likely-soft text-likely-ink",
+    },
+    below: {
+      label: "English Below Bar ⚠",
+      className: "bg-reach-soft text-reach-ink",
+    },
     unknown: { label: "English Unknown", className: "bg-line text-ink-soft" },
   };
   const c = config[status];
   return (
-    <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.className}`}>
+    <span
+      className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.className}`}
+    >
       {c.label}
     </span>
   );

@@ -112,14 +112,17 @@ export default function GuideComparePage({
               </li>
             </ol>
           </nav>
-          <DetailExit href={withFields("/guide/places", stated)} label="Countries" />
+          <DetailExit
+            href={withFields("/guide/places", stated)}
+            label="Countries"
+          />
         </div>
         <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
           {a && b ? `${a.name} or ${b.name}?` : "Compare two countries"}
         </h1>
         <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft">
-          The same questions asked of both, in the same order, with what each one
-          costs you level with what it gives you. Neither column is a
+          The same questions asked of both, in the same order, with what each
+          one costs you level with what it gives you. Neither column is a
           recommendation — the last row is the one to read twice.
         </p>
       </header>
@@ -151,15 +154,18 @@ export default function GuideComparePage({
           {/* The names once, at the top of the columns, on the screens wide
               enough to keep two columns. Narrower than that, each answer labels
               itself — see `Side`. */}
-          <div
-            aria-hidden
-            className="hidden gap-3 px-5 sm:grid sm:grid-cols-2"
-          >
+          <div aria-hidden className="hidden gap-3 px-5 sm:grid sm:grid-cols-2">
             <p className="text-base font-semibold text-ink">{a.name}</p>
             <p className="text-base font-semibold text-ink">{b.name}</p>
           </div>
 
-          <Row label="In one line" aName={a.name} bName={b.name} a={a.oneLine} b={b.oneLine} />
+          <Row
+            label="In one line"
+            aName={a.name}
+            bName={b.name}
+            a={a.oneLine}
+            b={b.oneLine}
+          />
           <Row
             label="What only this place gives you"
             aName={a.name}
@@ -345,15 +351,21 @@ function Row({
       <div className="mt-2 grid gap-3 sm:grid-cols-2">
         <div>
           <Side name={aName} />
-          <p className="max-w-[58ch] text-sm leading-relaxed text-ink-soft">{a}</p>
+          <p className="max-w-[58ch] text-sm leading-relaxed text-ink-soft">
+            {a}
+          </p>
         </div>
         <div>
           <Side name={bName} />
-          <p className="max-w-[58ch] text-sm leading-relaxed text-ink-soft">{b}</p>
+          <p className="max-w-[58ch] text-sm leading-relaxed text-ink-soft">
+            {b}
+          </p>
         </div>
       </div>
       {footnote && (
-        <p className="mt-2 text-xs leading-relaxed text-ink-faint">{footnote}</p>
+        <p className="mt-2 text-xs leading-relaxed text-ink-faint">
+          {footnote}
+        </p>
       )}
     </section>
   );
@@ -377,7 +389,11 @@ function ListRow({
   inline?: boolean;
 }) {
   const dot =
-    tone === "good" ? "bg-accent" : tone === "bad" ? "bg-reach" : "bg-ink-faint";
+    tone === "good"
+      ? "bg-accent"
+      : tone === "bad"
+        ? "bg-reach"
+        : "bg-ink-faint";
   const column = (items: string[]) =>
     inline ? (
       <ul className="flex flex-wrap gap-1.5">

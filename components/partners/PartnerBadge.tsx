@@ -1,5 +1,9 @@
 import Link from "@/components/ui/Link";
-import { partnerMonogram, partnerPath, type PartnerRef } from "@/lib/data/partners";
+import {
+  partnerMonogram,
+  partnerPath,
+  type PartnerRef,
+} from "@/lib/data/partners";
 
 // "Posted by Astana Hub ✓" — the attribution that travels with every
 // partner-posted opportunity.
@@ -79,7 +83,11 @@ export function PartnerLogo({
   className?: string;
 }) {
   const box =
-    size === "lg" ? "h-14 w-14 text-lg" : size === "md" ? "h-7 w-7 text-[11px]" : "h-5 w-5 text-[9px]";
+    size === "lg"
+      ? "h-14 w-14 text-lg"
+      : size === "md"
+        ? "h-7 w-7 text-[11px]"
+        : "h-5 w-5 text-[11px]";
 
   if (partner.logoUrl) {
     // Logos are either committed to /public or an organisation's own https URL,
@@ -146,7 +154,9 @@ export function VerifiedTick({ size = "sm" }: { size?: BadgeSize }) {
  */
 export function VerifiedExplainer({ className = "" }: { className?: string }) {
   return (
-    <p className={`flex items-start gap-1.5 text-xs leading-relaxed text-ink-faint ${className}`}>
+    <p
+      className={`flex items-start gap-1.5 text-xs leading-relaxed text-ink-faint ${className}`}
+    >
       <VerifiedTick />
       <span>
         A verified partner posted this themselves. We confirmed the account

@@ -12,110 +12,126 @@ import { LIMITS } from "@/lib/limits";
 
 // Bounds (LIMITS) are enforced here so an oversized profile can never be stored
 // and later overwhelm the analysis. The UI mirrors these caps for good UX.
-export const inputSchema = z
-  .object({
-    // Redesigned intake extras (optional so older clients still validate).
-    full_name: z.string().trim().max(LIMITS.shortText).optional(),
-    budget_annual_usd: z.number().min(0).max(10_000_000).optional(),
-    country: z.string().trim().min(1, "Tell us your country.").max(LIMITS.shortText),
-    citizenship: z
-      .string()
-      .trim()
-      .min(1, "Add your citizenship.")
-      .max(LIMITS.shortText),
-    destinations: z
-      // Keep in sync with DestinationCode (lib/data/destinations.ts). "AE" was
-      // missing here once — an onboarding save with UAE selected failed validation.
-      .array(z.enum(["US", "IT", "HK", "AE", "KR", "CN", "CA"]))
-      .min(1, "Pick at least one destination country.")
-      .max(LIMITS.destinations),
-    faculties: z
-      .array(
-        z.enum([
-          "engineering",
-          "computer_science",
-          "business_economics",
-          "natural_sciences",
-          "humanities_social",
-          "medicine_health",
-          "law",
-          "arts_design",
-        ])
-      )
-      .min(1, "Pick at least one field of study.")
-      .max(LIMITS.faculties),
-    intended_major: z.string().trim().max(LIMITS.shortText).optional().default(""),
-    // Year they finish high school — anchors the date-based timeline. Bounded
-    // loosely so the schema doesn't need touching each year.
-    graduation_year: z.number().int().min(2000).max(2100).optional(),
-    // Total grades in the student's school system (11 KZ/RU, 12 US, 13 IT/DE).
-    school_years: z.number().int().min(9).max(14).optional(),
-    curriculum: z.enum(["IB", "A-Level", "national", "US-GPA", "other"], {
-      errorMap: () => ({ message: "Pick your curriculum." }),
-    }),
-    grades: z.object({
-      raw: z.string().trim().min(1, "Add your grades.").max(LIMITS.grades),
-      ib_total: z.number().optional(),
-      gpa: z.number().optional(),
-      gpa_scale: z.number().optional(),
-      national_percent: z.number().optional(),
-    }),
-    tests: z.object({
-      SAT: z.number().optional(),
-      ACT: z.number().optional(),
-      IELTS: z.number().optional(),
-      TOEFL: z.number().optional(),
-      subjects: z.string().max(LIMITS.subjects).optional(),
-    }),
-    // Common App activities (up to 10), validated against the same caps the UI uses.
-    activities: z
-      .array(
-        z.object({
-          type: z.string().max(60).optional(),
-          position: z.string().trim().max(LIMITS.activityPosition),
-          organization: z.string().trim().max(LIMITS.activityOrganization).optional(),
-          description: z.string().trim().max(LIMITS.activityDescription).optional(),
-          grades: z.array(z.string().max(4)).max(5).optional(),
-          timing: z.array(z.string().max(20)).max(3).optional(),
-          hours_per_week: z.number().min(0).max(LIMITS.hoursPerWeek).optional(),
-          weeks_per_year: z.number().min(0).max(LIMITS.weeksPerYear).optional(),
-          continue_in_college: z.boolean().optional(),
-        })
-      )
-      .max(LIMITS.activities, "Up to 10 activities, like the Common App.")
-      .transform((a) => a.filter((x) => x.position.trim().length > 0)),
-    // Common App honors / awards (up to 5).
-    honors: z
-      .array(
-        z.object({
-          title: z.string().trim().max(LIMITS.honorTitle),
-          grades: z.array(z.string().max(4)).max(5).optional(),
-          levels: z.array(z.string().max(20)).max(4).optional(),
-        })
-      )
-      .max(LIMITS.honors, "Up to 5 honors, like the Common App.")
-      .transform((h) => h.filter((x) => x.title.trim().length > 0)),
-    target_schools: z.array(z.string()).max(LIMITS.targetSchools),
-    needs_aid: z.boolean(),
-    italy_programs: z.array(z.string().max(80)).max(8).default([]),
-    italy_family_income: z.number().min(0).max(10_000_000).optional(),
-    hk_programs: z.array(z.string().max(80)).max(6).default([]),
-    hk_grade_status: z.enum(["predicted", "achieved"]).optional(),
-    uae_programs: z.array(z.string().max(80)).max(6).default([]),
-    uae_grade_status: z.enum(["predicted", "achieved"]).optional(),
-    kr_programs: z.array(z.string().max(80)).max(6).default([]),
-    kr_grade_status: z.enum(["predicted", "achieved"]).optional(),
-    kr_topik_level: z.number().int().min(1).max(6).optional(),
-    // Attribution survey (non-referral signups). Optional so a referral user —
-    // who never sees the step — always saves cleanly.
-    heard_from: z.string().trim().max(40).optional().default(""),
-    heard_from_code: z.string().trim().max(64).optional().default(""),
-  });
-  // Target schools/programs are NO LONGER required at intake. The redesigned
-  // onboarding collects only the student's own data; the analysis produces the
-  // standing/scorecard from that. Admission odds & application costs unlock
-  // later, once the student adds a college list (see the locked sections on the
-  // dashboard). So no per-destination target requirement here.
+export const inputSchema = z.object({
+  // Redesigned intake extras (optional so older clients still validate).
+  full_name: z.string().trim().max(LIMITS.shortText).optional(),
+  budget_annual_usd: z.number().min(0).max(10_000_000).optional(),
+  country: z
+    .string()
+    .trim()
+    .min(1, "Tell us your country.")
+    .max(LIMITS.shortText),
+  citizenship: z
+    .string()
+    .trim()
+    .min(1, "Add your citizenship.")
+    .max(LIMITS.shortText),
+  destinations: z
+    // Keep in sync with DestinationCode (lib/data/destinations.ts). "AE" was
+    // missing here once — an onboarding save with UAE selected failed validation.
+    .array(z.enum(["US", "IT", "HK", "AE", "KR", "CN", "CA"]))
+    .min(1, "Pick at least one destination country.")
+    .max(LIMITS.destinations),
+  faculties: z
+    .array(
+      z.enum([
+        "engineering",
+        "computer_science",
+        "business_economics",
+        "natural_sciences",
+        "humanities_social",
+        "medicine_health",
+        "law",
+        "arts_design",
+      ]),
+    )
+    .min(1, "Pick at least one field of study.")
+    .max(LIMITS.faculties),
+  intended_major: z
+    .string()
+    .trim()
+    .max(LIMITS.shortText)
+    .optional()
+    .default(""),
+  // Year they finish high school — anchors the date-based timeline. Bounded
+  // loosely so the schema doesn't need touching each year.
+  graduation_year: z.number().int().min(2000).max(2100).optional(),
+  // Total grades in the student's school system (11 KZ/RU, 12 US, 13 IT/DE).
+  school_years: z.number().int().min(9).max(14).optional(),
+  curriculum: z.enum(["IB", "A-Level", "national", "US-GPA", "other"], {
+    errorMap: () => ({ message: "Pick your curriculum." }),
+  }),
+  grades: z.object({
+    raw: z.string().trim().min(1, "Add your grades.").max(LIMITS.grades),
+    ib_total: z.number().optional(),
+    gpa: z.number().optional(),
+    gpa_scale: z.number().optional(),
+    national_percent: z.number().optional(),
+  }),
+  tests: z.object({
+    SAT: z.number().optional(),
+    ACT: z.number().optional(),
+    IELTS: z.number().optional(),
+    TOEFL: z.number().optional(),
+    subjects: z.string().max(LIMITS.subjects).optional(),
+  }),
+  // Common App activities (up to 10), validated against the same caps the UI uses.
+  activities: z
+    .array(
+      z.object({
+        type: z.string().max(60).optional(),
+        position: z.string().trim().max(LIMITS.activityPosition),
+        organization: z
+          .string()
+          .trim()
+          .max(LIMITS.activityOrganization)
+          .optional(),
+        description: z
+          .string()
+          .trim()
+          .max(LIMITS.activityDescription)
+          .optional(),
+        grades: z.array(z.string().max(4)).max(5).optional(),
+        timing: z.array(z.string().max(20)).max(3).optional(),
+        hours_per_week: z.number().min(0).max(LIMITS.hoursPerWeek).optional(),
+        weeks_per_year: z.number().min(0).max(LIMITS.weeksPerYear).optional(),
+        continue_in_college: z.boolean().optional(),
+      }),
+    )
+    .max(LIMITS.activities, "Up to 10 activities, like the Common App.")
+    .transform((a) => a.filter((x) => x.position.trim().length > 0)),
+  // Common App honors / awards (up to 5).
+  honors: z
+    .array(
+      z.object({
+        title: z.string().trim().max(LIMITS.honorTitle),
+        grades: z.array(z.string().max(4)).max(5).optional(),
+        levels: z.array(z.string().max(20)).max(4).optional(),
+      }),
+    )
+    .max(LIMITS.honors, "Up to 5 honors, like the Common App.")
+    .transform((h) => h.filter((x) => x.title.trim().length > 0)),
+  target_schools: z.array(z.string()).max(LIMITS.targetSchools),
+  needs_aid: z.boolean(),
+  italy_programs: z.array(z.string().max(80)).max(8).default([]),
+  italy_family_income: z.number().min(0).max(10_000_000).optional(),
+  hk_programs: z.array(z.string().max(80)).max(6).default([]),
+  hk_grade_status: z.enum(["predicted", "achieved"]).optional(),
+  uae_programs: z.array(z.string().max(80)).max(6).default([]),
+  uae_grade_status: z.enum(["predicted", "achieved"]).optional(),
+  kr_programs: z.array(z.string().max(80)).max(6).default([]),
+  kr_grade_status: z.enum(["predicted", "achieved"]).optional(),
+  kr_topik_level: z.number().int().min(1).max(6).optional(),
+  // Attribution survey (non-referral signups). Optional so a referral user —
+  // who never sees the step — always saves cleanly.
+  heard_from: z.string().trim().max(40).optional().default(""),
+  heard_from_code: z.string().trim().max(64).optional().default(""),
+});
+// Target schools/programs are NO LONGER required at intake. The redesigned
+// onboarding collects only the student's own data; the analysis produces the
+// standing/scorecard from that. Admission odds & application costs unlock
+// later, once the student adds a college list (see the locked sections on the
+// dashboard). So no per-destination target requirement here.
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 

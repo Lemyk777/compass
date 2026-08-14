@@ -1,4 +1,4 @@
-import { Logo } from "@/components/ui/Logo";
+import { BrandLink } from "@/components/ui/BrandLink";
 import { Shell } from "@/components/ui/Shell";
 import { ButtonLink } from "@/components/ui/Button";
 import { StudentShell } from "@/components/student/StudentShell";
@@ -63,7 +63,7 @@ export default async function GuideLayout({
       <SkipLink />
       <header className="border-b border-line/70">
         <Shell className="flex items-center justify-between gap-3 py-5">
-          <Logo className="shrink-0 text-ink" />
+          <BrandLink />
           <div className="flex items-center gap-2">
             <ButtonLink href="/opportunities" variant="subtle" size="sm">
               What can I enter?

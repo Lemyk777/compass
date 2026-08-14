@@ -21,7 +21,9 @@ export function Logo({
         aria-hidden="true"
         className="h-6 w-6 shrink-0 object-contain"
       />
-      <span className="text-[1.05rem] font-semibold tracking-tight">Compass</span>
+      <span className="text-[1.05rem] font-semibold tracking-tight">
+        Compass
+      </span>
     </span>
   );
 }

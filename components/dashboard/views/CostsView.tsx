@@ -2,8 +2,16 @@
 
 import { CostBreakdown } from "@/components/report/CostBreakdown";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
-import { analysisHasCountry, hasAnyCollegeList } from "@/lib/data/country-content";
-import { CountryTabs, EmptyCountryList, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
+import {
+  analysisHasCountry,
+  hasAnyCollegeList,
+} from "@/lib/data/country-content";
+import {
+  CountryTabs,
+  EmptyCountryList,
+  NoAnalysisYet,
+  PageHeader,
+} from "@/components/dashboard/states";
 import { LockedSection } from "@/components/dashboard/LockedSection";
 import { CostsTeaser, CostsArt } from "@/components/dashboard/LockedTeasers";
 import { useT } from "@/lib/i18n/client";

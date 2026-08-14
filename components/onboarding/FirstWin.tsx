@@ -32,7 +32,7 @@ export function FirstWin() {
   const graduationYear = data.graduation_year;
   const faculties = useMemo(
     () => (Array.isArray(data.faculties) ? data.faculties : []),
-    [data.faculties]
+    [data.faculties],
   );
 
   // Lazy-load the matching engine so the catalog is a separate async chunk, not
@@ -47,7 +47,12 @@ export function FirstWin() {
     import("@/lib/data/key-dates").then((m) => {
       if (cancelled) return;
       setPlan(
-        m.buildExtracurriculars({ today, faculties, factors: [], graduationYear }),
+        m.buildExtracurriculars({
+          today,
+          faculties,
+          factors: [],
+          graduationYear,
+        }),
       );
     });
     return () => {
@@ -64,8 +69,9 @@ export function FirstWin() {
   const nearest = shown
     .filter((o) => o.dateConfirmed)
     .reduce<(typeof shown)[number] | null>(
-      (best, o) => (best == null || o.daysToDeadline < best.daysToDeadline ? o : best),
-      null
+      (best, o) =>
+        best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
+      null,
     );
 
   return (
@@ -98,11 +104,16 @@ export function FirstWin() {
       </p>
 
       <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">
-        {shown.length === 1 ? "One to start with" : `${shown.length} to start with`}
+        {shown.length === 1
+          ? "One to start with"
+          : `${shown.length} to start with`}
       </p>
       <ul className="mt-1.5 space-y-1.5">
         {shown.map((o) => (
-          <li key={o.id} className="flex flex-wrap items-baseline gap-x-2 text-sm">
+          <li
+            key={o.id}
+            className="flex flex-wrap items-baseline gap-x-2 text-sm"
+          >
             <span className="font-medium text-ink">{o.name}</span>
             <span className="text-xs text-ink-faint">
               {o.dateConfirmed ? (

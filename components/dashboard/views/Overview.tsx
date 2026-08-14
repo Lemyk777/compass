@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 
 const OverallGauge = dynamic(
-  () => import("@/components/charts/OverallGauge").then((mod) => mod.OverallGauge),
+  () =>
+    import("@/components/charts/OverallGauge").then((mod) => mod.OverallGauge),
   {
     ssr: false,
     loading: () => (
@@ -13,11 +14,14 @@ const OverallGauge = dynamic(
         <div className="h-28 w-28 rounded-full bg-card flex items-center justify-center" />
       </div>
     ),
-  }
+  },
 );
 
 const RadarScorecard = dynamic(
-  () => import("@/components/charts/RadarScorecard").then((mod) => mod.RadarScorecard),
+  () =>
+    import("@/components/charts/RadarScorecard").then(
+      (mod) => mod.RadarScorecard,
+    ),
   {
     ssr: false,
     loading: () => (
@@ -29,7 +33,7 @@ const RadarScorecard = dynamic(
         </div>
       </div>
     ),
-  }
+  },
 );
 
 import { ButtonLink } from "@/components/ui/Button";
@@ -79,15 +83,20 @@ export function Overview() {
   }, []);
 
   if (loading) return <LoadingState />;
-  if (error) return <ErrorState error={error} onRetry={runAnalysis} hasProfile={hasProfile} />;
-  if (!analysis) return <EmptyState hasProfile={hasProfile} onRun={runAnalysis} />;
+  if (error)
+    return (
+      <ErrorState error={error} onRetry={runAnalysis} hasProfile={hasProfile} />
+    );
+  if (!analysis)
+    return <EmptyState hasProfile={hasProfile} onRun={runAnalysis} />;
 
   const overall = countryOverall(
     country,
     analysis.factors,
-    analysis.italy_financial_fit_score
+    analysis.italy_financial_fit_score,
   );
-  const italyFin = country === "IT" ? analysis.italy_financial_fit_score : undefined;
+  const italyFin =
+    country === "IT" ? analysis.italy_financial_fit_score : undefined;
 
   // Top factors for the compact bar list — relevant ones for the country first.
   // HK/AE/KR use their native factor sets (see country-scorecard.ts) so this
@@ -146,7 +155,9 @@ export function Overview() {
                 return (
                   <li key={f.key}>
                     <div className="mb-1 flex items-baseline justify-between gap-4">
-                      <span className="text-sm font-medium text-ink">{f.label}</span>
+                      <span className="text-sm font-medium text-ink">
+                        {f.label}
+                      </span>
                       <span data-num className="text-sm font-semibold text-ink">
                         {shown}
                         <span className="text-ink-faint">/10</span>
@@ -163,7 +174,11 @@ export function Overview() {
               })}
             </ul>
           </div>
-          <ButtonLink href={`${basePath}/standing`} variant="subtle" className="mt-6 w-full">
+          <ButtonLink
+            href={`${basePath}/standing`}
+            variant="subtle"
+            className="mt-6 w-full"
+          >
             {t("dash.seeFull")}
           </ButtonLink>
         </section>
@@ -176,7 +191,15 @@ export function Overview() {
         className="h-auto w-full justify-start gap-6 rounded-2xl px-6 py-6 text-left"
       >
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-fill">
-          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="h-6 w-6"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
         </span>
@@ -187,10 +210,20 @@ export function Overview() {
           <span className="mt-0.5 block text-lg font-semibold text-ink">
             {t("dash.oddsCta")}
           </span>
-          <span className="mt-0.5 block text-sm text-ink-soft">{t("dash.oddsTime")}</span>
+          <span className="mt-0.5 block text-sm text-ink-soft">
+            {t("dash.oddsTime")}
+          </span>
         </span>
         <span className="text-ink-faint">
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="m9 6 6 6-6 6" />
           </svg>
         </span>

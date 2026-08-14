@@ -13,7 +13,9 @@ import { emptyProfile } from "@/lib/types";
 import type { OnboardingContextValue } from "../types";
 import { saveProfile as saveProfileAction } from "@/app/onboarding/actions";
 
-const OnboardingContext = createContext<OnboardingContextValue | undefined>(undefined);
+const OnboardingContext = createContext<OnboardingContextValue | undefined>(
+  undefined,
+);
 
 // Onboarding is a long (8–11 step) form whose state lives only in memory and is
 // written to the DB once, at the final "Review → Submit". An interrupted session
@@ -33,7 +35,9 @@ export function OnboardingContextProvider({
   showSurvey?: boolean;
   hasSavedProfile?: boolean;
 }) {
-  const [data, setData] = useState<StudentProfileInput>(initial ?? emptyProfile());
+  const [data, setData] = useState<StudentProfileInput>(
+    initial ?? emptyProfile(),
+  );
   const [errors, setErrors] = useState<Record<string, string> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -74,7 +78,7 @@ export function OnboardingContextProvider({
 
   const updateField = <K extends keyof StudentProfileInput>(
     key: K,
-    value: StudentProfileInput[K]
+    value: StudentProfileInput[K],
   ) => {
     setData((d) => ({ ...d, [key]: value }));
   };
@@ -143,7 +147,9 @@ export function OnboardingContextProvider({
 export function useOnboardingContext() {
   const ctx = useContext(OnboardingContext);
   if (!ctx) {
-    throw new Error("useOnboardingContext must be used within an OnboardingContextProvider");
+    throw new Error(
+      "useOnboardingContext must be used within an OnboardingContextProvider",
+    );
   }
   return ctx;
 }

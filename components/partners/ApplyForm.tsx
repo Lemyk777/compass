@@ -46,7 +46,9 @@ export function ApplyForm({ defaultEmail }: { defaultEmail: string }) {
   if (sent) {
     return (
       <div className="rounded-2xl border border-ivy/30 bg-ivy-soft/60 p-6">
-        <p className="text-base font-semibold text-ink">That&rsquo;s with us.</p>
+        <p className="text-base font-semibold text-ink">
+          That&rsquo;s with us.
+        </p>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
           We check one thing before listing an organisation: that this account
           really belongs to it. We&rsquo;ll write to{" "}
@@ -65,7 +67,10 @@ export function ApplyForm({ defaultEmail }: { defaultEmail: string }) {
       }}
       className="space-y-4 rounded-2xl border border-line bg-card p-6 shadow-card"
     >
-      <Field label="Organisation" hint="The name students will see on every card you post.">
+      <Field
+        label="Organisation"
+        hint="The name students will see on every card you post."
+      >
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}

@@ -15,7 +15,9 @@ export function SummaryView() {
       <PageHeader title={t("report.summaryTitle")} />
       {analysis.summary ? (
         <Card>
-          <p className="text-pretty leading-relaxed text-ink-soft">{analysis.summary}</p>
+          <p className="text-pretty leading-relaxed text-ink-soft">
+            {analysis.summary}
+          </p>
         </Card>
       ) : (
         <p className="text-sm text-ink-soft">{t("dash.noSummary")}</p>

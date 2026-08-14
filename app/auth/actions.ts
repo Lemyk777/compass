@@ -21,7 +21,9 @@ export type AuthMethodHint = "google-only" | "unknown";
  * per-IP cap on probing still belongs in the Supabase Auth rate-limit settings;
  * this just keeps the endpoint from being a free existence/method oracle.
  */
-export async function lookupAuthMethod(rawEmail: string): Promise<AuthMethodHint> {
+export async function lookupAuthMethod(
+  rawEmail: string,
+): Promise<AuthMethodHint> {
   const email = rawEmail.trim().toLowerCase();
   if (!email) return "unknown";
 
@@ -47,8 +49,7 @@ export async function lookupAuthMethod(rawEmail: string): Promise<AuthMethodHint
       // The admin list endpoint returns an empty `identities` array on some
       // GoTrue versions, so we union both rather than trust identities alone.
       const meta = user.app_metadata as
-        | { provider?: string; providers?: string[] }
-        | undefined;
+        { provider?: string; providers?: string[] } | undefined;
       const providers = new Set<string>([
         ...(meta?.providers ?? (meta?.provider ? [meta.provider] : [])),
         ...(user.identities ?? []).map((i) => i.provider),

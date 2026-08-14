@@ -49,8 +49,26 @@ export function UniversityLogos({ logos }: { logos: UniversityLogo[] }) {
 // Real country flags (flagcdn), revealed with a staggered animation on scroll.
 // ---------------------------------------------------------------------------
 const CODES = [
-  "kz", "in", "ng", "br", "vn", "eg", "id", "pk", "tr", "kr",
-  "cn", "mx", "ph", "bd", "ke", "co", "th", "uz", "my", "gh",
+  "kz",
+  "in",
+  "ng",
+  "br",
+  "vn",
+  "eg",
+  "id",
+  "pk",
+  "tr",
+  "kr",
+  "cn",
+  "mx",
+  "ph",
+  "bd",
+  "ke",
+  "co",
+  "th",
+  "uz",
+  "my",
+  "gh",
 ];
 
 export function CountryReveal() {
@@ -76,7 +94,7 @@ export function CountryReveal() {
           }
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
     io.observe(el);
     return () => io.disconnect();

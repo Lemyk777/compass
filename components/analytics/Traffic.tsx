@@ -50,11 +50,16 @@ export function Traffic() {
       if (id == null || ms < 1000) return; // under a second is noise, not a visit
       const body = JSON.stringify({ id, ms });
       if (navigator.sendBeacon) {
-        navigator.sendBeacon("/api/track", new Blob([body], { type: "application/json" }));
-      } else {
-        void fetch("/api/track", { method: "POST", body, keepalive: true }).catch(
-          () => {}
+        navigator.sendBeacon(
+          "/api/track",
+          new Blob([body], { type: "application/json" }),
         );
+      } else {
+        void fetch("/api/track", {
+          method: "POST",
+          body,
+          keepalive: true,
+        }).catch(() => {});
       }
     };
 

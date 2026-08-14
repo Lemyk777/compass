@@ -8,8 +8,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { denyUnlessCronAuthorized } from "@/lib/cron/auth";
-import { scrapeSatDates, scrapeCompetitionDeadline } from "@/lib/scraper/scrape-dates";
-import { COMPETITIONS, daysBetween, type Competition } from "@/lib/data/key-dates";
+import {
+  scrapeSatDates,
+  scrapeCompetitionDeadline,
+} from "@/lib/scraper/scrape-dates";
+import {
+  COMPETITIONS,
+  daysBetween,
+  type Competition,
+} from "@/lib/data/key-dates";
 
 export const maxDuration = 300; // scraping multiple sites can be slow
 
@@ -65,7 +72,7 @@ export async function GET(req: NextRequest) {
           reg_deadline: s.regDeadline,
           cycle: cycleForDate(s.test),
         })),
-        { onConflict: "test_date" }
+        { onConflict: "test_date" },
       );
       if (error) {
         console.error("Failed to upsert SAT sittings:", error);
@@ -121,30 +128,30 @@ export async function GET(req: NextRequest) {
         // can overwrite the curated date and drive a countdown.
         const verdict = acceptScrapedDate(scraped.deadline, comp);
         if (!verdict.ok) {
-          console.warn(`Rejected ${comp.id} scrape (${scraped.deadline}): ${verdict.reason}`);
+          console.warn(
+            `Rejected ${comp.id} scrape (${scraped.deadline}): ${verdict.reason}`,
+          );
           results[comp.id] = `rejected: ${verdict.reason} (kept existing)`;
           continue;
         }
-        const { error } = await supabase
-          .from("competition_deadlines")
-          .upsert(
-            {
-              id: comp.id,
-              name: comp.name,
-              fields: comp.fields,
-              deadline: scraped.deadline,
-              event_window: scraped.window,
-              level: comp.level,
-              url: comp.url,
-              blurb: comp.blurb,
-              // Only a guardrail-passed scrape is marked confirmed; this flag is
-              // what lets the date overlay the curated one in the UI.
-              date_confirmed: true,
-              cycle: getCurrentCycle(),
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "id" }
-          );
+        const { error } = await supabase.from("competition_deadlines").upsert(
+          {
+            id: comp.id,
+            name: comp.name,
+            fields: comp.fields,
+            deadline: scraped.deadline,
+            event_window: scraped.window,
+            level: comp.level,
+            url: comp.url,
+            blurb: comp.blurb,
+            // Only a guardrail-passed scrape is marked confirmed; this flag is
+            // what lets the date overlay the curated one in the UI.
+            date_confirmed: true,
+            cycle: getCurrentCycle(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" },
+        );
         if (error) {
           console.error(`Failed to upsert ${comp.id}:`, error);
           results[comp.id] = `error: ${error.message}`;

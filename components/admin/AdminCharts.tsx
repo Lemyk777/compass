@@ -36,9 +36,18 @@ export function SignupsOverTime({
         />
         <Tooltip
           cursor={{ fill: "rgba(16,25,43,0.04)" }}
-          contentStyle={{ borderRadius: 12, border: "1px solid rgb(var(--line))", fontSize: 12 }}
+          contentStyle={{
+            borderRadius: 12,
+            border: "1px solid rgb(var(--line))",
+            fontSize: 12,
+          }}
         />
-        <Bar dataKey="count" fill={ACCENT} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+        <Bar
+          dataKey="count"
+          fill={ACCENT}
+          radius={[4, 4, 0, 0]}
+          isAnimationActive={false}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -77,7 +86,11 @@ export function SignupsByCountry({
         />
         <Tooltip
           cursor={{ fill: "rgba(16,25,43,0.04)" }}
-          contentStyle={{ borderRadius: 12, border: "1px solid rgb(var(--line))", fontSize: 12 }}
+          contentStyle={{
+            borderRadius: 12,
+            border: "1px solid rgb(var(--line))",
+            fontSize: 12,
+          }}
         />
         <Bar dataKey="count" radius={[0, 4, 4, 0]} isAnimationActive={false}>
           {data.map((_, i) => (

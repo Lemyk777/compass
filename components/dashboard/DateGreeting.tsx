@@ -30,7 +30,9 @@ export function Greeting({ name }: { name?: string | null }) {
   const word = now ? greetingFor(now.getHours(), t) : t("dash.hello");
   const greeting = name ? `${word}, ${name}` : word;
   return (
-    <h1 className="text-3xl font-semibold tracking-tight text-ink">{greeting}</h1>
+    <h1 className="text-3xl font-semibold tracking-tight text-ink">
+      {greeting}
+    </h1>
   );
 }
 

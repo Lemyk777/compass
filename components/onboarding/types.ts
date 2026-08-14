@@ -18,7 +18,7 @@ export interface StepProps {
   data: StudentProfileInput;
   updateField: <K extends keyof StudentProfileInput>(
     key: K,
-    value: StudentProfileInput[K]
+    value: StudentProfileInput[K],
   ) => void;
   updateFields: (fields: Partial<StudentProfileInput>) => void;
   goToKey?: (key: StepKey) => void;
@@ -41,7 +41,7 @@ export interface OnboardingContextValue {
   isSaving: boolean;
   updateField: <K extends keyof StudentProfileInput>(
     key: K,
-    value: StudentProfileInput[K]
+    value: StudentProfileInput[K],
   ) => void;
   updateFields: (fields: Partial<StudentProfileInput>) => void;
   saveProfile: () => Promise<{ ok: boolean; error?: string }>;

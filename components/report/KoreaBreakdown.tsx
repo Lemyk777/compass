@@ -24,18 +24,22 @@ export function KoreaBreakdown({ programs }: Props) {
   return (
     <div className="space-y-10">
       <CountryBanner code="KR" title="South Korea Admission Rules">
-        Korean international admission is a document-based, GPA-first screen — no entrance
-        exam, SAT optional. The decisive gate is language: TOPIK for Korean-taught programs,
-        IELTS/TOEFL for English-taught ones (KAIST, Yonsei UIC). Merit scholarships are decided
-        from the same document screen; KAIST covers every admitted international student in full.
-        Check each program&apos;s scorecard below.
+        Korean international admission is a document-based, GPA-first screen —
+        no entrance exam, SAT optional. The decisive gate is language: TOPIK for
+        Korean-taught programs, IELTS/TOEFL for English-taught ones (KAIST,
+        Yonsei UIC). Merit scholarships are decided from the same document
+        screen; KAIST covers every admitted international student in full. Check
+        each program&apos;s scorecard below.
       </CountryBanner>
 
       <div className="space-y-4">
         <div className="space-y-1">
-          <h3 className="text-base font-semibold tracking-tight text-ink">Korea Target Programs</h3>
+          <h3 className="text-base font-semibold tracking-tight text-ink">
+            Korea Target Programs
+          </h3>
           <p className="text-xs leading-relaxed text-ink-faint">
-            Your competitive standing, GPA comparison, language gate, and scholarship picture.
+            Your competitive standing, GPA comparison, language gate, and
+            scholarship picture.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -64,7 +68,9 @@ function KoreaProgramCard({ program: p }: { program: KoreaProgramAnalysis }) {
         <p className="text-[11px] font-medium uppercase tracking-widest text-ink-faint">
           {p.field.replace("_", " ")} · {p.city}
         </p>
-        <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">{p.university}</p>
+        <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">
+          {p.university}
+        </p>
         <p className="text-xs text-ink-soft">{p.program_name}</p>
       </div>
 
@@ -113,7 +119,10 @@ function KoreaProgramCard({ program: p }: { program: KoreaProgramAnalysis }) {
         </div>
 
         <div className="flex items-center justify-between gap-4 pt-1">
-          <Stat label="Annual Tuition" value={`$${p.annual_fee_usd.toLocaleString()}`} />
+          <Stat
+            label="Annual Tuition"
+            value={`$${p.annual_fee_usd.toLocaleString()}`}
+          />
           <ScholarshipBadge status={p.scholarship} />
         </div>
       </div>
@@ -149,13 +158,16 @@ function LanguageBadge({ program: p }: { program: KoreaProgramAnalysis }) {
       className: "bg-reach-soft text-reach-ink",
     },
     unknown: {
-      label: p.topik_required != null ? `${bar} · Needed` : "English Score Needed",
+      label:
+        p.topik_required != null ? `${bar} · Needed` : "English Score Needed",
       className: "bg-target-soft text-target-ink",
     },
   };
   const c = config[p.language];
   return (
-    <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.className}`}>
+    <span
+      className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.className}`}
+    >
       {c.label}
     </span>
   );

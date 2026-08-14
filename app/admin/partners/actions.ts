@@ -35,7 +35,10 @@ function revalidateAll(id: string): void {
 }
 
 /** Approve the application: the organisation is listed and can post. */
-export async function approvePartner(id: string, note = ""): Promise<AdminPartnerResult> {
+export async function approvePartner(
+  id: string,
+  note = "",
+): Promise<AdminPartnerResult> {
   await requireRole("admin", "/admin/partners");
   const admin = createAdminClient();
 
@@ -71,7 +74,7 @@ export async function approvePartner(id: string, note = ""): Promise<AdminPartne
  */
 export async function setPartnerVerified(
   id: string,
-  verified: boolean
+  verified: boolean,
 ): Promise<AdminPartnerResult> {
   const session = await requireRole("admin", "/admin/partners");
   const admin = createAdminClient();
@@ -91,7 +94,10 @@ export async function setPartnerVerified(
 }
 
 /** Decline an application. The account goes back to being a normal student. */
-export async function rejectPartner(id: string, note = ""): Promise<AdminPartnerResult> {
+export async function rejectPartner(
+  id: string,
+  note = "",
+): Promise<AdminPartnerResult> {
   await requireRole("admin", "/admin/partners");
   const admin = createAdminClient();
 
@@ -124,7 +130,10 @@ export async function rejectPartner(id: string, note = ""): Promise<AdminPartner
  * dropped in lib/partners/live.ts. Reversible: reactivating brings the same
  * posts back.
  */
-export async function suspendPartner(id: string, note = ""): Promise<AdminPartnerResult> {
+export async function suspendPartner(
+  id: string,
+  note = "",
+): Promise<AdminPartnerResult> {
   await requireRole("admin", "/admin/partners");
   const admin = createAdminClient();
 
@@ -142,7 +151,9 @@ export async function suspendPartner(id: string, note = ""): Promise<AdminPartne
   return { ok: true };
 }
 
-export async function reactivatePartner(id: string): Promise<AdminPartnerResult> {
+export async function reactivatePartner(
+  id: string,
+): Promise<AdminPartnerResult> {
   await requireRole("admin", "/admin/partners");
   const admin = createAdminClient();
 
@@ -170,7 +181,7 @@ export async function reactivatePartner(id: string): Promise<AdminPartnerResult>
  */
 export async function adminUpdatePartner(
   id: string,
-  input: { name: string; country: string; city: string; logoUrl: string }
+  input: { name: string; country: string; city: string; logoUrl: string },
 ): Promise<AdminPartnerResult> {
   await requireRole("admin", "/admin/partners");
   const admin = createAdminClient();
@@ -179,7 +190,10 @@ export async function adminUpdatePartner(
   if (name.length < 2) return { ok: false, error: "The name is too short." };
   const logoUrl = input.logoUrl.trim().slice(0, 300);
   if (logoUrl && !/^(https:\/\/|\/)/.test(logoUrl)) {
-    return { ok: false, error: "The logo needs to be an https:// link or a /public path." };
+    return {
+      ok: false,
+      error: "The logo needs to be an https:// link or a /public path.",
+    };
   }
 
   const { error } = await admin
@@ -201,7 +215,7 @@ export async function adminUpdatePartner(
 /** Take down (or restore) a single partner post without touching the account. */
 export async function adminSetPostPublished(
   postId: string,
-  published: boolean
+  published: boolean,
 ): Promise<AdminPartnerResult> {
   await requireRole("admin", "/admin/partners");
   const admin = createAdminClient();
@@ -224,7 +238,7 @@ export async function adminSetPostPublished(
  */
 export async function attachPartnerAccount(
   id: string,
-  email: string
+  email: string,
 ): Promise<AdminPartnerResult> {
   await requireRole("admin", "/admin/partners");
   const admin = createAdminClient();
@@ -236,17 +250,28 @@ export async function attachPartnerAccount(
   // at our scale, and this runs once per partner, by hand.
   let userId: string | null = null;
   for (let page = 1; page <= 20 && !userId; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+    const { data, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
     if (error) break;
     const users = data?.users ?? [];
-    userId = users.find((u) => (u.email ?? "").toLowerCase() === wanted)?.id ?? null;
+    userId =
+      users.find((u) => (u.email ?? "").toLowerCase() === wanted)?.id ?? null;
     if (users.length < 200) break;
   }
-  if (!userId) return { ok: false, error: "No account with that email has signed up yet." };
+  if (!userId)
+    return {
+      ok: false,
+      error: "No account with that email has signed up yet.",
+    };
 
   const existing = await getPartnerForUser(userId);
   if (existing && existing.id !== id) {
-    return { ok: false, error: `That account already posts as ${existing.name}.` };
+    return {
+      ok: false,
+      error: `That account already posts as ${existing.name}.`,
+    };
   }
 
   const { error } = await admin
@@ -259,7 +284,10 @@ export async function attachPartnerAccount(
   return { ok: true };
 }
 
-async function setRole(userId: string, role: "partner" | "student"): Promise<void> {
+async function setRole(
+  userId: string,
+  role: "partner" | "student",
+): Promise<void> {
   try {
     const admin = createAdminClient();
     await admin.from("profiles").update({ role }).eq("id", userId);

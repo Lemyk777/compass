@@ -51,7 +51,9 @@ export default async function AdminPartnersPage() {
       />
 
       <div className="mx-auto max-w-3xl px-5 py-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Partners</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">
+          Partners
+        </h1>
         <p className="mb-6 max-w-xl text-sm leading-relaxed text-ink-soft">
           Organisations that post opportunities under their own name. Approving
           one means everything it posts from then on goes live immediately,
@@ -65,8 +67,8 @@ export default async function AdminPartnersPage() {
           <Stat label="Verified" value={verified} />
         </div>
         <p className="mt-2 text-xs text-ink-faint">
-          <span data-num>{livePosts}</span> partner-posted opportunities are live
-          on students&rsquo; lists.
+          <span data-num>{livePosts}</span> partner-posted opportunities are
+          live on students&rsquo; lists.
         </p>
 
         <Section title="Awaiting review" count={pending.length}>
@@ -76,7 +78,11 @@ export default async function AdminPartnersPage() {
             </Card>
           ) : (
             pending.map((p) => (
-              <PartnerAdmin key={p.id} partner={p} posts={postsByPartner.get(p.id) ?? []} />
+              <PartnerAdmin
+                key={p.id}
+                partner={p}
+                posts={postsByPartner.get(p.id) ?? []}
+              />
             ))
           )}
         </Section>
@@ -84,7 +90,11 @@ export default async function AdminPartnersPage() {
         {active.length > 0 && (
           <Section title="Listed" count={active.length}>
             {active.map((p) => (
-              <PartnerAdmin key={p.id} partner={p} posts={postsByPartner.get(p.id) ?? []} />
+              <PartnerAdmin
+                key={p.id}
+                partner={p}
+                posts={postsByPartner.get(p.id) ?? []}
+              />
             ))}
           </Section>
         )}
@@ -92,7 +102,11 @@ export default async function AdminPartnersPage() {
         {inactive.length > 0 && (
           <Section title="Suspended and rejected" count={inactive.length}>
             {inactive.map((p) => (
-              <PartnerAdmin key={p.id} partner={p} posts={postsByPartner.get(p.id) ?? []} />
+              <PartnerAdmin
+                key={p.id}
+                partner={p}
+                posts={postsByPartner.get(p.id) ?? []}
+              />
             ))}
           </Section>
         )}

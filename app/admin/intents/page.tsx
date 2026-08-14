@@ -86,16 +86,16 @@ export default async function AdminIntentsPage() {
   const withProfile = sp.length;
   const withYear = sp.filter((p) => p.graduation_year != null).length;
   const withFaculties = sp.filter(
-    (p) => Array.isArray(p.faculties) && p.faculties.length > 0
+    (p) => Array.isArray(p.faculties) && p.faculties.length > 0,
   ).length;
   const withActivities = sp.filter(
-    (p) => Array.isArray(p.activities) && p.activities.length > 0
+    (p) => Array.isArray(p.activities) && p.activities.length > 0,
   ).length;
   // Distinct users who ran the full report at least once — the opt-in the new
   // signup flow bets on. Counted by user, not by analysis row (one student can
   // re-run it many times).
   const withReport = new Set(
-    (analysisRows ?? []).map((a) => a.user_id as string)
+    (analysisRows ?? []).map((a) => a.user_id as string),
   ).size;
 
   const byStatus = (s: string) => intents.filter((i) => i.status === s);
@@ -113,16 +113,19 @@ export default async function AdminIntentsPage() {
   // The conversion the mechanics are supposed to move: of everyone who said
   // "I'm doing this", how many came back and said they actually entered.
   const conversion =
-    intents.length > 0 ? Math.round((applied.length / intents.length) * 100) : 0;
+    intents.length > 0
+      ? Math.round((applied.length / intents.length) * 100)
+      : 0;
 
   // Days from commitment to "I entered it". Median, not mean — with a handful
   // of rows one late finisher would swing an average completely.
   const lags = applied
     .map((i) =>
       i.created_at && i.updated_at
-        ? (new Date(i.updated_at).getTime() - new Date(i.created_at).getTime()) /
+        ? (new Date(i.updated_at).getTime() -
+            new Date(i.created_at).getTime()) /
           86_400_000
-        : null
+        : null,
     )
     .filter((n): n is number => n != null && n >= 0)
     .sort((a, b) => a - b);
@@ -146,9 +149,12 @@ export default async function AdminIntentsPage() {
     { planning: number; doing: number; applied: number; dropped: number }
   >();
   for (const i of intents) {
-    const row =
-      perOpportunity.get(i.opportunity_id) ??
-      { planning: 0, doing: 0, applied: 0, dropped: 0 };
+    const row = perOpportunity.get(i.opportunity_id) ?? {
+      planning: 0,
+      doing: 0,
+      applied: 0,
+      dropped: 0,
+    };
     if (i.status === "applied") row.applied++;
     else if (i.status === "dropped") row.dropped++;
     else if (i.status === "doing") row.doing++;
@@ -165,8 +171,7 @@ export default async function AdminIntentsPage() {
         // rendering a bare key that looks like a bug.
         known: Boolean(c),
         cost: c ? opportunityCost(c) : null,
-        total:
-          counts.planning + counts.doing + counts.applied + counts.dropped,
+        total: counts.planning + counts.doing + counts.applied + counts.dropped,
         ...counts,
       };
     })
@@ -276,10 +281,10 @@ export default async function AdminIntentsPage() {
                 </h2>
                 <p className="mb-3 mt-0.5 text-xs text-ink-soft">
                   Of {totalUsers} signups. Signup now lands on Opportunities and
-                  the full report is opt-in, so &ldquo;Ran the full report&rdquo;
-                  is the conversion to watch — not a step everyone is pushed
-                  through. Without a graduation year no age or grade rule can
-                  fire, so those students see an unfiltered catalog.
+                  the full report is opt-in, so &ldquo;Ran the full
+                  report&rdquo; is the conversion to watch — not a step everyone
+                  is pushed through. Without a graduation year no age or grade
+                  rule can fire, so those students see an unfiltered catalog.
                 </p>
                 <Bars
                   rows={[
@@ -323,7 +328,10 @@ export default async function AdminIntentsPage() {
                             </span>
                           )}
                         </span>
-                        <span data-num className="shrink-0 text-xs tabular-nums text-ink-soft">
+                        <span
+                          data-num
+                          className="shrink-0 text-xs tabular-nums text-ink-soft"
+                        >
                           {o.planning} planning · {o.doing} started ·{" "}
                           {o.applied} entered · {o.dropped} dropped
                         </span>
@@ -346,7 +354,10 @@ export default async function AdminIntentsPage() {
                   <p className="text-sm text-ink-faint">Nothing yet.</p>
                 ) : (
                   <Bars
-                    rows={costRows.map((r) => ({ label: r.label, count: r.count }))}
+                    rows={costRows.map((r) => ({
+                      label: r.label,
+                      count: r.count,
+                    }))}
                     base={Math.max(...costRows.map((r) => r.count), 1)}
                   />
                 )}
@@ -357,9 +368,9 @@ export default async function AdminIntentsPage() {
                   When they said they&rsquo;d start
                 </h2>
                 <p className="mb-3 mt-0.5 text-xs text-ink-soft">
-                  The implementation intention. All four options are deliberately
-                  near-term — an intention set for &ldquo;sometime&rdquo; is not
-                  one.
+                  The implementation intention. All four options are
+                  deliberately near-term — an intention set for
+                  &ldquo;sometime&rdquo; is not one.
                 </p>
                 <Bars
                   rows={whenRows}
@@ -391,7 +402,10 @@ export default async function AdminIntentsPage() {
                   <h2 className="text-base font-semibold text-ink">
                     Commitment → entry
                   </h2>
-                  <p data-num className="mt-1 font-display text-3xl font-semibold text-ink">
+                  <p
+                    data-num
+                    className="mt-1 font-display text-3xl font-semibold text-ink"
+                  >
                     {medianLag} days
                   </p>
                   <p className="mt-1 text-xs text-ink-soft">
@@ -440,7 +454,10 @@ function Bars({
               style={{ width: `${Math.round((r.count / base) * 100)}%` }}
             />
           </div>
-          <span data-num className="w-10 shrink-0 text-right text-xs tabular-nums text-ink">
+          <span
+            data-num
+            className="w-10 shrink-0 text-right text-xs tabular-nums text-ink"
+          >
             {r.count}
           </span>
         </div>

@@ -61,7 +61,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // The guide: its index, its four steps, then every subject inside them.
     "/guide",
     ...GUIDE_SECTIONS.map((s) => s.href),
-    ...allCareerAreas().map(({ area }) => `/guide/work/${areaSlug(area.title)}`),
+    ...allCareerAreas().map(
+      ({ area }) => `/guide/work/${areaSlug(area.title)}`,
+    ),
     ...STUDY_DESTINATIONS.map((d) => `/guide/places/${d.id}`),
     ...HUBS.map((h) => `/guide/cities/${h.id}`),
 

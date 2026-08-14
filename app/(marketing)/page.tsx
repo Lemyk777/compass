@@ -1,4 +1,4 @@
-import { Logo } from "@/components/ui/Logo";
+import { BrandLink } from "@/components/ui/BrandLink";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { ButtonLink } from "@/components/ui/Button";
 import { UniversityLogos } from "@/components/marketing/UniversityMarquee";
@@ -89,10 +89,7 @@ export default async function LandingPage() {
       <SkipLink />
       <header className="absolute inset-x-0 top-0 z-50">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-6 py-6 md:px-12 md:py-8 xl:px-20">
-          <Logo
-            className="shrink-0 text-ink"
-            style={{ viewTransitionName: "brand-logo" }}
-          />
+          <BrandLink />
           <nav className="flex items-center gap-2 sm:gap-3">
             {isAdmin && (
               <AdminSwitcher className="mr-1 hidden lg:inline-flex" />
@@ -587,7 +584,7 @@ export default async function LandingPage() {
 
       <footer className="mx-auto max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem] px-6 py-10 text-sm font-light text-ink-faint">
         <div className="flex flex-col items-start justify-between gap-4 border-t border-black/10 pt-8 sm:flex-row sm:items-center">
-          <Logo className="text-ink/80" />
+          <BrandLink transition={false} className="opacity-80" />
           <nav className="flex flex-wrap items-center gap-5">
             <a href="/opportunities" className="transition hover:text-ink/70">
               Opportunities

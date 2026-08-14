@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       return NextResponse.redirect(
-        `${origin}/auth/login?error=${encodeURIComponent("Could not sign you in. Please try again.")}`
+        `${origin}/auth/login?error=${encodeURIComponent("Could not sign you in. Please try again.")}`,
       );
     }
   }
