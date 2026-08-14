@@ -61,6 +61,7 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
   research_program: "Research program",
   summer_program: "Summer program",
   community: "Community",
+  simulation: "Try the work",
 };
 
 /**
@@ -70,6 +71,8 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
  * every elite olympiad.
  */
 const CATEGORY_WHY: Record<CompetitionCategory, string> = {
+  simulation:
+    "The cheapest way to find out that you do not want something. You do the real tasks of a job for a few hours — the actual spreadsheet, the actual brief — and the answer you get is your own reaction to it, which no amount of reading produces. Employers built these to recruit, so they are honest about what the work is; that they are free and take an afternoon is the reason to do one before committing years to the subject behind it.",
   community:
     "This is the one kind here that will not show up on an application by itself — nobody is impressed that you joined a forum. What it does is put you next to people already doing the thing: they tell you which competition is worth entering, read your draft, and answer the question you would otherwise have quietly given up on. It costs nothing, there is no deadline to miss, and most students who get somewhere had one of these long before they had a result.",
   course:

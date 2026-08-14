@@ -27,6 +27,7 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
   research_program: "Research",
   summer_program: "Summer program",
   community: "Community",
+  simulation: "Try the work",
 };
 
 /**
@@ -36,23 +37,28 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
  * deadline you can still make, then something you can start tonight. Categories
  * are kept distinct so four rows read as a catalog rather than four olympiads.
  */
-export function previewOpportunities(today = new Date(), limit = 4): Competition[] {
+export function previewOpportunities(
+  today = new Date(),
+  limit = 4,
+): Competition[] {
   const picked: Competition[] = [];
   const seen = new Set<CompetitionCategory>();
 
   const dated = COMPETITIONS.filter(
-    (c) => c.dateConfirmed && daysBetween(today, c.deadline) >= 0
-  ).sort((a, b) => daysBetween(today, a.deadline) - daysBetween(today, b.deadline));
+    (c) => c.dateConfirmed && daysBetween(today, c.deadline) >= 0,
+  ).sort(
+    (a, b) => daysBetween(today, a.deadline) - daysBetween(today, b.deadline),
+  );
 
   const open = COMPETITIONS.filter(
-    (c) => c.alwaysOpen && opportunityCost(c).tone === "free"
+    (c) => c.alwaysOpen && opportunityCost(c).tone === "free",
   );
 
   // Alternate between the two kinds so neither half of the story is missing,
   // preferring a category we haven't shown yet.
   const take = (pool: Competition[]) => {
     const fresh = pool.find(
-      (c) => !picked.includes(c) && !seen.has(competitionCategory(c))
+      (c) => !picked.includes(c) && !seen.has(competitionCategory(c)),
     );
     const next = fresh ?? pool.find((c) => !picked.includes(c));
     if (!next) return false;
@@ -191,7 +197,8 @@ function Row({
             every row here exactly as it is on every real card. */}
         <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-ink-soft">
           <span className="font-medium text-ink">Who can enter:</span>{" "}
-          {o.eligibility ?? "check the age and grade rules on the official page"}
+          {o.eligibility ??
+            "check the age and grade rules on the official page"}
         </p>
 
         {days !== null && (

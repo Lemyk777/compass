@@ -3370,4 +3370,23 @@ export const COMPETITIONS: Competition[] = [
     costDetail:
       "The problems, the solutions and the community are free. An optional paid tier adds extra practice features, and you never need it.",
   },
+  {
+    id: "forage-all",
+    name: "Forage — every job simulation",
+    fields: "all",
+    deadline: "2027-06-30",
+    window: "Self-paced — browse by company or by field, free",
+    level: "international",
+    category: "simulation",
+    tier: "accessible",
+    eligibility:
+      "Open worldwide and free — each simulation states its own requirements; check the platform's minimum age in its terms",
+    url: "https://www.theforage.com/simulations",
+    blurb:
+      "Do the real tasks of a job for an afternoon — J.P. Morgan for investment banking, BCG for consulting, Lyft for back-end engineering, and a hundred more. Built by the employers to recruit, so they are honest about what the work actually is.",
+    alwaysOpen: true,
+    cost: "free",
+    costDetail:
+      "Free across the platform — employers fund these to recruit. Confirm on the page before you start.",
+  },
 ];

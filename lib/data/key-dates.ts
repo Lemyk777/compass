@@ -94,6 +94,15 @@ export const COMPETITION_CATEGORIES = [
   // who is twelve, or has no money, or lives somewhere none of the programmes
   // reach: joining costs nothing and starts today.
   "community",
+  // A TRY, not an entry. A job simulation is unpaid, ungraded, has no deadline
+  // and nothing to win: you do the actual tasks of a job for a few hours and
+  // find out whether you can stand it. That is a different question from every
+  // other kind here, and it is the best-evidenced answer we have to "what do I
+  // want to study" — the self-efficacy literature names simulations directly,
+  // and the platforms report completers as roughly twice as likely to be hired.
+  //
+  // We LINK OUT and never build these (release 3, PLANNER_PLAN.md §3).
+  "simulation",
 ] as const;
 
 export type CompetitionCategory = (typeof COMPETITION_CATEGORIES)[number];

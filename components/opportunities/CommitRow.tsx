@@ -22,7 +22,13 @@ import {
 } from "@/lib/data/intents";
 import type { Opportunity } from "@/lib/data/key-dates";
 
-export function OpportunityRow({ o, commit }: { o: Opportunity; commit?: boolean }) {
+export function OpportunityRow({
+  o,
+  commit,
+}: {
+  o: Opportunity;
+  commit?: boolean;
+}) {
   // One card definition for the whole product — see OpportunityCard. The
   // commitment step is the only thing unique to the dashboard, so it rides in
   // as the card's footer.
@@ -81,7 +87,9 @@ function CommitRow({ o }: { o: Opportunity }) {
   if (intent && intent.status !== "dropped") {
     return (
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-3">
-        <p className="text-xs font-medium text-ivy-ink">{intentSentence(intent)}</p>
+        <p className="text-xs font-medium text-ivy-ink">
+          {intentSentence(intent)}
+        </p>
         {intent.status === "planning" && (
           <button
             type="button"
@@ -165,7 +173,9 @@ function CommitRow({ o }: { o: Opportunity }) {
         ))}
       </div>
       <label className="mt-2 block">
-        <span className="sr-only">Where or how you&rsquo;ll start (optional)</span>
+        <span className="sr-only">
+          Where or how you&rsquo;ll start (optional)
+        </span>
         <input
           type="text"
           value={detail}
@@ -214,7 +224,8 @@ function WhyMattersField({
 
   function commit() {
     setEditing(false);
-    const cleaned = value.trim().replace(/\s+/g, " ").slice(0, WHY_MATTERS_MAX) || null;
+    const cleaned =
+      value.trim().replace(/\s+/g, " ").slice(0, WHY_MATTERS_MAX) || null;
     if (cleaned !== existing) onSave(cleaned); // only write a real change
   }
 
@@ -229,7 +240,9 @@ function WhyMattersField({
         {existing ? (
           <span className="text-ink-soft">
             <span className="text-ink-faint">Why you&rsquo;re in: </span>
-            <span className="italic text-ivy-ink">&ldquo;{existing}&rdquo;</span>
+            <span className="italic text-ivy-ink">
+              &ldquo;{existing}&rdquo;
+            </span>
           </span>
         ) : (
           <span className="text-ink-faint underline-offset-2 hover:underline">
