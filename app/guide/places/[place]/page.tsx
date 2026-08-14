@@ -22,6 +22,8 @@ import {
   universitiesForPlace,
 } from "@/lib/data/place-universities";
 import { statedGuideFields } from "@/lib/guide/student-fields";
+import { guidePickState, type PlanPickState } from "@/lib/guide/plan-state";
+import { AddToPlan } from "@/components/guide/AddToPlan";
 import { WorkFromHere } from "@/components/guide/Spine";
 import { areasForDestination } from "@/lib/data/spine";
 import { pageMeta } from "@/lib/seo";
@@ -52,7 +54,7 @@ export async function generateMetadata({
   });
 }
 
-export default function DestinationPage({
+export default async function DestinationPage({
   params,
   searchParams,
 }: {
@@ -66,6 +68,9 @@ export default function DestinationPage({
     <DestinationBody
       destination={destination}
       stated={statedGuideFields(searchParams)}
+      // Resolved in the route rather than inside the body, so the body stays
+      // the pure renderer it already was. One cached read — see plan-state.ts.
+      pick={await guidePickState("place", params.place)}
     />
   );
 }
@@ -73,9 +78,11 @@ export default function DestinationPage({
 function DestinationBody({
   destination: d,
   stated,
+  pick,
 }: {
   destination: StudyDestination;
   stated: ReturnType<typeof statedGuideFields>;
+  pick: PlanPickState;
 }) {
   const hubs = HUBS.filter((h) => d.hubs.includes(h.id));
   const named = universitiesForPlace(d.id);
@@ -330,6 +337,17 @@ function DestinationBody({
       lead={d.oneLine}
       aside={
         <>
+          {/* First in the rail, because it is the one thing on this page that
+              changes something rather than telling you something. */}
+          <AddToPlan
+            kind="place"
+            id={d.id}
+            label={d.name}
+            signedIn={pick.signedIn}
+            saved={pick.saved}
+            maps={pick.maps}
+            returnTo={`/guide/places/${d.id}`}
+          />
           <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-ink">
               Strongest fields here

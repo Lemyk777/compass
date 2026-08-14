@@ -46,9 +46,13 @@ async function currentUserId(): Promise<string | null> {
   return user?.id ?? null;
 }
 
+// `/planner` rather than `/planner/maps`: the maps list became a LENS of the one
+// planner route, and `/planner/maps` is now a 308 from next.config.mjs.
+// Revalidating a redirect is a no-op that reads as coverage. One map is still a
+// page of its own — a document a student can link to — so it keeps its path.
 function refresh(mapId?: string) {
   try {
-    revalidatePath("/planner/maps");
+    revalidatePath("/planner");
     if (mapId) revalidatePath(`/planner/maps/${mapId}`);
   } catch {
     // ignore cache revalidation errors
@@ -492,11 +496,139 @@ export async function promoteNodeToTask(input: {
     };
   }
 
+  // `refresh` already covers `/planner`, which is where the board lives now
+  // that it is a lens rather than a route.
   refresh(input.mapId);
-  try {
-    revalidatePath("/planner/board");
-  } catch {
-    // ignore cache revalidation errors
+  return { ok: true };
+}
+
+/**
+ * Start a map that already has the student's own decisions on it.
+ *
+ * The founder's complaint about the map was that its controls made no sense,
+ * and release 3 named the real cause: the controls were hard to understand
+ * because the NODES meant nothing. There is no intuition about where to put a
+ * thought — but there is an obvious one about where to put Berlin, once
+ * Germany is already on the page.
+ *
+ * So a first map is not blank. It is the countries you took out of the guide,
+ * with the cities inside them nested where we know the containment — which is
+ * the same shape the guide spends a whole release establishing, and the reason
+ * the operations then have an obvious meaning.
+ *
+ * With no country picked it falls back to the kinds of work, which is the same
+ * question one level out. With neither, it declines rather than creating an
+ * empty map with a heading on it.
+ */
+export async function createMapFromPlan(): Promise<SaveResult> {
+  const uid = await currentUserId();
+  if (!uid) return { ok: false, error: "Please log in again." };
+
+  const supabase = createClient();
+
+  const { count, error: countError } = await supabase
+    .from("planner_map_nodes")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", uid)
+    .is("parent_id", null);
+
+  if (countError)
+    return fail(countError.code, "Could not start a map. Try again.");
+  if ((count ?? 0) >= LIMITS.maps) {
+    return {
+      ok: false,
+      error: `That's ${LIMITS.maps} maps — delete one before starting another.`,
+    };
   }
+
+  // Dynamic, for the same reason everything else in the planner reaches the
+  // guide's registries this way: `study-destinations` pulls in prose that has no
+  // business on this module's static graph.
+  const [{ loadPicks }, { parsePickRef }, { destinationForHub }] =
+    await Promise.all([
+      import("@/lib/planner/picks"),
+      import("@/lib/data/plan-picks"),
+      import("@/lib/data/study-destinations"),
+    ]);
+
+  const picks = await loadPicks(uid);
+  const resolved = picks
+    .map((p) => ({ ...p, parsed: parsePickRef(p.ref) }))
+    .filter((p) => p.parsed !== null);
+
+  const places = resolved.filter((p) => p.parsed!.kind === "place");
+  const hubs = resolved.filter((p) => p.parsed!.kind === "hub");
+  const work = resolved.filter((p) => p.parsed!.kind === "work");
+
+  if (places.length === 0 && work.length === 0) {
+    return { ok: false, error: "Put a country or a kind of work on your plan first." };
+  }
+
+  const mapId = crypto.randomUUID();
+  const rows: Record<string, unknown>[] = [];
+  const base = {
+    user_id: uid,
+    map_id: mapId,
+  };
+
+  // Room for the root plus whatever fits. The bound is the table's, not a
+  // product opinion: past it the diagram stops being drawable.
+  let budget = LIMITS.mapNodes - 1;
+  const take = <T,>(list: T[]): T[] => {
+    const out = list.slice(0, Math.max(budget, 0));
+    budget -= out.length;
+    return out;
+  };
+
+  const usePlaces = places.length > 0;
+
+  rows.push({
+    ...base,
+    id: mapId,
+    parent_id: null,
+    label: usePlaces ? "Where could I study?" : "What do I actually want to do?",
+    position: 0,
+  });
+
+  const parents = take(usePlaces ? places : work);
+  parents.forEach((p, i) => {
+    const id = crypto.randomUUID();
+    rows.push({
+      ...base,
+      id,
+      parent_id: mapId,
+      label: p.label,
+      // The href is what types the node — no `kind` column anywhere in this
+      // feature, in either table. Derive, never store.
+      link_href: p.href,
+      position: i,
+    });
+
+    if (!usePlaces) return;
+    // The cities they picked that actually sit in THIS country. Containment we
+    // know is worth drawing; containment we are guessing at is not, so a city
+    // whose country we cannot resolve simply stays out rather than being hung
+    // under the wrong one.
+    const inside = take(
+      hubs.filter(
+        (h) => destinationForHub(h.parsed!.id)?.id === p.parsed!.id,
+      ),
+    );
+    inside.forEach((h, j) => {
+      rows.push({
+        ...base,
+        id: crypto.randomUUID(),
+        parent_id: id,
+        label: h.label,
+        link_href: h.href,
+        position: j,
+      });
+    });
+  });
+
+  const { error } = await supabase.from("planner_map_nodes").insert(rows);
+  if (error) return fail(error.code, "Could not start a map. Try again.");
+
+  refresh(mapId);
   return { ok: true };
 }

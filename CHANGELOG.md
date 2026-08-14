@@ -21,6 +21,91 @@ record.
 
 ---
 
+## 2026-08-14 — The plan is the guide, answered
+
+The section this release rebuilds had already been rebuilt once, three days
+earlier, and the founder's verdict on that was "almost nothing changed". He was
+right. That release shipped a view registry, a stepped agenda and typed map
+nodes — all necessary, none of it visible. **A structural release needs one
+thing a person can see shipped with it, or it reads as no work at all.** That is
+the finding this entry exists to record.
+
+### What a student notices
+
+- **The plan stopped being three pages.** "What's next", the board and the maps
+  were three addresses behind a control shaped like a tab strip, so switching
+  view reloaded the section and threw away whichever month you had stepped to.
+  They are three lenses over one screen now: switching is instant, the period
+  you were looking at survives it, and the address still names the view so a
+  link to your board still opens your board.
+- **Every guide page can be put on the plan.** A kind of work, a country, a
+  city, a route from home — one quiet control in the margin of the page you were
+  reading. The plan shows them back grouped under the guide's own step numbers,
+  and every chip opens where you read it. Before this, the plan could send you
+  into the guide and nothing could come back: you could read every word about
+  Germany and there was no way to say "this one is mine".
+- **There is one sentence at the top of the plan that tells you what to do next,
+  and why.** Always exactly one, at every stage — not a list, and not only on
+  your first day. It runs from what has already gone wrong, to the question you
+  are furthest from answering, to what is closest to happening. If we have no
+  honest number to give you, the sentence does not have one in it.
+- **The mind map says what it is acting on.** The bar was ten words in a row —
+  Add inside, Add after, Indent, Outdent, Up, Down — with nothing on screen
+  saying which branch any of them would touch. It now names the branch above the
+  verbs, the two "add"s became one control whose choice is a sentence, and
+  indent/outdent are arrows labelled with what they do. And your first map is no
+  longer blank: it can be drawn from the countries you already picked, with the
+  cities nested inside the right one.
+- **You can try the work before choosing a degree.** An area of work now names
+  the free employer-built simulations that let you do the actual job for an
+  afternoon — J.P. Morgan on money and markets, three on data and AI. We build
+  none of these and we host none of them; we point at the platform that does.
+  Where there is no honest answer — nobody runs a simulation of treating
+  patients — the page says nothing rather than offering a near miss.
+- **Moving a card on the board is instant**, and the card visibly travels
+  between columns. It used to sit still until a server round trip finished.
+
+### One bug this found
+
+A country appeared **twice** in a field's chain, one city under each. The guide
+matched a country by the name printed on a city ("UAE") against the name on the
+country profile ("United Arab Emirates"), so it could never recognise itself.
+Live since the chain shipped, and invisible to every test that existed —
+they all checked properties of the chain and none checked that a country appears
+in it once. Found by reading the browser console. "Hong Kong SAR" against "Hong
+Kong" was one city away from the same fault.
+
+### Under the hood
+
+- **Migration `0030_planner_path.sql` — already applied** (`npm run db:check`
+  reports 32/32). It holds what a student claimed out of the guide. There is no
+  `kind` column: a pick's kind is the prefix of its ref, the same argument that
+  keeps a map node's type out of the database. The server action computes the
+  link and ignores the caller's, because a server action is a public HTTP
+  endpoint and a supplied path would let anyone file `/admin` under the label
+  "Germany".
+- `/planner/board` and `/planner/maps` are enumerated **308s**, not deletions.
+  `/planner/maps/<id>` stays a real page: one map is a document a student can
+  send to someone.
+- The card that moves between columns needed a data-flow change rather than an
+  animation. A view transition whose promise waits on a server round trip
+  freezes the document — measured at 2130ms here once already — so the move now
+  lands in the client first and the server reconciles behind it.
+- **192 unit tests**, up from 175. `/planner` is 105 kB carrying all three
+  lenses, down from 110 kB carrying one.
+- No new environment variable.
+
+### What this deliberately did not do
+
+The owner's call was that the plan gets **no path of stages** — no numbered
+progression of its own. The alternative was a five-stop spine mirroring the
+guide, and the concern against going without it is that all the accompaniment
+then rests on that single next-move sentence. It is recorded in
+[PLANNER_PLAN.md](docs/PLANNER_PLAN.md) §"Release 4" so it can be revisited
+against evidence rather than re-argued. Majors still do not exist as a layer.
+
+---
+
 ## 2026-08-07 — The guide says three times as much
 
 ### What a student notices

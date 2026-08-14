@@ -18,6 +18,8 @@ import {
   universitiesForHub,
 } from "@/lib/data/place-universities";
 import { statedGuideFields } from "@/lib/guide/student-fields";
+import { guidePickState } from "@/lib/guide/plan-state";
+import { AddToPlan } from "@/components/guide/AddToPlan";
 import { WorkFromHere } from "@/components/guide/Spine";
 import { areasForHub } from "@/lib/data/spine";
 import { pageMeta } from "@/lib/seo";
@@ -42,7 +44,7 @@ export async function generateMetadata({
   });
 }
 
-export default function GuideHubPage({
+export default async function GuideHubPage({
   params,
   searchParams,
 }: {
@@ -52,6 +54,9 @@ export default function GuideHubPage({
   const hub = HUBS.find((h) => h.id === params.hub);
   if (!hub) notFound();
 
+  // Whether this is already on the reader's plan. One cached read, shared with
+  // whatever else on this request asks — see lib/guide/plan-state.ts.
+  const pick = await guidePickState("hub", params.hub);
   const stated = statedGuideFields(searchParams);
   const country = destinationForHub(hub.id);
   const nearby = HUBS.filter(
@@ -183,6 +188,17 @@ export default function GuideHubPage({
       lead={hub.what}
       aside={
         <>
+          {/* First in the rail, because it is the one thing on this page that
+              changes something rather than telling you something. */}
+          <AddToPlan
+            kind="hub"
+            id={hub.id}
+            label={hub.city}
+            signedIn={pick.signedIn}
+            saved={pick.saved}
+            maps={pick.maps}
+            returnTo={`/guide/cities/${hub.id}`}
+          />
           {/* If this city sits in a country we profile in full, that page is the
               next question the student will have. */}
           {country && (

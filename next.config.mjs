@@ -37,6 +37,16 @@ const RENAMED_HUB_IDS = {
   "osaka-kyoto": "osaka",
 };
 
+// The planner's old routes, and the `?view=` value each becomes. Duplicated
+// from lib/data/planner-sections.ts for the same reason as the lists above —
+// next.config is loaded before any TypeScript is compiled — and asserted equal
+// by a unit test, so renaming a view without handling its old address fails the
+// build's test step.
+const PLANNER_VIEW_REDIRECTS = [
+  ["/planner/board", "board"],
+  ["/planner/maps", "map"],
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -64,6 +74,19 @@ const nextConfig = {
       ...Object.entries(RENAMED_HUB_IDS).map(([from, to]) => ({
         source: `/guide/cities/${from}`,
         destination: `/guide/cities/${to}`,
+        permanent: true,
+      })),
+      // The planner's board and maps list stopped being routes: they are lenses
+      // of `/planner`, over one loaded dataset, because three pages behind a
+      // control shaped like a tab strip is what made the section read as three
+      // products. Both addresses were live and linked, so they redirect.
+      //
+      // Enumerated exactly, never `/planner/maps/:path*` — `/planner/maps/<id>`
+      // is still a real page, because one map is a document a student can send
+      // to someone, and a pattern here would swallow it.
+      ...PLANNER_VIEW_REDIRECTS.map(([from, view]) => ({
+        source: from,
+        destination: `/planner?view=${view}`,
         permanent: true,
       })),
     ];

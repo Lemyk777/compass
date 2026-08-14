@@ -1,6 +1,11 @@
 "use client";
 
-import { MINDMAP_GEOMETRY, type MapLayout } from "@/lib/data/mindmap";
+import {
+  MAP_NODE_KIND_LABEL,
+  MINDMAP_GEOMETRY,
+  mapNodeKind,
+  type MapLayout,
+} from "@/lib/data/mindmap";
 
 // The picture of the tree.
 //
@@ -15,9 +20,14 @@ import { MINDMAP_GEOMETRY, type MapLayout } from "@/lib/data/mindmap";
 
 const g = MINDMAP_GEOMETRY;
 
-/** Long labels are cut in the picture and kept in full in the outline. */
-function short(label: string): string {
-  return label.length > 22 ? `${label.slice(0, 21)}…` : label;
+/**
+ * Long labels are cut in the picture and kept in full in the outline — and two
+ * characters shorter when a kind marker is sharing the box, or the text runs
+ * under the dot.
+ */
+function short(label: string, marked: boolean): string {
+  const max = marked ? 20 : 22;
+  return label.length > max ? `${label.slice(0, max - 1)}…` : label;
 }
 
 export function MapDiagram({
@@ -55,6 +65,12 @@ export function MapDiagram({
 
         {nodes.map((n) => {
           const on = n.id === currentId;
+          // What this branch IS. A typed node gets a small mark and says its
+          // kind in the tooltip; an untyped thought gets neither, because
+          // marking every box would stop the marks meaning anything. Same rule
+          // the outline's badges follow, and the same single source: the kind
+          // is derived from where the node points.
+          const kind = MAP_NODE_KIND_LABEL[mapNodeKind(n.linkHref)];
           return (
             <g
               key={n.id}
@@ -66,7 +82,7 @@ export function MapDiagram({
               onClick={() => onPick(n.id)}
               className="cursor-pointer"
             >
-              <title>{n.label}</title>
+              <title>{kind ? `${n.label} — ${kind}` : n.label}</title>
               <rect
                 x={n.x - g.nodeWidth / 2}
                 y={n.y - g.nodeHeight / 2}
@@ -80,14 +96,22 @@ export function MapDiagram({
                 }
                 strokeWidth={on ? 2 : 1}
               />
+              {kind && (
+                <circle
+                  cx={n.x - g.nodeWidth / 2 + 9}
+                  cy={n.y}
+                  r={3}
+                  className="fill-accent"
+                />
+              )}
               <text
-                x={n.x}
+                x={n.x + (kind ? 5 : 0)}
                 y={n.y}
                 dominantBaseline="central"
                 textAnchor="middle"
                 className={`text-xs font-medium ${on ? "fill-accent-ink" : "fill-ink"}`}
               >
-                {short(n.label)}
+                {short(n.label, Boolean(kind))}
               </text>
             </g>
           );

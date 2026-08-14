@@ -16,6 +16,10 @@ import { VALUE_LABEL } from "@/lib/data/values";
 import { SpineChain } from "@/components/guide/Spine";
 import { spineForFaculty } from "@/lib/data/spine";
 import { statedGuideFields } from "@/lib/guide/student-fields";
+import { guidePickState } from "@/lib/guide/plan-state";
+import { AddToPlan } from "@/components/guide/AddToPlan";
+import { TryTheWork } from "@/components/guide/TryTheWork";
+import { simulationsForArea } from "@/lib/data/try-it";
 import { pageMeta } from "@/lib/seo";
 
 // One area of work, in full. This was a modal sheet, which meant it had no URL:
@@ -37,7 +41,7 @@ export async function generateMetadata({
   });
 }
 
-export default function GuideAreaPage({
+export default async function GuideAreaPage({
   params,
   searchParams,
 }: {
@@ -46,6 +50,10 @@ export default function GuideAreaPage({
 }) {
   const found = areaBySlug(params.area);
   if (!found) notFound();
+
+  // Whether this is already on the reader's plan. One cached read, shared with
+  // whatever else on this request asks — see lib/guide/plan-state.ts.
+  const pick = await guidePickState("work", params.area);
 
   const { faculty, area } = found;
   const stated = statedGuideFields(searchParams);
@@ -174,9 +182,21 @@ export default function GuideAreaPage({
       id: "try-it",
       title: "Test it this month",
       body: (
-        <GuideBlock label="Free, and finishable in a few evenings" tone="good">
-          {area.tryItNow}
-        </GuideBlock>
+        <>
+          <GuideBlock label="Free, and finishable in a few evenings" tone="good">
+            {area.tryItNow}
+          </GuideBlock>
+          {/* The founder's own ask, and the best-evidenced item on the list: a
+              student weighing investment banking should meet the bank's own
+              simulation HERE, not in a catalog of 173 rows. Renders nothing for
+              an area with no honest answer — absence over a near-miss, because
+              a reader would spend an evening on it and learn the wrong thing
+              about a career. */}
+          <TryTheWork
+            simulations={simulationsForArea(params.area)}
+            areaTitle={area.title}
+          />
+        </>
       ),
     },
   ];
@@ -191,6 +211,17 @@ export default function GuideAreaPage({
       lead={area.what}
       aside={
         <>
+          {/* First in the rail, because it is the one thing on this page that
+              changes something rather than telling you something. */}
+          <AddToPlan
+            kind="work"
+            id={params.area}
+            label={area.title}
+            signedIn={pick.signedIn}
+            saved={pick.saved}
+            maps={pick.maps}
+            returnTo={`/guide/work/${params.area}`}
+          />
           {/* Nearby areas, for the student who is close but not quite. The
               guide's rule is that we widen rather than guess, and this is that
               rule made clickable. */}

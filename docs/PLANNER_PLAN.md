@@ -267,6 +267,11 @@ third entry, not a fourth edit site. Same pattern as `guide-sections.ts`.
 
 ### Routes
 
+> **Superseded by Release 4.** Both of these became `?view=` values over one
+> route; `/planner/board` is a 308 now. Kept as written because the release-1
+> reasoning below is still why the section is `force-dynamic` and
+> session-gated — only the addressing changed.
+
 ```
 /planner          agenda — "What's next"      (server)
 /planner/board    the board                    (server)
@@ -716,3 +721,154 @@ that changes what the product IS, and 4–5 depend on both.
 - [What Is Progressive Disclosure in UX?](https://www.uxpin.com/studio/blog/what-is-progressive-disclosure/) — minimal action first.
 - [Forage virtual job simulations](https://www.theforage.com/simulations) and [Job simulation teaches students professional skills](https://www.insidehighered.com/news/student-success/life-after-college/2024/05/15/job-simulation-teaches-students-professional) — the outcome data.
 - [Notion database views](https://www.sparxno.com/blog/notion-database-views) and [Trello workspace views](https://www.atlassian.com/blog/trello/trello-workspace-views-dashcards) — one dataset, many views, no duplication.
+
+---
+
+# Release 4 — the join, and one sentence that never leaves
+
+**Decided 2026-08-14**, after the founder read release 3 and said that almost
+nothing had changed. He was right, and the reason is worth writing down before
+the work is: **release 3 shipped the structure and not the experience.**
+
+## 0. What release 3 actually left on screen
+
+Read the code rather than the changelog and the gap is exact:
+
+| Shipped as | What a student met |
+|---|---|
+| "one window, three synchronised views" | `PlannerTabs` was three `<Link>`s to three routes. Pressing one ran the server again and threw away the period you had stepped to. A tab strip that behaves like a destination is three products sharing a header. |
+| "the empty plan is a CHOICE, built from the spine" | `EmptyPlanner` renders only when the plan is empty. The **only** sentence the section ever addressed to a student vanished the moment they did one thing. The product accompanied nobody past their first action. |
+| "the guide→planner bridge" | Four **counts** on those four cards. Nothing could travel the other way: you could read every word about Germany and there was no way to say "this one is mine". |
+| "a map node is what it points at" | `mapNodeKind` existed and `MapWorkspace` never rendered it. The bar was still ten words with no visible subject. |
+
+None of that is wrong work. It is all *necessary* work that produced no
+observable change, which is a specific failure mode worth naming: **a structural
+release needs one visible consequence shipped with it, or it reads as nothing.**
+
+## 1. The owner's three calls, 2026-08-14
+
+Offered as three options each, with a recommendation. What was chosen:
+
+1. **No path.** The section gets **no stops, no stages, no progress spine** —
+   only the three lenses joined into one window, the join from the guide, and
+   one "next move" at the top. The recommendation was a five-stop path mirroring
+   the guide; the concern raised against this option was that it fixes the
+   navigation and not the accompaniment. Overruled, and correctly recorded as
+   overruled: **the guidance load therefore falls entirely on the next move and
+   on the picks being visible at all times.**
+2. **A table for the picks** (`planner_path`, migration 0030) rather than
+   reusing `planner_map_nodes`. One fact, one home; maps stay maps.
+3. **Majors: not now.** The chain stays area of work → field → country → city →
+   university. §8.2 of the backlog still holds the question.
+
+## 2. What the join is, and what it is not
+
+A pick is one fact: *you put this on your plan*. It carries no rank, no score
+and no reason, because everything else about a country already lives in a
+registry the guide owns and a second copy here would be a snapshot of prose that
+gets revised — the same argument that makes the spine a function.
+
+Three properties, each of them a rule the obvious version breaks:
+
+- **The kind is the prefix of the ref** (`place:germany`). No `kind` column.
+  Same argument as `mapNodeKind` deriving a node's type from where it points.
+- **The href is computed by the server action**, never accepted from the caller.
+  A server action is a public HTTP endpoint; without this, anyone could store
+  `/admin` under the label "Germany" and have the plan render it as a country
+  chip. `pickHref` can only produce `/guide/…`.
+- **`lib/data/plan-picks.ts` imports nothing but a type**, and a test enforces
+  it. Two client components render chips from it.
+
+The control on the guide side is deliberately quiet and deliberately *present
+when signed out*, where it becomes a link to sign in that comes back. A reader
+who has just decided something is exactly the person for whom an account is
+worth the friction; hiding the control would hide the reason.
+
+## 3. The next move: one sentence, always, with a reason
+
+`lib/data/next-move.ts` is pure, ordered, and returns exactly one move. The
+three rules are in the file and in three tests:
+
+1. **Exactly one.** A list of suggestions is the student's own confusion handed
+   back with our name on it.
+2. **Every move says WHY.** "Go and read about countries" is an instruction;
+   "you marked Data & AI — five countries actually hire for it" is a reason, and
+   a reason is what a consultant gives that a form does not. `why` is not
+   optional in the type and no branch omits it.
+3. **It never invents a number.** Where we have nothing honest to say, the copy
+   is phrased without a figure rather than with a zero.
+
+The ladder — first match wins — runs *what has already gone wrong* → *the
+question they are furthest from answering* → *what is closest to happening*:
+
+```
+overdue → cold-start → pick-work → pick-place → pick-city
+        → commit → start → deadline → undated → steady
+```
+
+`pick-work / pick-place / pick-city` is the guide's own zoom, and it is what
+makes the plan read as a continuation of it rather than as a second opinion.
+Only `citiesInPicked` is allowed to *decide* a branch as well as phrase one: the
+"a country is not one job market" move must not fire for a student whose
+countries hold no city page, or it sends them to a list with nothing of theirs
+in it.
+
+Only `overdue` and a near `deadline` may use the warning tone, so that colour
+keeps meaning "this one ran out".
+
+## 4. One window, for real
+
+One route, one loader, three lenses. `PlannerWindow` holds the lens **and the
+period**, so stepping to March, glancing at the board and coming back lands in
+March. The URL is written with `replaceState`: a lens is still shareable, and
+Back still leaves the plan.
+
+`/planner/board` and `/planner/maps` are 308s in `next.config.mjs`, enumerated —
+`/planner/maps/<id>` stays a real page, because one map is a document. The lens
+is carried through `requireSession`, which fixes release 1's bug one layer up:
+following a link to the board used to land you on the agenda after signing in.
+
+## 5. The map's controls
+
+The complaint was never that the operations are wrong — they are the right
+operations and each is disabled exactly when it is impossible. It is that **a
+verb with an invisible object cannot be understood**, and half the verbs were
+named after the data structure. Three changes, all the same change:
+
+1. the bar states its subject — "Working on — *Germany*, Country";
+2. ten controls became five groups (the two adds are one control whose choice
+   lives in its own form, where the options can be sentences);
+3. indent/outdent became **arrows** whose accessible name is the operation
+   explained.
+
+And a first map is no longer blank: `createMapFromPlan` seeds it from
+`planner_path` — the countries picked, with the picked cities nested inside the
+right country. Containment we know, never guessed.
+
+## 6. Shipped
+
+| what | where |
+|---|---|
+| `planner_path` + RLS + grants | `supabase/migrations/0030_planner_path.sql` (**apply by hand, then `npm run db:check`**) |
+| the pure pick model | `lib/data/plan-picks.ts` (type-only imports, tested) |
+| the guidance | `lib/data/next-move.ts` + `tallyPlanner` in `lib/data/planner.ts` |
+| add from the guide | `components/guide/AddToPlan.tsx`, on all four steps; `lib/guide/plan-state.ts` |
+| one window | `components/planner/PlannerWindow.tsx`, `PlannerLenses`, redirects in `next.config.mjs` |
+| picks in the plan | `components/planner/YourPicks.tsx` |
+| the map | `MapWorkspace` rebuilt; `SeedMapFromPlan`; `PlacedNode.linkHref` |
+| motion | `.lens-in`, `.period-in-forward`, `.period-in-back` in `app/globals.css` |
+
+**185 unit tests** (was 175), build clean, `/planner` 105 kB carrying all three
+lenses (was 110 kB carrying one).
+
+## 7. What release 4 did NOT do
+
+- **No path, no stages** — the owner's call, recorded above. If the plan ever
+  reads as directionless again, that decision is the first thing to revisit, and
+  the concern was stated before it was taken rather than after.
+- **Majors still do not exist as a layer.** Backlog §8.2.
+- **Nothing seeds a map from the guide page itself** — you can seed one from
+  your picks, which covers most of backlog §8.1, but "add this to a map" while
+  reading is still not there.
+- **No job simulation surfaced on an area page.** The `simulation` kind exists
+  in the catalog; the spine's "test it this month" step still does not use it.

@@ -44,4 +44,10 @@ export const LIMITS = {
   mapLabel: 80,
   mapNodes: 60,
   maps: 12,
+  // What a student claimed out of the guide (migration 0030). The same abuse
+  // bound as `plannerItems` — a server action is a public HTTP endpoint — and
+  // generous on purpose: weighing eight countries at once is a real state to be
+  // in, and the plan's job is to help sort them, not to refuse the mess.
+  pathPicks: 60,
+  pickLabel: 80,
 } as const;

@@ -452,6 +452,65 @@
   animation: section-in 0.4s ease-out both;
 }
 
+/* ---- THE PLAN'S WINDOW ----------------------------------------------------
+   Two motions in the whole section, and each one carries information rather
+   than decorating a surface. That is the same bar the guide's card→page morph
+   had to clear, and the reason there is no entrance on the next-move card: the
+   most important thing on the page must never be held at opacity 0 waiting for
+   an animation to finish.
+
+   1. `.lens-in` — the panel under the lens switcher, replayed by remounting on
+      a `key`. It says "this region changed and the rest did not", which is the
+      one thing a tab strip cannot say on its own.
+   2. `.period-in-*` — the agenda's period, entering from the side the student
+      travelled. An arrow control's whole job is direction, and a symmetric fade
+      throws that away: with these, stepping back LOOKS like stepping back.
+
+   Transform and opacity only, so both are compositor-only and cost a frame of
+   nothing. Both are covered by the global reduced-motion guard at the bottom of
+   this file, which zeroes the duration and the delay — with `both` fill that
+   lands on the end state, i.e. visible and in place. */
+@keyframes lens-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lens-in {
+  animation: lens-in 0.22s cubic-bezier(0.2, 0.7, 0.35, 1) both;
+}
+
+@keyframes period-in-forward {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes period-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.period-in-forward {
+  animation: period-in-forward 0.24s cubic-bezier(0.2, 0.7, 0.35, 1) both;
+}
+.period-in-back {
+  animation: period-in-back 0.24s cubic-bezier(0.2, 0.7, 0.35, 1) both;
+}
+
 /* Headline line — a deep-navy phrase that smoothly "shuffles" between full
    sentences: the new line glides DOWN into place while the old one slips down
    and out at the SAME time. The trick that keeps it clean: motion

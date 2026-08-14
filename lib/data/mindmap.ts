@@ -137,6 +137,13 @@ export type PlacedNode = {
   id: string;
   label: string;
   depth: number;
+  /**
+   * Carried through the layout untouched, so the picture can show WHAT a branch
+   * is and not only where it sits. It takes part in no geometry — a node's box
+   * is the same size whether it points at Germany or at a thought — which is
+   * why adding it here changes nothing the layout tests assert.
+   */
+  linkHref: string | null;
   /** Centre of the node box. */
   x: number;
   y: number;
@@ -187,7 +194,14 @@ export function layoutTree(root: MapNode): MapLayout {
     }
 
     yOf.set(n.id, y);
-    nodes.push({ id: n.id, label: n.label, depth: n.depth, x, y });
+    nodes.push({
+      id: n.id,
+      label: n.label,
+      depth: n.depth,
+      linkHref: n.linkHref,
+      x,
+      y,
+    });
 
     for (const c of n.children) {
       edges.push({

@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Starting a session?** Read
+> [docs/BACKLOG_2026-08.md](docs/BACKLOG_2026-08.md) **§1 first** — it says what
+> is deployed versus what is only on the branch, and getting that wrong is the
+> fastest way to do work twice. §8 has the ordered next list, §5 the findings,
+> §7 the working method.
+
 ## What this is
 
 Compass — a guidance tool for international students. **Opportunities is the front door**: what competitions, olympiads, courses and programmes a student can actually enter, at their age, with honest dates and costs. The **planner** ([docs/PLANNER_PLAN.md](docs/PLANNER_PLAN.md)) is the third section, where what they committed to becomes dated work. The admission analysis (factor scores, per-school likelihood ranges, benchmarks, gap analysis, recommendations across **US · Italy · Hong Kong · UAE · Korea**) is now one opt-in input, not the product a student arrives for. Three roles share one backend: **student** (core product), **ambassador** (referral growth), **admin/founder** (metrics). Full product spec lives in [docs/compass-project-blueprint.md](docs/compass-project-blueprint.md); setup in [docs/SETUP.md](docs/SETUP.md); a map of the codebase in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); the plan of record for the front door in [docs/OPPORTUNITIES_PLAN.md](docs/OPPORTUNITIES_PLAN.md).
@@ -212,10 +218,33 @@ is its own route now:
   **every stop has a page behind it**, or it is a name a student cannot click;
   institutions appear **only under a field they are `knownFor`, in the
   registry's order** — never sorted by anything, which would be a ranking; and a
-  country we merely NAME is plain text, not a link. It is **server-only in
+  country we merely NAME is plain text, not a link.
+  **A stop's identity is its destination ID, never its printed name.** The walk
+  used to match a stop on `s.country === hub.country` while storing
+  `destination?.name ?? hub.country` — and the hubs say `UAE` where the profile
+  says `United Arab Emirates`, so the stop could never match itself: Dubai and
+  Abu Dhabi each opened their own, and the chain listed the same country twice
+  with one city in each. `Hong Kong SAR` vs `Hong Kong` was one hub away from
+  the same bug. React reported it as duplicate keys; a student saw a duplicated
+  country. Compare ids, not prose — a test now walks every field's chain. It is **server-only in
   practice** (five prose registries, ~4,000 lines) and a test fails any client
   component that imports it. The round trip is asserted: a city on a field's
   chain must lead back to that field's areas.
+- **An area of work says how to TRY it, and we never build the try ourselves**
+  ([lib/data/try-it.ts](lib/data/try-it.ts) → `TryTheWork`, inside "Test it this
+  month"). A student weighing investment banking meets the bank's own simulation
+  on that page rather than in a catalog of 173 rows — the best-evidenced item on
+  the backlog, and free. Three rules, test-enforced:
+  **no URLs in the file** (the catalog owns links because `test:links` keeps
+  them alive, and the individual company pages sit behind bot protection the
+  gate demonstrably cannot pass — so they are NAMED here and LINKED through the
+  one catalog row that passes); **we describe the task and the employer, never
+  the product title**, because a company is renamed far less often than its
+  course listing and the employer is also the search term; and **an area with
+  nothing honest to offer renders nothing** — there is no employer simulation
+  for treating patients, and a near-miss would cost a reader an evening and
+  teach them the wrong thing about a career. Re-verify yearly, same class of
+  claim as `englishTaught`.
 - **The steps live in one registry** ([lib/data/guide-sections.ts](lib/data/guide-sections.ts)) that the tabs, the index cards and the "next step" footer all read. Add or rename a step there, not in four places.
 - **One session read per request.** `guideView()`/`guideSession()` in [lib/guide/student-fields.ts](lib/guide/student-fields.ts) are `cache()`d, because the layout (picking a shell), the page (labelling the filter) and the filter's default each used to call `getSession()` — three `auth.getUser()` round trips and three `profiles` reads before a page drew anything. Ask through `guideView`, not `getSession`, inside the guide.
 - **The field filter is `?f=`, not state** ([lib/data/guide-fields.ts](lib/data/guide-fields.ts) + [lib/guide/student-fields.ts](lib/guide/student-fields.ts)). Three states, and the last two are NOT the same: absent = "not stated" (falls back to the student's own fields), `f=all` = the student deliberately widened it, `f=a,b` = those fields. Collapsing them re-applies the profile on every navigation. Every in-section link carries it via `withFields`.
@@ -245,11 +274,55 @@ is its own route now:
   bundles, which are server-rendered apart from two islands.
 - **The loading skeleton is on the LIST routes only, and that is load-bearing.** A `loading.tsx` is a Suspense boundary, and a boundary lets the server flush the response — status line included — before the page under it renders. One section-wide `app/guide/loading.tsx` therefore made every unknown id answer **200** carrying a not-found page. The skeleton (`components/guide/Skeleton.tsx`) now sits in six scoped files, which is why `/guide`, `/guide/work`, `/guide/places` and `/guide/cities` each live in a `(index)`/`(list)` route group — a group adds nothing to the URL but stops the subject pages inheriting the boundary. It is also where the wait actually is: a list page resolves the session (`guideView`), a subject page reads static data. Don't "tidy" the groups away or hoist the file back up.
 
-## The planner — one list, two views (read [docs/PLANNER_PLAN.md](docs/PLANNER_PLAN.md) first)
+## The planner — ONE route, three lenses (read [docs/PLANNER_PLAN.md](docs/PLANNER_PLAN.md) first)
 
-The student's third section, at `/planner` (agenda) and `/planner/board`.
-Private — `robots.ts` blocks it, the sitemap does not list it, each page calls
-`requireSession` with **its own path**.
+The student's third section, and it is a single route: **`/planner?view=next |
+board | map`**. Private — `robots.ts` blocks it, the sitemap does not list it,
+the page calls `requireSession` **carrying the lens**, so a link to the board
+survives signing in.
+
+- **`/planner/board` and `/planner/maps` are 308s from
+  [next.config.mjs](next.config.mjs), not routes.** They were three pages behind
+  a control shaped like a tab strip, which meant "switching view" ran the server
+  again and threw away the period you had stepped to. One route means one loader
+  and three lenses that cannot disagree.
+  [PlannerWindow](components/planner/PlannerWindow.tsx) holds the lens AND the
+  period, and writes the URL with **`replaceState`, never `pushState`** — Back
+  from a plan should leave the plan, not walk backwards through which lens you
+  were looking through. The redirects are **enumerated**: `/planner/maps/<id>`
+  is still a real page, because one map is a document a student can send to
+  someone, and a pattern would swallow it.
+- **`/planner` is the only place the section's guidance lives, and it is exactly
+  one sentence.** [nextMove](lib/data/next-move.ts) is pure, ordered, and
+  returns ONE move with a mandatory `why`. Three rules, all test-enforced: one
+  move (a list of suggestions is the student's confusion handed back with our
+  name on it); every move says why (an instruction is not a reason, and the
+  missing reason is the whole of "there is no accompaniment"); and it never
+  invents a number — where we have nothing honest to say the copy is phrased
+  without one. The ladder runs *what has already gone wrong → the question they
+  are furthest from answering → what is closest to happening*, and only a closed
+  or near date may use the warning tone.
+- **The guide→plan join is a table, and it is what the section is built on**
+  (`planner_path`, migration **0030**). A student can put a kind of work, a
+  country, a city or a route from home onto their plan from the guide page they
+  read it on ([AddToPlan](components/guide/AddToPlan.tsx), one quiet control in
+  the `DetailShell` rail — a loud one would turn every country profile into a
+  page about the plan). The plan then shows them back, grouped **by the guide's
+  own step numbers**, each chip opening where it was read
+  ([YourPicks](components/planner/YourPicks.tsx)).
+  - **No `kind` column.** A pick's kind is the prefix of its `ref`
+    (`place:germany`) — same argument as `mapNodeKind`, same argument as the
+    spine: a stored type is a second copy that eventually disagrees.
+  - **The server action computes the `href` and ignores the caller's.** A server
+    action is a public HTTP endpoint; a client-supplied path would let anyone
+    store `/admin` under the label "Germany". `pickHref` can only produce
+    `/guide/…`, and a test asserts it.
+  - [lib/data/plan-picks.ts](lib/data/plan-picks.ts) is **type-only imports**,
+    tested — it travels into two client bundles and must not drag 4,000 lines of
+    prose with it.
+  - **Empty groups are not rendered.** Four headings with nothing under them
+    would be a path with the paint changed, and the owner's call was that the
+    section gets no path: what is missing is said once, by the move at the top.
 
 - **The selection rule is one sentence: the planner holds things that have a
   date and a state.** From that everything follows, including the split between
@@ -282,21 +355,46 @@ Private — `robots.ts` blocks it, the sitemap does not list it, each page calls
 - **Moving is a button, never a drag.** Native HTML5 drag cannot be operated
   from a keyboard and is poor on touch, and most of our students are on a phone.
   `stepStatus` is the whole move model, and it is pure.
+- **A move lands in the client first, and only then may it be animated.** The
+  board holds the presses the student has just made and lays them over the
+  server's columns, so an arrow moves a card immediately instead of after a
+  server action, a revalidate and a re-render. That is also the ONLY safe way to
+  use a view transition here: §5.1 of the backlog is that a
+  `startViewTransition` whose promise waits on a round trip freezes the document
+  (measured 2130ms), so the callback must be synchronous — hence `flushSync`,
+  and hence the server action outside it. Reduced motion **skips** the
+  transition rather than shortening it, because a zero-duration transition still
+  freezes. `plannerMorph` names the card, and its escape is **injective**: the
+  first version swept every illegal character to `-`, which mapped `a:b` and
+  `a-b` onto one name — and two elements claiming one name is not a broken
+  animation, it is silently no animation.
 - **`lib/planner/load.ts` is the ONLY place the planner touches `key-dates` or
   `roadmap`**, it is server-only, and it reaches both through dynamic `import()`.
   `lib/data/planner.ts` takes `PlannerCompetition` — a structural subset of
   `Competition` — so the pure core never imports the catalog at all. Same bundle
-  rule as `guide-filter.ts`; `/planner` is 110 kB against an 87.8 kB baseline
-  because of it.
+  rule as `guide-filter.ts`; `/planner` is 105 kB against an 87.8 kB baseline
+  **while carrying all three lenses**, because the two heaviest pieces — the
+  next-move card (it uses the shared button system, whose class merging costs
+  ~9 kB in a client bundle) and the maps lens (it reaches the map registry) —
+  are server-rendered and handed to the window as nodes.
 - **No client component in the planner calls `new Date()`.** `todayISO` is
-  resolved once in the loader and passed down. That is what makes the two views
-  agree with each other, survive hydration, and stay unit-testable.
+  resolved once in the loader and passed down. That is what makes the three
+  lenses agree with each other, survive hydration, and stay unit-testable.
+- **Two motions in the whole section, and both carry information**
+  (`.lens-in`, `.period-in-forward`/`.period-in-back` in
+  [app/globals.css](app/globals.css)). The lens panel replays its entrance on a
+  `key` so it says "this region changed and the rest did not"; the agenda's
+  period enters **from the side the student travelled**, because direction is
+  the one thing an arrow control means and a symmetric fade throws it away.
+  Transform and opacity only. **The next-move card has no entrance at all** — a
+  fade-up holds its content at `opacity: 0` until the animation finishes, and
+  that card is the section's entire guidance.
 - **A derived card cannot be deleted, only dropped** — deleting it would delete
   the record of a commitment. Own tasks delete.
 - The views are a registry ([lib/data/planner-sections.ts](lib/data/planner-sections.ts)),
   same as the guide's steps. Adding mind maps was one entry, as intended.
 
-### Mind maps (`/planner/maps`, migration 0029)
+### Mind maps (`?view=map` and `/planner/maps/<id>`, migration 0029)
 
 - **We store the STRUCTURE, never the coordinates.** A node has a parent and a
   position among its siblings; the picture is computed by `layoutTree` in
@@ -321,6 +419,29 @@ Private — `robots.ts` blocks it, the sitemap does not list it, each page calls
   same pure predicates (`canIndent`/`canOutdent`/`canMoveUp`/`canMoveDown`) the
   server actions check — a lit button the server then refuses teaches the
   structure's rules wrongly.
+- **The bar states its SUBJECT, and that is the fix for "the controls are
+  terrible".** It was ten words in a row — Add inside · Add after · Rename ·
+  Indent · Outdent · Up · Down · Send to plan · Delete — with nothing on screen
+  saying which branch any of them acted on, and half of them named after the
+  data structure rather than after the decision. A verb with an invisible object
+  cannot be understood. So: "Working on — *Germany*, Country" sits above the
+  verbs; the two adds became one control with the choice inside its own form,
+  where "inside it" and "beside it" can be sentences; and the four structural
+  moves became one labelled group of **arrows** whose accessible name is the
+  operation explained ("Move it out one level"), because direction is drawn
+  better than it is named. Ten controls, five groups, and every one is 44px.
+- **A first map is not blank** (`createMapFromPlan` → `SeedMapFromPlan`). A
+  blank canvas asks a student to invent the axes of their own decision before
+  they have any, which is the real reason the controls read as incomprehensible.
+  Seeded from `planner_path`: the countries they picked as branches, with the
+  cities they picked **nested inside the right country** — containment we know,
+  never guessed, so a city whose country cannot be resolved stays out rather
+  than hanging under the wrong one.
+- **`PlacedNode` carries `linkHref` and takes no part in the geometry**, so the
+  picture can mark WHAT a branch is. A typed node gets a dot and names its kind
+  in the tooltip; an untyped thought gets neither, because marking every box
+  would stop the marks meaning anything — the same rule the outline's badges
+  follow, off the same derived kind.
 - **The diagram is `role="img"`; the outline is the content.** Two
   representations of one tree, and only one of them is authoritative or
   focusable. Two focusable copies is a worse experience, not a more accessible

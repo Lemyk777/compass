@@ -16,7 +16,7 @@ import type { NextRequest } from "next/server";
 import { denyUnlessCronAuthorized } from "@/lib/cron/auth";
 import { TIER_META } from "@/lib/tiers";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { renderModule } from "./build-map-outlines";
 import { MAP_OUTLINES } from "@/lib/data/map-outlines";
@@ -69,6 +69,11 @@ import {
   careerAreaTitles,
 } from "@/lib/data/careers";
 import { CAREER_AREA_TITLES } from "@/lib/data/career-titles";
+import {
+  JOB_SIMULATIONS,
+  TRY_IT_OPPORTUNITY_ID,
+  simulationsForArea,
+} from "@/lib/data/try-it";
 import { HOME_ROUTES, homeRoutesForFaculties } from "@/lib/data/from-home";
 import {
   LEGACY_GUIDE_PLACE_IDS,
@@ -86,7 +91,21 @@ import {
   nextGuideSection,
 } from "@/lib/data/guide-sections";
 import { INTENT_STATUSES } from "@/lib/data/intents";
-import { PLANNER_SECTIONS } from "@/lib/data/planner-sections";
+import {
+  PLANNER_SECTIONS,
+  plannerViewFromParam,
+} from "@/lib/data/planner-sections";
+import { nextMove, type NextMoveInput } from "@/lib/data/next-move";
+import {
+  PICK_KINDS,
+  countPicks,
+  groupPicks,
+  isPickId,
+  isPickKind,
+  parsePickRef,
+  pickHref,
+  pickRef,
+} from "@/lib/data/plan-picks";
 import {
   MAP_NODE_KIND_LABEL,
   mapNodeKind,
@@ -107,9 +126,12 @@ import {
   daysBetweenISO,
   intentStatusFromPlanner,
   isMovable,
+  plannerMorph,
   plannerStatusFromIntent,
   stepStatus,
+  tallyPlanner,
   type PlannerInputs,
+  type PlannerItem,
   type PlannerStatus,
 } from "@/lib/data/planner";
 import {
@@ -3128,10 +3150,18 @@ test("the planner is private, and its steps are a registry", () => {
   );
   const ids = PLANNER_SECTIONS.map((s) => s.id);
   assert.equal(new Set(ids).size, ids.length, "two planner steps share an id");
+
+  // They are VIEWS of one route now, not routes of their own — which is what
+  // "one window" actually means and what makes switching cost no round trip.
+  // A section whose href went back to `/planner/<something>` would be three
+  // destinations again with the same paint.
+  const views = PLANNER_SECTIONS.map((s) => s.view);
+  assert.equal(new Set(views).size, views.length, "two lenses share a ?view=");
   for (const s of PLANNER_SECTIONS) {
-    assert.ok(
-      s.href === "/planner" || s.href.startsWith("/planner/"),
-      `${s.id} is outside the section`,
+    assert.equal(
+      s.href,
+      `/planner?view=${s.view}`,
+      `${s.id} is not a view of the one planner route`,
     );
     assert.ok(s.label.trim().length > 0, `${s.id} has no tab label`);
     assert.ok(s.title.trim().length > 0, `${s.id} has no heading`);
@@ -4337,4 +4367,735 @@ test("the student nav runs in the product's own order", () => {
   );
   // And a closed menu must carry no listeners at all.
   assert.match(src, /removeEventListener/, "the menu leaks its listeners");
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The guide → plan join (migration 0030).
+//
+// The plan could already send a student into the guide; nothing could come
+// back. A pick is the other half of that sentence — the answers a student
+// claimed as theirs — and everything below is a rule that would be silently
+// wrong without a test, because the whole feature sits behind a session and an
+// agent cannot open it in a browser.
+
+test("what a plan can hold is exactly what the guide can produce", () => {
+  // The kinds ARE the guide's steps. A fifth kind without a step would be a
+  // thing the plan can hold and the guide has no way to produce; a step with no
+  // kind would be a page whose "add to my plan" has nowhere to write.
+  assert.deepEqual(
+    PICK_KINDS.map((k) => k.section),
+    GUIDE_SECTIONS.map((s) => s.id),
+    "the picks and the guide's steps have drifted apart",
+  );
+  for (const k of PICK_KINDS) {
+    const section = GUIDE_SECTIONS.find((s) => s.id === k.section)!;
+    assert.equal(
+      k.step,
+      section.step,
+      `${k.kind} shows a step number the guide does not use`,
+    );
+    assert.equal(
+      k.listHref,
+      section.href,
+      `${k.kind} does not lead back to its own step`,
+    );
+  }
+});
+
+test("a pick's kind is derived from its ref, never stored beside it", () => {
+  for (const k of PICK_KINDS) {
+    const ref = pickRef(k.kind, "some-id");
+    assert.deepEqual(parsePickRef(ref), { kind: k.kind, id: "some-id" });
+  }
+
+  // Everything after the FIRST colon is the id, so a malformed ref cannot
+  // silently become a different kind.
+  assert.deepEqual(parsePickRef("place:united-states"), {
+    kind: "place",
+    id: "united-states",
+  });
+
+  // Unrecognised, malformed and empty all return null rather than guessing. A
+  // chip whose kind we cannot name has no group to sit in.
+  for (const bad of [
+    "",
+    ":",
+    "place:",
+    ":germany",
+    "country:germany",
+    "germany",
+  ]) {
+    assert.equal(parsePickRef(bad), null, `"${bad}" was accepted as a pick`);
+  }
+});
+
+test("a pick can only ever point into the guide", () => {
+  // The server action computes the href and ignores anything the caller sends,
+  // and this is why: a client-supplied path would let anyone store `/admin`
+  // under the label "Germany" and have the plan render it as a country chip.
+  for (const k of PICK_KINDS) {
+    const href = pickHref(k.kind, "berlin");
+    assert.ok(
+      href.startsWith("/guide/"),
+      `${k.kind} can point outside the guide (${href})`,
+    );
+  }
+  assert.equal(pickHref("place", "germany"), "/guide/places/germany");
+  assert.equal(pickHref("hub", "berlin"), "/guide/cities/berlin");
+  assert.equal(pickHref("work", "data-and-ai"), "/guide/work/data-and-ai");
+  // Step 4 is one page, not a page per route, so every route lands there. The
+  // ref stays unique, which is what the database key needs.
+  assert.equal(pickHref("route", "kaggle"), "/guide/from-home");
+
+  // Ids are slugs and nothing else — this is half of a database key and half of
+  // a URL, so traversal, protocols and whitespace are rejected outright.
+  for (const bad of [
+    "",
+    "../admin",
+    "Germany",
+    "a b",
+    "germany?x=1",
+    "//evil.example",
+    "-leading",
+  ]) {
+    assert.equal(isPickId(bad), false, `"${bad}" was accepted as a pick id`);
+  }
+  assert.ok(isPickId("united-states"));
+  assert.ok(isPickKind("place"));
+  assert.equal(isPickKind("country"), false);
+});
+
+test("picks are grouped in the guide's own order, and empty groups are dropped", () => {
+  const picks = [
+    { ref: "hub:berlin", label: "Berlin", href: "/guide/cities/berlin" },
+    { ref: "place:germany", label: "Germany", href: "/guide/places/germany" },
+    {
+      ref: "work:data-and-ai",
+      label: "Data & AI",
+      href: "/guide/work/data-and-ai",
+    },
+    // A row written by a version that knew a kind we no longer do.
+    { ref: "major:mech-eng", label: "Mechanical", href: "/guide/x" },
+  ];
+
+  const groups = groupPicks(picks);
+  assert.deepEqual(
+    groups.map((g) => g.kind),
+    ["work", "place", "hub"],
+    "the plan reorders what the guide numbered, or kept an empty group",
+  );
+
+  // Dropped, not coerced into a group it does not belong to.
+  assert.ok(
+    groups.every((g) => g.picks.every((p) => p.ref !== "major:mech-eng")),
+    "an unrecognised pick was rendered under a kind it is not",
+  );
+
+  // The order INSIDE a group is the order given — the loader sorts by when they
+  // were added, so nothing here may re-sort and bury the newest thought.
+  const two = groupPicks([
+    { ref: "place:poland", label: "Poland", href: "/guide/places/poland" },
+    { ref: "place:germany", label: "Germany", href: "/guide/places/germany" },
+  ]);
+  assert.deepEqual(
+    two[0].picks.map((p) => p.label),
+    ["Poland", "Germany"],
+    "the picks were re-sorted, which is a ranking nobody asked for",
+  );
+
+  assert.deepEqual(countPicks(picks), { work: 1, place: 1, hub: 1, route: 0 });
+  assert.equal(groupPicks([]).length, 0);
+});
+
+test("the plan's picks stay out of every prose registry", () => {
+  // Same bundle rule as the spine and the catalog: this module is imported by
+  // two client components, and the guide's registries are ~4,000 lines. A chip
+  // renders from its stored label and href, which is all a chip needs.
+  const src = readFileSync(
+    path.join(process.cwd(), "lib/data/plan-picks.ts"),
+    "utf8",
+  );
+  const runtimeImports = src
+    .split("\n")
+    .filter((l) => /^import /.test(l) && !/^import type /.test(l));
+  assert.deepEqual(
+    runtimeImports,
+    [],
+    "plan-picks.ts gained a runtime import — it must stay type-only",
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The next move — the whole of the plan's guidance, in one pure function.
+//
+// The section's real failure was that the only sentence addressed to a student
+// lived on the EMPTY state and vanished the moment anything existed in the
+// plan, so the product accompanied nobody past their first action. These are
+// the rules that stop that coming back.
+
+const NO_PICKS = { work: 0, place: 0, hub: 0, route: 0 };
+
+function moveInput(over: Partial<NextMoveInput> = {}): NextMoveInput {
+  return {
+    fieldsStated: 1,
+    picks: NO_PICKS,
+    committed: 0,
+    started: 0,
+    overdue: 0,
+    openToYou: 0,
+    reachableAreas: 0,
+    reachableCountries: 0,
+    citiesInPicked: 0,
+    nextDeadline: null,
+    dated: 0,
+    ...over,
+  };
+}
+
+test("there is always exactly one next move, and it always says why", () => {
+  // Every state the rules can be in, including several that differ in one
+  // number — the point is that none falls through and none returns a menu.
+  const states: Partial<NextMoveInput>[] = [
+    {},
+    { overdue: 2 },
+    { overdue: 1, committed: 4, started: 3, dated: 9 },
+    { picks: { ...NO_PICKS, work: 1 } },
+    { picks: { ...NO_PICKS, work: 1, place: 2 }, citiesInPicked: 5 },
+    { picks: { ...NO_PICKS, work: 1, place: 2 }, citiesInPicked: 0 },
+    { picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 } },
+    { picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 }, committed: 2 },
+    {
+      picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 },
+      committed: 2,
+      started: 1,
+      dated: 3,
+      nextDeadline: { title: "PROMYS", daysLeft: 20 },
+    },
+    {
+      committed: 1,
+      started: 1,
+      picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 },
+    },
+    { fieldsStated: 0 },
+  ];
+
+  const seen = new Set<string>();
+  for (const s of states) {
+    const move = nextMove(moveInput(s));
+    seen.add(move.id);
+
+    assert.ok(move.headline.trim().length > 0, `${move.id} has no headline`);
+    // The reason is not decoration. "Go and read about countries" is an
+    // instruction; a reason is the thing a consultant gives that a form does
+    // not, and its absence is exactly what "there is no accompaniment" meant.
+    assert.ok(
+      move.why.trim().length > 40,
+      `${move.id} tells the student what to do without saying why`,
+    );
+    assert.ok(
+      move.action.href.startsWith("/"),
+      `${move.id} sends the student off the site`,
+    );
+    assert.ok(move.action.label.trim().length > 0, `${move.id} has no action`);
+    // At most ONE alternative, ever. Two beside a recommendation is a menu,
+    // which is what this exists to replace.
+    assert.ok(
+      move.alt === undefined || move.alt.href.startsWith("/"),
+      `${move.id}'s alternative leaves the site`,
+    );
+    // The warning colour keeps meaning "this one ran out".
+    if (move.tone === "urgent") {
+      assert.ok(
+        move.id === "overdue" || move.id === "deadline",
+        `${move.id} claims urgency without a date having run out`,
+      );
+    }
+  }
+
+  // The states above exercise the ladder, not one branch of it.
+  assert.ok(seen.size >= 7, `only ${seen.size} distinct moves are reachable`);
+});
+
+test("the next move runs from what has gone wrong to what is closest", () => {
+  // 1. A closed deadline outranks everything, including a student who is
+  // otherwise doing fine. Nothing about Berlin matters this week.
+  assert.equal(
+    nextMove(
+      moveInput({
+        overdue: 1,
+        picks: { ...NO_PICKS, work: 2, place: 3, hub: 2 },
+        committed: 5,
+        started: 4,
+        dated: 6,
+        nextDeadline: { title: "PROMYS", daysLeft: 3 },
+      }),
+    ).id,
+    "overdue",
+  );
+
+  // 2. Nothing at all → the most concrete thing that exists, because it needs
+  // no self-knowledge. Asking "what do you want to study" here is the form this
+  // product exists to avoid.
+  const cold = nextMove(moveInput({ fieldsStated: 0 }));
+  assert.equal(cold.id, "cold-start");
+  assert.equal(cold.action.href, "/opportunities");
+
+  // 3-5. The guide's own zoom, in order: what work, then where, then which city
+  // inside it. A country contains cities, so it comes first — the guide shipped
+  // that backwards once.
+  const withWork = { ...NO_PICKS, work: 1 };
+  assert.equal(nextMove(moveInput({ committed: 1 })).id, "pick-work");
+  assert.equal(nextMove(moveInput({ picks: withWork })).id, "pick-place");
+  assert.equal(
+    nextMove(moveInput({ picks: { ...withWork, place: 1 }, citiesInPicked: 4 }))
+      .id,
+    "pick-city",
+  );
+
+  // The one number allowed to DECIDE rather than only phrase: with no city page
+  // inside the countries they picked, the move must not send them to a list
+  // with nothing of theirs in it.
+  assert.equal(
+    nextMove(moveInput({ picks: { ...withWork, place: 1 }, citiesInPicked: 0 }))
+      .id,
+    "commit",
+  );
+
+  const decided = { ...NO_PICKS, work: 1, place: 1, hub: 1 };
+  // 6. Thought it through, did nothing about it — the gap the product measures.
+  assert.equal(nextMove(moveInput({ picks: decided })).id, "commit");
+  // 7. Said they would, never started. We ask "when will you start?" precisely
+  // so this state is observable; saying nothing about it wastes the answer.
+  assert.equal(
+    nextMove(moveInput({ picks: decided, committed: 3 })).id,
+    "start",
+  );
+  // 8. Moving, and something is close.
+  const deadline = nextMove(
+    moveInput({
+      picks: decided,
+      committed: 3,
+      started: 2,
+      dated: 4,
+      nextDeadline: { title: "PROMYS", daysLeft: 4 },
+    }),
+  );
+  assert.equal(deadline.id, "deadline");
+  assert.match(deadline.headline, /PROMYS/);
+  assert.equal(deadline.tone, "urgent");
+  // 9. Carrying things, none of which has a date we can stand behind. Said
+  // plainly rather than hidden: a student planning around a guess is worse off
+  // than one who knows there is nothing to plan around.
+  assert.equal(
+    nextMove(moveInput({ picks: decided, committed: 2, started: 1 })).id,
+    "undated",
+  );
+  // 10. Nothing wrong, nothing urgent — still one move.
+  assert.equal(
+    nextMove(
+      moveInput({
+        picks: decided,
+        committed: 2,
+        started: 2,
+        dated: 3,
+        nextDeadline: null,
+      }),
+    ).id,
+    "steady",
+  );
+});
+
+test("the next move never invents a number, and widens when nothing was stated", () => {
+  // A count we do not have is left out of the sentence rather than rendered as
+  // a zero — the same rule the empty planner's cards follow, because a number
+  // is the one thing on a card a student takes literally.
+  const noCatalog = nextMove(moveInput({ fieldsStated: 0, openToYou: 0 }));
+  assert.ok(
+    !/\d/.test(noCatalog.action.label),
+    `"${noCatalog.action.label}" carries a number we do not have`,
+  );
+  const withCatalog = nextMove(moveInput({ fieldsStated: 0, openToYou: 42 }));
+  assert.match(withCatalog.action.label, /\b42\b/);
+
+  // Singular and plural, because "1 things" is the tell that a count was
+  // concatenated rather than written.
+  assert.match(nextMove(moveInput({ overdue: 1 })).headline, /One thing closed/);
+  assert.match(nextMove(moveInput({ overdue: 3 })).headline, /^3 things/);
+
+  // Unknown facts never exclude: a student who stated no field is sent into the
+  // guide DELIBERATELY WIDENED (`f=all`), not into a list filtered by nothing.
+  // Collapsing "not stated" and "widened" re-applies the profile on every
+  // navigation — the third of the three states that must not be merged.
+  const widened = nextMove(moveInput({ fieldsStated: 0, committed: 1 }));
+  assert.equal(widened.id, "pick-work");
+  assert.match(widened.action.href, /\?f=all$/);
+  const narrowed = nextMove(moveInput({ fieldsStated: 2, committed: 1 }));
+  assert.ok(
+    !narrowed.action.href.includes("?f="),
+    "a student's own fields were frozen into the link instead of left as the default",
+  );
+});
+
+test("the plan's tally is read off the view, never re-derived", () => {
+  let n = 0;
+  const item = (over: Partial<PlannerItem>): PlannerItem => ({
+    key: `k${(n += 1)}`,
+    origin: "opportunity",
+    sourceId: "x",
+    title: "X",
+    dueISO: null,
+    status: "todo",
+    href: null,
+    note: null,
+    daysLeft: null,
+    ...over,
+  });
+
+  const soon = item({ title: "Soonest", dueISO: "2026-09-01", daysLeft: 18 });
+  const later = item({ title: "Later", dueISO: "2026-09-20", daysLeft: 37 });
+
+  const tally = tallyPlanner({
+    items: [
+      soon,
+      later,
+      item({ status: "doing" }),
+      item({ status: "done" }),
+      item({ status: "dropped" }),
+      item({ origin: "own", status: "doing" }),
+      // A fact about the world with no state — never counted as a commitment.
+      item({ origin: "sat", status: "todo" }),
+    ],
+    months: [
+      {
+        key: "2026-09",
+        label: "September 2026",
+        items: [soon, later],
+        phases: [],
+      },
+    ],
+    overdue: [item({ dueISO: "2026-07-01", daysLeft: -44 })],
+    undated: [],
+    columns: { todo: [], doing: [], done: [] },
+    droppedCount: 1,
+  });
+
+  // Own tasks and world facts are not commitments; dropped ones are not either.
+  assert.equal(tally.committed, 4);
+  assert.equal(tally.started, 2);
+  assert.equal(tally.overdue, 1);
+  assert.equal(tally.dated, 2);
+  // The nearest date is the head of the first non-empty month, NOT a fresh
+  // minimum: a second ordering can disagree with the one the agenda draws.
+  assert.deepEqual(tally.nextDeadline, { title: "Soonest", daysLeft: 18 });
+
+  const empty = tallyPlanner({
+    items: [],
+    months: [],
+    overdue: [],
+    undated: [],
+    columns: { todo: [], doing: [], done: [] },
+    droppedCount: 0,
+  });
+  assert.equal(empty.nextDeadline, null);
+  assert.equal(empty.committed, 0);
+});
+
+test("the planner is one route, and its old addresses still resolve", () => {
+  // `?view=` is read leniently: an old link, a typo or a truncated share all
+  // arrive here, and none is worth an error page when "show them the agenda" is
+  // available and correct.
+  assert.equal(plannerViewFromParam(undefined), "next");
+  assert.equal(plannerViewFromParam("board"), "board");
+  assert.equal(plannerViewFromParam("map"), "maps");
+  assert.equal(plannerViewFromParam("nonsense"), "next");
+  assert.equal(plannerViewFromParam(["board", "map"]), "board");
+
+  const root = process.cwd();
+  // The board and the maps list stopped being routes. Both addresses were live
+  // and linked, so both must redirect — a deleted page that 404s is a broken
+  // link in somebody's history.
+  const config = readFileSync(path.join(root, "next.config.mjs"), "utf8");
+  for (const [from, view] of [
+    ["/planner/board", "board"],
+    ["/planner/maps", "map"],
+  ]) {
+    assert.ok(
+      config.includes(`"${from}", "${view}"`),
+      `${from} has no redirect to its view`,
+    );
+    assert.ok(
+      PLANNER_SECTIONS.some((s) => s.view === view),
+      `${from} redirects to ?view=${view}, which no lens answers to`,
+    );
+  }
+
+  // Enumerated, never a pattern: the page for a single map is still real,
+  // because one map is a document a student can send to someone. Checked
+  // against the CODE with comments stripped — the config explains this rule in
+  // prose, and prose that names the forbidden pattern is not the pattern.
+  const code = config.replace(/\/\/.*$/gm, "");
+  assert.ok(
+    !/planner\/maps\/[:*]/.test(code),
+    "a pattern redirect would swallow the page for a single map",
+  );
+  assert.ok(
+    existsSync(path.join(root, "app/planner/maps/[id]/page.tsx")),
+    "the page for a single map is gone",
+  );
+  for (const dead of ["app/planner/board", "app/planner/maps/page.tsx"]) {
+    assert.ok(
+      !existsSync(path.join(root, dead)),
+      `${dead} still exists — a lens and a route for the same thing will drift`,
+    );
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trying the work (backlog §8 item 4) — a few hours of the actual job, on the
+// page about that job.
+//
+// The founder asked for this by name. Every rule below is a way the obvious
+// version either rots within a year or tells a student something false about a
+// career they then spend three years training for.
+
+test("a simulation is named where the work is, and points at a real area", () => {
+  const slugs = new Set(allCareerAreas().map(({ area }) => areaSlug(area.title)));
+
+  assert.ok(JOB_SIMULATIONS.length > 0, "nothing to try anywhere");
+
+  for (const s of JOB_SIMULATIONS) {
+    assert.ok(s.employer.trim().length > 0, "a simulation with no employer");
+    assert.ok(s.areas.length > 0, `${s.employer} is a try at nothing`);
+    for (const a of s.areas) {
+      // A dead slug renders as silence, which is the worst failure here: the
+      // page looks finished and the one actionable thing on it is missing.
+      assert.ok(
+        slugs.has(a),
+        `${s.employer} points at "${a}", which is not an area of work`,
+      );
+    }
+    // Written like `dayToDay` — the Tuesday, not the job description. A short
+    // line here is a product blurb, which is the thing we are replacing.
+    assert.ok(
+      s.what.length > 80,
+      `${s.employer} describes the task too thinly to be worth an evening`,
+    );
+    assert.ok(s.hours.trim().length > 0, `${s.employer} has no rough length`);
+  }
+});
+
+test("the try-it registry owns no links and promises no outcomes", () => {
+  const src = readFileSync(
+    path.join(process.cwd(), "lib/data/try-it.ts"),
+    "utf8",
+  );
+
+  // The catalog owns links, because `npm run test:links` is what keeps them
+  // alive and it only knows about the catalog — and these company pages sit
+  // behind connection-level bot protection the gate demonstrably cannot pass.
+  // So they are NAMED here and LINKED through the one row that does pass.
+  const code = stripComments(src);
+  assert.ok(
+    !/https?:\/\//.test(code),
+    "try-it.ts carries a URL — the catalog owns links, and the gate cannot check these",
+  );
+
+  // No product titles. The employer is the stable half of the claim and the
+  // thing a student searches for; a course name is what gets re-cut and
+  // renamed, and a page that names one is wrong the day it changes.
+  assert.ok(
+    !/Virtual Experience|Job Simulation Program|Programme\b/i.test(code),
+    "try-it.ts names a product title, which is the half that rots",
+  );
+
+  // And no outcome claims. The hiring statistics are real and they are the
+  // platform's, not ours — quoting them on a card turns "try this" into a
+  // promise about a student's future.
+  assert.ok(
+    !/twice as likely|guarantee|get hired|land a job|\d+%/i.test(code),
+    "try-it.ts makes a claim about what happens to the student afterwards",
+  );
+});
+
+test("an area with no honest simulation gets silence, not a near miss", () => {
+  // Absence over a wrong claim — the same rule that keeps a countdown off an
+  // unconfirmed date. There is no employer simulation for treating patients,
+  // and offering an adjacent one would cost a reader an evening and teach them
+  // the wrong thing about medicine.
+  assert.deepEqual(simulationsForArea("treating-patients"), []);
+  assert.deepEqual(simulationsForArea("not-an-area-at-all"), []);
+
+  // The founder's own example, and it is the assertion that fails if the
+  // mapping is ever broken: someone weighing investment banking meets the
+  // bank's own simulation on that page.
+  const money = simulationsForArea("money-and-markets");
+  assert.ok(money.length > 0, "money & markets offers nothing to try");
+  assert.ok(
+    money.some((s) => /J\.P\. Morgan/.test(s.employer)),
+    "the bank that builds the investment-banking simulation is not on that page",
+  );
+
+  // Capped, and in registry order. The area page already answers five
+  // questions; a fourth card turns its one actionable part back into a list,
+  // and sorting would be a ranking nobody asked for.
+  for (const { area } of allCareerAreas()) {
+    const list = simulationsForArea(areaSlug(area.title));
+    assert.ok(
+      list.length <= 3,
+      `${area.title} offers ${list.length} things to try — the cap is 3`,
+    );
+    const registryOrder = JOB_SIMULATIONS.filter((s) =>
+      s.areas.includes(areaSlug(area.title)),
+    ).slice(0, 3);
+    assert.deepEqual(
+      list.map((s) => s.employer),
+      registryOrder.map((s) => s.employer),
+      `${area.title} reorders what to try, which is a ranking`,
+    );
+  }
+});
+
+test("the try-it card links through the catalog row that the gate keeps alive", () => {
+  // The one URL in this whole feature lives in the catalog, where
+  // `npm run test:links` can reach it. If that row is ever renamed or removed,
+  // every area page's most actionable link dies silently — so it is pinned.
+  assert.ok(
+    COMPETITIONS.some((c) => c.id === TRY_IT_OPPORTUNITY_ID),
+    `${TRY_IT_OPPORTUNITY_ID} is not in the catalog — the try-it card links nowhere`,
+  );
+  const row = COMPETITIONS.find((c) => c.id === TRY_IT_OPPORTUNITY_ID)!;
+  assert.equal(
+    row.category,
+    "simulation",
+    "the row the try-it card links to is no longer a simulation",
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A card moving between columns (backlog §8 item 5, the rest of #23).
+//
+// The move is applied in the client BEFORE the server answers, and only then is
+// it allowed to be animated. Both halves are the same decision, and the second
+// one is a rule this codebase has already been burned by once.
+
+test("a moving card is named so it can be morphed, and the name is legal CSS", () => {
+  // A `view-transition-name` is a custom-ident: `:` is not legal in one, and
+  // the item key is `${origin}:${sourceId}`. An id starting with a digit would
+  // not be legal either — the prefix handles that.
+  const ident = /^[a-zA-Z-][a-zA-Z0-9-]*$/;
+
+  for (const key of [
+    "opportunity:forage-all",
+    "own:6f1c9e2a-9b3d-4c77-8a10-9e2b4c5d6e7f",
+    "sat:2026-11-07",
+    "deadline:mit-ea",
+    // The nastiest realistic case: an id that is all digits.
+    "opportunity:2026",
+  ]) {
+    const name = plannerMorph(key);
+    assert.match(name, ident, `${key} produced an illegal ident: ${name}`);
+    assert.ok(!name.includes(":"), `${name} still carries a colon`);
+  }
+
+  // Distinct keys stay distinct — two elements sharing a name is not a broken
+  // animation, it is NO animation, silently.
+  const keys = ["opportunity:a", "own:a", "opportunity:a-b", "opportunity:a:b"];
+  const names = keys.map(plannerMorph);
+  assert.equal(
+    new Set(names).size,
+    names.length,
+    `two cards would claim one transition name: ${names.join(", ")}`,
+  );
+});
+
+test("the board's view transition can never freeze the page", () => {
+  const src = readFileSync(
+    path.join(process.cwd(), "components/planner/PlannerBoard.tsx"),
+    "utf8",
+  );
+
+  // §5.1, and it is the general rule rather than a detail of that bug: a
+  // `startViewTransition` whose promise is gated on anything asynchronous
+  // paints a snapshot and stops responding to scroll until it settles —
+  // measured at 2130ms waiting on a `force-dynamic` route. The callback here
+  // must therefore be synchronous, which also means the server action cannot
+  // be inside it.
+  const callback = src.match(/startViewTransition\(([\s\S]{0,200})/);
+  assert.ok(callback, "the board no longer starts a view transition");
+  assert.ok(
+    !/await|async|movePlannerItem/.test(callback[1]),
+    "the board's view transition waits on something — that freezes the document",
+  );
+
+  // `flushSync`, or React batches the update, the snapshot is taken before
+  // anything has changed, and the morph animates nothing.
+  assert.match(
+    src,
+    /flushSync/,
+    "the board's transition updates state asynchronously, so it morphs nothing",
+  );
+
+  // Reduced motion skips the transition ENTIRELY. The global CSS guard zeroes
+  // the duration, and a zero-duration transition still freezes — which is
+  // exactly the trap §5.1 records.
+  assert.match(
+    src,
+    /prefers-reduced-motion/,
+    "the board animates a move for a reader who asked for less motion",
+  );
+
+  // And the whole thing is feature-detected: Firefox had no view transitions
+  // for most of this product's life, and the move must still land there.
+  assert.match(src, /"startViewTransition" in document/);
+});
+
+test("a country appears once in a chain, however its hubs spell its name", () => {
+  // Found by opening an area page and reading the console: React reported two
+  // children with the key "United Arab Emirates-middle_east". What a student
+  // saw was the same country listed twice, one city under each.
+  //
+  // The cause was an identity built out of PROSE. The walk matched a stop on
+  // `s.country === hub.country` and stored `destination?.name ?? hub.country` —
+  // and the hubs say "UAE" where the country profile says "United Arab
+  // Emirates", so the stop could never match itself. Dubai and Abu Dhabi were
+  // split into separate hubs two releases ago, which is what made it visible.
+  // "Hong Kong SAR" against "Hong Kong" was one hub away from the same bug.
+  for (const faculty of FACULTY_VALUES) {
+    const spine = spineForFaculty(faculty);
+
+    const seenDestination = new Set<string>();
+    const seenLabel = new Set<string>();
+    for (const stop of spine.stops) {
+      if (stop.destination) {
+        assert.ok(
+          !seenDestination.has(stop.destination.id),
+          `${faculty}: ${stop.destination.name} appears twice in the chain`,
+        );
+        seenDestination.add(stop.destination.id);
+      }
+      // What the renderer keys on, and what a reader actually sees. Even two
+      // stops that are genuinely different rows must not present as the same
+      // country in the same region.
+      const label = `${stop.country}-${stop.region}`;
+      assert.ok(
+        !seenLabel.has(label),
+        `${faculty}: two stops both read as "${label}"`,
+      );
+      seenLabel.add(label);
+    }
+
+    // And nothing was lost in the deduplication: every hub carrying this field
+    // still has a stop to sit in, exactly once.
+    const hubIds = spine.stops.flatMap((s) => s.hubs.map((h) => h.id));
+    assert.equal(
+      new Set(hubIds).size,
+      hubIds.length,
+      `${faculty}: a city is listed under two countries`,
+    );
+    assert.equal(
+      hubIds.length,
+      spine.hubCount,
+      `${faculty}: the chain's own city count disagrees with the cities in it`,
+    );
+  }
 });
