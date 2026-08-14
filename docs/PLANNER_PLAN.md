@@ -657,6 +657,42 @@ instead of views:
 - **nothing connects the plan to the guide.** The window gains the spine's own
   chain as its source: what the student read becomes what the plan can offer.
 
+## Shipped, 2026-08-14 — all five
+
+| # | what | where |
+|---|---|---|
+| 1 | one window, three synchronised views | `PlannerTabs` is a segmented control; the pages lost their own `<h1>` |
+| 2 | the agenda is a stepped period | `PeriodStepper` + `agendaHomeIndex` (pure, tested) |
+| 3 | the empty plan is a CHOICE, built from the spine | `plannerStarts` + `EmptyPlanner`; the loader walks the spine |
+| 4 | a map node is what it points at | `mapNodeKind`, derived from `link_href` — no migration |
+| 5 | `simulation` as a kind | one line in `COMPETITION_CATEGORIES`; the compiler found the rest |
+
+**Three findings worth keeping:**
+
+- **The guide→planner bridge is the counts.** The empty planner's four options
+  carry numbers walked out of the spine — the areas of work and countries *this
+  student's own fields* reach. That is what makes the plan an extension of the
+  guide rather than a second opinion about it, and it cost no new data.
+- **Derive the type, never store it.** A map node pointing at
+  `/guide/places/germany` IS a country. No `kind` column, no migration, and no
+  way for a label and a type to disagree — the same argument as the spine.
+- **A link the gate cannot stand behind does not ship.** Five Forage company
+  pages are demonstrably live (curl, 200, five for five) and `test:links` still
+  cannot reach them: connection-level bot protection, not rate limiting. They
+  were dropped and the catalogue row now names them in its blurb instead. The
+  failure mode under a deadline is to keep the row and weaken the gate.
+
+**What release 3 did NOT do**, so nobody assumes otherwise:
+
+- **There is still no way to ADD a typed node from the guide.** The kinds render
+  and the plan can receive a branch, but seeding a map with a country you just
+  read about is the next piece, and it is what turns the map from "structure it
+  can display" into "structure it helps you build".
+- **Majors do not exist as a layer.** The chain runs area of work → FIELD →
+  country → city → university-known-for-that-field. There is no per-university
+  programme list, and `knownFor` is field-level. The founder asked for majors
+  explicitly; this is the honest statement that they are not here yet.
+
 ## Build order
 
 1. **The view switcher over one state.** Structural, no new data, and it is what

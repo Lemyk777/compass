@@ -16,7 +16,7 @@ holds only what is **specific to this backlog** and not already written there.
 | `main` and `develop` | **in sync**, everything merged and deployed |
 | PRs [#99](https://github.com/Lemyk777/compass/pull/99) · [#100](https://github.com/Lemyk777/compass/pull/100) · [#101](https://github.com/Lemyk777/compass/pull/101) · [#102](https://github.com/Lemyk777/compass/pull/102) | all MERGED |
 | Progress | **20 of 23 done, 1 half-done, 2 untouched** (#11, #14), plus **#24** and **#27** done. **#26 — the planner rebuilt as one connected thing — is next and is the biggest.** See §4 |
-| Unit tests | **167** (`npm run test:unit`) |
+| Unit tests | **173** (`npm run test:unit`) |
 
 ### The migrations are applied — verified 2026-08-13
 
