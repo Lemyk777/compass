@@ -117,7 +117,10 @@ Then append this section at the end of the file:
 
 test("every major has a unique id, a name, and belongs to a field", () => {
   const ids = new Set<string>();
-  assert.ok(MAJORS.length >= 40, "the majors layer is too thin to be a step");
+  // The floor rises with each wave: 12 after A1, 24 after A1b, 36 after A1c,
+  // 44 after A1d. Raise this literal in the wave that earns it — a floor that
+  // stays at 12 stops being a floor.
+  assert.ok(MAJORS.length >= 12, "the majors layer is too thin to be a step");
   for (const m of MAJORS) {
     assert.ok(!ids.has(m.id), `duplicate major id ${m.id}`);
     ids.add(m.id);
@@ -193,11 +196,10 @@ test("no major carries a URL — the catalog owns links", () => {
   );
 });
 
-test("the chain does not break: every major leads to a real area, and every area is reachable", () => {
+test("every major leads to at least one area of work that exists", () => {
   const areaSlugs = new Set(
     allCareerAreas().map(({ area }) => areaSlug(area.title)),
   );
-  const reached = new Set<string>();
   for (const m of MAJORS) {
     assert.ok(m.leadsTo.length > 0, `${m.id} leads to no work at all`);
     for (const slug of m.leadsTo) {
@@ -205,16 +207,14 @@ test("the chain does not break: every major leads to a real area, and every area
         areaSlugs.has(slug),
         `${m.id} points at a missing area of work: ${slug}`,
       );
-      reached.add(slug);
     }
   }
-  for (const slug of areaSlugs) {
-    assert.ok(
-      reached.has(slug),
-      `no major leads to ${slug} — the student reaches a dead end there`,
-    );
-  }
 });
+
+// NOTE: the REVERSE edge — every area of work reachable from some major — is
+// asserted in Task A1d, once the registry is complete. It cannot pass while the
+// registry is being written in waves, and a test that is expected to fail for
+// three tasks is a test nobody reads.
 
 test("majors: empty fields in ⇒ every major; a chosen field never widens it", () => {
   assert.equal(majorsForFaculties([]).length, MAJORS.length);
@@ -373,7 +373,9 @@ export const MAJORS: Major[] = [
     leadsTo: ["infrastructure-and-construction", "machines-and-manufacturing"],
     fields: ["engineering"],
   },
-  // ── The remaining ~48 entries follow exactly this shape. ──────────────────
+  // ── This task writes TEN MORE, to twelve total, covering `engineering`,
+  // `computer_science` and `business_economics`. Waves A1b–A1d write the rest.
+  // ─────────────────────────────────────────────────────────────────────────
   //
   // WRITING RULES, enforced by the tests in scripts/test-engine.ts — write to
   // the tests, not to a word count:
@@ -389,11 +391,11 @@ export const MAJORS: Major[] = [
   //     every one of the 33 areas must be reached by at least one major. Run
   //     `npm run test:unit` to find the ones nothing points at.
   //
-  // COVERAGE: at least 40 entries, spread so that every one of the eight
-  // faculties has majors and every area of work is reachable. The reachability
-  // test is the real gate — it is what stops a student with an uncommon
-  // interest walking into an empty room, which is the failure this layer exists
-  // to fix.
+  // COVERAGE across all four waves: at least 44 entries, spread so that every
+  // one of the eight faculties has majors and every area of work is reachable.
+  // The reachability test in A1d is the real gate — it is what stops a student
+  // with an uncommon interest walking into an empty room, which is the failure
+  // this layer exists to fix.
 ];
 
 /** One major by id. Undefined for anything unknown. */
@@ -469,6 +471,104 @@ Expected: no output.
 ```bash
 git add lib/data/majors.ts scripts/test-engine.ts
 git commit -m "feat(majors): the layer between what you'd do and where you'd learn it"
+```
+
+---
+
+### Tasks A1b, A1c, A1d: the remaining subjects, in three waves
+
+The registry is written in waves because ~44 entries of prose is not one unit of
+work: quality falls off a cliff around the thirtieth entry when nobody is
+reviewing until the end. Each wave is its own commit and its own review, so the
+prose is checked four times rather than once.
+
+**Every wave is identical in method.** Only the fields covered and the floor
+change:
+
+| Task | Fields to cover | New floor in the id test | Adds |
+|---|---|---|---|
+| A1b | `natural_sciences`, `medicine_health` | `>= 24` | — |
+| A1c | `humanities_social`, `law` | `>= 36` | — |
+| A1d | `arts_design`, plus whatever the reachability test still names | `>= 44` | the reverse-edge test |
+
+**Files (all three):**
+- Modify: `lib/data/majors.ts`
+- Modify: `scripts/test-engine.ts` (raise the floor literal only; A1d also adds one test)
+
+**Interfaces:** unchanged from A1. No new exports. `Major`'s shape is fixed — a
+wave that wants a new field has found a real modelling problem and should stop
+and say so rather than add one quietly.
+
+- [ ] **Step 1: Raise the floor first, and watch it fail**
+
+Change the literal in `assert.ok(MAJORS.length >= N, …)` to this wave's number,
+then:
+
+```bash
+npm run test:unit
+```
+
+Expected: FAIL on that assertion. This is the wave's own red test — it is what
+makes the wave a TDD cycle rather than a typing session.
+
+- [ ] **Step 2: Write this wave's entries**
+
+Append to `MAJORS`, following the shape of the entries already there and the
+writing rules in the file's comment block. The tests are the specification:
+`firstYear` > 120 chars naming what makes people leave, `catch` > 100,
+`suitsYou` > 100, `notForYou` > 140 and naming where to go instead, every one
+DISTINCT across the whole registry, no prices, rankings, superlatives or URLs,
+and every `leadsTo` slug resolving.
+
+- [ ] **Step 3: Run the tests until green**
+
+```bash
+npm run test:unit
+```
+
+Expected: PASS. The distinctness assertions are the ones most likely to bite —
+they exist because fifty hand-written pairs is exactly the size at which one
+sentence gets pasted across a field and nobody notices.
+
+- [ ] **Step 4 (A1d ONLY): add the reverse-edge test**
+
+The registry is complete, so the chain can finally be asserted in both
+directions. Append to `scripts/test-engine.ts`:
+
+```ts
+test("every area of work is reachable from at least one major", () => {
+  // The reverse edge, and the one that actually protects a student: a kind of
+  // work nothing leads to is a page whose reader has nowhere to go next. The
+  // student most likely to hit it is the one with the least common interest —
+  // exactly who this layer exists for.
+  const reached = new Set<string>();
+  for (const m of MAJORS) for (const slug of m.leadsTo) reached.add(slug);
+  for (const { area } of allCareerAreas()) {
+    const slug = areaSlug(area.title);
+    assert.ok(
+      reached.has(slug),
+      `no subject leads to ${slug} — a student reaches a dead end there`,
+    );
+  }
+});
+```
+
+Run it, and write whatever subjects it names until it passes. **Do not satisfy
+it by adding a slug to an existing major's `leadsTo` that does not honestly lead
+there** — a false edge is worse than a missing one, because the student follows
+it.
+
+- [ ] **Step 5: Type-check and commit**
+
+```bash
+npx tsc --noEmit && npm run test:unit
+```
+
+Then, with the wave's own subject in the message:
+
+```bash
+git add lib/data/majors.ts scripts/test-engine.ts
+git commit -m "feat(majors): <the fields this wave covered>"
 ```
 
 ---
@@ -2550,45 +2650,9 @@ git commit -m "feat(companion): two Tuesdays, three answers, and 'I don't get it
 - Consumes: `CompanionView` (C1); `BeatPair` (C2).
 - Produces: `<Companion view={…} pair={…} />`, mounted once in `StudentShell`.
 
-- [ ] **Step 1: Write the failing bundle test**
-
-This is the test that protects every route in the product from the repository's most expensive recurring mistake.
+- [ ] **Step 1: Write the failing no-repeat test**
 
 ```ts
-test("the companion never drags a prose registry into a client bundle", () => {
-  // key-dates builds a map over ~2,700 catalog rows at module load; careers,
-  // world, study-destinations and spine are thousands of lines of prose. Any
-  // runtime import of one of them from a client component ships it to every
-  // route the companion renders on — which, by design, is all of them.
-  const banned = [
-    "@/lib/data/key-dates",
-    "@/lib/data/careers",
-    "@/lib/data/world",
-    "@/lib/data/study-destinations",
-    "@/lib/data/spine",
-    "@/lib/data/competitions-data",
-  ];
-  const files = [
-    "components/companion/Companion.tsx",
-    "components/companion/BeatPair.tsx",
-  ];
-  for (const file of files) {
-    const full = path.join(process.cwd(), file);
-    if (!existsSync(full)) continue;
-    const src = stripComments(readFileSync(full, "utf8"));
-    for (const mod of banned) {
-      // `import type` is free — it is erased. Anything else is not.
-      const runtime = new RegExp(
-        `import\\s+(?!type\\b)[^;]*from\\s+["']${mod.replace(/[/@-]/g, "\\$&")}["']`,
-      );
-      assert.ok(
-        !runtime.test(src),
-        `${file} imports ${mod} at runtime — that ships it to every page`,
-      );
-    }
-  }
-});
-
 test("the companion says nothing twice in a row as a student advances", () => {
   // A companion that repeats itself reads as broken, and this is the only way
   // to catch it: walk the ladder and compare each utterance with the last.
@@ -2629,13 +2693,18 @@ test("the companion says nothing twice in a row as a student advances", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify the no-repeat test passes and the bundle test is inert**
+- [ ] **Step 2: Run it**
 
 ```bash
 npm run test:unit
 ```
 
-Expected: PASS. The bundle test skips missing files by design, so it goes green now and becomes a real gate the moment the components exist. This is deliberate — the test lands before the code it guards.
+Expected: PASS — `station` and `nextMove` both exist by now, so this test is live the moment it is written. Commit it on its own:
+
+```bash
+git add scripts/test-engine.ts
+git commit -m "test(companion): it must never say the same thing twice in a row"
+```
 
 - [ ] **Step 3: Write the companion**
 
@@ -2670,15 +2739,63 @@ Then check the console and the network:
 # read_network_requests  -> expect no request for a chunk containing the catalog
 ```
 
-- [ ] **Step 5: Run the gate**
+- [ ] **Step 5: Write the bundle test, now that there is something to guard**
+
+It is written **after** the components on purpose. A version that skipped
+missing files would have been green from the moment it was typed and green again
+the day someone deleted the file it protects — a test that passes when its
+subject does not exist is not a test. So it asserts the files are there, and it
+is red until they are.
+
+```ts
+test("the companion never drags a prose registry into a client bundle", () => {
+  // key-dates builds a map over ~2,700 catalog rows at module load; careers,
+  // world, study-destinations and spine are thousands of lines of prose. Any
+  // runtime import of one of them from a client component ships it to every
+  // route the companion renders on — which, by design, is all of them. This is
+  // the repository's most expensive recurring mistake and the companion is the
+  // widest possible surface for it.
+  const banned = [
+    "@/lib/data/key-dates",
+    "@/lib/data/careers",
+    "@/lib/data/world",
+    "@/lib/data/study-destinations",
+    "@/lib/data/spine",
+    "@/lib/data/competitions-data",
+  ];
+  const files = [
+    "components/companion/Companion.tsx",
+    "components/companion/BeatPair.tsx",
+  ];
+  for (const file of files) {
+    const full = path.join(process.cwd(), file);
+    // Asserted, not skipped: a guard that quietly passes for a file that is not
+    // there guards nothing, and would go green again the day it is deleted.
+    assert.ok(existsSync(full), `${file} is missing — this guard has no subject`);
+    const src = stripComments(readFileSync(full, "utf8"));
+    for (const mod of banned) {
+      // `import type` is free — it is erased. Anything else is not.
+      const runtime = new RegExp(
+        `import\\s+(?!type\\b)[^;]*from\\s+["']${mod.replace(/[/@-]/g, "\\$&")}["']`,
+      );
+      assert.ok(
+        !runtime.test(src),
+        `${file} imports ${mod} at runtime — that ships it to every page`,
+      );
+    }
+  }
+});
+```
+
+- [ ] **Step 6: Run the gate**
 
 ```bash
 npm run test:unit && npx tsc --noEmit && npm run lint
 ```
 
-Expected: PASS, then no output. The bundle test is now live against real files.
+Expected: PASS, then no output.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add components/companion components/student/StudentShell.tsx scripts/test-engine.ts
