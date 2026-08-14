@@ -1725,6 +1725,14 @@ or the next session builds on ten commits that are not in production.**
 
 ### The two gaps release 3 left open, and they are the top of the list
 
+> **There is a second list now: [AUDIT_2026-08-14.md](AUDIT_2026-08-14.md).**
+> Nine findings turned up while answering one question from the founder ("why
+> does the site say 114 when the docs say 173?"). None of them is fixed. They
+> are kept in their own file rather than folded in here because this backlog is
+> the founder's 23-item list and its history is worth keeping legible — but the
+> audit is the more urgent read of the two, and **A1 carries an explicit
+> do-not-touch instruction** that a later session must not override.
+
 **8.0 — DONE.** `0030_planner_path.sql` applied 2026-08-14, `db:check` 32/32.
 
 **8.1 — DONE.** A student can put a country, a city, a kind of work or a route

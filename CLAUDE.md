@@ -7,6 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > is deployed versus what is only on the branch, and getting that wrong is the
 > fastest way to do work twice. §8 has the ordered next list, §5 the findings,
 > §7 the working method.
+>
+> **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine open
+> findings with evidence, none of them fixed. **A1 is marked do-not-touch by the
+> owner; do not "fix" it.**
 
 ## What this is
 
