@@ -420,8 +420,7 @@ export function majorsForFaculties(faculties: FacultyValue[]): Major[] {
 export function majorsByField(
   faculties: FacultyValue[],
 ): { faculty: FacultyValue; majors: Major[] }[] {
-  const fields = faculties.length > 0 ? faculties : [];
-  const source = fields.length > 0 ? fields : uniqueFields();
+  const source = faculties.length > 0 ? faculties : uniqueFields();
   return source
     .map((faculty) => ({
       faculty,
@@ -519,6 +518,13 @@ writing rules in the file's comment block. The tests are the specification:
 `suitsYou` > 100, `notForYou` > 140 and naming where to go instead, every one
 DISTINCT across the whole registry, no prices, rankings, superlatives or URLs,
 and every `leadsTo` slug resolving.
+
+**VARY THE SENTENCE, not just the facts.** The A1 review found that eight of
+twelve `firstYear` fields had converged on one construction — "the people who
+leave are the ones who wanted X and got Y" — with genuinely different facts
+inside an identical frame. No test can catch that, because every string is
+distinct; a reader going through forty-four of them can. Read the entries
+already in the file before writing, and build the sentence a different way.
 
 - [ ] **Step 3: Run the tests until green**
 

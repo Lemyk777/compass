@@ -261,7 +261,7 @@ export const MAJORS: Major[] = [
     firstYear:
       "An introduction to accounting, economics, marketing and organisational behaviour side by side, none of them in much depth, which is exactly the shape of the degree and exactly what disappoints some students. The ones who leave are usually the ones who wanted to go deep into one subject — finance, or psychology, or economics — and found a survey course in each instead of mastery of any one.",
     catch:
-      "Breadth is the whole design and also the risk: a specialist employer will often prefer someone with a focused finance, economics or engineering degree over a generalist one, so this degree earns more trust when it comes combined with proof from outside the classroom — an internship, a small venture, a real leadership role — that the transcript alone cannot supply.",
+      "Breadth is the whole design and also the risk: a specialist employer will often prefer someone with a focused finance, economics or engineering degree over a generalist one, so the degree carries weight only alongside proof from outside the classroom — an internship, a small venture, a real leadership role — that the transcript alone cannot supply.",
     suitsYou:
       "You are drawn to how a whole organisation fits together rather than to one function inside it, and you are willing to build evidence of your ability outside the classroom, because the degree by itself will not carry the argument for you.",
     notForYou:
@@ -370,8 +370,7 @@ export function majorsForFaculties(faculties: FacultyValue[]): Major[] {
 export function majorsByField(
   faculties: FacultyValue[],
 ): { faculty: FacultyValue; majors: Major[] }[] {
-  const fields = faculties.length > 0 ? faculties : [];
-  const source = fields.length > 0 ? fields : uniqueFields();
+  const source = faculties.length > 0 ? faculties : uniqueFields();
   return source
     .map((faculty) => ({
       faculty,
