@@ -80,6 +80,13 @@ import {
 } from "@/lib/data/try-it";
 import { HOME_ROUTES, homeRoutesForFaculties } from "@/lib/data/from-home";
 import {
+  MAJORS,
+  majorById,
+  majorsByField,
+  majorsForArea,
+  majorsForFaculties,
+} from "@/lib/data/majors";
+import {
   LEGACY_GUIDE_PLACE_IDS,
   RENAMED_HUB_IDS,
 } from "@/lib/data/legacy-guide-urls";
@@ -5197,4 +5204,130 @@ test("the category list is not hand-copied into a view", () => {
     /ADMIN_CATEGORIES = COMPETITION_CATEGORIES/,
     "the admin endpoint no longer accepts exactly the catalog's kinds",
   );
+});
+// ── Majors ───────────────────────────────────────────────────────────────────
+// The layer that was missing from the chain entirely: a student could learn what
+// work exists and where it lives, and never find out what you actually apply to.
+// Held to the same rules as every other prose registry here.
+
+test("every major has a unique id, a name, and belongs to a field", () => {
+  const ids = new Set<string>();
+  // The floor rises with each wave: 12 after A1, 24 after A1b, 36 after A1c,
+  // 44 after A1d. Raise this literal in the wave that earns it — a floor that
+  // stays at 12 stops being a floor.
+  assert.ok(MAJORS.length >= 12, "the majors layer is too thin to be a step");
+  for (const m of MAJORS) {
+    assert.ok(!ids.has(m.id), `duplicate major id ${m.id}`);
+    ids.add(m.id);
+    assert.match(m.id, /^[a-z0-9][a-z0-9-]{0,63}$/, `${m.id} is not a slug`);
+    assert.ok(m.name.trim().length > 2, `${m.id} has no name`);
+    assert.ok(m.fields.length > 0, `${m.id} belongs to no field`);
+  }
+});
+
+test("every major says what it actually is, what the first year is, and what school subjects it needs", () => {
+  for (const m of MAJORS) {
+    assert.ok(
+      m.whatItActuallyIs.trim().length > 60,
+      `${m.id} does not say what it actually is`,
+    );
+    // The field nobody writes down, and the reason half of first years leave.
+    assert.ok(
+      m.firstYear.trim().length > 120,
+      `${m.id} does not say what the first year is really made of`,
+    );
+    assert.ok(
+      m.schoolSubjects.length > 0,
+      `${m.id} names nothing a student could start today`,
+    );
+  }
+});
+
+test("every major states its catch and who should look elsewhere", () => {
+  const catches = new Set<string>();
+  const avoid = new Set<string>();
+  for (const m of MAJORS) {
+    assert.ok(
+      m.catch.trim().length > 100,
+      `${m.id} has no catch — that is a brochure`,
+    );
+    assert.ok(
+      m.suitsYou.trim().length > 100,
+      `${m.id} does not say who it suits`,
+    );
+    assert.ok(
+      m.notForYou.trim().length > 140,
+      `${m.id} does not name who should look somewhere else`,
+    );
+    catches.add(m.catch.trim());
+    avoid.add(m.notForYou.trim());
+  }
+  assert.equal(catches.size, MAJORS.length, "two majors share one catch");
+  assert.equal(avoid.size, MAJORS.length, "two majors warn off the same person");
+});
+
+test("no major quotes a price, a salary or a ranking", () => {
+  const forbidden =
+    /(\$|€|£|₸|\bUSD\b|\bEUR\b|\bper month\b|\bper year\b|\brank(ed|ing)? (?:#|no\.?\s?)\d|\btop \d+\b|\bbest\b|\bleading\b|\bprestigious\b)/i;
+  for (const m of MAJORS) {
+    for (const [field, text] of Object.entries(m)) {
+      if (typeof text !== "string") continue;
+      assert.ok(
+        !forbidden.test(text),
+        `${m.id}.${field} quotes a figure, ranking or superlative: ${text.slice(0, 80)}`,
+      );
+    }
+  }
+});
+
+test("no major carries a URL — the catalog owns links", () => {
+  const src = readFileSync(
+    path.join(process.cwd(), "lib/data/majors.ts"),
+    "utf8",
+  );
+  assert.ok(
+    !/https?:\/\//.test(stripComments(src)),
+    "majors.ts contains a URL; test:links only knows about the catalog",
+  );
+});
+
+test("every major leads to at least one area of work that exists", () => {
+  const areaSlugs = new Set(
+    allCareerAreas().map(({ area }) => areaSlug(area.title)),
+  );
+  for (const m of MAJORS) {
+    assert.ok(m.leadsTo.length > 0, `${m.id} leads to no work at all`);
+    for (const slug of m.leadsTo) {
+      assert.ok(
+        areaSlugs.has(slug),
+        `${m.id} points at a missing area of work: ${slug}`,
+      );
+    }
+  }
+});
+
+// NOTE: the REVERSE edge — every area of work reachable from some major — is
+// asserted in Task A1d, once the registry is complete. It cannot pass while the
+// registry is being written in waves, and a test that is expected to fail for
+// three tasks is a test nobody reads.
+
+test("majors: empty fields in ⇒ every major; a chosen field never widens it", () => {
+  assert.equal(majorsForFaculties([]).length, MAJORS.length);
+  const cs = majorsForFaculties(["computer_science"]);
+  assert.ok(cs.length > 0 && cs.length <= MAJORS.length);
+  assert.ok(cs.every((m) => m.fields.includes("computer_science")));
+});
+
+test("majorById and majorsForArea resolve, and unknown ids return nothing", () => {
+  assert.equal(majorById(MAJORS[0].id)?.id, MAJORS[0].id);
+  assert.equal(majorById("no-such-major"), undefined);
+  const slug = MAJORS[0].leadsTo[0];
+  assert.ok(majorsForArea(slug).some((m) => m.id === MAJORS[0].id));
+  assert.deepEqual(majorsForArea("no-such-area"), []);
+});
+
+test("majorsByField groups in the order given and drops empty fields", () => {
+  const groups = majorsByField(["computer_science", "law"]);
+  assert.equal(groups[0].faculty, "computer_science");
+  assert.ok(groups.every((g) => g.majors.length > 0));
 });
