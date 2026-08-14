@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Starting a session?** Read
+> [docs/BACKLOG_2026-08.md](docs/BACKLOG_2026-08.md) **§1 first** — it says what
+> is deployed versus what is only on the branch, and getting that wrong is the
+> fastest way to do work twice. §8 has the ordered next list, §5 the findings,
+> §7 the working method.
+
 ## What this is
 
 Compass — a guidance tool for international students. **Opportunities is the front door**: what competitions, olympiads, courses and programmes a student can actually enter, at their age, with honest dates and costs. The **planner** ([docs/PLANNER_PLAN.md](docs/PLANNER_PLAN.md)) is the third section, where what they committed to becomes dated work. The admission analysis (factor scores, per-school likelihood ranges, benchmarks, gap analysis, recommendations across **US · Italy · Hong Kong · UAE · Korea**) is now one opt-in input, not the product a student arrives for. Three roles share one backend: **student** (core product), **ambassador** (referral growth), **admin/founder** (metrics). Full product spec lives in [docs/compass-project-blueprint.md](docs/compass-project-blueprint.md); setup in [docs/SETUP.md](docs/SETUP.md); a map of the codebase in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); the plan of record for the front door in [docs/OPPORTUNITIES_PLAN.md](docs/OPPORTUNITIES_PLAN.md).
