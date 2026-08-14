@@ -20,9 +20,24 @@ npm install
 ## 3. Supabase
 
 1. Create a project at supabase.com.
-2. **Run the migration:** open the SQL editor and paste
-   [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql). This
-   creates all tables, RLS policies, and the `signup_count_for_code` helper.
+2. **Run the migrations, all of them, in order.** Open the SQL editor and paste
+   [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql)
+   first — it creates the core tables, RLS policies and the
+   `signup_count_for_code` helper — then every numbered file after it, up to and
+   including `0030_planner_path.sql`. There is **no migration runner**: nothing
+   here applies itself, and a missing one usually shows up as a feature that
+   silently does not persist rather than as an error.
+
+   Then verify rather than assume:
+
+   ```bash
+   npm run db:check
+   ```
+
+   Read-only, a couple of seconds, one probe per table. It should report **32/32
+   pass**. This exists because an audit once found a migration that had never
+   been applied while everything around it had — see
+   [ARCHITECTURE.md](ARCHITECTURE.md) § `supabase/migrations/`.
 3. **Auth providers** (Authentication → Providers):
    - Enable **Email**.
    - Enable **Google**: create an OAuth client in Google Cloud Console, set the

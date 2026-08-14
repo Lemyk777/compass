@@ -382,7 +382,7 @@ competition; the admin page lists broken links first.
 ## Verification (no API key needed)
 
 ```bash
-npm run test:unit       # 21 unit tests — scoring, eligibility, quiz, careers, matching
+npm run test:unit       # 192 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner
 npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
 npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog

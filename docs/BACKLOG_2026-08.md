@@ -143,7 +143,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 | 27 | **Community, and 157 → 172.** A kind of opportunity the catalog had no shape for. See §5.18. |
 | 25 | **Readability.** The dark theme was not lower-contrast, it was under-engineered: no type step, a 10px floor, and one theme's optics served by the other's settings. See §5.16. |
 | 22 | **CLOSED.** The planner is advertised now that it works; the bands below the hero ramp with the window. See §5.15. |
-| 17 | **The planner, COMPLETE** — `/planner` (agenda) + `/planner/board` + `/planner/maps`. Delivered in two releases; both shipped. See §5.12 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
+| 17 | **The planner, COMPLETE** — one route, `/planner?view=next\|board\|map`, with the guide join and one next move. Delivered over four releases. See §5.12, §5.19, §5.23, §5.24 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
 
 **Not on the founder's list, added because it was needed:**
 
@@ -1493,10 +1493,11 @@ Two things worth carrying:
 
 ```bash
 npm run build            # the gate — never while `npm run dev` is running
-npm run test:unit        # 127 tests
+npm run test:unit        # 192 tests
 npx tsc --noEmit
 npm run lint
-node --import tsx scripts/test-session-checks.ts   # 60 checks
+npm run db:check         # read-only: is the DB what the code assumes? 32/32
+node --import tsx scripts/test-session-checks.ts   # 61 checks
 npm run test:guide-links # 27/27 official sources — NOT in CI, run it anyway
 npm run db:check         # after applying a migration, and before believing any note about one
 ```

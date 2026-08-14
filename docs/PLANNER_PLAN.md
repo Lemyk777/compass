@@ -267,6 +267,11 @@ third entry, not a fourth edit site. Same pattern as `guide-sections.ts`.
 
 ### Routes
 
+> **Superseded by Release 4.** Both of these became `?view=` values over one
+> route; `/planner/board` is a 308 now. Kept as written because the release-1
+> reasoning below is still why the section is `force-dynamic` and
+> session-gated — only the addressing changed.
+
 ```
 /planner          agenda — "What's next"      (server)
 /planner/board    the board                    (server)

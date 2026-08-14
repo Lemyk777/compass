@@ -53,6 +53,34 @@ gh pr create --base main --head develop --title "release: what is going out"
 The body lists what a user will notice and anything that must be done by hand —
 a migration to apply, an environment variable to set.
 
+> **What is actually happening, as of 2026-08-14.** The last several releases
+> have gone `feat/…` → `main` directly — PR #107 and PR #108 both did — so
+> `develop` has not been the integration point for a while and this section
+> describes an intention rather than the practice. That is written down here
+> rather than quietly corrected, because which of the two is right is the
+> owner's call and not a documentation edit: either `develop` starts being used
+> again, or this section should say "a feature branch, PRed into `main`, one
+> release at a time". Until it is decided, **the rule that matters is the one
+> below it** — never push to `main`, and open the PR.
+
+### Never keep pushing to a branch whose PR has merged
+
+A merged pull request is closed and does not take new commits. Anything pushed
+to that branch afterwards **silently accumulates instead of shipping**, and the
+branch keeps looking like it is up to date. This has happened here twice: PR
+#106 and again PR #107, the second time leaving ten commits and then two more
+stranded on `feat/guide-spine` while the branch name suggested otherwise.
+
+So, before pushing to a branch that has a PR:
+
+```bash
+gh pr view <number> --json state,mergedAt
+```
+
+If it is `MERGED`, cut a fresh branch and open a new PR. And never edit a merged
+PR's title or body to describe work that was not in it — that destroys the only
+record of what actually shipped.
+
 ### Hotfixes
 
 A production bug that cannot wait branches from `main`, PRs into `main`, and is

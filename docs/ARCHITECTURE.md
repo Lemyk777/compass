@@ -42,6 +42,9 @@ almost never a prompt change.
 | One content container for the student's section | `components/ui/Shell.tsx` — 1024 → 1440; width buys columns, never line length |
 | The guide's steps, and what the tabs read | `lib/data/guide-sections.ts` — one registry behind the tabs, the index cards and the "next step" footer |
 | The guide's field filter | `lib/data/guide-fields.ts` (pure, `?f=`) + `lib/guide/student-fields.ts` (the profile default) — "not stated" and "explicitly everything" are different states |
+| What a student claimed out of the guide | `lib/data/plan-picks.ts` (pure, type-only imports) + `planner_path` (0030). A pick's kind is the prefix of its ref (`place:germany`) — there is no `kind` column, and the server action computes the href so a caller cannot supply one |
+| The plan's one sentence of guidance | `lib/data/next-move.ts` — pure and ordered, returns exactly ONE move, and the `why` is not optional |
+| Trying a kind of work before choosing it | `lib/data/try-it.ts` → `components/guide/TryTheWork.tsx`. Names the employer and describes the task; **no URLs** (the catalog owns links, and these company pages are behind bot protection the gate cannot pass); an area with no honest answer renders nothing |
 | The student's own shell (Opportunities + Guide) | `components/student/StudentShell.tsx`; the guide adds its own frame in `app/guide/layout.tsx`; the report keeps `components/dashboard/DashboardShell.tsx` |
 | Loading a signed-in student's facts once | `lib/dashboard/load.ts` — feeds both shells |
 | The dated roadmap | `lib/data/roadmap.ts` |
@@ -64,7 +67,7 @@ almost never a prompt change.
 | --- | --- |
 | `(marketing)/` | The public landing page, told in the product's own order: Opportunities → the guide → the report. Session-aware: a signed-in visitor gets "Dashboard", not "Log in"/"Sign up". Every count on it is read from the catalog and the guide registries at request time, so the page cannot claim a number the student won't see |
 | `opportunities/` | **Public eligibility checker — the guest surface only.** A signed-in student is redirected to `/dashboard/opportunities` so there is one Opportunities experience per state, not two |
-| `planner/` | **Private**: the student's third section. `page.tsx` is the agenda (everything with a date), `board/` is the board (everything with a state they own), `maps/` is the mind maps. The first two render `lib/planner/load.ts` — the only place the planner touches the catalog or the roadmap, and it does so through dynamic `import()` |
+| `planner/` | **Private, and ONE route**: `page.tsx` serves `/planner?view=next\|board\|map` — the agenda (everything with a date), the board (everything with a state they own) and the mind maps are three lenses over one loader, not three pages. `/planner/board` and `/planner/maps` are enumerated 308s in `next.config.mjs`; `maps/[id]/` is still a real page, because one map is a document a student can send to someone. `lib/planner/load.ts` is the only place the planner touches the catalog or the roadmap, and it does so through dynamic `import()` |
 | `guide/` | **Public**: the four-step guide, its own route per step and per subject |
 | `onboarding/` | The full intake wizard — now **opt-in** (the analysis path), no longer where signups land; `actions.ts` holds the Zod schema that is the single source of truth for a valid profile |
 | `dashboard/` | The logged-in product. `layout.tsx` loads everything once and hands it to `DashboardContext`; each subroute is a thin view |
@@ -95,7 +98,8 @@ surfaces — if two surfaces need it, it moves to `ui/`.
 | --- | --- |
 | `ai/` | The analysis pipeline. Read `prompt.ts`, `analyze.ts`, `schema.ts`, `assemble.ts` together — they only make sense as a set |
 | `data/` | Deterministic datasets and the code over them: universities, programmes, deadlines, the opportunity registry, geography, the roadmap |
-| `planner/` | `load.ts` — the planner's one loader. Server-only, and the boundary that keeps the catalog out of the section's client bundle; the pure core is `data/planner.ts`, which imports no dataset at all. `maps-load.ts` does the same for mind maps over `data/mindmap.ts`, which stores structure and computes the picture |
+| `planner/` | `load.ts` — the planner's one loader. Server-only, and the boundary that keeps the catalog out of the section's client bundle; the pure core is `data/planner.ts`, which imports no dataset at all. `maps-load.ts` does the same for mind maps over `data/mindmap.ts`, which stores structure and computes the picture. `picks.ts` reads what the student claimed out of the guide (`planner_path`, 0030) — split out because the GUIDE needs it too, and a country page must not reach the planner's loader to answer one boolean |
+| `guide/` | `student-fields.ts` (the reader, and their fields, read once per request) and `plan-state.ts` — the only thing the guide asks the planner: is this subject already on your plan, and which maps could it go on |
 | `auth/` | Session, roles, post-signup provisioning |
 | `supabase/` | Three clients — `server.ts` (respects RLS, the default), `admin.ts` (service role, bypasses RLS, server-only), `client.ts` (browser) |
 | `discovery/`, `scraper/` | Finding new opportunities and refreshing their dates |
@@ -110,30 +114,37 @@ migration runner and no state table, so:
 - write it idempotently (`if not exists`, `drop policy if exists`);
 - include column-level grants — table privileges are locked down, and a missing
   grant surfaces as a bare `42501` that looks nothing like a permissions bug;
-- verify against the live database rather than trusting a note:
-
-  ```sql
-  select table_name from information_schema.tables where table_name = 'your_table';
-  ```
+- **add the expected columns to `scripts/check-schema.ts` in the same commit**,
+  which is what lets `npm run db:check` answer "is the database actually what
+  this code assumes?" in a couple of seconds — read-only, one probe per table.
+  It reports **32/32 as of 2026-08-14**, `planner_path` (0030) included.
 
 **This drifts silently — check it, don't assume it.** On 2026-08-05 an audit of
 the live database found `0010_graduation_year` had never been applied: every
 student's school year silently failed to save (the app degrades rather than
 crashing, so nothing surfaced), while every other migration through 0023 *was*
-applied. If a feature "doesn't persist" and the code looks right, check the
-column exists before debugging the code.
+applied. If a feature "doesn't persist" and the code looks right, run
+`npm run db:check` before debugging the code — that script exists because of
+this incident, and it is the only note here that cannot go stale.
 
 ### `scripts/`
 
 Verification, run directly with `node --import tsx`. Two pure suites, both in
 the CI gate and neither needing a key, network or DB:
 
-- `test-engine.ts` (`npm run test:unit`, node:test) — the deterministic core:
-  rubric/overall scoring, benchmarks, eligibility arithmetic, the interest quiz,
-  the careers registry, matching invariants. **Add a case here when you touch
-  scoring or eligibility.**
-- `test-session-checks.ts` — 60 checks over geography, eligibility gates,
+- `test-engine.ts` (`npm run test:unit`, node:test) — **192 tests** over the
+  deterministic core: rubric/overall scoring, benchmarks, eligibility
+  arithmetic, the interest quiz, the careers registry, matching invariants, the
+  guide's chain, and the whole of the planner. **Add a case here when you touch
+  scoring or eligibility** — and when you touch the planner, because that
+  section sits behind a session and cannot be opened in a browser by an agent,
+  so a pure test is the only verification available to it.
+- `test-session-checks.ts` — 61 checks over geography, eligibility gates,
   registry integrity, the commitment vocabulary and cron rotation maths.
+- `check-schema.ts` (`npm run db:check`) — read-only, needs `.env.local`.
+  **Add a migration's expected columns here in the same commit as the
+  migration**; that is what lets defensive scaffolding be deleted instead of
+  accumulating, because the schema becomes checkable.
 
 `test-links.ts` checks every catalog URL (weekly job, deliberately outside the
 gate — datacenter IPs get bot-walled differently than a student's browser).
