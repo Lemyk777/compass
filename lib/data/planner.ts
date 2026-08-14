@@ -416,3 +416,75 @@ export function agendaHomeIndex(
   const next = months.findIndex((m) => m.key > nowKey);
   return next >= 0 ? next : months.length - 1;
 }
+
+/**
+ * The handful of numbers the plan's single guidance sentence reasons about.
+ *
+ * Derived from the built view rather than re-queried, so the card at the top of
+ * the window can never disagree with the cards underneath it — the same reason
+ * the two views share one loader. Pure, and tested: nothing in the planner can
+ * be verified in a browser by an agent, so its logic lives where a test reaches.
+ */
+export type PlannerTally = {
+  /** Opportunities they said they would enter, excluding the ones dropped. */
+  committed: number;
+  /** Of those, the ones that actually moved off "not started". */
+  started: number;
+  /** Dated, past, and unfinished. */
+  overdue: number;
+  /** Things still ahead with a date we can stand behind. */
+  dated: number;
+  /** The nearest of those. Null when nothing ahead carries a confirmed date. */
+  nextDeadline: { title: string; daysLeft: number } | null;
+};
+
+export function tallyPlanner(view: PlannerView): PlannerTally {
+  const commitments = view.items.filter(
+    (i) => i.origin === "opportunity" && i.status !== "dropped",
+  );
+
+  // The months are already sorted earliest-first and so are the items inside
+  // them, so the nearest dated thing is the head of the first non-empty month.
+  // Recomputing a minimum here would be a second ordering that can disagree
+  // with the one the agenda draws.
+  const soonest = view.months.find((m) => m.items.length > 0)?.items[0] ?? null;
+
+  return {
+    committed: commitments.length,
+    started: commitments.filter(
+      (i) => i.status === "doing" || i.status === "done",
+    ).length,
+    overdue: view.overdue.length,
+    dated: view.months.reduce((n, m) => n + m.items.length, 0),
+    nextDeadline:
+      soonest && soonest.daysLeft !== null
+        ? { title: soonest.title, daysLeft: soonest.daysLeft }
+        : null,
+  };
+}
+
+/**
+ * The name that ties one card to itself across a move, so the browser morphs it
+ * from the column it left into the one it arrives in.
+ *
+ * A `view-transition-name` must be a CSS custom-ident and unique in the
+ * document, which is the entire reason this is a function and not a template
+ * literal at the call site — the guide learned the same lesson with
+ * `guideMorph`. The key is already `${origin}:${sourceId}`, unique within a
+ * view by construction (a test asserts one opportunity can never appear twice),
+ * so uniqueness of the INPUT comes for free.
+ *
+ * Uniqueness of the output does not, and the first version of this got it
+ * wrong: sweeping every illegal character to `-` maps `a:b` and `a-b` onto one
+ * name. Two elements claiming one transition name is not a broken animation, it
+ * is silently NO animation — the worst class of bug this file can ship, because
+ * nothing fails and the feature simply is not there. So the escape is
+ * INJECTIVE: every character outside `[a-zA-Z0-9]` becomes its own code point
+ * between hyphens, including the hyphen itself, and two different keys cannot
+ * meet. The `plan-` prefix covers the other rule, that an ident may not begin
+ * with a digit.
+ */
+export function plannerMorph(key: string): string {
+  const safe = key.replace(/[^a-zA-Z0-9]/g, (c) => `-${c.charCodeAt(0)}-`);
+  return `plan-${safe}`;
+}

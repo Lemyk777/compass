@@ -4,15 +4,20 @@ import { loadStudentContext } from "@/lib/dashboard/load";
 import { createClient } from "@/lib/supabase/server";
 import type { SessionProfile } from "@/lib/auth/session";
 import { plannerStarts, type PlannerStart } from "@/lib/data/planner-start";
+import { loadPicks } from "@/lib/planner/picks";
+import { loadMaps, type MapSummary } from "@/lib/planner/maps-load";
+import { countPicks, type PlanPick } from "@/lib/data/plan-picks";
+import { nextMove, type NextMove } from "@/lib/data/next-move";
 import {
   buildPlanner,
+  tallyPlanner,
   type PlannerCompetition,
   type PlannerOwnItem,
   type PlannerStatus,
   type PlannerView,
 } from "@/lib/data/planner";
 
-// Everything the planner's two pages need, fetched once.
+// Everything the planner's ONE page needs, fetched once.
 //
 // This is the ONLY place the planner reaches `key-dates` and `roadmap`, and it
 // is server-only. Both build over the whole catalog at module load, so a
@@ -42,6 +47,22 @@ export type PlannerData = PlannerView & {
    * cost a walk over five registries on every load.
    */
   starts: PlannerStart[];
+  /**
+   * What the student claimed out of the guide (0030). This is the join made
+   * visible: before it, the plan could not name a single thing they had read.
+   */
+  picks: PlanPick[];
+  /**
+   * The one thing to do next, and the whole of the section's guidance.
+   *
+   * It is computed on EVERY load, not only for an empty plan, and that is the
+   * fix rather than a detail: the only sentence this section ever addressed to
+   * a student lived on the empty state and disappeared the moment anything
+   * existed, so the product accompanied nobody past their first action.
+   */
+  move: NextMove;
+  /** The maps, for the third lens. Cheap — one flat select, counted in memory. */
+  maps: MapSummary[];
 };
 
 const load = cache(
@@ -65,7 +86,7 @@ async function loadUncached(
   const supabase = createClient();
   const today = new Date(`${todayISO}T00:00:00Z`);
 
-  const [ctx, ownResult, mapResult, keyDates, roadmapModule] =
+  const [ctx, ownResult, mapResult, picks, maps, keyDates, roadmapModule] =
     await Promise.all([
       loadStudentContext({ id: userId, country } as SessionProfile),
       // `select("*")`, and the error is read rather than thrown: a table that does
@@ -75,6 +96,10 @@ async function loadUncached(
       supabase.from("planner_items").select("*").eq("user_id", userId),
       // Same degradation as above: 0029 unapplied reads as "no maps", not a throw.
       supabase.from("planner_map_nodes").select("map_id").eq("user_id", userId),
+      // Both degrade the same way as the two above: an unapplied 0030 reads as
+      // "nothing picked", an unapplied 0029 as "no maps".
+      loadPicks(userId),
+      loadMaps(userId),
       import("@/lib/data/key-dates"),
       import("@/lib/data/roadmap"),
     ]);
@@ -148,46 +173,86 @@ async function loadUncached(
     })),
   });
 
+  // ── What the guidance reasons about ────────────────────────────────────────
+  //
+  // All of it is computed on every load now, where it used to be computed only
+  // for an empty plan. That is a deliberate cost: it is one in-memory pass over
+  // the catalog — the same pass `/opportunities` makes on every request — and it
+  // buys the one thing this section was missing, which is a sentence addressed
+  // to the student at every stage rather than only on their first day.
+  const plan = keyDates.buildExtracurriculars({
+    today,
+    faculties: ctx.profileMeta.faculties,
+    factors: ctx.analysis?.factors ?? [],
+    liveCompetitions: ctx.liveDates.competitions,
+    homeCountry: ctx.profileMeta.homeCountry,
+    graduationYear: ctx.profileMeta.graduationYear,
+  });
+  const enterable = plan.items.filter((o) => !o.notYetEligible);
+
+  // THE BRIDGE. The spine is dynamically imported for the same reason key-dates
+  // is: it reaches five prose registries and must not join this module's static
+  // graph.
+  const { spineForFaculty, areasForFields } = await import("@/lib/data/spine");
+  const { STUDY_DESTINATIONS } = await import("@/lib/data/study-destinations");
+
+  // Narrowed by FILTERING, not by casting: `profileMeta.faculties` is
+  // `string[]`, and a profile saved before a field was renamed would otherwise
+  // reach the spine as a key it has no entry for.
+  const stated = ctx.profileMeta.faculties.filter((f): f is FacultyValue =>
+    (FACULTY_VALUES as string[]).includes(f),
+  );
+  // Unknown facts never exclude — with nothing stated we count the whole chain
+  // rather than offering a shorter list.
+  const fields = stated.length > 0 ? stated : FACULTY_VALUES;
+  const countries = new Set<string>();
+  for (const f of fields) {
+    for (const stop of spineForFaculty(f).stops) countries.add(stop.country);
+  }
+
+  const counts = countPicks(picks);
+
+  // How many cities we profile sit inside the countries they picked. This one
+  // number is allowed to DECIDE a branch rather than only phrase one — the
+  // "a country is not one job market" move must not fire for a student whose
+  // countries contain no city page, or it sends them to a list with nothing of
+  // theirs in it. Counted from the destination registry rather than the spine,
+  // because it is a containment question and not a field question.
+  const pickedPlaceIds = new Set(
+    picks
+      .filter((p) => p.ref.startsWith("place:"))
+      .map((p) => p.ref.slice("place:".length)),
+  );
+  const citiesInPicked = STUDY_DESTINATIONS.filter((d) =>
+    pickedPlaceIds.has(d.id),
+  ).reduce((n, d) => n + d.hubs.length, 0);
+
+  const tally = tallyPlanner(view);
+
+  const move = nextMove({
+    fieldsStated: stated.length,
+    picks: counts,
+    committed: tally.committed,
+    started: tally.started,
+    overdue: tally.overdue,
+    openToYou: enterable.length,
+    reachableAreas: areasForFields(fields).length,
+    reachableCountries: countries.size,
+    citiesInPicked,
+    nextDeadline: tally.nextDeadline,
+    dated: tally.dated,
+  });
+
   // The empty state is not a dead end: with nothing committed, name two things
   // this student can actually enter rather than showing a blank column with a
   // link in it. Resolved on the server, so the catalog never crosses over.
   let suggestions: PlannerData["suggestions"] = [];
   let starts: PlannerStart[] = [];
   if (view.items.length === 0) {
-    const plan = keyDates.buildExtracurriculars({
-      today,
-      faculties: ctx.profileMeta.faculties,
-      factors: ctx.analysis?.factors ?? [],
-      liveCompetitions: ctx.liveDates.competitions,
-      homeCountry: ctx.profileMeta.homeCountry,
-      graduationYear: ctx.profileMeta.graduationYear,
-    });
-    const enterable = plan.items.filter((o) => !o.notYetEligible);
     suggestions = enterable
       .filter((o) => o.dateConfirmed)
       .slice(0, 2)
       .map((o) => ({ id: o.id, name: o.name, deadline: o.deadline }));
-
-    // THE BRIDGE. The spine is dynamically imported for the same reason
-    // key-dates is: it reaches five prose registries and must not join this
-    // module's static graph.
-    const [{ spineForFaculty, areasForFields }, faculties] = [
-      await import("@/lib/data/spine"),
-      ctx.profileMeta.faculties,
-    ];
-    // Narrowed by FILTERING, not by casting: `profileMeta.faculties` is
-    // `string[]`, and a profile saved before a field was renamed would
-    // otherwise reach the spine as a key it has no entry for.
-    const stated = faculties.filter((f): f is FacultyValue =>
-      (FACULTY_VALUES as string[]).includes(f),
-    );
-    // Unknown facts never exclude — with nothing stated we count the whole
-    // chain rather than offering a shorter list of choices.
-    const fields = stated.length > 0 ? stated : FACULTY_VALUES;
-    const countries = new Set<string>();
-    for (const f of fields) {
-      for (const stop of spineForFaculty(f).stops) countries.add(stop.country);
-    }
 
     starts = plannerStarts({
       // The NARROWED list, not the raw column: everything downstream reasons
@@ -201,5 +266,5 @@ async function loadUncached(
     });
   }
 
-  return { ...view, todayISO, suggestions, starts };
+  return { ...view, todayISO, suggestions, starts, picks, move, maps };
 }

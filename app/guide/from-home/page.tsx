@@ -11,6 +11,9 @@ import {
 import { guideSection } from "@/lib/data/guide-sections";
 import { homeRoutesForFaculties } from "@/lib/data/from-home";
 import { guideView } from "@/lib/guide/student-fields";
+import { guidePickSet } from "@/lib/guide/plan-state";
+import { AddToPlan } from "@/components/guide/AddToPlan";
+import { pickRef } from "@/lib/data/plan-picks";
 import { pageMeta } from "@/lib/seo";
 
 // Step 4, and the one the guide would be dishonest without.
@@ -57,6 +60,11 @@ export default async function GuideFromHomePage({
 }) {
   const { signedIn, fields, stated, defaults } = await guideView(searchParams);
   const routes = homeRoutesForFaculties(fields);
+
+  // This step is a LIST on one page, so its picks are read as a set — one query
+  // for six controls rather than one query each. That is the whole reason
+  // `guidePickSet` exists beside `guidePickState`.
+  const picked = await guidePickSet();
 
   // Declared once and read twice — once by the contents list, once as the
   // sections themselves. Same rule as the subject pages: a part cannot exist in
@@ -132,6 +140,22 @@ export default async function GuideFromHomePage({
                 </div>
               ))}
             </dl>
+
+            {/* Compact, and after the route rather than beside its heading:
+                this step has six of these on one page, and a full-width control
+                under every entry would out-weigh the entries. `w-auto` on the
+                wrapper is what stops it stretching to the column. */}
+            <div className="max-w-xs">
+              <AddToPlan
+                kind="route"
+                id={r.id}
+                label={r.name}
+                signedIn={picked.signedIn}
+                saved={picked.refs.has(pickRef("route", r.id))}
+                returnTo="/guide/from-home"
+                size="compact"
+              />
+            </div>
           </GuidePart>
         ))}
       </div>

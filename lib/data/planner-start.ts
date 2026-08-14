@@ -103,7 +103,7 @@ export function plannerStarts(input: PlannerStartInput): PlannerStart[] {
       id: "map",
       label: input.mapCount > 0 ? "Go back to thinking it through" : "Think it through on a map",
       tells: "Put the options side by side, then send any branch straight to this plan.",
-      href: "/planner/maps",
+      href: "/planner?view=map",
       count: input.mapCount || null,
       unit: "maps of yours",
     },

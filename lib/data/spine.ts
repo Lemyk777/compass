@@ -123,14 +123,39 @@ export function spineForFaculty(faculty: FacultyValue): Spine {
     for (const hub of HUBS.filter(
       (h) => h.region === region && h.fields.includes(faculty),
     )) {
-      const existing = stops.find(
-        (s) => s.country === hub.country && s.region === region,
+      // Resolved BEFORE the dedupe, and that ordering is the whole fix.
+      //
+      // This used to match on `s.country === hub.country` while storing
+      // `destination?.name ?? hub.country`, so a country whose hubs spell it
+      // differently from its profile never matched itself: a hub says "UAE" and
+      // the destination is called "United Arab Emirates", so Dubai and Abu
+      // Dhabi each opened their own stop and the chain listed the same country
+      // twice, one city in each. Hong Kong ("Hong Kong SAR" on the hub) was one
+      // more hub away from the same fate. React reported it as duplicate keys;
+      // what a student saw was a duplicated country.
+      //
+      // The identity of a stop is its DESTINATION when it has one — the id, not
+      // a display string, for the same reason nothing else here compares prose.
+      // Only a stop with no profile behind it falls back to the hub's own
+      // country name, where that string is genuinely all we have.
+      const destination = destinationForHub(hub.id) ?? null;
+      const existing = stops.find((s) =>
+        destination
+          ? // A destination id is unique across the whole registry, so this is
+            // deliberately NOT scoped to the current region: one country is one
+            // stop, wherever the walk happens to reach it.
+            s.destination?.id === destination.id
+          : // The fallback compares prose, so it stays inside the region it was
+            // built in — two unrelated places sharing a name is a stretch, but
+            // it costs nothing to keep this as narrow as it was.
+            s.destination === null &&
+            s.region === region &&
+            s.country === hub.country,
       );
       if (existing) {
         existing.hubs.push(hub);
         continue;
       }
-      const destination = destinationForHub(hub.id) ?? null;
       stops.push({
         country: destination?.name ?? hub.country,
         region,

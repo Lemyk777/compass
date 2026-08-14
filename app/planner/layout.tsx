@@ -1,7 +1,6 @@
 import { getSession } from "@/lib/auth/session";
 import { StudentShell } from "@/components/student/StudentShell";
 import { loadStudentContext } from "@/lib/dashboard/load";
-import { PlannerTabs } from "@/components/planner/PlannerTabs";
 
 // The frame for the planner — the student's third section, beside Opportunities
 // and the Guide.
@@ -35,19 +34,17 @@ export default async function PlannerLayout({
       isAdmin={session.role === "admin"}
       hasReport={Boolean(ctx.analysis)}
     >
-      <div className="space-y-7">
-        {/* ONE heading for the window, and the view switcher under it. The
-            three views used to bring their own `<h1>` each, so the section had
-            two headings before any content and the views disagreed about how
-            tall their header was. */}
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">
-            Your plan
-          </h1>
-          <div className="mt-3.5">
-            <PlannerTabs />
-          </div>
-        </div>
+      <div className="space-y-6">
+        {/* ONE heading for the whole section, and it lives here rather than in
+            a page. The three views used to bring their own `<h1>` each, so the
+            section opened with two headings before any content and the views
+            disagreed about how tall their header was.
+            The lens switcher is NOT here: it belongs to the window, which owns
+            which lens is showing, and a switcher in a layout would have to
+            reach for the URL to find out. */}
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">
+          Your plan
+        </h1>
         {children}
       </div>
     </StudentShell>

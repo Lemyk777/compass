@@ -9,6 +9,12 @@ import {
   type PlannerOrigin,
   type PlannerStatus,
 } from "@/lib/data/planner";
+import {
+  isPickId,
+  isPickKind,
+  pickHref,
+  pickRef,
+} from "@/lib/data/plan-picks";
 
 // Writes for the planner. Two tables, and which one a write lands in is decided
 // by the item's ORIGIN — a committed opportunity keeps its state in
@@ -65,10 +71,13 @@ async function currentUserId(): Promise<string | null> {
   return user?.id ?? null;
 }
 
+// One path, because there is one page now: the board and the maps became views
+// of `/planner` rather than routes of their own, and `/planner/board` is a 308
+// from next.config.mjs. Revalidating a redirect would be a no-op that reads as
+// coverage.
 function refresh() {
   try {
     revalidatePath("/planner");
-    revalidatePath("/planner/board");
   } catch {
     // ignore cache revalidation errors
   }
@@ -262,4 +271,139 @@ export async function movePlannerItem(input: {
     // ignore cache revalidation errors
   }
   return { ok: true };
+}
+
+// ─── The guide → plan join ────────────────────────────────────────────────────
+//
+// Claiming something out of the guide, and letting go of it again. Two writes,
+// one table (0030), and neither of them accepts a path from the caller: the
+// href is COMPUTED from the pick, because a server action is a public HTTP
+// endpoint and a client-supplied path would let anyone store `/admin` under the
+// label "Germany" and have the plan render it as a country chip.
+
+/**
+ * Same shape of hint as `migrationHint`, for the table this feature owns.
+ * Separate function rather than a parameter: the two migrations fail at
+ * different times, and a message naming the wrong one sends the reader to the
+ * wrong SQL file.
+ */
+function pathMigrationHint(code: string | undefined): string | null {
+  if (code === "42P01" || code === "42703") {
+    return "Your plan's picks aren't set up yet — run migration 0030_planner_path.sql.";
+  }
+  return null;
+}
+
+/**
+ * Put a country / city / kind of work / route from home onto the plan.
+ *
+ * Idempotent by the table's own unique key, so pressing it twice — or landing
+ * on the page again with a stale button — is not an error the student has to
+ * read about. `onConflict` updates the label, which is what keeps a pick made
+ * a year ago from rendering the name a registry has since changed.
+ */
+export async function addPick(input: {
+  kind: string;
+  id: string;
+  label: string;
+}): Promise<SaveResult> {
+  if (!isPickKind(input.kind)) return { ok: false, error: "Unknown kind." };
+  if (!isPickId(input.id)) return { ok: false, error: "Unknown item." };
+
+  const label = clean(input.label, LIMITS.pickLabel);
+  if (!label) return { ok: false, error: "That one has no name." };
+
+  const uid = await currentUserId();
+  if (!uid) return { ok: false, error: "Please log in again." };
+
+  const supabase = createClient();
+
+  // The ceiling, checked before the insert — the same abuse bound every other
+  // student-writable table here carries. `head: true` fetches no rows.
+  const { count, error: countError } = await supabase
+    .from("planner_path")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", uid);
+
+  if (countError) {
+    return {
+      ok: false,
+      error:
+        pathMigrationHint(countError.code) ?? "Could not save that. Try again.",
+    };
+  }
+  if ((count ?? 0) >= LIMITS.pathPicks) {
+    return {
+      ok: false,
+      error: `That's ${LIMITS.pathPicks} things on your plan — take one off before adding another.`,
+    };
+  }
+
+  const { error } = await supabase.from("planner_path").upsert(
+    {
+      user_id: uid,
+      ref: pickRef(input.kind, input.id),
+      label,
+      href: pickHref(input.kind, input.id),
+    },
+    { onConflict: "user_id,ref" },
+  );
+
+  if (error) {
+    return {
+      ok: false,
+      error: pathMigrationHint(error.code) ?? "Could not save that. Try again.",
+    };
+  }
+
+  refreshPath(pickHref(input.kind, input.id));
+  return { ok: true };
+}
+
+/**
+ * Take one back off. A pick is a thought, not a commitment — changing your mind
+ * about a country is the point of weighing several, so this is a plain delete
+ * rather than the archive line `dropped` gives a commitment.
+ */
+export async function removePick(input: {
+  kind: string;
+  id: string;
+}): Promise<SaveResult> {
+  if (!isPickKind(input.kind)) return { ok: false, error: "Unknown kind." };
+  if (!isPickId(input.id)) return { ok: false, error: "Unknown item." };
+
+  const uid = await currentUserId();
+  if (!uid) return { ok: false, error: "Please log in again." };
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("planner_path")
+    .delete()
+    .eq("user_id", uid)
+    .eq("ref", pickRef(input.kind, input.id));
+
+  if (error) {
+    return {
+      ok: false,
+      error:
+        pathMigrationHint(error.code) ?? "Could not remove that. Try again.",
+    };
+  }
+
+  refreshPath(pickHref(input.kind, input.id));
+  return { ok: true };
+}
+
+/**
+ * Both surfaces that changed: the plan, and the guide page the button is on.
+ * Missing the second is why a "saved" state used to survive a Back navigation
+ * — the guide is `force-dynamic`, but the router cache is not.
+ */
+function refreshPath(guideHref: string) {
+  try {
+    revalidatePath("/planner");
+    revalidatePath(guideHref);
+  } catch {
+    // ignore cache revalidation errors
+  }
 }

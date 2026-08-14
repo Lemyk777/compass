@@ -25,14 +25,17 @@ export default async function MapPage({ params }: { params: { id: string } }) {
     <div className="space-y-5">
       <div>
         <Link
-          href="/planner/maps"
-          className="text-xs text-ink-faint underline-offset-2 hover:underline focus-visible:focus-ring"
+          href="/planner?view=map"
+          className="inline-flex min-h-11 items-center text-sm text-ink-faint underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
         >
           ← Your maps
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+        {/* An `h2`, because the section's `h1` is "Your plan" in the layout and
+            one document may only have one. The map's own question is still the
+            largest thing on the page — level and size are different axes. */}
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
           {root.label}
-        </h1>
+        </h2>
       </div>
 
       <MapWorkspace root={root} mapId={params.id} />
