@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Logo } from "@/components/ui/Logo";
+import { BrandLink } from "@/components/ui/BrandLink";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { ButtonLink } from "@/components/ui/Button";
 import { EligibilityChecker } from "@/components/opportunities/EligibilityChecker";
@@ -94,7 +94,7 @@ export default async function OpportunitiesPage() {
       <SkipLink />
       <header className="border-b border-line/70">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-5 sm:px-6">
-          <Logo className="shrink-0 text-ink" />
+          <BrandLink />
           <ButtonLink href="/auth/login" variant="subtle" size="sm">
             Sign in
           </ButtonLink>

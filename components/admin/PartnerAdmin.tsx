@@ -54,7 +54,9 @@ export function PartnerAdmin({
           <PartnerLogo partner={partner} size="md" />
           <div className="min-w-0">
             <p className="flex flex-wrap items-center gap-1.5">
-              <span className="text-base font-semibold text-ink">{partner.name}</span>
+              <span className="text-base font-semibold text-ink">
+                {partner.name}
+              </span>
               {partner.verifiedAt && <VerifiedTick size="md" />}
               <StatusPill status={partner.status} />
             </p>
@@ -86,7 +88,9 @@ export function PartnerAdmin({
       </div>
 
       {partner.about && (
-        <p className="mt-3 text-sm leading-relaxed text-ink-soft">{partner.about}</p>
+        <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+          {partner.about}
+        </p>
       )}
       {partner.appliedNote && (
         <p className="mt-2 rounded-lg bg-surface px-3 py-2 text-xs leading-relaxed text-ink-soft">
@@ -95,7 +99,9 @@ export function PartnerAdmin({
         </p>
       )}
       {partner.reviewNote && (
-        <p className="mt-2 text-xs text-ink-faint">Your note: {partner.reviewNote}</p>
+        <p className="mt-2 text-xs text-ink-faint">
+          Your note: {partner.reviewNote}
+        </p>
       )}
 
       {/* ── Decisions ───────────────────────────────────────────────────── */}
@@ -109,7 +115,11 @@ export function PartnerAdmin({
               maxLength={300}
             />
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" disabled={pending} onClick={() => run(() => approvePartner(partner.id, note))}>
+              <Button
+                size="sm"
+                disabled={pending}
+                onClick={() => run(() => approvePartner(partner.id, note))}
+              >
                 Approve — they can post
               </Button>
               <Button
@@ -130,9 +140,13 @@ export function PartnerAdmin({
               size="sm"
               variant={partner.verifiedAt ? "tonal" : "primary"}
               disabled={pending}
-              onClick={() => run(() => setPartnerVerified(partner.id, !partner.verifiedAt))}
+              onClick={() =>
+                run(() => setPartnerVerified(partner.id, !partner.verifiedAt))
+              }
             >
-              {partner.verifiedAt ? "Remove the tick" : "Verify — the account is theirs"}
+              {partner.verifiedAt
+                ? "Remove the tick"
+                : "Verify — the account is theirs"}
             </Button>
             {partner.status === "active" ? (
               <Button
@@ -153,7 +167,11 @@ export function PartnerAdmin({
                 Reactivate
               </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={() => setShowEdit((s) => !s)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowEdit((s) => !s)}
+            >
               {showEdit ? "Close details" : "Edit details"}
             </Button>
           </div>
@@ -254,12 +272,19 @@ function EditPanel({ partner }: { partner: Partner }) {
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field label="Country" hint="Free text — normalised to an ISO-2 code.">
-          <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Kazakhstan" />
+          <Input
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder="Kazakhstan"
+          />
         </Field>
         <Field label="City">
           <Input value={city} onChange={(e) => setCity(e.target.value)} />
         </Field>
-        <Field label="Logo" hint="https:// link, or a /public path we committed.">
+        <Field
+          label="Logo"
+          hint="https:// link, or a /public path we committed."
+        >
           <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
         </Field>
       </div>
@@ -267,7 +292,11 @@ function EditPanel({ partner }: { partner: Partner }) {
         size="sm"
         disabled={pending}
         onClick={() =>
-          run(() => adminUpdatePartner(partner.id, { name, country, city, logoUrl }), "Saved.")
+          run(
+            () =>
+              adminUpdatePartner(partner.id, { name, country, city, logoUrl }),
+            "Saved.",
+          )
         }
       >
         Save details
@@ -278,14 +307,23 @@ function EditPanel({ partner }: { partner: Partner }) {
           label="Link a different account"
           hint="The email of the Compass account that should post as this organisation."
         >
-          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="team@astanahub.com" />
+          <Input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="team@astanahub.com"
+          />
         </Field>
         <Button
           size="sm"
           variant="tonal"
           className="mt-2"
           disabled={pending || !email}
-          onClick={() => run(() => attachPartnerAccount(partner.id, email), "Account linked.")}
+          onClick={() =>
+            run(
+              () => attachPartnerAccount(partner.id, email),
+              "Account linked.",
+            )
+          }
         >
           Link this account
         </Button>
@@ -309,7 +347,9 @@ function StatusPill({ status }: { status: Partner["status"] }) {
         ? "bg-target-soft text-target-ink"
         : "bg-reach-soft text-reach-ink";
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${tone}`}>
+    <span
+      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${tone}`}
+    >
       {status}
     </span>
   );

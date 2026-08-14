@@ -7,7 +7,11 @@ export const metadata = { title: "Compass — Dashboard preview" };
 // design be seen without Supabase/Anthropic configured. `?locked=1` previews the
 // no-college-list (locked odds/costs) state. DemoDashboard reads searchParams,
 // so it's wrapped in Suspense.
-export default function DemoLayout({ children }: { children: React.ReactNode }) {
+export default function DemoLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <Suspense>
       <DemoDashboard>{children}</DemoDashboard>

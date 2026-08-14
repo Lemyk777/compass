@@ -1,5 +1,5 @@
 import Link from "@/components/ui/Link";
-import { Logo } from "@/components/ui/Logo";
+import { BrandLink } from "@/components/ui/BrandLink";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 
 /**
@@ -25,7 +25,7 @@ export function LegalPage({
       <header className="border-b border-black/10">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-6">
           <Link href="/" aria-label="Compass home">
-            <Logo className="text-ink" />
+            <BrandLink transition={false} />
           </Link>
           <Link
             href="/"

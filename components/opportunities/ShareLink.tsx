@@ -106,7 +106,11 @@ export function ShareLink({
           <path d="M12 3v13" />
           <path d="m7 8 5-5 5 5" />
         </svg>
-        {state === "copied" ? "Link copied" : state === "failed" ? "Copy failed" : label}
+        {state === "copied"
+          ? "Link copied"
+          : state === "failed"
+            ? "Copy failed"
+            : label}
       </button>
       {/* Announced separately from the label, because a button whose own text
           changes is not reliably re-read. */}

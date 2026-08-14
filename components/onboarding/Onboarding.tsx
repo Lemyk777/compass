@@ -5,7 +5,7 @@ import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { MotionSafe } from "@/components/ui/MotionSafe";
-import { Logo } from "@/components/ui/Logo";
+import { BrandLink } from "@/components/ui/BrandLink";
 import Link from "@/components/ui/Link";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import type { StudentProfileInput } from "@/lib/types";
@@ -133,10 +133,7 @@ function Wizard({
       <SkipLink />
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <Logo
-            className="text-ink"
-            style={{ viewTransitionName: "brand-logo" }}
-          />
+          <BrandLink />
           <ButtonLink href={basePath} variant="ghost" size="sm">
             <svg
               className="h-4 w-4"

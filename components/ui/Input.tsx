@@ -21,12 +21,12 @@ export const Input = forwardRef<HTMLInputElement, ComponentProps<"input">>(
         ref={ref}
         className={cn(
           "h-11 w-full rounded-xl border border-line bg-card px-3.5 text-[0.95rem] text-ink placeholder:text-ink-faint focus-visible:focus-ring",
-          className
+          className,
         )}
         {...props}
       />
     );
-  }
+  },
 );
 
 export function Field({
@@ -44,7 +44,9 @@ export function Field({
     <label htmlFor={htmlFor} className="block">
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-ink-faint">{hint}</span>}
+      {hint && (
+        <span className="mt-1 block text-xs text-ink-faint">{hint}</span>
+      )}
     </label>
   );
 }

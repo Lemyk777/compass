@@ -16,7 +16,10 @@ export function Label({
   htmlFor?: string;
 }) {
   return (
-    <label htmlFor={htmlFor} className="mb-2 block text-sm font-medium text-ink">
+    <label
+      htmlFor={htmlFor}
+      className="mb-2 block text-sm font-medium text-ink"
+    >
       {children}
     </label>
   );
@@ -181,7 +184,8 @@ export function MultiSelectField({
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -205,7 +209,9 @@ export function MultiSelectField({
           onClick={() => setOpen((o) => !o)}
           className={`${inputCls} flex items-center justify-between gap-2 text-left`}
         >
-          <span className={`truncate ${selectedLabels.length ? "text-ink" : "text-ink-faint"}`}>
+          <span
+            className={`truncate ${selectedLabels.length ? "text-ink" : "text-ink-faint"}`}
+          >
             {selectedLabels.length ? selectedLabels.join(", ") : placeholder}
           </span>
           <Chevron inline />
@@ -231,11 +237,21 @@ export function MultiSelectField({
                 >
                   <span
                     className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border ${
-                      on ? "border-accent bg-accent text-on-fill" : "border-line"
+                      on
+                        ? "border-accent bg-accent text-on-fill"
+                        : "border-line"
                     }`}
                   >
                     {on && (
-                      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-3 w-3"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <path d="M5 12l5 5L20 7" />
                       </svg>
                     )}

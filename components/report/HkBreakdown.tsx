@@ -24,16 +24,20 @@ export function HkBreakdown({ programs }: Props) {
   return (
     <div className="space-y-10">
       <CountryBanner code="HK" title="Hong Kong Admission Rules">
-        Hong Kong university admission is academically merit-driven but also highly holistic.
-        Shortlisted students are often interviewed, and final admission for predicted-grade applicants
-        comes as a Conditional Offer. Check each program&apos;s scorecard below.
+        Hong Kong university admission is academically merit-driven but also
+        highly holistic. Shortlisted students are often interviewed, and final
+        admission for predicted-grade applicants comes as a Conditional Offer.
+        Check each program&apos;s scorecard below.
       </CountryBanner>
 
       <div className="space-y-4">
         <div className="space-y-1">
-          <h3 className="text-base font-semibold tracking-tight text-ink">HK Target Programs</h3>
+          <h3 className="text-base font-semibold tracking-tight text-ink">
+            HK Target Programs
+          </h3>
           <p className="text-xs leading-relaxed text-ink-faint">
-            Your competitive standing, academic index comparison, and specific entry gates.
+            Your competitive standing, academic index comparison, and specific
+            entry gates.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -64,9 +68,14 @@ type HkIndexView =
   | { kind: "stale"; needsRefresh: boolean };
 
 function hkIndexView(p: HkProgramAnalysis): HkIndexView {
-  if (p.index_source === "ib") return { kind: "ib", value: `${p.user_index}/45` };
+  if (p.index_source === "ib")
+    return { kind: "ib", value: `${p.user_index}/45` };
   // A real SAT is on the 400–1600 scale AND new rows always carry typical_sat.
-  if (p.index_source === "sat" && p.typical_sat != null && p.user_index >= 400) {
+  if (
+    p.index_source === "sat" &&
+    p.typical_sat != null &&
+    p.user_index >= 400
+  ) {
     return { kind: "sat", value: String(p.user_index) };
   }
   // "estimate" = blank profile; a "sat" row that failed the check = outdated.
@@ -84,7 +93,9 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
         <p className="text-[11px] font-medium uppercase tracking-widest text-ink-faint">
           {p.field}
         </p>
-        <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">{p.university}</p>
+        <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">
+          {p.university}
+        </p>
         <p className="text-xs text-ink-soft">{p.program_name}</p>
       </div>
 
@@ -93,7 +104,11 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
         <StatusPill status={p.status} />
         <div className="text-right">
           <p className="text-[11px] text-ink-faint">
-            {view.kind === "sat" ? "Your SAT" : view.kind === "ib" ? "Your IB" : "Academic standing"}
+            {view.kind === "sat"
+              ? "Your SAT"
+              : view.kind === "ib"
+                ? "Your IB"
+                : "Academic standing"}
           </p>
           <p className="text-base font-bold tabular-nums text-ink">
             {view.kind === "stale" ? "—" : view.value}
@@ -112,7 +127,10 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
         </div>
 
         <div className="flex items-center justify-between gap-4 pt-1">
-          <Stat label="Annual Tuition" value={`${p.annual_fee_hkd.toLocaleString()} HKD`} />
+          <Stat
+            label="Annual Tuition"
+            value={`${p.annual_fee_hkd.toLocaleString()} HKD`}
+          />
           <ScholarshipBadge status={p.scholarship} />
         </div>
       </div>
@@ -145,8 +163,8 @@ function HkScoreBar({ program: p }: { program: HkProgramAnalysis }) {
   }
 
   const isSat = view.kind === "sat";
-  const typical = isSat ? p.typical_sat ?? p.user_index : p.typical_ib;
-  const min = isSat ? p.min_sat ?? typical - 120 : p.min_ib;
+  const typical = isSat ? (p.typical_sat ?? p.user_index) : p.typical_ib;
+  const min = isSat ? (p.min_sat ?? typical - 120) : p.min_ib;
 
   return (
     <ScoreBar
@@ -176,13 +194,21 @@ function InterviewBadge({ required }: { required: boolean }) {
 
 function EnglishBadge({ status }: { status: HkProgramAnalysis["english"] }) {
   const config = {
-    meets: { label: "English Met ✓", className: "bg-likely-soft text-likely-ink" },
-    below: { label: "English Below Bar ⚠", className: "bg-reach-soft text-reach-ink" },
+    meets: {
+      label: "English Met ✓",
+      className: "bg-likely-soft text-likely-ink",
+    },
+    below: {
+      label: "English Below Bar ⚠",
+      className: "bg-reach-soft text-reach-ink",
+    },
     unknown: { label: "English Unknown", className: "bg-line text-ink-soft" },
   };
   const c = config[status];
   return (
-    <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.className}`}>
+    <span
+      className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.className}`}
+    >
       {c.label}
     </span>
   );

@@ -35,7 +35,9 @@ export function CostBreakdown({
               key={r.name}
               className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
             >
-              <span className="min-w-0 truncate text-sm text-ink">{r.name}</span>
+              <span className="min-w-0 truncate text-sm text-ink">
+                {r.name}
+              </span>
               <span data-num className="shrink-0 text-sm font-medium text-ink">
                 {fmt(r.fee)}
               </span>

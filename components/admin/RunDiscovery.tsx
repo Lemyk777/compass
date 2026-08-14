@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { runDiscoveryNow, type RunDiscoveryState } from "@/app/admin/opportunities/actions";
+import {
+  runDiscoveryNow,
+  type RunDiscoveryState,
+} from "@/app/admin/opportunities/actions";
 import { Button } from "@/components/ui/Button";
 
 // "Find me more law opportunities, now."
@@ -38,12 +41,16 @@ export function RunDiscovery({
   }
 
   return (
-    <form action={onSubmit} className="rounded-2xl border border-line bg-card p-4 shadow-card">
+    <form
+      action={onSubmit}
+      className="rounded-2xl border border-line bg-card p-4 shadow-card"
+    >
       <p className="text-sm font-semibold text-ink">Run discovery now</p>
       <p className="mt-0.5 text-xs text-ink-soft">
-        One web search at one angle, screened against the catalog and each candidate&apos;s own
-        page. Takes about a minute and costs a few cents. Anything it finds lands in the queue
-        below — nothing reaches students without your approval.
+        One web search at one angle, screened against the catalog and each
+        candidate&apos;s own page. Takes about a minute and costs a few cents.
+        Anything it finds lands in the queue below — nothing reaches students
+        without your approval.
       </p>
 
       <div className="mt-3 flex flex-wrap items-end gap-2">
@@ -84,20 +91,25 @@ export function RunDiscovery({
 
       {pending && (
         <p className="mt-3 text-xs text-ink-faint">
-          Searching, reading each candidate&apos;s official page and re-extracting its deadline.
-          Don&apos;t close the tab.
+          Searching, reading each candidate&apos;s official page and
+          re-extracting its deadline. Don&apos;t close the tab.
         </p>
       )}
 
       {state && (
         <div className="mt-3 rounded-xl border border-line bg-surface p-3">
-          <p className={`text-sm font-semibold ${state.ok ? "text-ink" : "text-red-700"}`}>
+          <p
+            className={`text-sm font-semibold ${state.ok ? "text-ink" : "text-red-700"}`}
+          >
             {state.message}
           </p>
           {state.lines.length > 0 && (
             <ul className="mt-2 space-y-0.5">
               {state.lines.map((line, i) => (
-                <li key={i} className="whitespace-pre-wrap text-xs text-ink-soft">
+                <li
+                  key={i}
+                  className="whitespace-pre-wrap text-xs text-ink-soft"
+                >
                   {line}
                 </li>
               ))}

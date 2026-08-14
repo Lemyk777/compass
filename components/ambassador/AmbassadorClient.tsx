@@ -62,7 +62,8 @@ export function AmbassadorClient({ code }: { code: string }) {
         <Button
           variant="subtle"
           onClick={() => {
-            if (navigator.share) navigator.share({ url: link, title: "Join Compass" });
+            if (navigator.share)
+              navigator.share({ url: link, title: "Join Compass" });
           }}
         >
           {t("amb.share")}

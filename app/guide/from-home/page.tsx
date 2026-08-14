@@ -66,12 +66,14 @@ export default async function GuideFromHomePage({
   return (
     <div className="space-y-6">
       <ListHead
-        intro={<SectionIntro
-          step={SECTION.step}
-          title={SECTION.title}
-          blurb={SECTION.blurb}
-          count={`${routes.length} routes that judge the work, not the address it came from.`}
-        />}
+        intro={
+          <SectionIntro
+            step={SECTION.step}
+            title={SECTION.title}
+            blurb={SECTION.blurb}
+            count={`${routes.length} routes that judge the work, not the address it came from.`}
+          />
+        }
         aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
       />
 

@@ -39,14 +39,23 @@ export default async function RankingsPage() {
   const admin = createAdminClient();
   const [{ data: analyses }, { data: profiles }, { data: sps }, usersRes] =
     await Promise.all([
-      admin.from("analyses").select("user_id, output, created_at").order("created_at", { ascending: false }),
+      admin
+        .from("analyses")
+        .select("user_id, output, created_at")
+        .order("created_at", { ascending: false }),
       admin.from("profiles").select("id, full_name"),
-      admin.from("student_profiles").select("user_id, faculties, intended_major"),
+      admin
+        .from("student_profiles")
+        .select("user_id, faculties, intended_major"),
       admin.auth.admin.listUsers({ perPage: 1000 }),
     ]);
 
-  const nameById = new Map((profiles ?? []).map((p) => [p.id, p.full_name as string | null]));
-  const emailById = new Map((usersRes?.data?.users ?? []).map((u) => [u.id, u.email]));
+  const nameById = new Map(
+    (profiles ?? []).map((p) => [p.id, p.full_name as string | null]),
+  );
+  const emailById = new Map(
+    (usersRes?.data?.users ?? []).map((u) => [u.id, u.email]),
+  );
   const spById = new Map((sps ?? []).map((s) => [s.user_id as string, s]));
 
   // Latest analysis per user (already ordered newest-first).
@@ -60,7 +69,9 @@ export default async function RankingsPage() {
     seen.add(userId);
     const an = parsed.data;
     const sp = spById.get(userId);
-    const facultyKey = sp?.faculties?.[0] ? facultyLabelKey(sp.faculties[0]) : undefined;
+    const facultyKey = sp?.faculties?.[0]
+      ? facultyLabelKey(sp.faculties[0])
+      : undefined;
     const major =
       (sp?.intended_major as string | undefined)?.trim() ||
       (facultyKey ? t(facultyKey) : "—");
@@ -84,7 +95,7 @@ export default async function RankingsPage() {
         key: f.key,
         label: f.label,
         score: Math.round(f.score),
-      }))
+      })),
     );
     // Each board ranks by and shows that COUNTRY'S OWN overall + a country-
     // native breakdown. The overall is the same country-weighted score the
@@ -96,12 +107,12 @@ export default async function RankingsPage() {
     const overallByCountry: LeaderboardRow["overallByCountry"] = {};
     if (an.italy_programs?.length) {
       factorsByCountry.IT = orderFactors(
-        italyFactors(an.italy_programs, an.italy_financial_fit_score)
+        italyFactors(an.italy_programs, an.italy_financial_fit_score),
       );
       overallByCountry.IT = countryOverall(
         "IT",
         an.factors,
-        an.italy_financial_fit_score
+        an.italy_financial_fit_score,
       );
     }
     if (an.hk_programs?.length) {
@@ -113,7 +124,9 @@ export default async function RankingsPage() {
       overallByCountry.AE = countryOverall("AE", an.factors);
     }
     if (an.kr_programs?.length) {
-      factorsByCountry.KR = orderFactors(krFactors(profileFactors, an.kr_programs));
+      factorsByCountry.KR = orderFactors(
+        krFactors(profileFactors, an.kr_programs),
+      );
       overallByCountry.KR = countryOverall("KR", an.factors);
     }
     rows.push({

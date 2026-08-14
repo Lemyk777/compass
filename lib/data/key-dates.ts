@@ -68,12 +68,44 @@ export type CompetitionLevel = "international" | "national" | "regional";
 // research programs and summer schools/programs are next. The category union is
 // pre-widened so adding them later is data-only (the UI filter derives its tabs
 // from the categories actually present). v1 only populates competition/olympiad.
-export type CompetitionCategory =
-  | "competition"
-  | "olympiad"
-  | "course"
-  | "research_program"
-  | "summer_program";
+/**
+ * The kinds of opportunity, as ONE list.
+ *
+ * It used to be a bare union, and the same five strings were then restated in
+ * the partner form's Zod enum, in the admin quick-add's const, and in the
+ * form's option list. Nothing made them agree; adding a sixth kind broke three
+ * of them, which is how we found out. Server-side validators derive from this
+ * array, so a new kind is one edit and the compiler finds the rest.
+ */
+export const COMPETITION_CATEGORIES = [
+  "competition",
+  "olympiad",
+  "course",
+  "research_program",
+  "summer_program",
+  // A PLACE rather than an event: a forum, a club network, a citizen-science
+  // platform, an open-source month. The distinguishing fact is that there is
+  // nothing to win and usually nothing to miss — you join, and you keep going —
+  // so almost every row here is `alwaysOpen`.
+  //
+  // It earns its own kind because "where do I find people doing this" is a
+  // different question from "what can I enter", and filing it under
+  // `competition` answered neither. It is also the honest answer for a student
+  // who is twelve, or has no money, or lives somewhere none of the programmes
+  // reach: joining costs nothing and starts today.
+  "community",
+  // A TRY, not an entry. A job simulation is unpaid, ungraded, has no deadline
+  // and nothing to win: you do the actual tasks of a job for a few hours and
+  // find out whether you can stand it. That is a different question from every
+  // other kind here, and it is the best-evidenced answer we have to "what do I
+  // want to study" — the self-efficacy literature names simulations directly,
+  // and the platforms report completers as roughly twice as likely to be hired.
+  //
+  // We LINK OUT and never build these (release 3, PLANNER_PLAN.md §3).
+  "simulation",
+] as const;
+
+export type CompetitionCategory = (typeof COMPETITION_CATEGORIES)[number];
 export type CompetitionTier = "accessible" | "selective" | "elite";
 
 // ── Cost & accessibility ──────────────────────────────────────────────────────
@@ -341,7 +373,10 @@ export function buildStudyPlan({
   // Use live data when available, fall back to hardcoded arrays. Competitions
   // use the registry as the base with live dates overlaid, so the full curated
   // list always shows (not just whatever's been seeded into the DB).
-  const sittings = liveSatSittings && liveSatSittings.length > 0 ? liveSatSittings : SAT_SITTINGS;
+  const sittings =
+    liveSatSittings && liveSatSittings.length > 0
+      ? liveSatSittings
+      : SAT_SITTINGS;
   const comps = resolveCompetitions(liveCompetitions);
 
   // Application-deadline window from graduation year. A "Class of G" student
@@ -353,11 +388,19 @@ export function buildStudyPlan({
     earlyDeadlineISO = `${graduationYear - 1}-11-01`;
     const regularISO = `${graduationYear}-01-05`;
     cycleLabel = `Class of ${graduationYear} · applying in the ${graduationYear - 1}–${String(
-      graduationYear
+      graduationYear,
     ).slice(2)} cycle`;
     deadlines = [
-      { label: "Early Action / Decision deadline", date: earlyDeadlineISO, daysLeft: daysBetween(today, earlyDeadlineISO) },
-      { label: "Regular Decision deadline", date: regularISO, daysLeft: daysBetween(today, regularISO) },
+      {
+        label: "Early Action / Decision deadline",
+        date: earlyDeadlineISO,
+        daysLeft: daysBetween(today, earlyDeadlineISO),
+      },
+      {
+        label: "Regular Decision deadline",
+        date: regularISO,
+        daysLeft: daysBetween(today, regularISO),
+      },
     ].filter((d) => d.daysLeft >= -30); // hide deadlines well in the past
   }
 
@@ -365,12 +408,13 @@ export function buildStudyPlan({
   // before apps" sitting is the latest test ≥ 3 weeks before the early deadline
   // (scores need time to arrive).
   const openSittings = sittings.filter(
-    (s) => daysBetween(today, s.regDeadline) >= 0
+    (s) => daysBetween(today, s.regDeadline) >= 0,
   );
   let lastBeforeIdx = -1;
   if (earlyDeadlineISO) {
     for (let i = 0; i < openSittings.length; i++) {
-      if (daysBetween(openSittings[i].test, earlyDeadlineISO) >= 21) lastBeforeIdx = i;
+      if (daysBetween(openSittings[i].test, earlyDeadlineISO) >= 21)
+        lastBeforeIdx = i;
     }
   }
   const satSteps: SatStep[] = openSittings.slice(0, 3).map((s, i) => ({
@@ -419,13 +463,13 @@ const clamp10 = (x: number) => Math.max(0, Math.min(10, x));
  * baseline — the same blend the HK board / scorecard use for "achievements".
  */
 export function extracurricularStrength(
-  factors: { key: string; score: number }[]
+  factors: { key: string; score: number }[],
 ): number {
   const get = (k: string) => factors.find((f) => f.key === k)?.score ?? 0;
   return clamp10(
     0.45 * get("awards") +
       0.35 * get("extracurricular_depth") +
-      0.2 * get("academics")
+      0.2 * get("academics"),
   );
 }
 
@@ -555,7 +599,12 @@ export function buildExtracurriculars({
     // An empty field selection means "we don't know yet", not "show almost
     // nothing". Filtering on it left a profile-less student with 9 of 86
     // opportunities — the exact dead end that makes people leave.
-    .filter((c) => fac.size === 0 || c.fields === "all" || c.fields.some((f) => fac.has(f)))
+    .filter(
+      (c) =>
+        fac.size === 0 ||
+        c.fields === "all" ||
+        c.fields.some((f) => fac.has(f)),
+    )
     // Drop a CONFIRMED competition once its date has passed. Keep
     // not-yet-announced ones (the catalog shows them as "Dates not yet
     // announced") — their stored date is only an estimate, so we don't filter on
@@ -619,4 +668,3 @@ export function buildExtracurriculars({
 
   return { strength, band, targetTiers, items };
 }
-

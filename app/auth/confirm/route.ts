@@ -43,8 +43,8 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.redirect(
     `${origin}/auth/login?error=${encodeURIComponent(
-      "This confirmation link is invalid or has expired. Please sign in or sign up again to get a new one."
-    )}`
+      "This confirmation link is invalid or has expired. Please sign in or sign up again to get a new one.",
+    )}`,
   );
 }
 

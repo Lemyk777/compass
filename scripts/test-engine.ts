@@ -88,6 +88,8 @@ import {
 import { INTENT_STATUSES } from "@/lib/data/intents";
 import { PLANNER_SECTIONS } from "@/lib/data/planner-sections";
 import {
+  MAP_NODE_KIND_LABEL,
+  mapNodeKind,
   MINDMAP_MAX_DEPTH,
   buildTree,
   canIndent,
@@ -101,6 +103,7 @@ import {
 import {
   PLANNER_COLUMNS,
   buildPlanner,
+  agendaHomeIndex,
   daysBetweenISO,
   intentStatusFromPlanner,
   isMovable,
@@ -139,6 +142,7 @@ import {
   destinationsForFaculties,
 } from "@/lib/data/study-destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
+import { plannerStarts } from "@/lib/data/planner-start";
 import {
   areasForDestination,
   areasForHub,
@@ -3736,9 +3740,14 @@ test("11px is the floor — no surface ships 10px type", () => {
       readFileSync(file, "utf8")
         .split("\n")
         .forEach((line, i) => {
-          const m = line.match(/text-\[(\d+(?:\.\d+)?)px\]/);
-          if (m && Number(m[1]) < 11) {
-            offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
+          // matchAll, not match: a ternary can carry three sizes on one
+          // line, and reading only the first is how a 9px monogram sat behind
+          // an 11px one for a whole release. Found when prettier happened to
+          // split the line.
+          for (const m of line.matchAll(/text-[(d+(?:.d+)?)px]/g)) {
+            if (Number(m[1]) < 11) {
+              offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
+            }
           }
         });
     }
@@ -4030,4 +4039,302 @@ test("the spine stays out of every client bundle", () => {
     [],
     `a client component imports the spine at runtime:\n${offenders.join("\n")}`,
   );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The agenda's window (release 3, #26).
+//
+// The agenda shows ONE period now instead of every month down the page, so
+// something has to decide which period it opens on. That decision is pure and
+// lives in lib/data/planner.ts, because a rule the planner cannot test is
+// folklore — the same reason `stepStatus` is there.
+
+test("the agenda's window opens on a period that answers 'what is next'", () => {
+  const months = (...keys: string[]) => keys.map((key) => ({ key }));
+
+  // The ordinary case: today's month is in the list.
+  assert.equal(
+    agendaHomeIndex(months("2026-07", "2026-08", "2026-09"), "2026-08-14"),
+    1,
+  );
+
+  // The case that matters. Nothing is due in August, and opening on July —
+  // which is behind — or on an empty window would answer "what is next" with
+  // either the past or with nothing. It steps to the next month that HAS
+  // something, which is the honest answer.
+  assert.equal(
+    agendaHomeIndex(months("2026-07", "2026-09", "2026-11"), "2026-08-14"),
+    1,
+  );
+
+  // Everything dated is already behind. The last month is the only honest
+  // answer; pretending there is a future period would be inventing one.
+  assert.equal(agendaHomeIndex(months("2026-03", "2026-05"), "2026-08-14"), 1);
+
+  // Everything is ahead — open on the first, not on some notion of "now" that
+  // has no period to sit in.
+  assert.equal(agendaHomeIndex(months("2027-01", "2027-04"), "2026-08-14"), 0);
+
+  // Empty list returns 0 so a caller can index without a guard, and the view
+  // renders its empty state rather than reading months[-1].
+  assert.equal(agendaHomeIndex([], "2026-08-14"), 0);
+
+  // Year boundaries are string comparisons on "YYYY-MM", which sort correctly.
+  // This is the assertion that fails if anyone switches to a numeric month.
+  assert.equal(
+    agendaHomeIndex(months("2026-09", "2026-12", "2027-02"), "2027-01-05"),
+    2,
+  );
+});
+
+test("the planner's window is stepped, and nothing in it moves on its own", () => {
+  const stepper = readFileSync(
+    path.join(process.cwd(), "components/planner/PeriodStepper.tsx"),
+    "utf8",
+  );
+  // The founder's rule for the whole section, and it now has a second surface:
+  // a card moves because a button was pressed. A carousel that advances itself
+  // would be the first thing here that moves without being asked.
+  assert.ok(
+    !/setInterval|setTimeout\(\s*\(\)\s*=>\s*[^)]*step/i.test(stepper),
+    "the period stepper advances on a timer — every step must be asked for",
+  );
+  // Disabled exactly when the step is impossible, the same rule the map's
+  // action bar follows: a lit control the handler then refuses teaches the
+  // structure's rules wrongly.
+  assert.match(
+    stepper,
+    /disabled=\{index <= 0\}/,
+    "stepping earlier is not disabled at the first period",
+  );
+  assert.match(
+    stepper,
+    /disabled=\{index >= count - 1\}/,
+    "stepping later is not disabled at the last period",
+  );
+  // Keys are bound on the group, not the document: otherwise an arrow press
+  // while typing a task title somewhere else on the page would step the window.
+  assert.ok(
+    !/addEventListener\(\s*["']keydown/.test(stepper),
+    "the stepper binds keys globally — it must bind them on its own group",
+  );
+});
+
+test("no client component in the planner reads the clock", () => {
+  // Release 1's rule, and the window is the first thing that would have been
+  // tempted to break it: `todayISO` is resolved once in the loader and passed
+  // down. It is what makes the views agree with each other, survive hydration,
+  // and stay unit-testable.
+  const dir = path.join(process.cwd(), "components/planner");
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith(".tsx")) continue;
+    const src = readFileSync(path.join(dir, f), "utf8");
+    if (!/^\s*["']use client["']/m.test(src)) continue;
+    assert.ok(
+      !/new Date\(\s*\)/.test(stripComments(src)),
+      `components/planner/${f} calls new Date() — todayISO comes from the loader`,
+    );
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Where a plan starts (release 3, #26) — the guide→planner bridge.
+
+test("the empty planner offers a choice, and every option is a thing that happens", () => {
+  const starts = plannerStarts({
+    faculties: ["computer_science"],
+    areaCount: 4,
+    placeCount: 16,
+    openCount: 104,
+    mapCount: 0,
+  });
+
+  assert.equal(starts.length, 4, "the choice lost an option");
+
+  for (const s of starts) {
+    // The constraint the whole screen rests on: "pick a field" is a form with
+    // different paint, and a form is exactly what a student who cannot say what
+    // they want to study is unable to fill in. Every label is an ACTION.
+    assert.match(
+      s.label,
+      /^(See|Find|Think|Go)\b/,
+      `"${s.label}" is a noun phrase — every option must be something that happens`,
+    );
+    // What they will know afterwards. Without it, choosing requires already
+    // knowing, which is the thing this student does not have.
+    assert.ok(
+      s.tells.length > 25,
+      `${s.id} does not say what it will tell them`,
+    );
+    assert.ok(s.href.startsWith("/"), `${s.id} leaves the app`);
+  }
+
+  // Three of the four land in the guide or the catalog — the bridge. A choice
+  // screen whose options all stayed inside the planner would be the island the
+  // planner already was.
+  const outward = starts.filter((s) => !s.href.startsWith("/planner"));
+  assert.equal(
+    outward.length,
+    3,
+    "the choice stopped reaching outside the planner",
+  );
+
+  // A count is a real number or absent. A zero rendered as a count is the one
+  // thing on the card a student would take literally.
+  assert.equal(
+    starts.find((s) => s.id === "map")!.count,
+    null,
+    "a zero map count must render as no count at all",
+  );
+  assert.equal(starts.find((s) => s.id === "enter")!.count, 104);
+});
+
+test("with no field stated the choice widens rather than shortening", () => {
+  // Unknown facts never exclude — the product's oldest rule, and the one most
+  // easily broken by a screen that thinks it needs an answer before it can help.
+  const none = plannerStarts({
+    faculties: [],
+    areaCount: 33,
+    placeCount: 19,
+    openCount: 121,
+    mapCount: 2,
+  });
+  assert.equal(
+    none.length,
+    4,
+    "a student who stated nothing got fewer choices",
+  );
+
+  // And the guide links carry `f=all`, which is "they deliberately widened it"
+  // rather than "not stated" — the third of the three states that must not be
+  // collapsed, or the profile re-applies itself on every navigation.
+  for (const id of ["work", "places"]) {
+    assert.match(
+      none.find((s) => s.id === id)!.href,
+      /\?f=all$/,
+      `${id} does not widen the guide for a student with no stated field`,
+    );
+  }
+
+  // Already has maps — the label acknowledges it rather than inviting them to
+  // start over.
+  assert.match(none.find((s) => s.id === "map")!.label, /back/i);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Typed map nodes (release 3, #26 item 4).
+//
+// The owner's call: the map is the STRUCTURE OF A DECISION, not a free canvas.
+// A node's kind is derived from where it points, so there is no column to keep
+// in step and no way for a label and a type to disagree — the same reason the
+// spine is a function rather than a table.
+
+test("what a map node IS comes from where it points", () => {
+  assert.equal(mapNodeKind("/guide/places/germany"), "country");
+  assert.equal(mapNodeKind("/guide/cities/berlin"), "city");
+  assert.equal(mapNodeKind("/guide/work/data-and-ai"), "work");
+  assert.equal(mapNodeKind("/opportunities/promys"), "opportunity");
+  assert.equal(mapNodeKind("/planner/board"), "plan");
+
+  // The ordinary case, and it has to stay the cheap one: an untyped thought.
+  assert.equal(mapNodeKind(null), "note");
+  assert.equal(
+    MAP_NODE_KIND_LABEL.note,
+    null,
+    "an untyped thought must not be badged",
+  );
+
+  // A guide path we do not recognise falls back rather than guessing. A wrong
+  // badge is worse than none: the badge is the thing telling a student what
+  // kind of decision they are making.
+  assert.equal(mapNodeKind("/guide/from-home"), "note");
+  assert.equal(mapNodeKind("/guide"), "note");
+
+  // Prefix order matters. `/guide/work/...` must not be swallowed by a looser
+  // guide test — this is the assertion that fails if anyone reorders them.
+  assert.notEqual(mapNodeKind("/guide/work/games-and-interactive"), "country");
+
+  // Every kind except the untyped one is nameable, or a node could be typed and
+  // still render as nothing.
+  for (const [kind, label] of Object.entries(MAP_NODE_KIND_LABEL)) {
+    if (kind === "note") continue;
+    assert.ok(label && label.length > 0, `${kind} has no label`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The brand mark, and where a header sends you.
+
+test("the logo is always a link, and it always goes home", () => {
+  // It was seven different behaviours across seven headers: not a link at all
+  // on the landing page, on /guide and on the signed-out /opportunities; to
+  // /opportunities in the student nav; to /dashboard in the report's header;
+  // nowhere in the report's sidebar; and to `/` on /partners alone. The single
+  // most-clicked affordance on the site did something different depending on
+  // which page you were reading, and six times out of seven it was not what
+  // everyone tries first.
+  const offenders: string[] = [];
+  for (const file of sourceFiles()) {
+    const rel_ = rel(file);
+    // BrandLink is the one place allowed to render the mark directly.
+    if (rel_.endsWith("components/ui/BrandLink.tsx")) continue;
+    if (rel_.endsWith("components/ui/Logo.tsx")) continue;
+    // The one legitimate exception, and it is not a header: Scorecard renders
+    // the mark INSIDE the report card it draws. A link there would be a link in
+    // a picture of a document.
+    if (rel_.endsWith("components/report/Scorecard.tsx")) continue;
+    const src = stripComments(readFileSync(file, "utf8"));
+    if (!/<Logo\b/.test(src)) continue;
+    offenders.push(rel_);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `render <BrandLink/>, not <Logo/> — the mark must be a link home:\n${offenders.join("\n")}`,
+  );
+
+  const brand = readFileSync(
+    path.join(process.cwd(), "components/ui/BrandLink.tsx"),
+    "utf8",
+  );
+  assert.match(brand, /href="\/"/, "the brand link no longer points home");
+  // It is a touch target before it is a logo, and the mark itself is 24px.
+  assert.match(brand, /min-h-11/, "the brand link lost its 44px touch target");
+  assert.match(brand, /aria-label=/, "the brand link has no accessible name");
+});
+
+test("the student nav runs in the product's own order", () => {
+  // Opportunities → Guide → Plan: what you can enter, where it leads, then it
+  // becomes work. It shipped as Opportunities → Plan → Guide, which disagreed
+  // with the landing page, with the guide's own "next step" footer, and with
+  // the sentence we use to explain ourselves.
+  const src = readFileSync(
+    path.join(process.cwd(), "components/student/StudentNav.tsx"),
+    "utf8",
+  );
+  const order = [...src.matchAll(/href: "(\/[a-z]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(order, ["/opportunities", "/guide", "/planner"]);
+
+  // Sign out was a permanent top-level button: the most destructive action on
+  // the page, one stray tap from a student's session, beside the links they
+  // actually want. It belongs behind the account menu.
+  const nav = src.slice(0, src.indexOf("function AccountMenu"));
+  assert.ok(
+    !/signout/i.test(nav),
+    "sign out is back in the header's top level",
+  );
+
+  // A menu without these is a trap.
+  assert.match(
+    src,
+    /"Escape"/,
+    "the account menu cannot be closed with Escape",
+  );
+  assert.match(
+    src,
+    /pointerdown/,
+    "the account menu does not close on a click outside",
+  );
+  // And a closed menu must carry no listeners at all.
+  assert.match(src, /removeEventListener/, "the menu leaks its listeners");
 });

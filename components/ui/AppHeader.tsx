@@ -1,5 +1,5 @@
 import Link from "@/components/ui/Link";
-import { Logo } from "@/components/ui/Logo";
+import { BrandLink } from "@/components/ui/BrandLink";
 import { Button } from "@/components/ui/Button";
 import { AdminSwitcher } from "@/components/admin/AdminSwitcher";
 import { getT } from "@/lib/i18n/server";
@@ -27,14 +27,11 @@ export function AppHeader({
           wide ? "max-w-5xl" : "max-w-2xl"
         }`}
       >
-        <Link href="/dashboard" className="rounded focus-visible:focus-ring flex items-center min-h-11">
-          <Logo
-            className="text-ink"
-            style={{ viewTransitionName: "brand-logo" }}
-          />
-        </Link>
+        <BrandLink />
 
-        {admin && <AdminSwitcher className="order-last w-full justify-center sm:order-none sm:w-auto" />}
+        {admin && (
+          <AdminSwitcher className="order-last w-full justify-center sm:order-none sm:w-auto" />
+        )}
         <div className="flex items-center gap-2">
           {links.map((l) => (
             <Link

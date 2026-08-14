@@ -30,7 +30,9 @@ export default async function MapPage({ params }: { params: { id: string } }) {
         >
           ← Your maps
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">{root.label}</h1>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+          {root.label}
+        </h1>
       </div>
 
       <MapWorkspace root={root} mapId={params.id} />

@@ -4,7 +4,10 @@ import { useState } from "react";
 import type { ItalyProgramAnalysis, ItalyDSUFit } from "@/lib/ai/schema";
 import { Flag } from "@/components/ui/Flag";
 import { OfficialSourceLink } from "@/components/ui/OfficialSourceLink";
-import { ITALY_GOV_SOURCES, italyOfficialUrl } from "@/lib/data/official-sources";
+import {
+  ITALY_GOV_SOURCES,
+  italyOfficialUrl,
+} from "@/lib/data/official-sources";
 
 type Props = {
   programs: ItalyProgramAnalysis[];
@@ -13,8 +16,12 @@ type Props = {
 export function ItalyBreakdown({ programs }: Props) {
   if (!programs.length) return null;
 
-  const guaranteed = programs.filter((p) => p.admission_branch === "guaranteed");
-  const graduatoria = programs.filter((p) => p.admission_branch === "graduatoria");
+  const guaranteed = programs.filter(
+    (p) => p.admission_branch === "guaranteed",
+  );
+  const graduatoria = programs.filter(
+    (p) => p.admission_branch === "graduatoria",
+  );
 
   return (
     <div className="space-y-10">
@@ -23,11 +30,14 @@ export function ItalyBreakdown({ programs }: Props) {
         <div className="flex items-start gap-3">
           <Flag code="IT" size={16} className="mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-ink">Italian Admission Rules</p>
+            <p className="text-sm font-medium text-ink">
+              Italian Admission Rules
+            </p>
             <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
-              Italian state universities use two distinct admission systems that operate
-              simultaneously. Your analysis below separates them — read each card to
-              understand exactly how the rules work for that specific program.
+              Italian state universities use two distinct admission systems that
+              operate simultaneously. Your analysis below separates them — read
+              each card to understand exactly how the rules work for that
+              specific program.
             </p>
             {/* Government source — Italy publishes the official Extra-UE rules and
                 pre-enrollment procedure here, updated every cycle. */}
@@ -99,7 +109,9 @@ function SectionHeader({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
-        <h3 className="text-base font-semibold tracking-tight text-ink">{label}</h3>
+        <h3 className="text-base font-semibold tracking-tight text-ink">
+          {label}
+        </h3>
         <span
           className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-widest ${
             badgeColor === "likely"
@@ -158,7 +170,10 @@ function GuaranteedCard({ program: p }: { program: ItalyProgramAnalysis }) {
         {/* Quota */}
         <div className="mt-3 flex items-center gap-4">
           <Stat label="Extra-UE seats" value={String(p.quota)} />
-          <Stat label="Threshold" value={String(p.guaranteed_threshold ?? "—")} />
+          <Stat
+            label="Threshold"
+            value={String(p.guaranteed_threshold ?? "—")}
+          />
           <DSUBadge fit={p.dsu_fit} feeEur={p.annual_fee_eur} />
         </div>
 
@@ -295,9 +310,12 @@ function ItalyRoadmap({ programs }: { programs: ItalyProgramAnalysis[] }) {
 
   return (
     <div className="rounded-2xl border border-line bg-card p-5">
-      <p className="mb-1 text-sm font-semibold text-ink">Italian Application Roadmap</p>
+      <p className="mb-1 text-sm font-semibold text-ink">
+        Italian Application Roadmap
+      </p>
       <p className="mb-4 text-xs text-ink-faint">
-        These steps apply globally to your Italian applications — complete them once, not per university.
+        These steps apply globally to your Italian applications — complete them
+        once, not per university.
       </p>
       <ol className="space-y-3">
         {steps.map((step, i) => (
@@ -407,13 +425,7 @@ function ThresholdBar({
   );
 }
 
-function ScoreBar({
-  userSAT,
-  cutoff,
-}: {
-  userSAT: number;
-  cutoff: number;
-}) {
+function ScoreBar({ userSAT, cutoff }: { userSAT: number; cutoff: number }) {
   const min = Math.min(userSAT, cutoff) - 80;
   const max = Math.max(userSAT, cutoff) + 80;
   const range = max - min;
@@ -472,9 +484,18 @@ function VolatilityBadge({
   quota: number;
 }) {
   const config = {
-    stable: { label: "Stable odds", className: "text-likely-ink bg-likely-soft" },
-    moderate: { label: "Some variance", className: "text-target-ink bg-target-soft" },
-    high: { label: "High volatility", className: "text-reach-ink bg-reach-soft" },
+    stable: {
+      label: "Stable odds",
+      className: "text-likely-ink bg-likely-soft",
+    },
+    moderate: {
+      label: "Some variance",
+      className: "text-target-ink bg-target-soft",
+    },
+    high: {
+      label: "High volatility",
+      className: "text-reach-ink bg-reach-soft",
+    },
   };
   const c = config[volatility];
   return (
@@ -487,18 +508,14 @@ function VolatilityBadge({
   );
 }
 
-function DSUBadge({
-  fit,
-  feeEur,
-}: {
-  fit: ItalyDSUFit;
-  feeEur: number;
-}) {
+function DSUBadge({ fit, feeEur }: { fit: ItalyDSUFit; feeEur: number }) {
   if (fit === "not_applicable") {
     return (
       <div>
         <p className="text-[11px] text-ink-faint">Annual fee</p>
-        <p className="text-xs font-semibold text-ink">€{feeEur.toLocaleString()}</p>
+        <p className="text-xs font-semibold text-ink">
+          €{feeEur.toLocaleString()}
+        </p>
       </div>
     );
   }

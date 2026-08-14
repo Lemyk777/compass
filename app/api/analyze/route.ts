@@ -46,7 +46,10 @@ export async function POST(_req: NextRequest) {
     .eq("id", user.id)
     .maybeSingle();
 
-  const destinations = normalizeDestinations(sp?.destinations, sp?.include_italy);
+  const destinations = normalizeDestinations(
+    sp?.destinations,
+    sp?.include_italy,
+  );
 
   // Target schools/programs are NO LONGER required to analyze. The standing
   // (factors, scorecard, gaps, timeline, summary) is produced from the student's
@@ -55,7 +58,7 @@ export async function POST(_req: NextRequest) {
   if (!sp || !sp.curriculum || destinations.length === 0) {
     return NextResponse.json(
       { error: "Complete your profile first." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -76,7 +79,7 @@ export async function POST(_req: NextRequest) {
         {
           error: `You've reached the limit of ${MAX_PER_DAY} analyses per day. Please try again tomorrow.`,
         },
-        { status: 429 }
+        { status: 429 },
       );
     }
   }

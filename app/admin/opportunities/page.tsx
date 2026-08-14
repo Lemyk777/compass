@@ -41,7 +41,9 @@ type CandidateRecord = {
 };
 
 function daysFromToday(iso: string): number {
-  return Math.round((new Date(iso + "T00:00:00Z").getTime() - Date.now()) / 86_400_000);
+  return Math.round(
+    (new Date(iso + "T00:00:00Z").getTime() - Date.now()) / 86_400_000,
+  );
 }
 
 function fieldsLabel(fields: string[] | "all"): string {
@@ -110,11 +112,18 @@ export default async function AdminOpportunitiesPage() {
 
   const candidates = (candRows ?? []) as CandidateRecord[];
   const pending = candidates.filter((c) => c.status === "pending");
-  const approvedCount = candidates.filter((c) => c.status === "approved").length;
-  const rejectedCount = candidates.filter((c) => c.status === "rejected").length;
+  const approvedCount = candidates.filter(
+    (c) => c.status === "approved",
+  ).length;
+  const rejectedCount = candidates.filter(
+    (c) => c.status === "rejected",
+  ).length;
 
   // ── Date + link health: the same merge the student dashboard performs ─────
-  const linkById = new Map<string, { ok: boolean | null; detail: string | null }>();
+  const linkById = new Map<
+    string,
+    { ok: boolean | null; detail: string | null }
+  >();
   for (const r of (liveRows ?? []) as Record<string, unknown>[]) {
     linkById.set(r.id as string, {
       ok: (r.link_ok as boolean | null) ?? null,
@@ -122,20 +131,25 @@ export default async function AdminOpportunitiesPage() {
     });
   }
   const updatedAtById = new Map<string, string | null>();
-  const liveComps: Competition[] = (liveRows ?? []).map((r: Record<string, unknown>) => {
-    updatedAtById.set(r.id as string, (r.updated_at as string | null) ?? null);
-    return {
-      id: r.id as string,
-      name: r.name as string,
-      fields: r.fields as Competition["fields"],
-      deadline: r.deadline as string,
-      window: r.event_window as string,
-      level: r.level as Competition["level"],
-      url: r.url as string,
-      blurb: r.blurb as string,
-      dateConfirmed: r.date_confirmed === true,
-    };
-  });
+  const liveComps: Competition[] = (liveRows ?? []).map(
+    (r: Record<string, unknown>) => {
+      updatedAtById.set(
+        r.id as string,
+        (r.updated_at as string | null) ?? null,
+      );
+      return {
+        id: r.id as string,
+        name: r.name as string,
+        fields: r.fields as Competition["fields"],
+        deadline: r.deadline as string,
+        window: r.event_window as string,
+        level: r.level as Competition["level"],
+        url: r.url as string,
+        blurb: r.blurb as string,
+        dateConfirmed: r.date_confirmed === true,
+      };
+    },
+  );
   const health = resolveCompetitions(liveComps)
     .map((c) => ({
       id: c.id,
@@ -167,7 +181,10 @@ export default async function AdminOpportunitiesPage() {
       label: `${l.name} (local)`,
     })),
   ];
-  const runAngles: RunOption[] = SEARCH_ANGLES.map((a) => ({ value: a.key, label: a.label }));
+  const runAngles: RunOption[] = SEARCH_ANGLES.map((a) => ({
+    value: a.key,
+    label: a.label,
+  }));
 
   return (
     <main className="min-h-dvh bg-surface">
@@ -201,12 +218,15 @@ export default async function AdminOpportunitiesPage() {
         <div className="mt-6 space-y-4">
           {pending.length === 0 ? (
             <Card>
-              <p className="text-sm text-ink-soft">{t("admin.oppsNoPending")}</p>
+              <p className="text-sm text-ink-soft">
+                {t("admin.oppsNoPending")}
+              </p>
             </Card>
           ) : (
             pending.map((c) => {
               const warnings = [...(c.warnings ?? [])].sort(
-                (a, b) => (WARNING_RANK[a.code] ?? 9) - (WARNING_RANK[b.code] ?? 9),
+                (a, b) =>
+                  (WARNING_RANK[a.code] ?? 9) - (WARNING_RANK[b.code] ?? 9),
               );
               return (
                 <Card key={c.id}>
@@ -221,7 +241,8 @@ export default async function AdminOpportunitiesPage() {
                         {c.name}
                       </a>
                       <p className="mt-0.5 text-xs text-ink-faint">
-                        {fieldsLabel(c.fields)} · {c.level} · {c.tier} · {c.category}
+                        {fieldsLabel(c.fields)} · {c.level} · {c.tier} ·{" "}
+                        {c.category}
                         {c.region && (
                           <span className="ml-1.5 rounded-full bg-accent-soft px-1.5 py-0.5 text-[11px] font-semibold text-accent-ink">
                             Local · {c.city ?? regionLabel(c.region)}
@@ -229,7 +250,10 @@ export default async function AdminOpportunitiesPage() {
                         )}
                       </p>
                     </div>
-                    <form action={rejectCandidate.bind(null, c.id)} className="shrink-0">
+                    <form
+                      action={rejectCandidate.bind(null, c.id)}
+                      className="shrink-0"
+                    >
                       <button
                         type="submit"
                         className="rounded-xl border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:bg-surface focus-visible:focus-ring"
@@ -239,7 +263,9 @@ export default async function AdminOpportunitiesPage() {
                     </form>
                   </div>
 
-                  {c.blurb && <p className="mt-2 text-sm text-ink-soft">{c.blurb}</p>}
+                  {c.blurb && (
+                    <p className="mt-2 text-sm text-ink-soft">{c.blurb}</p>
+                  )}
 
                   {/* What screening found on the candidate's own page. This is
                       what makes a review a decision rather than an errand: the
@@ -264,13 +290,19 @@ export default async function AdminOpportunitiesPage() {
                   )}
 
                   <div className="mt-3 space-y-1 text-xs">
-                    <p className={c.date_confirmed ? "text-ink" : "text-ink-soft"}>
+                    <p
+                      className={
+                        c.date_confirmed ? "text-ink" : "text-ink-soft"
+                      }
+                    >
                       {c.deadline ? `${c.deadline} · ` : ""}
                       {c.event_window}
                       {" — "}
                       <span
                         className={
-                          c.date_confirmed ? "font-semibold" : "font-semibold text-amber-700"
+                          c.date_confirmed
+                            ? "font-semibold"
+                            : "font-semibold text-amber-700"
                         }
                       >
                         {c.date_confirmed
@@ -279,9 +311,15 @@ export default async function AdminOpportunitiesPage() {
                       </span>
                     </p>
                     <p className="text-ink-faint">{c.date_evidence}</p>
-                    {c.eligibility && <p className="text-ink-faint">Eligibility: {c.eligibility}</p>}
+                    {c.eligibility && (
+                      <p className="text-ink-faint">
+                        Eligibility: {c.eligibility}
+                      </p>
+                    )}
                     <p className="text-ink-faint">
-                      Found {new Date(c.discovered_at).toISOString().slice(0, 10)} · {c.source}
+                      Found{" "}
+                      {new Date(c.discovered_at).toISOString().slice(0, 10)} ·{" "}
+                      {c.source}
                     </p>
                   </div>
 
@@ -340,26 +378,41 @@ export default async function AdminOpportunitiesPage() {
               {brokenLinks > 0 ? `, ${brokenLinks} broken link` : ""})
             </span>
           </h2>
-          <p className="mb-3 text-sm text-ink-soft">{t("admin.oppsHealthSub")}</p>
+          <p className="mb-3 text-sm text-ink-soft">
+            {t("admin.oppsHealthSub")}
+          </p>
           <Card>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-line text-xs text-ink-faint">
-                    <th className="py-2 pr-3 font-medium">{t("admin.oppsHealthName")}</th>
-                    <th className="py-2 pr-3 font-medium">{t("admin.oppsHealthDeadline")}</th>
-                    <th className="py-2 pr-3 font-medium">{t("admin.oppsHealthStatus")}</th>
-                    <th className="py-2 font-medium">{t("admin.oppsHealthLink")}</th>
+                    <th className="py-2 pr-3 font-medium">
+                      {t("admin.oppsHealthName")}
+                    </th>
+                    <th className="py-2 pr-3 font-medium">
+                      {t("admin.oppsHealthDeadline")}
+                    </th>
+                    <th className="py-2 pr-3 font-medium">
+                      {t("admin.oppsHealthStatus")}
+                    </th>
+                    <th className="py-2 font-medium">
+                      {t("admin.oppsHealthLink")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {health.map((h) => (
-                    <tr key={h.id} className="border-b border-line/60 last:border-0">
+                    <tr
+                      key={h.id}
+                      className="border-b border-line/60 last:border-0"
+                    >
                       <td className="py-2 pr-3 text-ink">{h.name}</td>
                       <td data-num className="py-2 pr-3 text-ink-soft">
                         {h.deadline}
                         {h.days >= 0 && (
-                          <span className="ml-1 text-xs text-ink-faint">in {h.days}d</span>
+                          <span className="ml-1 text-xs text-ink-faint">
+                            in {h.days}d
+                          </span>
                         )}
                       </td>
                       <td className="py-2 pr-3 text-xs">
@@ -372,7 +425,9 @@ export default async function AdminOpportunitiesPage() {
                             {t("admin.oppsHealthConfirmed")}
                           </span>
                         ) : (
-                          <span className="text-amber-700">{t("admin.oppsHealthEstimate")}</span>
+                          <span className="text-amber-700">
+                            {t("admin.oppsHealthEstimate")}
+                          </span>
                         )}
                       </td>
                       <td className="py-2 text-xs">
@@ -387,7 +442,9 @@ export default async function AdminOpportunitiesPage() {
                             {t("admin.oppsHealthLinkBroken")}
                           </a>
                         ) : h.link.ok === true ? (
-                          <span className="text-ink-faint">{t("admin.oppsHealthLinkOk")}</span>
+                          <span className="text-ink-faint">
+                            {t("admin.oppsHealthLinkOk")}
+                          </span>
                         ) : (
                           <span className="text-ink-faint">—</span>
                         )}

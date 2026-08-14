@@ -24,13 +24,13 @@ export function RankingsView({
 }) {
   const countries = availableCountries(rows);
   const [country, setCountry] = useState<CountryCode>(
-    () => countries[0] ?? "US"
+    () => countries[0] ?? "US",
   );
   const [hidden, setHidden] = useState(false);
   // Allow several rows open at once; the current user's row starts expanded so
   // they see their own breakdown immediately.
   const [open, setOpen] = useState<Set<string>>(
-    () => new Set(currentUserId ? [currentUserId] : [])
+    () => new Set(currentUserId ? [currentUserId] : []),
   );
 
   function toggle(userId: string) {
@@ -45,7 +45,10 @@ export function RankingsView({
   if (rows.length === 0) {
     return (
       <div className="space-y-5">
-        <PageHeader title="Rankings" hint="See how you compare with other students." />
+        <PageHeader
+          title="Rankings"
+          hint="See how you compare with other students."
+        />
         <p className="text-sm text-ink-soft">
           No ranked profiles yet. Once students complete their analysis, the
           leaderboard fills in here.
@@ -56,7 +59,7 @@ export function RankingsView({
 
   // The active board: its cohort, ranked by overall, with each row's breakdown
   // swapped to that country's native factors. Standing + legend follow from it.
-  const active = countries.includes(country) ? country : countries[0] ?? "US";
+  const active = countries.includes(country) ? country : (countries[0] ?? "US");
   const activeRows = boardRows(rows, active);
   const standing = computeStanding(activeRows, currentUserId);
   const legend = legendFactors(activeRows);
@@ -203,14 +206,15 @@ function Board({
   headerRight?: ReactNode;
 }) {
   if (rows.length === 0) return null;
-  const visible = hidden ? rows.filter((r) => r.userId !== currentUserId) : rows;
+  const visible = hidden
+    ? rows.filter((r) => r.userId !== currentUserId)
+    : rows;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-line bg-card shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-5 py-4">
         <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
-          {icon}{" "}
-          {title}
+          {icon} {title}
           <span data-num className="text-xs font-normal text-ink-faint">
             ({rows.length})
           </span>
@@ -297,7 +301,10 @@ function RowItem({
         <FactorSparkline factors={r.factors} />
 
         <div className="w-[3.25rem] shrink-0 text-right">
-          <span data-num className="text-lg font-semibold tabular-nums text-ink">
+          <span
+            data-num
+            className="text-lg font-semibold tabular-nums text-ink"
+          >
             {r.overall}
           </span>
           <span className="text-[11px] text-ink-faint">/100</span>
@@ -334,7 +341,10 @@ function StandingBadge({
           Your standing · {countryLabel(country)}
         </p>
         <p className="leading-tight">
-          <span data-num className="font-display text-2xl font-semibold tabular-nums text-ink">
+          <span
+            data-num
+            className="font-display text-2xl font-semibold tabular-nums text-ink"
+          >
             #{standing.rank}
           </span>{" "}
           <span className="text-xs text-ink-soft">of {standing.total}</span>
@@ -359,7 +369,10 @@ function StandingBadge({
 
 function FactorSparkline({ factors }: { factors: LeaderboardFactor[] }) {
   return (
-    <div className="hidden h-7 shrink-0 items-end gap-[3px] sm:flex" aria-hidden>
+    <div
+      className="hidden h-7 shrink-0 items-end gap-[3px] sm:flex"
+      aria-hidden
+    >
       {factors.map((f) => (
         <span
           key={f.key}
@@ -368,7 +381,10 @@ function FactorSparkline({ factors }: { factors: LeaderboardFactor[] }) {
         >
           <span
             className="absolute inset-x-0 bottom-0 rounded-full"
-            style={{ height: `${f.score * 10}%`, backgroundColor: factorColor(f.key) }}
+            style={{
+              height: `${f.score * 10}%`,
+              backgroundColor: factorColor(f.key),
+            }}
           />
         </span>
       ))}
@@ -390,10 +406,16 @@ function FactorBreakdown({ factors }: { factors: LeaderboardFactor[] }) {
           <span className="h-1.5 overflow-hidden rounded-full bg-line">
             <span
               className="block h-full rounded-full"
-              style={{ width: `${f.score * 10}%`, backgroundColor: factorColor(f.key) }}
+              style={{
+                width: `${f.score * 10}%`,
+                backgroundColor: factorColor(f.key),
+              }}
             />
           </span>
-          <span data-num className="text-right text-xs font-semibold tabular-nums text-ink">
+          <span
+            data-num
+            className="text-right text-xs font-semibold tabular-nums text-ink"
+          >
             {f.score}
             <span className="font-normal text-ink-faint">/10</span>
           </span>
@@ -405,7 +427,13 @@ function FactorBreakdown({ factors }: { factors: LeaderboardFactor[] }) {
 
 function RankBadge({ rank }: { rank: number }) {
   const medal =
-    rank === 1 ? "#D9A406" : rank === 2 ? "#9AA3B2" : rank === 3 ? "#B06B3A" : null;
+    rank === 1
+      ? "#D9A406"
+      : rank === 2
+        ? "#9AA3B2"
+        : rank === 3
+          ? "#B06B3A"
+          : null;
   if (medal) {
     return (
       <span

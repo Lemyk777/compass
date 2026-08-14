@@ -51,12 +51,18 @@ function decluster(pts: ProjPoint[]): Placed[] {
     const cxs = group.reduce((s, k) => s + pts[k].x, 0) / group.length;
     const cys = group.reduce((s, k) => s + pts[k].y, 0) / group.length;
     const side = cxs > VIEW_W * 0.5 ? -1 : 1;
-    const colX = Math.max(CHIP + 8, Math.min(VIEW_W - CHIP - 8, cxs + side * 120));
+    const colX = Math.max(
+      CHIP + 8,
+      Math.min(VIEW_W - CHIP - 8, cxs + side * 120),
+    );
     const spacing = CHIP * 2 + 7;
     const sorted = [...group].sort((a, b) => pts[a].y - pts[b].y);
     const startY = cys - ((sorted.length - 1) * spacing) / 2;
     sorted.forEach((k, idx) => {
-      const cy = Math.max(CHIP + 8, Math.min(VIEW_H - CHIP - 8, startY + idx * spacing));
+      const cy = Math.max(
+        CHIP + 8,
+        Math.min(VIEW_H - CHIP - 8, startY + idx * spacing),
+      );
       out.push({ ...pts[k], cx: colX, cy, lead: true });
     });
   }
@@ -134,10 +140,22 @@ export function OutlineMap({ country }: { country: CountryView }) {
           <path d={clip} />
         </clipPath>
         <filter id="terrain-lift" x="-15%" y="-15%" width="130%" height="130%">
-          <feDropShadow dx="0" dy="12" stdDeviation="16" floodColor="#0f172a" floodOpacity="0.22" />
+          <feDropShadow
+            dx="0"
+            dy="12"
+            stdDeviation="16"
+            floodColor="#0f172a"
+            floodOpacity="0.22"
+          />
         </filter>
         <filter id="chip-lift" x="-60%" y="-60%" width="220%" height="220%">
-          <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#0f172a" floodOpacity="0.28" />
+          <feDropShadow
+            dx="0"
+            dy="3"
+            stdDeviation="4"
+            floodColor="#0f172a"
+            floodOpacity="0.28"
+          />
         </filter>
       </defs>
 
@@ -163,95 +181,143 @@ export function OutlineMap({ country }: { country: CountryView }) {
             if (!useRemote) setUseRemote(true);
             else setLoaded(true);
           }}
-          style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.4s ease-out" }}
+          style={{
+            opacity: loaded ? 1 : 0,
+            transition: "opacity 0.4s ease-out",
+          }}
         />
 
-      {/* Coastline / border */}
-      <path d={clip} fill="none" stroke="rgba(15,23,42,0.45)" strokeWidth={1.3} strokeLinejoin="round" />
+        {/* Coastline / border */}
+        <path
+          d={clip}
+          fill="none"
+          stroke="rgba(15,23,42,0.45)"
+          strokeWidth={1.3}
+          strokeLinejoin="round"
+        />
 
-      {/* Leader lines + true-position dots for declustered (fanned-out) markers */}
-      {ordered
-        .filter((p) => p.lead)
-        .map((p) => (
-          <g key={`lead-${p.name}`}>
-            <line x1={p.x} y1={p.y} x2={p.cx} y2={p.cy} stroke="rgba(255,255,255,0.9)" strokeWidth={2.4} />
-            <line x1={p.x} y1={p.y} x2={p.cx} y2={p.cy} stroke="rgb(var(--ivy))" strokeWidth={1.1} />
-            <circle cx={p.x} cy={p.y} r={3} fill="#0E7B57" stroke="#fff" strokeWidth={1.4} />
-          </g>
-        ))}
+        {/* Leader lines + true-position dots for declustered (fanned-out) markers */}
+        {ordered
+          .filter((p) => p.lead)
+          .map((p) => (
+            <g key={`lead-${p.name}`}>
+              <line
+                x1={p.x}
+                y1={p.y}
+                x2={p.cx}
+                y2={p.cy}
+                stroke="rgba(255,255,255,0.9)"
+                strokeWidth={2.4}
+              />
+              <line
+                x1={p.x}
+                y1={p.y}
+                x2={p.cx}
+                y2={p.cy}
+                stroke="rgb(var(--ivy))"
+                strokeWidth={1.1}
+              />
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={3}
+                fill="#0E7B57"
+                stroke="#fff"
+                strokeWidth={1.4}
+              />
+            </g>
+          ))}
 
-      {/* University chips */}
-      {ordered.map((p) => {
-        const isHovered = hovered === p.name;
-        const r = isHovered ? CHIP + 2 : CHIP;
-        const chipClip = `chip-${country.code}-${p.name.replace(/[^a-z0-9]/gi, "")}`;
-        const labelW = p.name.length * 7.1 + 22;
-        const below = p.cy < VIEW_H - 92;
-        const labelY = below ? r + 9 : -(r + 9) - 26;
-        let labelX = -labelW / 2;
-        if (p.cx + labelX < 6) labelX = 6 - p.cx;
-        if (p.cx + labelX + labelW > VIEW_W - 6) labelX = VIEW_W - 6 - labelW - p.cx;
+        {/* University chips */}
+        {ordered.map((p) => {
+          const isHovered = hovered === p.name;
+          const r = isHovered ? CHIP + 2 : CHIP;
+          const chipClip = `chip-${country.code}-${p.name.replace(/[^a-z0-9]/gi, "")}`;
+          const labelW = p.name.length * 7.1 + 22;
+          const below = p.cy < VIEW_H - 92;
+          const labelY = below ? r + 9 : -(r + 9) - 26;
+          let labelX = -labelW / 2;
+          if (p.cx + labelX < 6) labelX = 6 - p.cx;
+          if (p.cx + labelX + labelW > VIEW_W - 6)
+            labelX = VIEW_W - 6 - labelW - p.cx;
 
-        return (
-          <g
-            key={p.name}
-            transform={`translate(${p.cx}, ${p.cy})`}
-            onMouseEnter={() => setHovered(p.name)}
-            onMouseLeave={() => setHovered((h) => (h === p.name ? null : h))}
-            className="cursor-pointer"
-            style={{ pointerEvents: "all" }}
-          >
-            {isHovered && <circle r={r + 7} fill="#0E7B57" opacity={0.18} />}
+          return (
+            <g
+              key={p.name}
+              transform={`translate(${p.cx}, ${p.cy})`}
+              onMouseEnter={() => setHovered(p.name)}
+              onMouseLeave={() => setHovered((h) => (h === p.name ? null : h))}
+              className="cursor-pointer"
+              style={{ pointerEvents: "all" }}
+            >
+              {isHovered && <circle r={r + 7} fill="#0E7B57" opacity={0.18} />}
 
-            <g filter="url(#chip-lift)">
-              <circle r={r} fill="#ffffff" stroke="rgb(var(--ivy))" strokeWidth={isHovered ? 2 : 1.4} />
-              {p.logo ? (
-                <>
-                  <clipPath id={chipClip}>
-                    <circle r={r - 3} />
-                  </clipPath>
-                  <image
-                    href={p.logo}
-                    x={-(r - 3)}
-                    y={-(r - 3)}
-                    width={(r - 3) * 2}
-                    height={(r - 3) * 2}
-                    clipPath={`url(#${chipClip})`}
-                    preserveAspectRatio="xMidYMid meet"
+              <g filter="url(#chip-lift)">
+                <circle
+                  r={r}
+                  fill="#ffffff"
+                  stroke="rgb(var(--ivy))"
+                  strokeWidth={isHovered ? 2 : 1.4}
+                />
+                {p.logo ? (
+                  <>
+                    <clipPath id={chipClip}>
+                      <circle r={r - 3} />
+                    </clipPath>
+                    <image
+                      href={p.logo}
+                      x={-(r - 3)}
+                      y={-(r - 3)}
+                      width={(r - 3) * 2}
+                      height={(r - 3) * 2}
+                      clipPath={`url(#${chipClip})`}
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                  </>
+                ) : (
+                  <text
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={
+                      r - 4 - Math.max(0, (p.mono?.length ?? 1) - 2) * 2.4
+                    }
+                    fontWeight={700}
+                    fill="#0E7B57"
+                    style={{
+                      fontFamily: "var(--font-sans, system-ui), sans-serif",
+                    }}
+                  >
+                    {p.mono ?? p.name.charAt(0)}
+                  </text>
+                )}
+              </g>
+
+              {isHovered && (
+                <g transform={`translate(${labelX}, ${labelY})`}>
+                  <rect
+                    width={labelW}
+                    height={26}
+                    rx={5}
+                    fill="#0f172a"
+                    filter="url(#chip-lift)"
                   />
-                </>
-              ) : (
-                <text
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fontSize={r - 4 - Math.max(0, (p.mono?.length ?? 1) - 2) * 2.4}
-                  fontWeight={700}
-                  fill="#0E7B57"
-                  style={{ fontFamily: "var(--font-sans, system-ui), sans-serif" }}
-                >
-                  {p.mono ?? p.name.charAt(0)}
-                </text>
+                  <text
+                    x={11}
+                    y={17}
+                    fontSize={13}
+                    fontWeight={600}
+                    fill="#ffffff"
+                    style={{
+                      fontFamily: "var(--font-sans, system-ui), sans-serif",
+                    }}
+                  >
+                    {p.name}
+                  </text>
+                </g>
               )}
             </g>
-
-            {isHovered && (
-              <g transform={`translate(${labelX}, ${labelY})`}>
-                <rect width={labelW} height={26} rx={5} fill="#0f172a" filter="url(#chip-lift)" />
-                <text
-                  x={11}
-                  y={17}
-                  fontSize={13}
-                  fontWeight={600}
-                  fill="#ffffff"
-                  style={{ fontFamily: "var(--font-sans, system-ui), sans-serif" }}
-                >
-                  {p.name}
-                </text>
-              </g>
-            )}
-          </g>
-        );
-      })}
+          );
+        })}
       </g>
     </svg>
   );

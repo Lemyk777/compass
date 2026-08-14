@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import Link from "@/components/ui/Link";
-import { Logo } from "@/components/ui/Logo";
+import { BrandLink } from "@/components/ui/BrandLink";
 import { ButtonLink } from "@/components/ui/Button";
 import { listActivePartners, partnerPostCounts } from "@/lib/partners/queries";
 import { partnerPath } from "@/lib/data/partners";
@@ -37,9 +37,7 @@ export default async function PartnersIndexPage() {
       <SkipLink />
       <header className="border-b border-line/70">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-5 sm:px-6">
-          <Link href="/" className="shrink-0 focus-visible:focus-ring">
-            <Logo className="text-ink" />
-          </Link>
+          <BrandLink transition={false} />
           <div className="flex items-center gap-2">
             <ButtonLink href="/opportunities" variant="ghost" size="sm">
               What can I enter?

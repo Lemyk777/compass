@@ -15,9 +15,21 @@ import { inputSchema, describeIssue, type SaveResult } from "./schema";
 // Valid onboarding step keys — guards the events.type value against junk.
 // Redesigned intake sections, plus the legacy keys so historical events stay valid.
 const ONBOARDING_STEPS = new Set([
-  "general", "academics", "activities", "awards", "budget",
-  "origin", "destinations", "faculties", "grades", "tests",
-  "honors", "us", "it", "hk", "review",
+  "general",
+  "academics",
+  "activities",
+  "awards",
+  "budget",
+  "origin",
+  "destinations",
+  "faculties",
+  "grades",
+  "tests",
+  "honors",
+  "us",
+  "it",
+  "hk",
+  "review",
 ]);
 
 /**
@@ -45,7 +57,7 @@ export async function logOnboardingStep(step: string): Promise<void> {
 }
 
 export async function saveProfile(
-  input: StudentProfileInput
+  input: StudentProfileInput,
 ): Promise<SaveResult> {
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success) {
@@ -63,7 +75,8 @@ export async function saveProfile(
   const profileUpdate: Record<string, unknown> = { country: data.country };
   if (data.full_name) profileUpdate.full_name = data.full_name;
   if (data.heard_from) profileUpdate.heard_from = data.heard_from;
-  if (data.heard_from_code) profileUpdate.heard_from_code = data.heard_from_code;
+  if (data.heard_from_code)
+    profileUpdate.heard_from_code = data.heard_from_code;
 
   let { error: profileErr } = await supabase
     .from("profiles")
@@ -76,7 +89,10 @@ export async function saveProfile(
   // profiles down to country + heard_from*; run 0012_grant_full_name.sql so the
   // student's own name can be saved). Either way, retry with the always-present,
   // always-granted country alone so onboarding can never hard-fail on this drift.
-  if (profileErr && ["42703", "PGRST204", "42501"].includes(profileErr.code ?? "")) {
+  if (
+    profileErr &&
+    ["42703", "PGRST204", "42501"].includes(profileErr.code ?? "")
+  ) {
     ({ error: profileErr } = await supabase
       .from("profiles")
       .update({ country: data.country })
@@ -163,7 +179,7 @@ export async function saveProfile(
     console.warn(
       "student_profiles is missing newer columns — saving without them. " +
         "Run migrations 0005_hong_kong.sql, 0009_onboarding_extras.sql, 0010_graduation_year.sql, 0016_uae.sql, 0017_korea.sql, 0018_school_years.sql.",
-      writeErr.message
+      writeErr.message,
     );
     ({ error: writeErr } = await write(safeRow));
   }

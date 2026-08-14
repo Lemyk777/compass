@@ -41,7 +41,7 @@ export function MapScene({ className }: { className?: string }) {
           io.disconnect();
         }
       },
-      { rootMargin: "300px 0px" }
+      { rootMargin: "300px 0px" },
     );
     io.observe(el);
     return () => io.disconnect();

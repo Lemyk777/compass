@@ -7,6 +7,7 @@ import assert from "node:assert";
 import { FACULTY_VALUES } from "../lib/data/faculties";
 import { normalizeCountry, LOCAL_TARGETS, regionLabel } from "../lib/data/geo";
 import {
+  COMPETITION_CATEGORIES,
   buildExtracurriculars,
   buildStudyPlan,
   resolveCompetitions,
@@ -127,18 +128,33 @@ ok("resolveCompetitions: unconfirmed live date never overrides curated", () => {
   assert.equal(merged.find((c) => c.id === "amc")!.deadline, amc.deadline);
 });
 
-const factors = [{ key: "awards", score: 9 }, { key: "extracurricular_depth", score: 9 }, { key: "academics", score: 9 }];
+const factors = [
+  { key: "awards", score: 9 },
+  { key: "extracurricular_depth", score: 9 },
+  { key: "academics", score: 9 },
+];
 ok("buildExtracurriculars: KZ student sees the local row", () => {
   const plan = buildExtracurriculars({
-    today, faculties: ["law"], factors, liveCompetitions: [localRow], homeCountry: "KZ",
+    today,
+    faculties: ["law"],
+    factors,
+    liveCompetitions: [localRow],
+    homeCountry: "KZ",
   });
   assert.ok(plan.items.some((o) => o.id === "kz-test-olympiad"));
 });
 ok("buildExtracurriculars: a KNOWN, different country does NOT see it", () => {
   const plan = buildExtracurriculars({
-    today, faculties: ["law"], factors, liveCompetitions: [localRow], homeCountry: "UZ",
+    today,
+    faculties: ["law"],
+    factors,
+    liveCompetitions: [localRow],
+    homeCountry: "UZ",
   });
-  assert.ok(!plan.items.some((o) => o.id === "kz-test-olympiad"), "leaked to UZ");
+  assert.ok(
+    !plan.items.some((o) => o.id === "kz-test-olympiad"),
+    "leaked to UZ",
+  );
 });
 // Deliberately the opposite of what this asserted until 2026-08-12, and the
 // change is the product's own rule finally applied to country: an UNKNOWN fact
@@ -149,7 +165,11 @@ ok("buildExtracurriculars: a KNOWN, different country does NOT see it", () => {
 ok("buildExtracurriculars: an UNKNOWN country still sees it", () => {
   for (const home of [null, undefined]) {
     const plan = buildExtracurriculars({
-      today, faculties: ["law"], factors, liveCompetitions: [localRow], homeCountry: home,
+      today,
+      faculties: ["law"],
+      factors,
+      liveCompetitions: [localRow],
+      homeCountry: home,
     });
     assert.ok(
       plan.items.some((o) => o.id === "kz-test-olympiad"),
@@ -157,25 +177,34 @@ ok("buildExtracurriculars: an UNKNOWN country still sees it", () => {
     );
   }
 });
-ok("buildExtracurriculars: no factors → emerging, accessible recommended (growth mode)", () => {
-  const plan = buildExtracurriculars({
-    today, faculties: ["computer_science", "natural_sciences"], factors: [], liveCompetitions: [],
-  });
-  assert.equal(plan.band, "emerging");
-  assert.equal(plan.strength, 0);
-  assert.ok(plan.items.length > 0);
-  for (const o of plan.items.filter((i) => i.fit === "recommended")) {
-    assert.equal(o.tierResolved, "accessible");
-  }
-});
+ok(
+  "buildExtracurriculars: no factors → emerging, accessible recommended (growth mode)",
+  () => {
+    const plan = buildExtracurriculars({
+      today,
+      faculties: ["computer_science", "natural_sciences"],
+      factors: [],
+      liveCompetitions: [],
+    });
+    assert.equal(plan.band, "emerging");
+    assert.equal(plan.strength, 0);
+    assert.ok(plan.items.length > 0);
+    for (const o of plan.items.filter((i) => i.fit === "recommended")) {
+      assert.equal(o.tierResolved, "accessible");
+    }
+  },
+);
 
 // The timeline reads the same rule, and it has to — two surfaces disagreeing
 // about who can reach an opportunity is worse than either answer.
 ok("buildStudyPlan: timeline applies the same three-case region rule", () => {
   const plan = (homeCountry: string | null) =>
     buildStudyPlan({
-      today, graduationYear: today.getFullYear() + 2, faculties: ["law"],
-      homeCountry, liveCompetitions: [localRow],
+      today,
+      graduationYear: today.getFullYear() + 2,
+      faculties: ["law"],
+      homeCountry,
+      liveCompetitions: [localRow],
     }).competitions.some((c) => c.id === "kz-test-olympiad");
   assert.ok(plan("KZ"), "the row's own country cannot see it");
   assert.ok(!plan("UZ"), "leaked to a known, different country");
@@ -186,21 +215,32 @@ ok("buildStudyPlan: timeline applies the same three-case region rule", () => {
 console.log("roadmap.ts");
 ok("buildRoadmap works with NO analysis (empty targets/actions)", () => {
   const r = buildRoadmap({
-    today, graduationYear: today.getFullYear() + 2, faculties: ["computer_science"],
-    targets: [], planActions: [],
+    today,
+    graduationYear: today.getFullYear() + 2,
+    faculties: ["computer_science"],
+    targets: [],
+    planActions: [],
   });
   assert.ok(r.headline.length > 0);
   assert.ok(r.phases.length > 0);
 });
 ok("buildRoadmap works with nothing at all (no grad year)", () => {
-  const r = buildRoadmap({ today, faculties: [], targets: [], planActions: [] });
+  const r = buildRoadmap({
+    today,
+    faculties: [],
+    targets: [],
+    planActions: [],
+  });
   assert.ok(r.headline.length > 0); // the "add your graduation year" state
 });
 
 // ── discovery helpers ────────────────────────────────────────────────────────
 console.log("discover.ts");
 ok("slugify: stable, safe ids incl. Cyrillic transliteration", () => {
-  assert.equal(slugify("Wharton Global High School Investment Competition!"), "wharton-global-high-school-investment-competition");
+  assert.equal(
+    slugify("Wharton Global High School Investment Competition!"),
+    "wharton-global-high-school-investment-competition",
+  );
   assert.equal(slugify("  Олимпиада «Мёбиус» 2026  "), "olimpiada-mebius-2026");
   assert.equal(slugify("Республикалық олимпиада"), "respublikalyk-olimpiada"); // Kazakh letters
   assert.equal(slugify("---"), "");
@@ -208,12 +248,17 @@ ok("slugify: stable, safe ids incl. Cyrillic transliteration", () => {
 
 // ── two-hop date-page discovery (pure, no network) ───────────────────────────
 console.log("scrape-dates.ts / findDatePages");
-const html = (...links: string[]) => `<html><body>${links.join("")}</body></html>`;
+const html = (...links: string[]) =>
+  `<html><body>${links.join("")}</body></html>`;
 const a = (href: string, text = "link") => `<a href="${href}">${text}</a>`;
 
 ok("picks an explicit key-dates page above everything else", () => {
   const out = findDatePages(
-    html(a("/about"), a("/register-and-key-dates.html", "Register & Key Dates"), a("/events/")),
+    html(
+      a("/about"),
+      a("/register-and-key-dates.html", "Register & Key Dates"),
+      a("/events/"),
+    ),
     "https://www.nmun.org/",
   );
   assert.equal(out[0], "https://www.nmun.org/register-and-key-dates.html");
@@ -221,7 +266,10 @@ ok("picks an explicit key-dates page above everything else", () => {
 
 ok("apply page outranks a generic events page (the alumni-events trap)", () => {
   const out = findDatePages(
-    html(a("/about-us/alumni-events", "Alumni events"), a("/programs/apply-rsi", "Apply")),
+    html(
+      a("/about-us/alumni-events", "Alumni events"),
+      a("/programs/apply-rsi", "Apply"),
+    ),
     "https://www.cee.org/programs/research-science-institute",
   );
   assert.equal(out[0], "https://www.cee.org/programs/apply-rsi");
@@ -229,7 +277,10 @@ ok("apply page outranks a generic events page (the alumni-events trap)", () => {
 
 ok("same-section links are preferred over other sections", () => {
   const out = findDatePages(
-    html(a("/other/deadlines", "Deadlines"), a("/programs/deadlines", "Deadlines")),
+    html(
+      a("/other/deadlines", "Deadlines"),
+      a("/programs/deadlines", "Deadlines"),
+    ),
     "https://x.org/programs/thing",
   );
   assert.equal(out[0], "https://x.org/programs/deadlines");
@@ -237,7 +288,10 @@ ok("same-section links are preferred over other sections", () => {
 
 ok("off-site application portals survive; weak off-site links do not", () => {
   const out = findDatePages(
-    html(a("https://portal.embark.com/apply/x", "Apply now"), a("https://other.com/events", "Events")),
+    html(
+      a("https://portal.embark.com/apply/x", "Apply now"),
+      a("https://other.com/events", "Events"),
+    ),
     "https://summerscience.org/",
   );
   assert.deepEqual(out, ["https://portal.embark.com/apply/x"]);
@@ -258,7 +312,13 @@ ok("ignores assets, socials, mailto and self-links", () => {
 
 ok("returns at most `limit`, deduped, absolute", () => {
   const out = findDatePages(
-    html(a("/apply"), a("/apply"), a("/calendar"), a("/deadlines"), a("/register")),
+    html(
+      a("/apply"),
+      a("/apply"),
+      a("/calendar"),
+      a("/deadlines"),
+      a("/register"),
+    ),
     "https://x.org/",
   );
   assert.equal(out.length, 2);
@@ -282,18 +342,28 @@ ok("reads country, grade and age rules we actually write", () => {
   assert.equal(parseEligibility("High-school students aged 13–18").ageMin, 13);
   assert.equal(parseEligibility("Under 20 — free to enter").ageMax, 19);
   assert.equal(parseEligibility("Age 15 or under on 31 December").ageMax, 15);
-  assert.equal(parseEligibility("Students aged 16+ who have completed grade 10").ageMin, 16);
-  assert.equal(parseEligibility("Final-year (grade 12) students only").gradeMin, 12);
+  assert.equal(
+    parseEligibility("Students aged 16+ who have completed grade 10").ageMin,
+    16,
+  );
+  assert.equal(
+    parseEligibility("Final-year (grade 12) students only").gradeMin,
+    12,
+  );
 });
 ok("does not invent constraints from negations or non-age numbers", () => {
   // "no national selection needed" previously parsed as REQUIRING one.
   assert.equal(
-    parseEligibility("Students under 25 worldwide — no national selection needed").viaNationalSelection,
+    parseEligibility(
+      "Students under 25 worldwide — no national selection needed",
+    ).viaNationalSelection,
     undefined,
   );
   // "under 4 years of secondary school remaining" is not an age.
   assert.equal(
-    parseEligibility("Female students with under 4 years of secondary school remaining").ageMax,
+    parseEligibility(
+      "Female students with under 4 years of secondary school remaining",
+    ).ageMax,
     undefined,
   );
   assert.deepEqual(parseEligibility(undefined), {});
@@ -315,19 +385,28 @@ ok("gate excludes wrong country and past-ceiling, keeps too-young", () => {
   // Unknown grade/age must never exclude.
   assert.equal(checkEligibility(seniorOnly, { grade: null }).ok, true);
 });
-ok("an age rule inferred from the school year only fires for the whole group", () => {
-  const teens = { ageMin: 13, ageMax: 18 }; // the single commonest rule we carry
-  // Year 7 is 12–13: some of them are already 13, so nobody is excluded.
-  assert.equal(checkEligibility(teens, { ageRange: plausibleAgeForGrade(7) }).ok, true);
-  // Year 5 is 10–11: no one in that year can be 13 yet.
-  const y5 = checkEligibility(teens, { ageRange: plausibleAgeForGrade(5) });
-  assert.equal(y5.ok === false && y5.reason, "too_young");
-  // A children's contest (8–12) against year 12 (17–18): genuinely outgrown.
-  const y12 = checkEligibility({ ageMin: 8, ageMax: 12 }, { ageRange: plausibleAgeForGrade(12) });
-  assert.equal(y12.ok === false && y12.reason, "too_old");
-  // No range and no age still never excludes.
-  assert.equal(checkEligibility(teens, {}).ok, true);
-});
+ok(
+  "an age rule inferred from the school year only fires for the whole group",
+  () => {
+    const teens = { ageMin: 13, ageMax: 18 }; // the single commonest rule we carry
+    // Year 7 is 12–13: some of them are already 13, so nobody is excluded.
+    assert.equal(
+      checkEligibility(teens, { ageRange: plausibleAgeForGrade(7) }).ok,
+      true,
+    );
+    // Year 5 is 10–11: no one in that year can be 13 yet.
+    const y5 = checkEligibility(teens, { ageRange: plausibleAgeForGrade(5) });
+    assert.equal(y5.ok === false && y5.reason, "too_young");
+    // A children's contest (8–12) against year 12 (17–18): genuinely outgrown.
+    const y12 = checkEligibility(
+      { ageMin: 8, ageMax: 12 },
+      { ageRange: plausibleAgeForGrade(12) },
+    );
+    assert.equal(y12.ok === false && y12.reason, "too_old");
+    // No range and no age still never excludes.
+    assert.equal(checkEligibility(teens, {}).ok, true);
+  },
+);
 
 ok("grade is derived from graduation year, nonsense rejected", () => {
   const jul2026 = new Date("2026-07-29T00:00:00Z");
@@ -351,21 +430,40 @@ ok("no faculties selected shows the whole catalog, not almost nothing", () => {
     `expected nearly the whole catalog, got ${plan.items.length}/${COMPETITIONS.length}`,
   );
 });
-ok("US-only entries are hidden from a non-US student and kept for a US one", () => {
-  const args = { today, faculties: ["medicine_health", "natural_sciences"], factors: midFactors };
-  const kz = buildExtracurriculars({ ...args, homeCountry: "KZ" });
-  const us = buildExtracurriculars({ ...args, homeCountry: "US" });
-  for (const id of ["usabo", "usapho", "usnco", "congressional-app"]) {
-    assert.ok(!kz.items.some((i) => i.id === id), `${id} leaked to a KZ student`);
-  }
-  assert.ok(us.items.some((i) => i.id === "usabo"), "over-filtered a US student");
-});
+ok(
+  "US-only entries are hidden from a non-US student and kept for a US one",
+  () => {
+    const args = {
+      today,
+      faculties: ["medicine_health", "natural_sciences"],
+      factors: midFactors,
+    };
+    const kz = buildExtracurriculars({ ...args, homeCountry: "KZ" });
+    const us = buildExtracurriculars({ ...args, homeCountry: "US" });
+    for (const id of ["usabo", "usapho", "usnco", "congressional-app"]) {
+      assert.ok(
+        !kz.items.some((i) => i.id === id),
+        `${id} leaked to a KZ student`,
+      );
+    }
+    assert.ok(
+      us.items.some((i) => i.id === "usabo"),
+      "over-filtered a US student",
+    );
+  },
+);
 ok("too-young entries stay visible but are never 'recommended'", () => {
   const g9 = buildExtracurriculars({
-    today, faculties: ["natural_sciences"], factors: midFactors, graduationYear: today.getFullYear() + 4,
+    today,
+    faculties: ["natural_sciences"],
+    factors: midFactors,
+    graduationYear: today.getFullYear() + 4,
   });
   const notYet = g9.items.filter((i) => i.notYetEligible);
-  assert.ok(notYet.length > 0, "expected some not-yet-eligible entries for a 9th grader");
+  assert.ok(
+    notYet.length > 0,
+    "expected some not-yet-eligible entries for a 9th grader",
+  );
   for (const i of notYet) assert.notEqual(i.fit, "recommended");
 });
 
@@ -379,7 +477,8 @@ const PERSONAS = [
   { grade: 12, country: "KZ", faculties: [...FACULTY_VALUES] as string[] },
   { grade: 12, country: "US", faculties: [...FACULTY_VALUES] as string[] },
 ];
-const yearFor = (grade: number) => today.getFullYear() + (12 - grade) + (today.getMonth() >= 5 ? 1 : 0);
+const yearFor = (grade: number) =>
+  today.getFullYear() + (12 - grade) + (today.getMonth() >= 5 ? 1 : 0);
 
 ok("every catalog entry is reachable by at least one real student", () => {
   const seen = new Set<string>();
@@ -395,7 +494,9 @@ ok("every catalog entry is reachable by at least one real student", () => {
       for (const i of plan.items) seen.add(i.id);
     }
   }
-  const unreachable = COMPETITIONS.filter((c) => !seen.has(c.id)).map((c) => c.id);
+  const unreachable = COMPETITIONS.filter((c) => !seen.has(c.id)).map(
+    (c) => c.id,
+  );
   assert.deepEqual(unreachable, []);
 });
 
@@ -423,7 +524,10 @@ ok("the public checker's headline count is true for a 12-year-old", () => {
       assert.ok(gate.gradeMin <= 7, `${o.id}: needs grade ${gate.gradeMin}`);
     }
   }
-  assert.ok(openNow.length > 0, "over-filtered — a 12-year-old must still have real options");
+  assert.ok(
+    openNow.length > 0,
+    "over-filtered — a 12-year-old must still have real options",
+  );
 });
 
 ok("a two-contest card is not capped at the junior contest's ceiling", () => {
@@ -436,7 +540,10 @@ ok("a two-contest card is not capped at the junior contest's ceiling", () => {
     homeCountry: "KZ",
     graduationYear: yearFor(12),
   });
-  assert.ok(g12.items.some((i) => i.id === "amc"), "AMC hidden from a final-year student");
+  assert.ok(
+    g12.items.some((i) => i.id === "amc"),
+    "AMC hidden from a final-year student",
+  );
 });
 
 ok("a division boundary is never read as an age ceiling", () => {
@@ -449,7 +556,10 @@ ok("no parsed gate contradicts itself", () => {
   for (const c of COMPETITIONS) {
     const g = c.gate ?? parseEligibility(c.eligibility);
     if (g.gradeMin != null && g.gradeMax != null) {
-      assert.ok(g.gradeMin <= g.gradeMax, `${c.id}: grades ${g.gradeMin}–${g.gradeMax}`);
+      assert.ok(
+        g.gradeMin <= g.gradeMax,
+        `${c.id}: grades ${g.gradeMin}–${g.gradeMax}`,
+      );
     }
     if (g.ageMin != null && g.ageMax != null) {
       assert.ok(g.ageMin <= g.ageMax, `${c.id}: ages ${g.ageMin}–${g.ageMax}`);
@@ -483,19 +593,34 @@ ok("the intention is reflected back as a first-person plan", () => {
     "You're starting this weekend.",
   );
   assert.equal(
-    intentSentence({ ...base, startWhen: "tonight", startDetail: "  at the  library " }),
+    intentSentence({
+      ...base,
+      startWhen: "tonight",
+      startDetail: "  at the  library ",
+    }),
     "You're starting tonight — at the library.",
   );
   assert.equal(intentSentence(base), "You're doing this.");
-  assert.equal(intentSentence({ ...base, status: "applied" }), "You entered this.");
+  assert.equal(
+    intentSentence({ ...base, status: "applied" }),
+    "You entered this.",
+  );
   assert.equal(
     intentSentence({ ...base, status: "dropped" }),
     "You decided against this one.",
   );
 });
 ok("statuses are validated and intents index by opportunity id", () => {
-  assert.ok(isIntentStatus("planning") && isIntentStatus("applied") && isIntentStatus("dropped"));
-  assert.ok(!isIntentStatus("entered") && !isIntentStatus("") && !isIntentStatus(undefined));
+  assert.ok(
+    isIntentStatus("planning") &&
+      isIntentStatus("applied") &&
+      isIntentStatus("dropped"),
+  );
+  assert.ok(
+    !isIntentStatus("entered") &&
+      !isIntentStatus("") &&
+      !isIntentStatus(undefined),
+  );
   const byId = indexIntents([
     { opportunityId: "amc", status: "planning" },
     { opportunityId: "fll", status: "applied" },
@@ -546,7 +671,10 @@ ok("a retired id can never come back as a live-only row", () => {
 });
 ok("every entry has a valid https URL and non-empty copy", () => {
   for (const c of COMPETITIONS) {
-    assert.ok(/^https:\/\//.test(c.url), `${c.id}: url must be https — ${c.url}`);
+    assert.ok(
+      /^https:\/\//.test(c.url),
+      `${c.id}: url must be https — ${c.url}`,
+    );
     assert.doesNotThrow(() => new URL(c.url), `${c.id}: unparseable url`);
     assert.ok(c.name.trim().length > 0, `${c.id}: empty name`);
     assert.ok(c.blurb.trim().length > 0, `${c.id}: empty blurb`);
@@ -556,12 +684,19 @@ ok("every entry has a valid https URL and non-empty copy", () => {
 ok("dates are valid ISO and fields/level/tier are in range", () => {
   const levels = ["international", "national", "regional"];
   const tiers = ["accessible", "selective", "elite"];
-  const cats = ["competition", "olympiad", "course", "research_program", "summer_program"];
+  // The FIFTH copy of this list, and the last: it is derived now. Adding
+  // `community` broke the type union, the partner validator, the admin const,
+  // the form options and this — five places with no way to disagree loudly.
+  const cats: readonly string[] = COMPETITION_CATEGORIES;
   for (const c of COMPETITIONS) {
-    assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(c.deadline), `${c.id}: bad deadline ${c.deadline}`);
+    assert.ok(
+      /^\d{4}-\d{2}-\d{2}$/.test(c.deadline),
+      `${c.id}: bad deadline ${c.deadline}`,
+    );
     assert.ok(levels.includes(c.level), `${c.id}: bad level`);
     if (c.tier) assert.ok(tiers.includes(c.tier), `${c.id}: bad tier`);
-    if (c.category) assert.ok(cats.includes(c.category), `${c.id}: bad category`);
+    if (c.category)
+      assert.ok(cats.includes(c.category), `${c.id}: bad category`);
     if (c.fields !== "all") {
       assert.ok(c.fields.length > 0, `${c.id}: empty fields`);
       for (const f of c.fields) {
@@ -574,7 +709,10 @@ ok("a confirmed date is never already in the past", () => {
   const todayISO = new Date().toISOString().slice(0, 10);
   for (const c of COMPETITIONS) {
     if (c.dateConfirmed) {
-      assert.ok(c.deadline >= todayISO, `${c.id}: confirmed but past (${c.deadline})`);
+      assert.ok(
+        c.deadline >= todayISO,
+        `${c.id}: confirmed but past (${c.deadline})`,
+      );
     }
   }
 });
@@ -582,18 +720,26 @@ ok("a confirmed date is never already in the past", () => {
 // ── model-reply parsing ──────────────────────────────────────────────────────
 console.log("scrape-dates.ts / parseJsonLoose");
 ok("plain JSON array and object", () => {
-  assert.deepEqual(parseJsonLoose('[{"test":"2026-08-22"}]'), [{ test: "2026-08-22" }]);
-  assert.deepEqual(parseJsonLoose('{"deadline":"2026-10-28"}'), { deadline: "2026-10-28" });
+  assert.deepEqual(parseJsonLoose('[{"test":"2026-08-22"}]'), [
+    { test: "2026-08-22" },
+  ]);
+  assert.deepEqual(parseJsonLoose('{"deadline":"2026-10-28"}'), {
+    deadline: "2026-10-28",
+  });
 });
 ok("survives markdown fences (the SAT failure mode)", () => {
   assert.deepEqual(
-    parseJsonLoose('```json\n[{"test":"2026-08-22","regDeadline":"2026-08-07"}]\n```'),
+    parseJsonLoose(
+      '```json\n[{"test":"2026-08-22","regDeadline":"2026-08-07"}]\n```',
+    ),
     [{ test: "2026-08-22", regDeadline: "2026-08-07" }],
   );
 });
 ok("survives prose around the JSON", () => {
   assert.deepEqual(
-    parseJsonLoose('Here are the dates I found:\n[{"a":1}]\nLet me know if you need more.'),
+    parseJsonLoose(
+      'Here are the dates I found:\n[{"a":1}]\nLet me know if you need more.',
+    ),
     [{ a: 1 }],
   );
 });
@@ -604,7 +750,9 @@ ok("literal null and unparseable replies", () => {
   assert.equal(parseJsonLoose(""), null);
 });
 ok("prefers the outer shape, not a brace inside prose", () => {
-  assert.deepEqual(parseJsonLoose('The set {a} aside, here: [{"x":2}]'), [{ x: 2 }]);
+  assert.deepEqual(parseJsonLoose('The set {a} aside, here: [{"x":2}]'), [
+    { x: 2 },
+  ]);
 });
 
 // ── cron rotation math ───────────────────────────────────────────────────────
@@ -620,7 +768,8 @@ ok("sync-dates: every competition covered by the daily 8-comp window", () => {
   assert.equal(covered.size, N, `only ${covered.size}/${N} covered in 60 days`);
 });
 ok("discover: faculty rotation covers all 8 faculties", () => {
-  const N = 8, PER = 2;
+  const N = 8,
+    PER = 2;
   const covered = new Set<number>();
   for (let week = 0; week < 8; week++) {
     const start = (week * PER) % N;
@@ -648,7 +797,7 @@ ok("empty facts → 0 of 7, not allDone", () => {
 });
 ok("all facts → allDone (card self-hides)", () => {
   const filled = Object.fromEntries(
-    Object.keys(NONE).map((k) => [k, true])
+    Object.keys(NONE).map((k) => [k, true]),
   ) as ReadinessFacts;
   const r = buildReadiness(filled);
   assert.equal(r.done, 7);
@@ -681,24 +830,41 @@ const addDays = (iso: string, n: number) => {
   return d;
 };
 const hasItem = (today: Date, id: string) =>
-  buildExtracurriculars({ today, faculties: [], factors: [] }).items.some((i) => i.id === id);
+  buildExtracurriculars({ today, faculties: [], factors: [] }).items.some(
+    (i) => i.id === id,
+  );
 
 ok("a confirmed deadline in the FUTURE is shown", () => {
-  assert.equal(hasItem(addDays(confirmedGlobal.deadline, -10), confirmedGlobal.id), true);
+  assert.equal(
+    hasItem(addDays(confirmedGlobal.deadline, -10), confirmedGlobal.id),
+    true,
+  );
 });
 ok("day-of the deadline is still shown (you can usually still enter)", () => {
-  assert.equal(hasItem(addDays(confirmedGlobal.deadline, 0), confirmedGlobal.id), true);
+  assert.equal(
+    hasItem(addDays(confirmedGlobal.deadline, 0), confirmedGlobal.id),
+    true,
+  );
 });
 ok("a confirmed deadline in the PAST disappears", () => {
-  assert.equal(hasItem(addDays(confirmedGlobal.deadline, 2), confirmedGlobal.id), false);
+  assert.equal(
+    hasItem(addDays(confirmedGlobal.deadline, 2), confirmedGlobal.id),
+    false,
+  );
 });
-ok("an UNCONFIRMED estimate never expires (dates unknown → shown as TBA)", () => {
-  // Take an unconfirmed entry and run the clock well past its estimate: it must
-  // still appear, because we never stood behind that date as a real deadline.
-  const c = COMPETITIONS.find((x) => !x.dateConfirmed && !x.region)!;
-  const today = addDays(c.deadline, 400);
-  const plan = buildExtracurriculars({ today, faculties: [], factors: [] });
-  assert.equal(plan.items.some((i) => i.id === c.id), true);
-});
+ok(
+  "an UNCONFIRMED estimate never expires (dates unknown → shown as TBA)",
+  () => {
+    // Take an unconfirmed entry and run the clock well past its estimate: it must
+    // still appear, because we never stood behind that date as a real deadline.
+    const c = COMPETITIONS.find((x) => !x.dateConfirmed && !x.region)!;
+    const today = addDays(c.deadline, 400);
+    const plan = buildExtracurriculars({ today, faculties: [], factors: [] });
+    assert.equal(
+      plan.items.some((i) => i.id === c.id),
+      true,
+    );
+  },
+);
 
 console.log(`\nAll ${passed} checks passed.`);

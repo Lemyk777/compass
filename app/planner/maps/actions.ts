@@ -89,7 +89,10 @@ async function loadMapRows(
     .eq("map_id", mapId);
 
   if (error) {
-    return { ok: false, error: migrationHint(error.code) ?? "Could not read that map." };
+    return {
+      ok: false,
+      error: migrationHint(error.code) ?? "Could not read that map.",
+    };
   }
   return { ok: true, rows: (data ?? []) as Row[] };
 }
@@ -120,7 +123,11 @@ function subtreeHeight(rows: Row[], id: string): number {
 function siblingsOf(rows: Row[], node: Row): Row[] {
   return rows
     .filter((r) => r.parent_id === node.parent_id)
-    .sort((a, b) => (a.position === b.position ? a.id.localeCompare(b.id) : a.position - b.position));
+    .sort((a, b) =>
+      a.position === b.position
+        ? a.id.localeCompare(b.id)
+        : a.position - b.position,
+    );
 }
 
 // ── Maps ──────────────────────────────────────────────────────────────────────
@@ -145,9 +152,13 @@ export async function createMap(label: string): Promise<SaveResult> {
     .eq("user_id", uid)
     .is("parent_id", null);
 
-  if (countError) return fail(countError.code, "Could not start a map. Try again.");
+  if (countError)
+    return fail(countError.code, "Could not start a map. Try again.");
   if ((count ?? 0) >= LIMITS.maps) {
-    return { ok: false, error: `That's ${LIMITS.maps} maps — delete one before starting another.` };
+    return {
+      ok: false,
+      error: `That's ${LIMITS.maps} maps — delete one before starting another.`,
+    };
   }
 
   // The root's map_id must equal its own id, so it is generated here rather than
@@ -215,7 +226,8 @@ export async function addNode(input: {
   }
 
   const parent = rows.find((r) => r.id === input.parentId);
-  if (!parent) return { ok: false, error: "That branch is gone — reload the map." };
+  if (!parent)
+    return { ok: false, error: "That branch is gone — reload the map." };
 
   if (depthOf(rows, parent.id) + 1 > MINDMAP_MAX_DEPTH) {
     return {
@@ -255,8 +267,12 @@ export async function renameNode(input: {
   const uid = await currentUserId();
   if (!uid) return { ok: false, error: "Please log in again." };
 
-  const patch: Record<string, unknown> = { label, updated_at: new Date().toISOString() };
-  if (input.note !== undefined) patch.note = clean(input.note, LIMITS.plannerNote);
+  const patch: Record<string, unknown> = {
+    label,
+    updated_at: new Date().toISOString(),
+  };
+  if (input.note !== undefined)
+    patch.note = clean(input.note, LIMITS.plannerNote);
   if (input.linkHref !== undefined) patch.link_href = cleanHref(input.linkHref);
 
   const supabase = createClient();
@@ -272,7 +288,10 @@ export async function renameNode(input: {
   return { ok: true };
 }
 
-export async function deleteNode(input: { mapId: string; id: string }): Promise<SaveResult> {
+export async function deleteNode(input: {
+  mapId: string;
+  id: string;
+}): Promise<SaveResult> {
   const uid = await currentUserId();
   if (!uid) return { ok: false, error: "Please log in again." };
 
@@ -282,7 +301,10 @@ export async function deleteNode(input: { mapId: string; id: string }): Promise<
   const node = loaded.rows.find((r) => r.id === input.id);
   if (!node) return { ok: true }; // already gone; nothing to say
   if (node.parent_id === null) {
-    return { ok: false, error: "That's the map itself — delete the whole map instead." };
+    return {
+      ok: false,
+      error: "That's the map itself — delete the whole map instead.",
+    };
   }
 
   const supabase = createClient();
@@ -321,7 +343,8 @@ export async function moveNode(input: {
 
   const node = rows.find((r) => r.id === input.id);
   if (!node) return { ok: false, error: "That node is gone — reload the map." };
-  if (node.parent_id === null) return { ok: false, error: "The map itself doesn't move." };
+  if (node.parent_id === null)
+    return { ok: false, error: "The map itself doesn't move." };
 
   const siblings = siblingsOf(rows, node);
   const i = siblings.findIndex((s) => s.id === node.id);
@@ -329,7 +352,8 @@ export async function moveNode(input: {
 
   if (input.direction === "up" || input.direction === "down") {
     const j = input.direction === "up" ? i - 1 : i + 1;
-    if (j < 0 || j >= siblings.length) return { ok: false, error: "It's already at the end." };
+    if (j < 0 || j >= siblings.length)
+      return { ok: false, error: "It's already at the end." };
 
     // Swap positions with the neighbour. Two writes, and a failure on the second
     // leaves a duplicate position — which `byPosition` breaks by id, so the tree
@@ -358,7 +382,10 @@ export async function moveNode(input: {
     if (i <= 0) return { ok: false, error: "Nothing above it to go under." };
     const newParent = siblings[i - 1];
     // The whole branch moves with it, so the check is on the branch, not the node.
-    if (depthOf(rows, newParent.id) + 1 + subtreeHeight(rows, node.id) > MINDMAP_MAX_DEPTH) {
+    if (
+      depthOf(rows, newParent.id) + 1 + subtreeHeight(rows, node.id) >
+      MINDMAP_MAX_DEPTH
+    ) {
       return {
         ok: false,
         error: `That would go past ${MINDMAP_MAX_DEPTH} levels. Shorten the branch first.`,
@@ -422,7 +449,10 @@ export async function promoteNodeToTask(input: {
   if (readError) return fail(readError.code, "Could not read that node.");
   if (!data) return { ok: false, error: "That node is gone — reload the map." };
 
-  const row = data as Pick<MapNodeRow, "note"> & { label: string; link_href: string | null };
+  const row = data as Pick<MapNodeRow, "note"> & {
+    label: string;
+    link_href: string | null;
+  };
 
   const { count, error: countError } = await supabase
     .from("planner_items")

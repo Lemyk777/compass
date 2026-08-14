@@ -62,7 +62,7 @@ function warnOnce(where: string, error: unknown) {
   console.error(
     `traffic: ${where} failed — is migration 0025_traffic.sql applied? ` +
       `(npm run db:check)`,
-    error
+    error,
   );
 }
 
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
 
   const referrer = externalHost(
     typeof body.referrer === "string" ? body.referrer : null,
-    req.headers.get("host")
+    req.headers.get("host"),
   );
 
   const { data, error } = await admin

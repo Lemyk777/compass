@@ -12,6 +12,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { COMPETITION_CATEGORIES } from "@/lib/data/key-dates";
 import { FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
 import { LOCAL_TARGETS } from "@/lib/data/geo";
 import { angleByKey, SEARCH_ANGLES } from "@/lib/discovery/discover";
@@ -47,7 +48,10 @@ const COST_MODELS: CostModel[] = [
   "varies",
 ];
 
-export async function approveCandidate(id: string, formData: FormData): Promise<void> {
+export async function approveCandidate(
+  id: string,
+  formData: FormData,
+): Promise<void> {
   await requireRole("admin", "/admin/opportunities");
   const admin = createAdminClient();
 
@@ -67,8 +71,12 @@ export async function approveCandidate(id: string, formData: FormData): Promise<
   // every approved row was permanently "cost unverified" because there was
   // nowhere to put the answer.
   const rawCost = String(formData.get("cost") ?? "unknown");
-  const cost = (COST_MODELS as string[]).includes(rawCost) ? (rawCost as CostModel) : "unknown";
-  const costDetail = String(formData.get("cost_detail") ?? "").trim().slice(0, 200);
+  const cost = (COST_MODELS as string[]).includes(rawCost)
+    ? (rawCost as CostModel)
+    : "unknown";
+  const costDetail = String(formData.get("cost_detail") ?? "")
+    .trim()
+    .slice(0, 200);
 
   const { error: upsertErr } = await admin.from("competition_deadlines").upsert(
     {
@@ -94,7 +102,10 @@ export async function approveCandidate(id: string, formData: FormData): Promise<
     { onConflict: "id" },
   );
   if (upsertErr) {
-    console.error(`[opportunities] approve upsert failed for ${id}:`, upsertErr);
+    console.error(
+      `[opportunities] approve upsert failed for ${id}:`,
+      upsertErr,
+    );
     return;
   }
 
@@ -143,11 +154,14 @@ export type RunDiscoveryState = {
  * and a way to tell whether it ever ran, which is precisely the ambiguity that
  * left the cron unexamined for a month.
  */
-export async function runDiscoveryNow(formData: FormData): Promise<RunDiscoveryState> {
+export async function runDiscoveryNow(
+  formData: FormData,
+): Promise<RunDiscoveryState> {
   await requireRole("admin", "/admin/opportunities");
 
   const rawTarget = String(formData.get("target") ?? "");
-  const angle = angleByKey(String(formData.get("angle") ?? "")) ?? SEARCH_ANGLES[0];
+  const angle =
+    angleByKey(String(formData.get("angle") ?? "")) ?? SEARCH_ANGLES[0];
 
   let target: DiscoveryTarget | null = null;
   if (rawTarget.startsWith("local:")) {
@@ -157,13 +171,18 @@ export async function runDiscoveryNow(formData: FormData): Promise<RunDiscoveryS
     target = { kind: "faculty", faculty: rawTarget as FacultyValue };
   }
   if (!target) {
-    return { ok: false, message: "Pick a field or a country to search.", lines: [] };
+    return {
+      ok: false,
+      message: "Pick a field or a country to search.",
+      lines: [],
+    };
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return {
       ok: false,
-      message: "ANTHROPIC_API_KEY is not set in this environment — discovery cannot search.",
+      message:
+        "ANTHROPIC_API_KEY is not set in this environment — discovery cannot search.",
       lines: [],
     };
   }
@@ -176,7 +195,10 @@ export async function runDiscoveryNow(formData: FormData): Promise<RunDiscoveryS
         : `${o.tag}: found ${o.found}, queued ${o.queued}${o.flagged > 0 ? ` (${o.flagged} flagged)` : ""}`;
       // Every dropped candidate is named with its reason. "Found 6, kept 0" on
       // its own is indistinguishable from a broken pipeline.
-      return [head, ...o.dropped.map((d) => `  · dropped ${d.name} — ${d.reason}`)];
+      return [
+        head,
+        ...o.dropped.map((d) => `  · dropped ${d.name} — ${d.reason}`),
+      ];
     });
 
     revalidatePath("/admin/opportunities");
@@ -210,14 +232,13 @@ export async function runDiscoveryNow(formData: FormData): Promise<RunDiscoveryS
 // renderer, and no "admin opportunities" concept for the rest of the code to
 // learn.
 
-const ADMIN_LEVELS = ["school", "regional", "national", "international"] as const;
-const ADMIN_CATEGORIES = [
-  "competition",
-  "olympiad",
-  "course",
-  "research_program",
-  "summer_program",
+const ADMIN_LEVELS = [
+  "school",
+  "regional",
+  "national",
+  "international",
 ] as const;
+const ADMIN_CATEGORIES = COMPETITION_CATEGORIES;
 
 export type QuickAddInput = {
   name: string;
@@ -238,7 +259,8 @@ export type QuickAddInput = {
   pinned: boolean;
 };
 
-export type QuickAddResult = { ok: true; id: string } | { ok: false; error: string };
+export type QuickAddResult =
+  { ok: true; id: string } | { ok: false; error: string };
 
 function slugId(name: string): string {
   const base = name
@@ -267,11 +289,16 @@ export async function quickAddOpportunity(
 
   if (name.length < 3) return { ok: false, error: "Give it a name." };
   if (blurb.length < 20)
-    return { ok: false, error: "The blurb is what a student reads first — write a sentence or two." };
+    return {
+      ok: false,
+      error:
+        "The blurb is what a student reads first — write a sentence or two.",
+    };
   if (!input.eligibility.trim())
     return {
       ok: false,
-      error: "Who can enter? This is on every card and is the whole point of the product.",
+      error:
+        "Who can enter? This is on every card and is the whole point of the product.",
     };
 
   let parsed: URL;
@@ -339,8 +366,14 @@ export async function quickAddOpportunity(
     console.error("[admin] quick add failed:", error);
     // The most likely cause on a database that has not run 0027 yet.
     if (/pinned/.test(error.message))
-      return { ok: false, error: "Run migration 0027 first — the `pinned` column is missing." };
-    return { ok: false, error: "Could not publish that. Try again in a moment." };
+      return {
+        ok: false,
+        error: "Run migration 0027 first — the `pinned` column is missing.",
+      };
+    return {
+      ok: false,
+      error: "Could not publish that. Try again in a moment.",
+    };
   }
 
   revalidatePath("/opportunities");

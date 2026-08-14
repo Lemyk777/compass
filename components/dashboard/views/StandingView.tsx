@@ -4,7 +4,11 @@ import { useState } from "react";
 import { Scorecard } from "@/components/report/Scorecard";
 import { Button } from "@/components/ui/Button";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
-import { CountryTabs, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
+import {
+  CountryTabs,
+  NoAnalysisYet,
+  PageHeader,
+} from "@/components/dashboard/states";
 import { countryOverall } from "@/lib/data/country-scorecard";
 import { useT } from "@/lib/i18n/client";
 
@@ -15,7 +19,11 @@ export function StandingView() {
 
   const activeTab = tabs.length ? country : null;
   const shareScore = activeTab
-    ? countryOverall(activeTab, analysis.factors, analysis.italy_financial_fit_score)
+    ? countryOverall(
+        activeTab,
+        analysis.factors,
+        analysis.italy_financial_fit_score,
+      )
     : analysis.overall_score;
 
   return (
@@ -28,7 +36,9 @@ export function StandingView() {
       </div>
       <Scorecard analysis={analysis} name={name} country={activeTab} />
       <ShareButton score={shareScore} />
-      <p className="text-center text-xs text-ink-faint">{t("report.estimate")}</p>
+      <p className="text-center text-xs text-ink-faint">
+        {t("report.estimate")}
+      </p>
     </div>
   );
 }

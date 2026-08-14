@@ -113,7 +113,8 @@ export async function createPlannerItem(input: {
   if (countError) {
     return {
       ok: false,
-      error: migrationHint(countError.code) ?? "Could not save that. Try again.",
+      error:
+        migrationHint(countError.code) ?? "Could not save that. Try again.",
     };
   }
   if ((count ?? 0) >= LIMITS.plannerItems) {
@@ -151,13 +152,16 @@ export async function updatePlannerItem(input: {
   const uid = await currentUserId();
   if (!uid) return { ok: false, error: "Please log in again." };
 
-  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const patch: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
   if (input.title !== undefined) {
     const title = clean(input.title, LIMITS.plannerTitle);
     if (!title) return { ok: false, error: "Give it a name first." };
     patch.title = title;
   }
-  if (input.note !== undefined) patch.note = clean(input.note, LIMITS.plannerNote);
+  if (input.note !== undefined)
+    patch.note = clean(input.note, LIMITS.plannerNote);
   if (input.dueISO !== undefined) patch.due_date = cleanDate(input.dueISO);
 
   const supabase = createClient();
@@ -212,7 +216,8 @@ export async function movePlannerItem(input: {
   sourceId: string;
   to: PlannerStatus;
 }): Promise<SaveResult> {
-  if (!isPlannerStatus(input.to)) return { ok: false, error: "Unknown column." };
+  if (!isPlannerStatus(input.to))
+    return { ok: false, error: "Unknown column." };
   if (input.origin !== "opportunity" && input.origin !== "own") {
     // SAT sittings and application deadlines are facts about the world. They
     // have no state to move, and the board never renders them — so reaching
@@ -235,7 +240,10 @@ export async function movePlannerItem(input: {
           .eq("user_id", uid)
       : await supabase
           .from("opportunity_intents")
-          .update({ status: intentStatusFromPlanner(input.to), updated_at: now })
+          .update({
+            status: intentStatusFromPlanner(input.to),
+            updated_at: now,
+          })
           .eq("opportunity_id", input.sourceId)
           .eq("user_id", uid);
 

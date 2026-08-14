@@ -1,6 +1,6 @@
 import Link from "@/components/ui/Link";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
-import { Logo } from "@/components/ui/Logo";
+import { BrandLink } from "@/components/ui/BrandLink";
 
 import { AuthForm } from "@/components/auth/AuthForm";
 import { AuthAside } from "@/components/marketing/AuthAside";
@@ -20,12 +20,7 @@ export default function LoginPage({
       <SkipLink />
       <div className="flex flex-col bg-surface">
         <header className="mx-auto flex w-full max-w-md items-center justify-between px-5 py-6">
-          <Link href="/" className="rounded focus-visible:focus-ring">
-            <Logo
-              className="text-ink"
-              style={{ viewTransitionName: "brand-logo" }}
-            />
-          </Link>
+          <BrandLink />
         </header>
         <main
           id={SKIP_TARGET}

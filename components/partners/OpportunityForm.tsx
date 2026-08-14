@@ -10,7 +10,11 @@ import {
   PARTNER_TIER_OPTIONS,
   partnerRef,
 } from "@/lib/data/partners";
-import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
+import {
+  FACULTIES,
+  FACULTY_LABEL,
+  type FacultyValue,
+} from "@/lib/data/faculties";
 import { regionLabel } from "@/lib/data/geo";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
@@ -68,7 +72,9 @@ export function OpportunityForm({
   onDone?: () => void;
   onCancel?: () => void;
 }) {
-  const [v, setV] = useState<OpportunityFormValues>(initial ?? EMPTY_OPPORTUNITY);
+  const [v, setV] = useState<OpportunityFormValues>(
+    initial ?? EMPTY_OPPORTUNITY,
+  );
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -170,7 +176,9 @@ export function OpportunityForm({
           />
 
           <fieldset>
-            <legend className="mb-1.5 text-sm font-medium text-ink">Subjects</legend>
+            <legend className="mb-1.5 text-sm font-medium text-ink">
+              Subjects
+            </legend>
             <div className="flex flex-wrap gap-2">
               {FACULTIES.map((f) => {
                 const on = v.fields.includes(f.value);
@@ -212,7 +220,9 @@ export function OpportunityForm({
           </Field>
 
           <fieldset>
-            <legend className="mb-1.5 text-sm font-medium text-ink">Who sees it</legend>
+            <legend className="mb-1.5 text-sm font-medium text-ink">
+              Who sees it
+            </legend>
             <div className="space-y-2">
               <Radio
                 name="scope"
@@ -366,8 +376,8 @@ export function OpportunityForm({
         </h3>
         <OpportunityCard o={preview} />
         <p className="mt-3 text-xs leading-relaxed text-ink-faint">
-          This is the real card, rendered the same way it is on a student&rsquo;s
-          list — including the countdown and the cost badge.
+          This is the real card, rendered the same way it is on a
+          student&rsquo;s list — including the countdown and the cost badge.
         </p>
       </aside>
     </div>
@@ -400,7 +410,9 @@ function usePreview(v: OpportunityFormValues, partner: Partner): Opportunity {
       deadline: v.deadline || new Date().toISOString().slice(0, 10),
       window:
         v.eventWindow ||
-        (v.timing === "always_open" ? "Runs continuously" : "dates to be confirmed"),
+        (v.timing === "always_open"
+          ? "Runs continuously"
+          : "dates to be confirmed"),
       level: v.level,
       category: v.category,
       tier: v.tier,
@@ -436,7 +448,9 @@ function FormSection({
 }) {
   return (
     <section className="rounded-2xl border border-line bg-card p-5 shadow-card">
-      <h3 className="mb-4 text-sm font-semibold tracking-tight text-ink">{title}</h3>
+      <h3 className="mb-4 text-sm font-semibold tracking-tight text-ink">
+        {title}
+      </h3>
       <div className="space-y-4">{children}</div>
     </section>
   );
@@ -456,7 +470,9 @@ function Choice<T extends string>({
   const active = options.find((o) => o.value === value);
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-medium text-ink">{label}</label>
+      <label className="mb-1.5 block text-sm font-medium text-ink">
+        {label}
+      </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
@@ -468,7 +484,9 @@ function Choice<T extends string>({
           </option>
         ))}
       </select>
-      {active?.hint && <p className="mt-1 text-xs text-ink-faint">{active.hint}</p>}
+      {active?.hint && (
+        <p className="mt-1 text-xs text-ink-faint">{active.hint}</p>
+      )}
     </div>
   );
 }
@@ -497,7 +515,9 @@ function Radio({
       />
       <span>
         <span className="block text-sm font-medium text-ink">{title}</span>
-        <span className="block text-xs leading-relaxed text-ink-faint">{hint}</span>
+        <span className="block text-xs leading-relaxed text-ink-faint">
+          {hint}
+        </span>
       </span>
     </label>
   );

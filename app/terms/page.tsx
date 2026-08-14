@@ -15,8 +15,8 @@ export default function TermsPage() {
   return (
     <LegalPage title="Terms of Use" updated={UPDATED}>
       <p>
-        These Terms of Use (&ldquo;Terms&rdquo;) govern your access to and use of
-        Compass (the &ldquo;Service&rdquo;). Compass (&ldquo;Compass,&rdquo;
+        These Terms of Use (&ldquo;Terms&rdquo;) govern your access to and use
+        of Compass (the &ldquo;Service&rdquo;). Compass (&ldquo;Compass,&rdquo;
         &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) is an
         independent project operated by individuals based in the Republic of
         Kazakhstan; it is not a registered company. By creating an account or
@@ -27,10 +27,10 @@ export default function TermsPage() {
       <LegalSection heading="1. The Service">
         <p>
           Compass provides AI-assisted, data-driven guidance to help
-          internationally-based students assess and improve their applications to
-          universities in the US, Italy, and Hong Kong. The Service produces
-          factor scores, benchmarks, likelihood ranges, and recommendations based
-          on the information you provide.
+          internationally-based students assess and improve their applications
+          to universities in the US, Italy, and Hong Kong. The Service produces
+          factor scores, benchmarks, likelihood ranges, and recommendations
+          based on the information you provide.
         </p>
       </LegalSection>
 
@@ -51,11 +51,12 @@ export default function TermsPage() {
 
       <LegalSection heading="3. Eligibility and accounts">
         <p>
-          You must provide accurate information when creating an account and keep
-          your login credentials secure. You are responsible for all activity
-          that occurs under your account. You must have the legal capacity to
-          enter into these Terms in your jurisdiction; if you are a minor, you may
-          use the Service only with the involvement of a parent or guardian.
+          You must provide accurate information when creating an account and
+          keep your login credentials secure. You are responsible for all
+          activity that occurs under your account. You must have the legal
+          capacity to enter into these Terms in your jurisdiction; if you are a
+          minor, you may use the Service only with the involvement of a parent
+          or guardian.
         </p>
       </LegalSection>
 
@@ -132,26 +133,26 @@ export default function TermsPage() {
           To the maximum extent permitted by law, Compass and its operators will
           not be liable for any indirect, incidental, special, consequential, or
           punitive damages, or for any loss of opportunity, admission, data, or
-          profits, arising out of or related to your use of the Service — even if
-          advised of the possibility of such damages.
+          profits, arising out of or related to your use of the Service — even
+          if advised of the possibility of such damages.
         </p>
       </LegalSection>
 
       <LegalSection heading="10. Termination">
         <p>
-          You may stop using the Service at any time. We may suspend or terminate
-          your access if you violate these Terms or use the Service in a way that
-          could harm Compass, other users, or third parties. Sections that by
-          their nature should survive termination will survive.
+          You may stop using the Service at any time. We may suspend or
+          terminate your access if you violate these Terms or use the Service in
+          a way that could harm Compass, other users, or third parties. Sections
+          that by their nature should survive termination will survive.
         </p>
       </LegalSection>
 
       <LegalSection heading="11. Changes to these Terms">
         <p>
-          We may update these Terms from time to time. When we do, we will revise
-          the &ldquo;Last updated&rdquo; date above. Your continued use of the
-          Service after a change takes effect constitutes acceptance of the
-          updated Terms.
+          We may update these Terms from time to time. When we do, we will
+          revise the &ldquo;Last updated&rdquo; date above. Your continued use
+          of the Service after a change takes effect constitutes acceptance of
+          the updated Terms.
         </p>
       </LegalSection>
 

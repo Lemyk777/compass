@@ -53,7 +53,12 @@ export async function generateMetadata({
   params: { id: string };
 }): Promise<Metadata> {
   const o = await findOpportunity(params.id);
-  if (!o) return pageMeta({ title: "Not found — Compass", description: "", path: `/opportunities/${params.id}` });
+  if (!o)
+    return pageMeta({
+      title: "Not found — Compass",
+      description: "",
+      path: `/opportunities/${params.id}`,
+    });
   return pageMeta({
     title: `${o.name} — who can enter, what it costs, when it closes | Compass`,
     description: previewLine(o),
@@ -80,7 +85,9 @@ export default async function OpportunityPage({
   const facts: { label: string; body: string; tone?: "warn" }[] = [
     {
       label: "Who can enter",
-      body: o.eligibility ?? "The organiser does not state an age or grade rule. Check the official page before you plan around it.",
+      body:
+        o.eligibility ??
+        "The organiser does not state an age or grade rule. Check the official page before you plan around it.",
     },
     { label: "What it costs", body: cost.detail },
     {

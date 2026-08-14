@@ -20,7 +20,7 @@ export function useListSelection<T>(
   items: T[],
   cap: number,
   idOf: (item: T) => string,
-  search: (item: T, q: string) => boolean
+  search: (item: T, q: string) => boolean,
 ) {
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -33,10 +33,23 @@ export function useListSelection<T>(
 
   const toggle = (id: string) =>
     setSelected((cur) =>
-      cur.includes(id) ? cur.filter((n) => n !== id) : atCap ? cur : [...cur, id]
+      cur.includes(id)
+        ? cur.filter((n) => n !== id)
+        : atCap
+          ? cur
+          : [...cur, id],
     );
 
-  return { selected, setSelected, query, setQuery, atCap, filtered, toggle, idOf };
+  return {
+    selected,
+    setSelected,
+    query,
+    setQuery,
+    atCap,
+    filtered,
+    toggle,
+    idOf,
+  };
 }
 
 export type ListSelection<T> = ReturnType<typeof useListSelection<T>>;
@@ -53,14 +66,14 @@ export function useFieldFilter<T>(
   items: T[],
   fieldOf: (item: T) => string,
   faculties: string[],
-  fieldsForFaculties: (faculties: string[]) => string[]
+  fieldsForFaculties: (faculties: string[]) => string[],
 ) {
   const key = faculties.join("|");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const wanted = useMemo(() => new Set(fieldsForFaculties(faculties)), [key]);
   const matches = useMemo(
     () => items.filter((i) => wanted.has(fieldOf(i))),
-    [items, wanted, fieldOf]
+    [items, wanted, fieldOf],
   );
 
   const canFilter = wanted.size > 0 && matches.length > 0;
@@ -110,7 +123,7 @@ export function useListSubmit(targetCountry: BuilderCountry) {
       }
       if (!res.ok || !data?.analysis) {
         throw new Error(
-          data?.error || "We couldn't run your analysis. Please try again."
+          data?.error || "We couldn't run your analysis. Please try again.",
         );
       }
       setAnalysis(data.analysis);

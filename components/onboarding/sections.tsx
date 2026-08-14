@@ -12,8 +12,16 @@ import {
 } from "./fields";
 import { COUNTRIES } from "@/lib/data/countries";
 import { FACULTIES } from "@/lib/data/faculties";
-import { CURRICULA, emptyActivity, emptyHonor, HONOR_LEVELS } from "@/lib/types";
-import { DESTINATIONS, AVAILABLE_DESTINATION_CODES } from "@/lib/data/destinations";
+import {
+  CURRICULA,
+  emptyActivity,
+  emptyHonor,
+  HONOR_LEVELS,
+} from "@/lib/types";
+import {
+  DESTINATIONS,
+  AVAILABLE_DESTINATION_CODES,
+} from "@/lib/data/destinations";
 import { Flag } from "@/components/ui/Flag";
 import { LIMITS } from "@/lib/limits";
 import { useT } from "@/lib/i18n/client";
@@ -25,7 +33,9 @@ export function GeneralSection() {
 
   // Compact card labels: "United States" truncates in the 2-column grid, so the
   // long names get a short form here (the full name still shows everywhere else).
-  const SHORT_DEST_LABEL: Partial<Record<(typeof AVAILABLE_DESTINATION_CODES)[number], string>> = {
+  const SHORT_DEST_LABEL: Partial<
+    Record<(typeof AVAILABLE_DESTINATION_CODES)[number], string>
+  > = {
     US: "USA",
     KR: "Korea",
   };
@@ -69,7 +79,9 @@ export function GeneralSection() {
         id="graduation_year"
         label="High-school graduation year"
         value={data.graduation_year ? String(data.graduation_year) : ""}
-        onChange={(v) => updateField("graduation_year", v ? Number(v) : undefined)}
+        onChange={(v) =>
+          updateField("graduation_year", v ? Number(v) : undefined)
+        }
         placeholder="Select your graduation year"
         options={gradYearOptions}
         hint="When you'll finish school — we use it to time your SAT and deadlines."
@@ -87,7 +99,9 @@ export function GeneralSection() {
       <OptionGrid
         label="Where do you want to study?"
         values={data.destinations}
-        onChange={(v) => updateField("destinations", v as typeof data.destinations)}
+        onChange={(v) =>
+          updateField("destinations", v as typeof data.destinations)
+        }
         options={destOptions}
       />
 
@@ -97,7 +111,10 @@ export function GeneralSection() {
         max={LIMITS.faculties}
         values={data.faculties}
         onChange={(v) => updateField("faculties", v as typeof data.faculties)}
-        options={FACULTIES.map((f) => ({ value: f.value, label: t(f.labelKey) }))}
+        options={FACULTIES.map((f) => ({
+          value: f.value,
+          label: t(f.labelKey),
+        }))}
         hint={`Pick up to ${LIMITS.faculties}.`}
       />
     </div>
@@ -207,18 +224,20 @@ export function AcademicsSection() {
 // ── 3. Activities ─────────────────────────────────────────────────────────────
 export function ActivitiesSection() {
   const { data, updateField } = useOnboardingContext();
-  const activities = data.activities.length ? data.activities : [emptyActivity()];
+  const activities = data.activities.length
+    ? data.activities
+    : [emptyActivity()];
 
   const set = (i: number, patch: Partial<(typeof activities)[number]>) =>
     updateField(
       "activities",
-      activities.map((a, idx) => (idx === i ? { ...a, ...patch } : a))
+      activities.map((a, idx) => (idx === i ? { ...a, ...patch } : a)),
     );
   const add = () => updateField("activities", [...activities, emptyActivity()]);
   const remove = (i: number) =>
     updateField(
       "activities",
-      activities.filter((_, idx) => idx !== i)
+      activities.filter((_, idx) => idx !== i),
     );
 
   return (
@@ -226,7 +245,9 @@ export function ActivitiesSection() {
       {activities.map((a, i) => (
         <div key={i} className="rounded-2xl border border-line bg-card p-5">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-semibold text-ink">Activity {i + 1}</span>
+            <span className="text-sm font-semibold text-ink">
+              Activity {i + 1}
+            </span>
             {activities.length > 1 && (
               <button
                 type="button"
@@ -294,18 +315,20 @@ export function AwardsSection() {
   const set = (i: number, patch: Partial<(typeof honors)[number]>) =>
     updateField(
       "honors",
-      honors.map((h, idx) => (idx === i ? { ...h, ...patch } : h))
+      honors.map((h, idx) => (idx === i ? { ...h, ...patch } : h)),
     );
   const add = () => updateField("honors", [...honors, emptyHonor()]);
   const remove = (i: number) =>
     updateField(
       "honors",
-      honors.filter((_, idx) => idx !== i)
+      honors.filter((_, idx) => idx !== i),
     );
   const toggleLevel = (i: number, level: string) => {
     const cur = honors[i].levels ?? [];
     set(i, {
-      levels: cur.includes(level) ? cur.filter((l) => l !== level) : [...cur, level],
+      levels: cur.includes(level)
+        ? cur.filter((l) => l !== level)
+        : [...cur, level],
     });
   };
 
@@ -313,13 +336,16 @@ export function AwardsSection() {
     <div className="space-y-4">
       {honors.length === 0 && (
         <p className="text-sm text-ink-soft">
-          Add any awards, honors, or recognitions — or skip if you have none yet.
+          Add any awards, honors, or recognitions — or skip if you have none
+          yet.
         </p>
       )}
       {honors.map((h, i) => (
         <div key={i} className="rounded-2xl border border-line bg-card p-5">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-semibold text-ink">Award {i + 1}</span>
+            <span className="text-sm font-semibold text-ink">
+              Award {i + 1}
+            </span>
             <button
               type="button"
               onClick={() => remove(i)}

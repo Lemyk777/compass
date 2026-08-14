@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { FACULTIES, FACULTY_LABEL, type FacultyValue } from "@/lib/data/faculties";
+import {
+  FACULTIES,
+  FACULTY_LABEL,
+  type FacultyValue,
+} from "@/lib/data/faculties";
 import {
   FIELDS_PARAM,
   parseFieldsParam,
@@ -96,7 +100,10 @@ export function FieldFilter({
         // Opening is a state change, so it moves rather than snaps. The keyframe
         // is the project's own `fade-up`, and the global reduced-motion guard in
         // globals.css collapses it to nothing for anyone who asked for that.
-        <div id="guide-fields-chips" className="animate-fade-up [animation-duration:220ms]">
+        <div
+          id="guide-fields-chips"
+          className="animate-fade-up [animation-duration:220ms]"
+        >
           <p className="mt-2 text-sm text-ink-soft">
             Narrows every step of the guide — nothing here is saved to your
             profile.

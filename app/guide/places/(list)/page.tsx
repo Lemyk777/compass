@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { FieldFilter } from "@/components/guide/FieldFilter";
-import { GuideCard, ListHead, NextStep, SectionIntro } from "@/components/guide/parts";
+import {
+  GuideCard,
+  ListHead,
+  NextStep,
+  SectionIntro,
+} from "@/components/guide/parts";
 import Link from "@/components/ui/Link";
 import { fieldsSuffix, withFields } from "@/lib/data/guide-fields";
 import { guideMorph, guideSection } from "@/lib/data/guide-sections";
@@ -85,12 +90,14 @@ export default async function GuidePlacesPage({
   return (
     <div className="space-y-6">
       <ListHead
-        intro={<SectionIntro
-          step={SECTION.step}
-          title={SECTION.title}
-          blurb={SECTION.blurb}
-          count={`${byField.length} countries. Each page states what it costs you before what it gives you, and names who should go somewhere else instead.`}
-        />}
+        intro={
+          <SectionIntro
+            step={SECTION.step}
+            title={SECTION.title}
+            blurb={SECTION.blurb}
+            count={`${byField.length} countries. Each page states what it costs you before what it gives you, and names who should go somewhere else instead.`}
+          />
+        }
         aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
       />
 

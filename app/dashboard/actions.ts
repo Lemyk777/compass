@@ -23,7 +23,7 @@ export type SaveResult = { ok: true } | { ok: false; error: string };
 // them so the matching analysis pathway runs. Shared by every per-country list
 // save below. Returns the row id and the merged destination list, or an error.
 async function profileForCountryList(
-  code: "US" | "IT" | "HK" | "AE" | "KR"
+  code: "US" | "IT" | "HK" | "AE" | "KR",
 ): Promise<
   | { ok: true; id: string; destinations: string[] }
   | { ok: false; error: string }
@@ -43,7 +43,10 @@ async function profileForCountryList(
   if (!sp) return { ok: false, error: "Complete your profile first." };
 
   const destinations = Array.from(
-    new Set([...normalizeDestinations(sp.destinations, sp.include_italy), code])
+    new Set([
+      ...normalizeDestinations(sp.destinations, sp.include_italy),
+      code,
+    ]),
   );
   return { ok: true, id: sp.id as string, destinations };
 }
@@ -55,7 +58,7 @@ async function profileForCountryList(
 export async function saveCollegeList(schools: string[]): Promise<SaveResult> {
   const valid = new Set(UNIVERSITIES.map((u) => u.name));
   const cleaned = Array.from(
-    new Set((schools ?? []).filter((s) => valid.has(s)))
+    new Set((schools ?? []).filter((s) => valid.has(s))),
   ).slice(0, LIMITS.targetSchools);
 
   if (cleaned.length === 0) {
@@ -92,11 +95,11 @@ export async function saveCollegeList(schools: string[]): Promise<SaveResult> {
 // the Italian pathway. Re-analysis is triggered by the client afterwards.
 export async function saveItalyList(
   programIds: string[],
-  familyIncome?: number
+  familyIncome?: number,
 ): Promise<SaveResult> {
   const valid = new Set(ITALIAN_PROGRAMS.map((p) => p.id));
   const cleaned = Array.from(
-    new Set((programIds ?? []).filter((id) => valid.has(id)))
+    new Set((programIds ?? []).filter((id) => valid.has(id))),
   ).slice(0, LIMITS.italyPrograms);
 
   if (cleaned.length === 0) {
@@ -107,7 +110,9 @@ export async function saveItalyList(
   if (!prof.ok) return prof;
 
   const income =
-    typeof familyIncome === "number" && Number.isFinite(familyIncome) && familyIncome >= 0
+    typeof familyIncome === "number" &&
+    Number.isFinite(familyIncome) &&
+    familyIncome >= 0
       ? Math.round(familyIncome)
       : null;
 
@@ -138,11 +143,11 @@ export async function saveItalyList(
 // Validates ids, caps the count, and ensures "HK" is in the destinations.
 export async function saveHkList(
   programIds: string[],
-  gradeStatus: "predicted" | "achieved"
+  gradeStatus: "predicted" | "achieved",
 ): Promise<SaveResult> {
   const valid = new Set(HK_PROGRAMS.map((p) => p.id));
   const cleaned = Array.from(
-    new Set((programIds ?? []).filter((id) => valid.has(id)))
+    new Set((programIds ?? []).filter((id) => valid.has(id))),
   ).slice(0, LIMITS.hkPrograms);
 
   if (cleaned.length === 0) {
@@ -169,7 +174,8 @@ export async function saveHkList(
     if (error.code === "42703" || error.code === "PGRST204") {
       return {
         ok: false,
-        error: "Hong Kong isn't enabled on this database yet. Apply migration 0005_hong_kong.sql.",
+        error:
+          "Hong Kong isn't enabled on this database yet. Apply migration 0005_hong_kong.sql.",
       };
     }
     return { ok: false, error: "Could not save your Hong Kong list." };
@@ -188,11 +194,11 @@ export async function saveHkList(
 // caps the count, and ensures "AE" is in the destinations so the UAE pathway runs.
 export async function saveUaeList(
   programIds: string[],
-  gradeStatus: "predicted" | "achieved"
+  gradeStatus: "predicted" | "achieved",
 ): Promise<SaveResult> {
   const valid = new Set(UAE_PROGRAMS.map((p) => p.id));
   const cleaned = Array.from(
-    new Set((programIds ?? []).filter((id) => valid.has(id)))
+    new Set((programIds ?? []).filter((id) => valid.has(id))),
   ).slice(0, LIMITS.uaePrograms);
 
   if (cleaned.length === 0) {
@@ -219,7 +225,8 @@ export async function saveUaeList(
     if (error.code === "42703" || error.code === "PGRST204") {
       return {
         ok: false,
-        error: "UAE isn't enabled on this database yet. Apply migration 0016_uae.sql.",
+        error:
+          "UAE isn't enabled on this database yet. Apply migration 0016_uae.sql.",
       };
     }
     return { ok: false, error: "Could not save your UAE list." };
@@ -241,11 +248,11 @@ export async function saveUaeList(
 export async function saveKoreaList(
   programIds: string[],
   gradeStatus: "predicted" | "achieved",
-  topikLevel?: number
+  topikLevel?: number,
 ): Promise<SaveResult> {
   const valid = new Set(KOREA_PROGRAMS.map((p) => p.id));
   const cleaned = Array.from(
-    new Set((programIds ?? []).filter((id) => valid.has(id)))
+    new Set((programIds ?? []).filter((id) => valid.has(id))),
   ).slice(0, LIMITS.krPrograms);
 
   if (cleaned.length === 0) {
@@ -253,7 +260,10 @@ export async function saveKoreaList(
   }
 
   const topik =
-    topikLevel != null && Number.isInteger(topikLevel) && topikLevel >= 1 && topikLevel <= 6
+    topikLevel != null &&
+    Number.isInteger(topikLevel) &&
+    topikLevel >= 1 &&
+    topikLevel <= 6
       ? topikLevel
       : null;
 
@@ -278,7 +288,8 @@ export async function saveKoreaList(
     if (error.code === "42703" || error.code === "PGRST204") {
       return {
         ok: false,
-        error: "South Korea isn't enabled on this database yet. Apply migration 0017_korea.sql.",
+        error:
+          "South Korea isn't enabled on this database yet. Apply migration 0017_korea.sql.",
       };
     }
     return { ok: false, error: "Could not save your Korea list." };
@@ -337,7 +348,8 @@ export async function saveGraduationYear(year: number): Promise<SaveResult> {
     if (error.code === "42703" || error.code === "PGRST204") {
       return {
         ok: false,
-        error: "Graduation year isn't enabled on this database yet. Apply migration 0010_graduation_year.sql.",
+        error:
+          "Graduation year isn't enabled on this database yet. Apply migration 0010_graduation_year.sql.",
       };
     }
     return { ok: false, error: "Could not save your year." };
@@ -362,7 +374,7 @@ export async function saveGraduationYear(year: number): Promise<SaveResult> {
  */
 export async function saveFaculties(faculties: string[]): Promise<SaveResult> {
   const valid = Array.from(new Set(faculties)).filter((f) =>
-    (FACULTY_VALUES as string[]).includes(f)
+    (FACULTY_VALUES as string[]).includes(f),
   );
   if (valid.length > LIMITS.faculties) {
     return { ok: false, error: `Pick up to ${LIMITS.faculties} fields.` };
@@ -454,7 +466,10 @@ export async function saveOpportunityIntent(input: {
   // omits the field leaves an existing note untouched.
   const row =
     input.whyMatters !== undefined
-      ? { ...core, why_matters: cleanIntentText(input.whyMatters, WHY_MATTERS_MAX) }
+      ? {
+          ...core,
+          why_matters: cleanIntentText(input.whyMatters, WHY_MATTERS_MAX),
+        }
       : core;
 
   const { error } = await supabase
@@ -473,7 +488,7 @@ export async function saveOpportunityIntent(input: {
 
 /** Remove an intent entirely (the student never meant to commit). */
 export async function clearOpportunityIntent(
-  opportunityId: string
+  opportunityId: string,
 ): Promise<SaveResult> {
   const supabase = createClient();
   const {

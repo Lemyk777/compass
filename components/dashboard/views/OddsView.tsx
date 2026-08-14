@@ -10,21 +10,32 @@ import { LikelihoodGauge } from "@/components/charts/LikelihoodGauge";
 // lazily (client-only) so Recharts stays out of the odds route's initial bundle;
 // the skeleton reserves height to avoid layout shift when it swaps in.
 const SchoolComparison = dynamic(
-  () => import("@/components/charts/SchoolComparison").then((m) => m.SchoolComparison),
+  () =>
+    import("@/components/charts/SchoolComparison").then(
+      (m) => m.SchoolComparison,
+    ),
   {
     ssr: false,
     loading: () => (
       <div className="h-64 w-full animate-pulse rounded-xl bg-line/20" />
     ),
-  }
+  },
 );
 import { Benchmarks } from "@/components/report/Benchmarks";
 import { Recommendations } from "@/components/report/Recommendations";
 import { COUNTRY_VIEWS } from "@/components/report/country-views";
-import { analysisHasCountry, hasAnyCollegeList } from "@/lib/data/country-content";
+import {
+  analysisHasCountry,
+  hasAnyCollegeList,
+} from "@/lib/data/country-content";
 import type { DestinationCode } from "@/lib/data/destinations";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
-import { CountryTabs, EmptyCountryList, NoAnalysisYet, PageHeader } from "@/components/dashboard/states";
+import {
+  CountryTabs,
+  EmptyCountryList,
+  NoAnalysisYet,
+  PageHeader,
+} from "@/components/dashboard/states";
 import { LockedSection } from "@/components/dashboard/LockedSection";
 import { OddsTeaser, OddsArt } from "@/components/dashboard/LockedTeasers";
 import { useT } from "@/lib/i18n/client";
@@ -91,7 +102,10 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
   return (
     <div className="space-y-8">
       {analysis.schools.length > 0 && (
-        <Section title={t("report.schoolsTitle")} hint={t("report.schoolsHint")}>
+        <Section
+          title={t("report.schoolsTitle")}
+          hint={t("report.schoolsHint")}
+        >
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {analysis.schools.map((s) => (
               <LikelihoodGauge
@@ -112,7 +126,10 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
         </Section>
       )}
       {analysis.schools.length > 1 && (
-        <Section title={t("report.compareTitle")} hint={t("report.compareHint")}>
+        <Section
+          title={t("report.compareTitle")}
+          hint={t("report.compareHint")}
+        >
           <Card>
             <SchoolComparison schools={analysis.schools} />
             <Legend />
@@ -148,7 +165,8 @@ function CountryOdds({
   const t = useT();
   const odds = COUNTRY_VIEWS[code]?.odds;
   if (!odds) return null;
-  if (!analysisHasCountry(analysis, code)) return <EmptyCountryList code={code} />;
+  if (!analysisHasCountry(analysis, code))
+    return <EmptyCountryList code={code} />;
   return (
     <Section title={t(odds.titleKey)} hint={t(odds.hintKey)}>
       {odds.render(analysis)}
@@ -166,8 +184,14 @@ function Legend() {
   return (
     <div className="mt-3 flex flex-wrap gap-4 border-t border-line pt-3">
       {items.map((i) => (
-        <span key={i.label} className="flex items-center gap-1.5 text-xs text-ink-soft">
-          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: i.color }} />
+        <span
+          key={i.label}
+          className="flex items-center gap-1.5 text-xs text-ink-soft"
+        >
+          <span
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: i.color }}
+          />
           {i.label}
         </span>
       ))}

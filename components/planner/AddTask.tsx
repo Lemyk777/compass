@@ -34,7 +34,10 @@ export function AddTask() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-xl border border-dashed border-line p-3">
+    <form
+      onSubmit={submit}
+      className="rounded-xl border border-dashed border-line p-3"
+    >
       <label className="block">
         <span className="sr-only">What do you need to do?</span>
         <input

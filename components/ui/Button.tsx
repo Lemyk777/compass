@@ -28,7 +28,7 @@ const base = cn(
   // focused button drew a white ring inside a white halo on a near-black page.
   // `.focus-ring` is `ring-accent` over `ring-offset-surface`; both theme.
   "focus-visible:focus-ring",
-  "active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+  "active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
 );
 
 const shapes: Record<Shape, string> = {
@@ -85,7 +85,13 @@ export function Button({
 }: CommonProps & ComponentProps<"button">) {
   return (
     <button
-      className={cn(base, shapes[shape], sizes[size], variants[variant], className)}
+      className={cn(
+        base,
+        shapes[shape],
+        sizes[size],
+        variants[variant],
+        className,
+      )}
       {...props}
     />
   );
@@ -94,14 +100,31 @@ export function Button({
 export const ButtonLink = forwardRef<
   HTMLAnchorElement,
   CommonProps & ComponentProps<typeof Link>
->(({ variant = "primary", size = "md", shape = "rounded", className, ...props }, ref) => {
-  return (
-    <Link
-      ref={ref}
-      className={cn(base, shapes[shape], sizes[size], variants[variant], className)}
-      {...props}
-    />
-  );
-});
+>(
+  (
+    {
+      variant = "primary",
+      size = "md",
+      shape = "rounded",
+      className,
+      ...props
+    },
+    ref,
+  ) => {
+    return (
+      <Link
+        ref={ref}
+        className={cn(
+          base,
+          shapes[shape],
+          sizes[size],
+          variants[variant],
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);
 
 ButtonLink.displayName = "ButtonLink";

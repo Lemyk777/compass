@@ -139,7 +139,7 @@ export default async function AdminTrafficPage({
           rangeLabel={RANGES.find((r) => r.days === days)!.label}
         />
       )}
-    </>
+    </>,
   );
 }
 
@@ -201,7 +201,7 @@ function TrafficReport({
               ? null
               : delta(
                   Math.round(totals.bounceRate * 100),
-                  Math.round(previous.bounceRate * 100)
+                  Math.round(previous.bounceRate * 100),
                 )
           }
           goodWhenUp={false}
@@ -456,7 +456,9 @@ function Bars({
           <div className="h-2 w-full overflow-hidden rounded-full bg-line">
             <div
               className="h-full rounded-full bg-accent"
-              style={{ width: `${Math.max(2, Math.round((r.value / top) * 100))}%` }}
+              style={{
+                width: `${Math.max(2, Math.round((r.value / top) * 100))}%`,
+              }}
             />
           </div>
         </li>
@@ -465,12 +467,9 @@ function Bars({
   );
 }
 
-function PagesTable({
-  rows,
-}: {
-  rows: Summary["pages"];
-}) {
-  if (!rows.length) return <p className="text-sm text-ink-faint">Nothing yet.</p>;
+function PagesTable({ rows }: { rows: Summary["pages"] }) {
+  if (!rows.length)
+    return <p className="text-sm text-ink-faint">Nothing yet.</p>;
   return (
     <div className="-mx-1 overflow-x-auto">
       <table className="w-full min-w-[34rem] text-sm">
@@ -486,7 +485,10 @@ function PagesTable({
         <tbody>
           {rows.map((p) => (
             <tr key={p.path} className="border-b border-line/60 last:border-0">
-              <td className="max-w-[18rem] truncate px-1 py-2 text-ink" title={p.path}>
+              <td
+                className="max-w-[18rem] truncate px-1 py-2 text-ink"
+                title={p.path}
+              >
                 {p.path}
               </td>
               <td data-num className="px-1 py-2 text-right text-ink-soft">

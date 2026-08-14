@@ -16,9 +16,21 @@ export function MiniScorecard({
     { label: t("mini.activities"), v: 6 },
   ];
   const chips = [
-    { label: t("tier.reach"), color: "rgb(var(--reach))", soft: "rgb(var(--reach-soft))" },
-    { label: t("tier.target"), color: "rgb(var(--target))", soft: "rgb(var(--target-soft))" },
-    { label: t("tier.likely"), color: "rgb(var(--likely))", soft: "rgb(var(--likely-soft))" },
+    {
+      label: t("tier.reach"),
+      color: "rgb(var(--reach))",
+      soft: "rgb(var(--reach-soft))",
+    },
+    {
+      label: t("tier.target"),
+      color: "rgb(var(--target))",
+      soft: "rgb(var(--target-soft))",
+    },
+    {
+      label: t("tier.likely"),
+      color: "rgb(var(--likely))",
+      soft: "rgb(var(--likely-soft))",
+    },
   ];
   return (
     <div
@@ -50,7 +62,9 @@ export function MiniScorecard({
       <div className="mt-6 space-y-2.5">
         {factors.map((f) => (
           <div key={f.label} className="flex items-center gap-3">
-            <span className="w-24 shrink-0 text-xs text-ink-soft">{f.label}</span>
+            <span className="w-24 shrink-0 text-xs text-ink-soft">
+              {f.label}
+            </span>
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-line">
               <div
                 className="h-full rounded-full bg-accent"

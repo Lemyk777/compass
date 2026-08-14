@@ -15,7 +15,7 @@ type Admin = ReturnType<typeof createAdminClient>;
 /** Best-effort user_id → email map via the auth admin API (server-only). */
 async function loadEmails(
   admin: Admin,
-  userIds: string[]
+  userIds: string[],
 ): Promise<Map<string, string | null>> {
   const want = new Set(userIds);
   const map = new Map<string, string | null>();
@@ -67,7 +67,7 @@ export default async function AdminAmbassadorsPage() {
 
   const emailById = await loadEmails(
     admin,
-    ambs.map((a) => a.user_id)
+    ambs.map((a) => a.user_id),
   );
 
   const rows: AmbassadorRow[] = ambs

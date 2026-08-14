@@ -27,10 +27,12 @@ import { requireSession } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPartnerForUser } from "@/lib/partners/queries";
 import { slugify, type Partner } from "@/lib/data/partners";
+import { COMPETITION_CATEGORIES } from "@/lib/data/key-dates";
 import { FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
 import { currentCycle, cycleEndPlaceholder } from "@/lib/data/cycle";
 
-export type PartnerResult = { ok: true; id?: string } | { ok: false; error: string };
+export type PartnerResult =
+  { ok: true; id?: string } | { ok: false; error: string };
 
 const BLURB_MAX = 280;
 const NAME_MAX = 120;
@@ -46,18 +48,14 @@ const opportunitySchema = z.object({
   name: z.string().trim().min(3).max(NAME_MAX),
   url: z.string().trim().url().startsWith("http"),
   blurb: z.string().trim().min(10).max(BLURB_MAX),
-  category: z.enum([
-    "competition",
-    "olympiad",
-    "course",
-    "research_program",
-    "summer_program",
-  ]),
+  category: z.enum(COMPETITION_CATEGORIES),
   tier: z.enum(["accessible", "selective", "elite"]),
   level: z.enum(["international", "national", "regional"]),
   // Empty = relevant to any field. Same meaning as "all" in the catalog:
   // unknown facts never exclude.
-  fields: z.array(z.enum(FACULTY_VALUES as [FacultyValue, ...FacultyValue[]])).max(8),
+  fields: z
+    .array(z.enum(FACULTY_VALUES as [FacultyValue, ...FacultyValue[]]))
+    .max(8),
   eligibility: z.string().trim().max(200),
   timing: z.enum(TIMING),
   deadline: z.string().trim(),
@@ -90,7 +88,10 @@ async function activePartner(): Promise<
   const session = await requireSession("/partner");
   const partner = await getPartnerForUser(session.id);
   if (!partner) {
-    return { ok: false, error: "This account is not linked to a partner organisation." };
+    return {
+      ok: false,
+      error: "This account is not linked to a partner organisation.",
+    };
   }
   if (partner.status === "pending") {
     return { ok: false, error: "Your application is still being reviewed." };
@@ -116,8 +117,10 @@ function todayISO(): string {
  * makes, and it has to stay worth something.
  */
 function resolveTiming(
-  input: NewOpportunityInput
-): { ok: true; deadline: string; confirmed: boolean; alwaysOpen: boolean } | { ok: false; error: string } {
+  input: NewOpportunityInput,
+):
+  | { ok: true; deadline: string; confirmed: boolean; alwaysOpen: boolean }
+  | { ok: false; error: string } {
   if (input.timing === "deadline") {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(input.deadline)) {
       return { ok: false, error: "Enter the deadline as a date." };
@@ -125,7 +128,12 @@ function resolveTiming(
     if (input.deadline < todayISO()) {
       return { ok: false, error: "That deadline is in the past." };
     }
-    return { ok: true, deadline: input.deadline, confirmed: true, alwaysOpen: false };
+    return {
+      ok: true,
+      deadline: input.deadline,
+      confirmed: true,
+      alwaysOpen: false,
+    };
   }
   return {
     ok: true,
@@ -154,7 +162,7 @@ async function uniqueId(partnerId: string, name: string): Promise<string> {
 function rowFrom(
   input: NewOpportunityInput,
   partner: Partner,
-  timing: { deadline: string; confirmed: boolean; alwaysOpen: boolean }
+  timing: { deadline: string; confirmed: boolean; alwaysOpen: boolean },
 ) {
   return {
     name: input.name,
@@ -164,7 +172,9 @@ function rowFrom(
     deadline: timing.deadline,
     event_window:
       input.eventWindow ||
-      (timing.alwaysOpen ? "Runs continuously — start whenever you like" : "See the official page"),
+      (timing.alwaysOpen
+        ? "Runs continuously — start whenever you like"
+        : "See the official page"),
     level: input.level,
     url: input.url,
     blurb: input.blurb,
@@ -193,7 +203,9 @@ function revalidateOpportunitySurfaces(partnerId: string): void {
 }
 
 /** Create and publish. Live to students the moment this returns. */
-export async function postOpportunity(input: NewOpportunityInput): Promise<PartnerResult> {
+export async function postOpportunity(
+  input: NewOpportunityInput,
+): Promise<PartnerResult> {
   const auth = await activePartner();
   if (!auth.ok) return auth;
 
@@ -216,7 +228,10 @@ export async function postOpportunity(input: NewOpportunityInput): Promise<Partn
 
   if (error) {
     console.error("[partners] post failed:", error);
-    return { ok: false, error: "Could not publish that. Try again in a moment." };
+    return {
+      ok: false,
+      error: "Could not publish that. Try again in a moment.",
+    };
   }
 
   await logEvent(auth.userId, "partner_post");
@@ -227,7 +242,7 @@ export async function postOpportunity(input: NewOpportunityInput): Promise<Partn
 /** Edit one of your own posts. Ownership is re-checked against partner_id. */
 export async function updateOpportunity(
   id: string,
-  input: NewOpportunityInput
+  input: NewOpportunityInput,
 ): Promise<PartnerResult> {
   const auth = await activePartner();
   if (!auth.ok) return auth;
@@ -262,7 +277,7 @@ export async function updateOpportunity(
  */
 export async function setOpportunityPublished(
   id: string,
-  published: boolean
+  published: boolean,
 ): Promise<PartnerResult> {
   const auth = await activePartner();
   if (!auth.ok) return auth;
@@ -297,7 +312,7 @@ export type PartnerProfileInput = z.infer<typeof profileSchema>;
  * mark would verify nothing at all. Renames go through an admin.
  */
 export async function savePartnerProfile(
-  input: PartnerProfileInput
+  input: PartnerProfileInput,
 ): Promise<PartnerResult> {
   const auth = await activePartner();
   if (!auth.ok) return auth;

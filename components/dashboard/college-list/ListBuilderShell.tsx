@@ -80,7 +80,9 @@ export function ListBuilderShell<T>({
       <StickyActionBar
         error={error}
         message={
-          n === 0 ? emptyMessage : `${n} ${n === 1 ? countNoun : `${countNoun}s`} selected`
+          n === 0
+            ? emptyMessage
+            : `${n} ${n === 1 ? countNoun : `${countNoun}s`} selected`
         }
         ctaLabel="See my admission odds"
         ctaDisabled={n === 0 || busy}

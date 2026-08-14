@@ -35,7 +35,13 @@ import { MapOutline } from "@/components/planner/MapOutline";
 
 type Dir = "up" | "down" | "indent" | "outdent";
 
-export function MapWorkspace({ root, mapId }: { root: MapNode; mapId: string }) {
+export function MapWorkspace({
+  root,
+  mapId,
+}: {
+  root: MapNode;
+  mapId: string;
+}) {
   const [currentId, setCurrentId] = useState<string>(root.id);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -49,7 +55,10 @@ export function MapWorkspace({ root, mapId }: { root: MapNode; mapId: string }) 
   const current = nodes.find((n) => n.id === currentId) ?? nodes[0];
   const isRoot = current?.id === root.id;
 
-  function run(fn: () => Promise<{ ok: true } | { ok: false; error: string }>, ok?: string) {
+  function run(
+    fn: () => Promise<{ ok: true } | { ok: false; error: string }>,
+    ok?: string,
+  ) {
     setError(null);
     setNotice(null);
     startTransition(async () => {
@@ -75,7 +84,9 @@ export function MapWorkspace({ root, mapId }: { root: MapNode; mapId: string }) 
     // parent, so there it falls back to a child, the only reading that is not
     // an error message.
     const parentId =
-      adding === "inside" || isRoot ? currentId : (parentIdOf(root, currentId) ?? currentId);
+      adding === "inside" || isRoot
+        ? currentId
+        : (parentIdOf(root, currentId) ?? currentId);
     run(() => addNode({ mapId, parentId, label }));
     setDraft("");
     setAdding(null);
@@ -111,7 +122,10 @@ export function MapWorkspace({ root, mapId }: { root: MapNode; mapId: string }) 
 
         <span aria-hidden className="mx-1 h-5 w-px bg-line" />
 
-        <BarButton onClick={() => move("indent")} disabled={disabled || !canIndent(root, currentId)}>
+        <BarButton
+          onClick={() => move("indent")}
+          disabled={disabled || !canIndent(root, currentId)}
+        >
           Indent
         </BarButton>
         <BarButton
@@ -120,7 +134,10 @@ export function MapWorkspace({ root, mapId }: { root: MapNode; mapId: string }) 
         >
           Outdent
         </BarButton>
-        <BarButton onClick={() => move("up")} disabled={disabled || !canMoveUp(root, currentId)}>
+        <BarButton
+          onClick={() => move("up")}
+          disabled={disabled || !canMoveUp(root, currentId)}
+        >
           Up
         </BarButton>
         <BarButton
@@ -153,10 +170,15 @@ export function MapWorkspace({ root, mapId }: { root: MapNode; mapId: string }) 
       </div>
 
       {adding && (
-        <form onSubmit={submitAdd} className="flex flex-wrap items-center gap-2">
+        <form
+          onSubmit={submitAdd}
+          className="flex flex-wrap items-center gap-2"
+        >
           <label className="min-w-0 flex-1">
             <span className="sr-only">
-              {adding === "inside" ? "What goes inside it?" : "What comes after it?"}
+              {adding === "inside"
+                ? "What goes inside it?"
+                : "What comes after it?"}
             </span>
             <input
               type="text"
@@ -164,7 +186,11 @@ export function MapWorkspace({ root, mapId }: { root: MapNode; mapId: string }) 
               value={draft}
               maxLength={LIMITS.mapLabel}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={adding === "inside" ? "What goes inside it?" : "What comes after it?"}
+              placeholder={
+                adding === "inside"
+                  ? "What goes inside it?"
+                  : "What comes after it?"
+              }
               className="w-full rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus-visible:focus-ring"
             />
           </label>
@@ -216,13 +242,17 @@ export function MapWorkspace({ root, mapId }: { root: MapNode; mapId: string }) 
           {root.children.length === 0 && (
             <p className="mt-3 max-w-[60ch] text-xs leading-relaxed text-ink-soft">
               One question so far. Add what your options are —{" "}
-              <span className="text-ink">Add inside</span> puts a branch under whatever is
-              selected.
+              <span className="text-ink">Add inside</span> puts a branch under
+              whatever is selected.
             </p>
           )}
         </div>
         <div className="order-1 lg:order-2">
-          <MapDiagram layout={layout} currentId={currentId} onPick={setCurrentId} />
+          <MapDiagram
+            layout={layout}
+            currentId={currentId}
+            onPick={setCurrentId}
+          />
         </div>
       </div>
     </div>

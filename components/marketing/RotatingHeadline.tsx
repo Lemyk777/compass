@@ -73,7 +73,7 @@ export function RotatingHeadline({
     }
     const io = new IntersectionObserver(
       (entries) => (entries.some((e) => e.isIntersecting) ? start() : stop()),
-      { threshold: 0 }
+      { threshold: 0 },
     );
     io.observe(el);
     return () => {

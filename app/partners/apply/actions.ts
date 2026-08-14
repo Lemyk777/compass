@@ -20,7 +20,8 @@ import { getPartnerForUser } from "@/lib/partners/queries";
 import { slugify } from "@/lib/data/partners";
 import { normalizeCountry } from "@/lib/data/geo";
 
-export type ApplyResult = { ok: true; id: string } | { ok: false; error: string };
+export type ApplyResult =
+  { ok: true; id: string } | { ok: false; error: string };
 
 const applySchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -53,7 +54,10 @@ export async function applyAsPartner(input: ApplyInput): Promise<ApplyResult> {
   const parsed = applySchema.safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
-    return { ok: false, error: issue?.message ?? "Check the form and try again." };
+    return {
+      ok: false,
+      error: issue?.message ?? "Check the form and try again.",
+    };
   }
   const data = parsed.data;
 
@@ -82,7 +86,10 @@ export async function applyAsPartner(input: ApplyInput): Promise<ApplyResult> {
 
   if (error) {
     console.error("[partners] application failed:", error);
-    return { ok: false, error: "Could not send that application. Try again in a moment." };
+    return {
+      ok: false,
+      error: "Could not send that application. Try again in a moment.",
+    };
   }
 
   revalidatePath("/admin/partners");

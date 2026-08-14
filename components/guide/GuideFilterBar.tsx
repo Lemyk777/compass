@@ -71,7 +71,10 @@ export function GuideFilterBar({
 
   useEffect(() => {
     if (!typed.current) return;
-    const t = setTimeout(() => write({ [GUIDE_FILTER_KEYS.q]: draft.trim() || null }), TYPING_MS);
+    const t = setTimeout(
+      () => write({ [GUIDE_FILTER_KEYS.q]: draft.trim() || null }),
+      TYPING_MS,
+    );
     return () => clearTimeout(t);
     // `write` is recreated each render; depending on it would reset the timer on
     // every keystroke and the query would never settle.
@@ -87,7 +90,9 @@ export function GuideFilterBar({
 
   const toggleRegion = (r: RegionKey) => {
     const on = filters.regions.includes(r);
-    const next = on ? filters.regions.filter((x) => x !== r) : [...filters.regions, r];
+    const next = on
+      ? filters.regions.filter((x) => x !== r)
+      : [...filters.regions, r];
     write({ [GUIDE_FILTER_KEYS.regions]: next.join(",") || null });
   };
 
@@ -104,7 +109,10 @@ export function GuideFilterBar({
       className="rounded-2xl border border-line bg-card px-4 py-3.5 sm:px-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h2 id="guide-filter-heading" className="text-sm font-semibold text-ink">
+        <h2
+          id="guide-filter-heading"
+          className="text-sm font-semibold text-ink"
+        >
           Narrow the list
         </h2>
         {active > 0 && (
@@ -170,7 +178,11 @@ export function GuideFilterBar({
               type="button"
               aria-pressed={filters.modelledOnly}
               onClick={() =>
-                write({ [GUIDE_FILTER_KEYS.modelled]: filters.modelledOnly ? null : "1" })
+                write({
+                  [GUIDE_FILTER_KEYS.modelled]: filters.modelledOnly
+                    ? null
+                    : "1",
+                })
               }
               className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-out active:scale-[0.96] active:duration-75 focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none ${
                 filters.modelledOnly

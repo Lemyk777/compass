@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, {
   createContext,
@@ -9,8 +9,8 @@ import React, {
   useRef,
   useTransition,
   useMemo,
-} from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+} from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 // A view transition FREEZES the document. The browser paints a static snapshot
 // and stops responding to scroll until the callback's promise settles. For the
@@ -62,10 +62,10 @@ const ViewTransitionsContext = createContext<React.Dispatch<
  * should get no freeze, not a fast one.
  */
 function canTransition(): boolean {
-  if (typeof document === 'undefined') return false;
-  if (!('startViewTransition' in document)) return false;
-  if (typeof window.matchMedia !== 'function') return true;
-  return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (typeof document === "undefined") return false;
+  if (!("startViewTransition" in document)) return false;
+  if (typeof window.matchMedia !== "function") return true;
+  return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 export function ViewTransitions({ children }: { children: React.ReactNode }) {
@@ -114,14 +114,16 @@ export function ViewTransitions({ children }: { children: React.ReactNode }) {
       }, MAX_FREEZE_MS);
 
       pending.current = { resolve: resolveTransition, timer };
-      (document as unknown as {
-        startViewTransition: (cb: () => Promise<void>) => unknown;
-      }).startViewTransition(() => promise);
+      (
+        document as unknown as {
+          startViewTransition: (cb: () => Promise<void>) => unknown;
+        }
+      ).startViewTransition(() => promise);
     };
 
-    window.addEventListener('popstate', onPopState);
+    window.addEventListener("popstate", onPopState);
     return () => {
-      window.removeEventListener('popstate', onPopState);
+      window.removeEventListener("popstate", onPopState);
     };
   }, []);
 
@@ -153,9 +155,11 @@ export function useTransitionRouter() {
         cb();
         return;
       }
-      (document as unknown as {
-        startViewTransition: (cb: () => Promise<void>) => unknown;
-      }).startViewTransition(
+      (
+        document as unknown as {
+          startViewTransition: (cb: () => Promise<void>) => unknown;
+        }
+      ).startViewTransition(
         () =>
           new Promise<void>((resolve) => {
             // Same deadline as popstate, and this is the path that actually hit
@@ -172,24 +176,24 @@ export function useTransitionRouter() {
               // `finish` itself rather than the result of calling it.
               setFinishViewTransition(() => finish);
             });
-          })
+          }),
       );
     },
-    [setFinishViewTransition, startReactTransition]
+    [setFinishViewTransition, startReactTransition],
   );
 
   const push = useCallback(
     (href: string, options?: Parameters<typeof router.push>[1]) => {
       triggerTransition(() => router.push(href, options));
     },
-    [triggerTransition, router]
+    [triggerTransition, router],
   );
 
   const replace = useCallback(
     (href: string, options?: Parameters<typeof router.replace>[1]) => {
       triggerTransition(() => router.replace(href, options));
     },
-    [triggerTransition, router]
+    [triggerTransition, router],
   );
 
   return useMemo(
@@ -198,6 +202,6 @@ export function useTransitionRouter() {
       push,
       replace,
     }),
-    [router, push, replace]
+    [router, push, replace],
   );
 }

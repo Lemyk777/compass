@@ -16,13 +16,14 @@ export default function PrivacyPage() {
     <LegalPage title="Privacy Policy" updated={UPDATED}>
       <p>
         This Privacy Policy explains how Compass (&ldquo;Compass,&rdquo;
-        &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) collects, uses,
-        and protects information when you use our website and services (the
-        &ldquo;Service&rdquo;). Compass helps internationally-based students
-        assess and improve their applications to universities in the US, Italy,
-        and Hong Kong. Compass is an independent project operated by individuals
-        based in the Republic of Kazakhstan; it is not a registered company. By
-        using the Service, you agree to the practices described here.
+        &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) collects,
+        uses, and protects information when you use our website and services
+        (the &ldquo;Service&rdquo;). Compass helps internationally-based
+        students assess and improve their applications to universities in the
+        US, Italy, and Hong Kong. Compass is an independent project operated by
+        individuals based in the Republic of Kazakhstan; it is not a registered
+        company. By using the Service, you agree to the practices described
+        here.
       </p>
 
       <LegalSection heading="1. Information we collect">
@@ -62,9 +63,7 @@ export default function PrivacyPage() {
         <p>We use the information we collect to:</p>
         <ul>
           <li>Provide, maintain, and improve the Service;</li>
-          <li>
-            Generate your personalized admissions assessment and report;
-          </li>
+          <li>Generate your personalized admissions assessment and report;</li>
           <li>Authenticate you and keep your account secure;</li>
           <li>
             Operate the ambassador referral program and attribute signups; and
@@ -152,10 +151,10 @@ export default function PrivacyPage() {
       <LegalSection heading="9. International users">
         <p>
           The Service is offered to internationally-based students, and your
-          information may be processed in the Republic of Kazakhstan and in other
-          countries — including by the service providers described above — which
-          may have data-protection laws different from those of your own country.
-          By using the Service, you consent to this processing.
+          information may be processed in the Republic of Kazakhstan and in
+          other countries — including by the service providers described above —
+          which may have data-protection laws different from those of your own
+          country. By using the Service, you consent to this processing.
         </p>
       </LegalSection>
 
