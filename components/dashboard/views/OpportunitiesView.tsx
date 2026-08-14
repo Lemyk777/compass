@@ -35,6 +35,7 @@ import Link from "@/components/ui/Link";
 import { OpportunityRow } from "@/components/opportunities/CommitRow";
 import { FilterBar } from "@/components/opportunities/FilterBar";
 import {
+  CATEGORY_TABS,
   NO_FILTERS,
   activeFilterCount,
   filterOpportunities,
@@ -896,15 +897,12 @@ function CategoryTabs({
   onChange: (c: CategoryFilter) => void;
   counts: Record<string, number>;
 }) {
-  const tabs: { key: CategoryFilter; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "olympiad", label: "Olympiads" },
-    { key: "competition", label: "Competitions" },
-    { key: "course", label: "Courses" },
-    { key: "summer_program", label: "Summer" },
-    { key: "research_program", label: "Research" },
-    { key: "community", label: "Community" },
-  ];
+  // From the registry, not written out here. This array used to be a hand-kept
+  // copy of the category union and it fell behind: `simulation` had no tab, so
+  // one catalog row counted inside "All" and could not be reached — and the tab
+  // counts stopped summing to the total, which is the version of the bug a
+  // student actually sees. See CATEGORY_TABS.
+  const tabs = CATEGORY_TABS;
   return (
     // Scrollable on a phone rather than wrapping into two ragged rows.
     <div className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-card/95 p-1 shadow-card backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

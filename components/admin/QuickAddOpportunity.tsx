@@ -7,6 +7,10 @@ import {
   quickAddOpportunity,
   type QuickAddInput,
 } from "@/app/admin/opportunities/actions";
+// From the pure filter module, NOT from key-dates: this is a client component,
+// and key-dates builds a lookup map over the whole ~2,700-entry catalog at
+// module load. `CATEGORY_ORDER` is the same list the student's tabs read.
+import { CATEGORY_ORDER } from "@/lib/data/opportunity-filter";
 import { FACULTIES, type FacultyValue } from "@/lib/data/faculties";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
 
@@ -198,15 +202,14 @@ export function QuickAddOpportunity() {
             }
             className="h-11 w-full rounded-xl border border-line bg-card px-3 text-[0.95rem] text-ink focus-visible:focus-ring"
           >
-            {[
-              "competition",
-              "olympiad",
-              "course",
-              "research_program",
-              "summer_program",
-            ].map((c) => (
+            {/* From the registry, not written out. This list was a hand-kept
+                copy and it fell TWO kinds behind — `community` and `simulation`
+                were both accepted by the server action (`ADMIN_CATEGORIES` IS
+                `COMPETITION_CATEGORIES`) and neither could be chosen in the
+                form that calls it. */}
+            {CATEGORY_ORDER.map((c) => (
               <option key={c} value={c}>
-                {c.replace("_", " ")}
+                {c.replace(/_/g, " ")}
               </option>
             ))}
           </select>

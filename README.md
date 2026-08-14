@@ -4,10 +4,19 @@ A guidance tool for international students, in three sections that run in one
 order.
 
 1. **Opportunities** — the front door, and the thing a student arrives for. A
-   curated, link-checked registry of **173** competitions, olympiads, courses,
-   programmes, communities and job simulations, matched to their field, country,
-   school year and age, with honest dates and honest costs. Works signed out,
-   with no analysis: see `/opportunities`.
+   curated, link-checked registry of competitions, olympiads, courses,
+   programmes, communities and job simulations — **173 entries as of
+   2026-08-14** — matched to their field, country, school year and age, with
+   honest dates and honest costs. Works signed out, with no analysis: see
+   `/opportunities`.
+
+   The number is dated because it moves, and the previous version of this file
+   claimed 100 long after it was 173. In the product itself no count is ever
+   written down: the landing page and the tabs read the catalog at request time,
+   so what a student is told is what a student then sees. **Two counts are both
+   true and mean different things** — the catalog's size, and how much of it
+   *this* student can actually enter once age, school year, field and country
+   have been applied. The tab strip shows the second and says so underneath.
 2. **The guide** — where those things lead. Kinds of work → the countries that
    host them → the cities inside those → what you can enter from home without
    moving at all. 33 areas of work, 17 country profiles, 38 cities, every one
