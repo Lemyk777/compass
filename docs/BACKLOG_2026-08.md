@@ -20,9 +20,32 @@ assuming anything is live.**
 | On `main` (deployed) | everything up to and including the **spine** (#16). PR [#106](https://github.com/Lemyk777/compass/pull/106) merged 2026-08-13 20:04 UTC at `7e9bec5` |
 | **NOT deployed** | 10 commits in PR [#107](https://github.com/Lemyk777/compass/pull/107) — community + catalog 173, the planner's release 3, and the brand-link fix |
 | Branch | `feat/guide-spine` (misnamed by now — it carries three releases' worth) |
-| Progress | **20 of 23 done**, 1 half-done (#23 animation), 2 untouched (**#11**, **#14**), plus **#24**, **#26**, **#27** done |
-| Unit tests | **175** (`npm run test:unit`) |
+| Progress | **20 of 23 done**, 1 half-done (#23 animation), 2 untouched (**#11**, **#14**), plus **#24**, **#26**, **#27** done, plus the planner's **release 4** |
+| Unit tests | **192** (`npm run test:unit`) |
 | Catalog | **173 entries · 0 broken links** (`npm run test:links`) |
+| Migrations | **All applied**, `0030_planner_path.sql` included — `npm run db:check` reports 32/32 as of 2026-08-14. |
+
+### Release 4 — the planner, 2026-08-14 (read PLANNER_PLAN.md § "Release 4")
+
+The founder read release 3 and said almost nothing had changed. He was right,
+and the finding is worth more than the fix: **release 3 shipped the structure
+and not the experience.** The tab strip was three routes, the only sentence
+addressed to a student lived on the empty state and vanished after their first
+action, the "bridge" to the guide was four numbers, and the map's typed nodes
+were computed and never rendered. Every one of those was real work that produced
+no observable change.
+
+**The rule to carry forward: a structural release needs one visible consequence
+shipped with it, or it reads as nothing.**
+
+Release 4: one route with three lenses (`/planner?view=…`), `planner_path` as a
+real guide→plan join with an "Add to my plan" control on every guide subject
+page, and `nextMove` — one pure, ordered sentence with a mandatory reason,
+present at every stage rather than only on day one. **The owner declined a
+"path" of stages**; the concern that this leaves all the accompaniment resting
+on the next move was raised before the decision and is recorded in
+PLANNER_PLAN.md §1, so it can be revisited against the evidence rather than
+re-argued.
 
 ### The mistake that produced that split, so it is not repeated
 
@@ -1399,6 +1422,73 @@ a component comment naming framer-motion. Anything asserting about what code
 *does* must read the code, not the prose around it. `stripComments` exists for
 that and should be the default for this class of test.
 
+### 5.23 The animation was blocked by a data-flow problem, not by an animation problem
+
+The open half of #23 was "a card moving between columns". The obvious version —
+wrap the existing move in `document.startViewTransition` — is the bug §5.1
+already records: the move is a server action on a `force-dynamic` route, so the
+transition's promise waits on a round trip and the document freezes, measured at
+2130ms with an idle main thread.
+
+**The fix was not a shorter animation. It was making the move land in the client
+first.** The board now holds the presses the student has just made and lays them
+over the server's columns, so an arrow moves a card immediately and the server
+reconciles afterwards; a failure puts it back. With the update applied
+synchronously (`flushSync` inside the callback) there is nothing for the
+transition to wait on, and the freeze is bounded by the animation itself.
+
+Two details that would each have shipped as "no animation, and nothing tells
+you":
+
+- **`flushSync` is load-bearing.** Without it React batches, the snapshot is
+  taken before the DOM changes, and the browser morphs nothing.
+- **`plannerMorph` has to be injective.** The first version swept every illegal
+  character to `-`, so `a:b` and `a-b` produced one name. Two elements claiming
+  one `view-transition-name` is not a broken animation — it is silently no
+  animation. It escapes to the character's code point now, hyphen included, and
+  a test asserts distinct keys stay distinct.
+
+Reduced motion **skips** the transition rather than shortening it: the global
+CSS guard zeroes the duration, and a zero-duration transition still freezes.
+
+**The general lesson, beyond this card:** when an animation cannot be added
+safely, the thing to fix is usually the update it is trying to animate. An
+interface that cannot be animated without freezing is usually one that was
+making the user wait already.
+
+### 5.24 A duplicated country, and an identity built out of prose
+
+Found by opening an area page during verification and reading the console:
+React reported *two children with the same key,
+`United Arab Emirates-middle_east`*. What a student actually saw was the same
+country listed twice in the chain, one city under each.
+
+`spineForFaculty` matched an existing stop on `s.country === hub.country` and
+stored `destination?.name ?? hub.country`. Those are two different strings: the
+hubs say **`UAE`**, the country profile is called **`United Arab Emirates`**. So
+the stop could never match itself, and every additional UAE hub opened a new
+one. It became visible only because Dubai and Abu Dhabi were split into separate
+hubs two releases ago (#5/#7). **`Hong Kong SAR` against `Hong Kong` was one hub
+away from exactly the same bug.**
+
+The rule: **a stop's identity is its destination id, never its printed name.**
+Nothing else in this codebase compares prose to decide whether two things are
+the same thing, and this is why. Fixed by resolving the destination before the
+dedupe and matching on the id; the fallback to a country string survives only
+for a hub whose country we do not profile, where that string is genuinely all we
+have.
+
+Two things worth carrying:
+
+- **The bug had been live since the spine shipped (#16) and no test saw it**,
+  because every existing spine test asserted properties of the chain — home
+  region first, every stop reachable, nothing ranked — and none asserted that
+  the chain contains each country *once*. A test does now, over every field.
+- **It was found by looking, not by testing.** The planner cannot be opened by
+  an agent, but the guide can, and the console is where a server component's
+  key collisions surface. Reading it after a change is cheap and it is the only
+  reason this was caught.
+
 ## 6. Verification
 
 ```bash
@@ -1634,17 +1724,21 @@ or the next session builds on ten commits that are not in production.**
 
 ### The two gaps release 3 left open, and they are the top of the list
 
-**8.1 — Adding a typed node to a map FROM the guide.** The map can now display
-the structure of a decision (a node knows it is a country, a field, a kind of
-work) and can send a branch to the plan. What it cannot do is receive one: there
-is no way to be reading about Germany and put it on your map. Until that exists,
-the map displays structure it cannot help you build, and the guide→map half of
-the bridge is missing while the guide→plan half is done.
+**8.0 — DONE.** `0030_planner_path.sql` applied 2026-08-14, `db:check` 32/32.
 
-Shape: a small "add to a map" control on the guide's subject pages, writing a
-`planner_map_nodes` row with `link_href` set to the page you are on — which is
-all `mapNodeKind` needs to type it. No migration. The hard part is not the write,
-it is **not turning every guide page into a page about the map**.
+**8.1 — DONE.** A student can put a country, a city, a kind of work or a route
+from home onto their plan from the guide page they read it on (`planner_path`);
+a first map can be seeded from those picks with the cities nested inside the
+right country (`createMapFromPlan`); and a subject can now be added to an
+**existing** map from the guide, writing a `planner_map_nodes` row whose
+`link_href` is the page you are on — which is all `mapNodeKind` needs to type
+it. No migration was needed for the last part.
+
+The restraint problem this entry warned about was real, and the answer was
+**progressive disclosure rather than a second control**: the map option only
+unfolds once the reader has claimed the subject, and only if they already keep
+maps. A guide page still has exactly one call to action on it, and nobody is
+invited to start a map they have no use for.
 
 **8.2 — Majors do not exist as a layer, and the founder asked for them twice.**
 The chain today is: area of work → **field** (`FacultyValue`, 8 of them) →
@@ -1685,10 +1779,22 @@ verification gate before a single row could ship.
    content half is the direct tone already agreed. **The quiz half now has a
    constraint from §7:** it may inform an offer, it may never be the answer, and
    it must not become a RIASEC clone.
-4. **The rest of #23's animation half.** The open question was always *which*
-   moment has earned an authored one. Two are now obvious candidates and both
-   are in the planner: the period stepping, and a card moving between columns.
-5. **Local (KZ / Central Asia) catalog rows.** `region` exists exactly for this
+4. **DONE — a job simulation is named where the work is**
+   (`lib/data/try-it.ts` → `TryTheWork`, inside "Test it this month"). Money &
+   markets gets J.P. Morgan, Data & AI gets three, treating patients gets
+   nothing. **We build none of these and we link to none of them directly:** the
+   file holds zero URLs, and the one link goes through the catalog row the gate
+   can actually keep alive. Two decisions worth keeping: the entry names the
+   EMPLOYER and describes the task in our own words, because a company outlives
+   its course listing and is also the search term; and an area with no honest
+   answer renders nothing, because a near-miss costs a reader an evening and
+   teaches them the wrong thing about a career.
+5. **DONE — the rest of #23's animation half.** The period steps in from the
+   direction of travel, the lens panel replays on switch, and a board card now
+   morphs between columns. The last one needed a design change, not an
+   animation: the move is applied in the CLIENT first, so the transition has
+   nothing to wait on. See §5.23.
+6. **Local (KZ / Central Asia) catalog rows.** `region` exists exactly for this
    and NAO Cup is still the only one. The highest-value widening we can do for
    the students the product is actually for.
 
