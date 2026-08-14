@@ -47,9 +47,13 @@ import {
   strengthBand,
   reachableFrom,
   COMPETITIONS,
+  COMPETITION_CATEGORIES,
 } from "@/lib/data/key-dates";
 import type { CompetitionLevel, Opportunity } from "@/lib/data/key-dates";
 import {
+  CATEGORY_ORDER,
+  CATEGORY_TABS,
+  CATEGORY_TAB_LABEL,
   NO_FILTERS,
   activeChips,
   activeFilterCount,
@@ -5098,4 +5102,99 @@ test("a country appears once in a chain, however its hubs spell its name", () =>
       `${faculty}: the chain's own city count disagrees with the cities in it`,
     );
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Every kind of opportunity has a tab.
+//
+// Reported by the founder as a number that did not add up: the tab strip showed
+// 10 + 48 + 26 + 10 + 9 + 10 = 113 while "All" said 114. The missing one was the
+// catalog's single `simulation` — the kind was added to the data model, the
+// Record-typed label maps were updated because the COMPILER forced them, and
+// the tab strip's hand-written array was not, because an array has no
+// obligation to cover a union. So one row counted inside "All" and could not be
+// reached by any filter.
+//
+// The compiler covers the labels. This covers the order, which is the half it
+// cannot.
+
+test("every kind of opportunity is reachable from the tabs", () => {
+  for (const kind of COMPETITION_CATEGORIES) {
+    assert.ok(
+      CATEGORY_ORDER.includes(kind),
+      `"${kind}" has no tab — rows of that kind count inside "All" and cannot be filtered to`,
+    );
+    assert.ok(
+      CATEGORY_TAB_LABEL[kind]?.trim().length > 0,
+      `"${kind}" has no tab label`,
+    );
+  }
+
+  // And nothing extra: a tab for a kind the catalog cannot hold would always
+  // read zero, and a zeroed tab is hidden — so it would be invisible dead code.
+  for (const kind of CATEGORY_ORDER) {
+    assert.ok(
+      (COMPETITION_CATEGORIES as readonly string[]).includes(kind),
+      `"${kind}" is a tab for a kind that does not exist`,
+    );
+  }
+  assert.equal(
+    new Set(CATEGORY_ORDER).size,
+    CATEGORY_ORDER.length,
+    "a kind is listed twice in the tab order",
+  );
+
+  // "All" leads, and then one tab per kind — so the tabs' counts sum to it.
+  assert.equal(CATEGORY_TABS[0].key, "all");
+  assert.equal(CATEGORY_TABS.length, COMPETITION_CATEGORIES.length + 1);
+
+  // Every category the catalog actually uses is covered too. This is the
+  // assertion that fails if a row is given a kind nobody added to the union —
+  // which the type system prevents in source but not in data pasted at speed.
+  for (const c of COMPETITIONS) {
+    // `category` is optional on a row — an omitted one falls back downstream
+    // rather than being invalid, so only a stated kind is asserted here.
+    if (!c.category) continue;
+    assert.ok(
+      CATEGORY_ORDER.includes(c.category),
+      `"${c.id}" is a ${c.category}, which has no tab`,
+    );
+  }
+});
+
+test("the category list is not hand-copied into a view", () => {
+  // The bug was one array kept by hand in a component. Two components render a
+  // list of kinds — the student's tabs and the admin's quick-add — and both
+  // must read the registry, or this comes back the next time a kind is added.
+  for (const file of [
+    "components/dashboard/views/OpportunitiesView.tsx",
+    "components/admin/QuickAddOpportunity.tsx",
+  ]) {
+    const src = stripComments(
+      readFileSync(path.join(process.cwd(), file), "utf8"),
+    );
+    // Three or more category literals in one file is a copy of the union.
+    const literals = (
+      src.match(
+        /"(olympiad|competition|course|research_program|summer_program|community|simulation)"/g,
+      ) ?? []
+    ).length;
+    assert.ok(
+      literals < 3,
+      `${file} writes out ${literals} category names — read CATEGORY_ORDER instead`,
+    );
+  }
+
+  // The admin form must be able to post every kind the server accepts. It was
+  // two behind: `community` and `simulation` were valid at the endpoint and
+  // unchoosable in the form that calls it.
+  const action = readFileSync(
+    path.join(process.cwd(), "app/admin/opportunities/actions.ts"),
+    "utf8",
+  );
+  assert.match(
+    action,
+    /ADMIN_CATEGORIES = COMPETITION_CATEGORIES/,
+    "the admin endpoint no longer accepts exactly the catalog's kinds",
+  );
 });

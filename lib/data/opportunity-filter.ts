@@ -34,6 +34,56 @@ import type {
 /** Single-select "kind" — owned by the sticky tabs, not by the filter panel. */
 export type CategoryFilter = "all" | CompetitionCategory;
 
+/**
+ * The tab strip, in the order a student reads it — and it lives here, not in the
+ * view, because a kind with no tab is a row nobody can reach.
+ *
+ * **This was a real bug and it is the reason both halves exist.** The view built
+ * its tabs from a hand-written array. `community` was added to it; `simulation`
+ * was not — so the catalog's one simulation counted inside "All" and could not
+ * be filtered to, and the tab counts stopped summing to the total. That is
+ * exactly what a reader notices: 10 + 48 + 26 + 10 + 9 + 10 is 113 against an
+ * "All" of 114, and there is no way to find the missing one.
+ *
+ * The compiler catches a missing LABEL, because a `Record` over the union must
+ * be complete. It cannot catch a missing entry in an ordered array — an array
+ * has no obligation to cover a union — so the ORDER is covered by a unit test
+ * instead. Both are needed: the order is editorial (olympiads lead, because
+ * they are the clearest evidence a student can produce) and cannot simply be
+ * derived from the data model's own ordering.
+ */
+export const CATEGORY_TAB_LABEL: Record<CompetitionCategory, string> = {
+  olympiad: "Olympiads",
+  competition: "Competitions",
+  course: "Courses",
+  summer_program: "Summer",
+  research_program: "Research",
+  community: "Community",
+  // Plural of a thing you DO, not of a thing you enter — the catalog's own
+  // wording for this kind, kept identical to the card's badge.
+  simulation: "Try the work",
+};
+
+/** Editorial order, not the data model's. Test-enforced to cover every kind. */
+export const CATEGORY_ORDER: CompetitionCategory[] = [
+  "olympiad",
+  "competition",
+  "course",
+  "summer_program",
+  "research_program",
+  "community",
+  "simulation",
+];
+
+/** What the sticky tabs render: "All", then every kind, each with its label. */
+export const CATEGORY_TABS: { key: CategoryFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  ...CATEGORY_ORDER.map((key) => ({
+    key: key as CategoryFilter,
+    label: CATEGORY_TAB_LABEL[key],
+  })),
+];
+
 /** What money means to a student, as four answerable questions. */
 export type CostBucket = "free" | "funded" | "free_start" | "paid";
 
