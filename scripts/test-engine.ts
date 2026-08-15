@@ -5444,3 +5444,33 @@ test("countPicks counts a major", () => {
   assert.equal(counts.work, 1);
   assert.equal(counts.place, 0);
 });
+
+test("the spine carries the study step, and every subject on it is under that field", () => {
+  // The chain used to run work -> country, skipping the row a student fills in
+  // on a form. This is the join that closes it.
+  for (const faculty of FACULTY_VALUES) {
+    const spine = spineForFaculty(faculty);
+    assert.ok(
+      spine.majors.length > 0,
+      `${faculty} has no subject to study — the chain breaks at step 2`,
+    );
+    assert.ok(
+      spine.majors.every((m) => m.fields.includes(faculty)),
+      `${faculty}'s chain lists a subject from another field`,
+    );
+  }
+});
+
+test("the sitemap lists the majors step and every subject page", () => {
+  const urls = new Set(sitemapRoutes().map((e) => e.url));
+  assert.ok(
+    urls.has(`${CANONICAL_URL}/guide/majors`),
+    "the majors step is not advertised to a crawler",
+  );
+  for (const m of MAJORS) {
+    assert.ok(
+      urls.has(`${CANONICAL_URL}/guide/majors/${m.id}`),
+      `${m.id} has a page the sitemap does not list`,
+    );
+  }
+});

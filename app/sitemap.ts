@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { CANONICAL_URL } from "@/lib/site";
 import { allCareerAreas, areaSlug } from "@/lib/data/careers";
 import { GUIDE_SECTIONS } from "@/lib/data/guide-sections";
+import { MAJORS } from "@/lib/data/majors";
 import { STUDY_DESTINATIONS } from "@/lib/data/study-destinations";
 import { HUBS } from "@/lib/data/world";
 import { COMPETITIONS } from "@/lib/data/competitions-data";
@@ -64,6 +65,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...allCareerAreas().map(
       ({ area }) => `/guide/work/${areaSlug(area.title)}`,
     ),
+    ...MAJORS.map((m) => `/guide/majors/${m.id}`),
     ...STUDY_DESTINATIONS.map((d) => `/guide/places/${d.id}`),
     ...HUBS.map((h) => `/guide/cities/${h.id}`),
 
