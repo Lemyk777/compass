@@ -194,6 +194,11 @@ import {
   topFieldsFromBeats,
   type BeatAnswers,
 } from "@/lib/data/beats";
+import {
+  STATIONS,
+  station,
+  type StationFacts,
+} from "@/lib/data/thread";
 import { competitionsFromRows } from "@/lib/partners/live";
 import sitemapRoutes from "@/app/sitemap";
 import robotsFile from "@/app/robots";
@@ -5685,4 +5690,98 @@ test("the reaction action's bounds reject anything the registry does not contain
   assert.ok(!isBeatReaction("loved"));
   assert.ok(!isBeatReaction(null));
   assert.ok(!isBeatReaction(7));
+});
+
+// ── The thread's stations ────────────────────────────────────────────────────
+const NOWHERE: StationFacts = {
+  pairsAnswered: 0,
+  picks: { work: 0, major: 0, place: 0, hub: 0, route: 0 },
+  tried: 0,
+  committed: 0,
+  started: 0,
+  overdue: 0,
+};
+
+test("stations are numbered 1..7 with no gaps and no duplicates", () => {
+  assert.equal(STATIONS.length, 7);
+  assert.deepEqual(
+    STATIONS.map((s) => s.index),
+    [1, 2, 3, 4, 5, 6, 7],
+  );
+  assert.equal(new Set(STATIONS.map((s) => s.id)).size, 7);
+});
+
+test("a student who has done nothing is at station one", () => {
+  const at = station(NOWHERE);
+  assert.equal(at.id, "sense");
+  assert.equal(at.index, 1);
+  assert.equal(at.total, 7);
+});
+
+test("the stations advance in order as real facts accumulate", () => {
+  const steps: [Partial<StationFacts>, string][] = [
+    [{ pairsAnswered: 3 }, "look"],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 0, place: 0, hub: 0, route: 0 },
+      },
+      "try",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 0, place: 0, hub: 0, route: 0 },
+        tried: 1,
+      },
+      "study",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 1, place: 0, hub: 0, route: 0 },
+        tried: 1,
+      },
+      "where",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 1, place: 1, hub: 0, route: 0 },
+        tried: 1,
+      },
+      "act",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 1, place: 1, hub: 0, route: 0 },
+        tried: 1,
+        committed: 1,
+        started: 1,
+      },
+      "keep",
+    ],
+  ];
+  for (const [patch, expected] of steps) {
+    assert.equal(
+      station({ ...NOWHERE, ...patch }).id,
+      expected,
+      `expected ${expected} for ${JSON.stringify(patch)}`,
+    );
+  }
+});
+
+test("the station is where they ARE, not the furthest thing they have touched", () => {
+  // Somebody who commits to an olympiad before answering a single pair is still
+  // at the beginning. Taking the maximum instead would tell a lost student they
+  // were nearly finished, which is the opposite of accompaniment.
+  assert.equal(station({ ...NOWHERE, committed: 3, started: 3 }).id, "sense");
+});
+
+test("an overdue thing does not move the station", () => {
+  // Urgency is the MOVE's business — it outranks everything there. A progress
+  // figure that fell because a deadline lapsed would read as punishment, and
+  // this product does not treat not-entering as a verdict on a person.
+  assert.equal(station({ ...NOWHERE, overdue: 2 }).id, "sense");
 });
