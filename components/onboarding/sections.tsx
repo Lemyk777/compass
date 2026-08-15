@@ -105,8 +105,15 @@ export function GeneralSection() {
         options={destOptions}
       />
 
+      {/* The label used to say "What major do you want to study?" over a control
+          that collects FIELDS, not majors — it asked one question and stored the
+          answer to another. The subject you apply with now has its own layer
+          (`/guide/majors`), and it is not something to type into an intake:
+          most people arriving here cannot name one, which is why they came.
+          So this asks the question it actually answers, and says out loud that
+          skipping it is a real answer rather than an unfinished form. */}
       <MultiSelectField
-        label="What major do you want to study?"
+        label="Which fields interest you?"
         placeholder="Select your fields"
         max={LIMITS.faculties}
         values={data.faculties}
@@ -115,7 +122,7 @@ export function GeneralSection() {
           value: f.value,
           label: t(f.labelKey),
         }))}
-        hint={`Pick up to ${LIMITS.faculties}.`}
+        hint={`Pick up to ${LIMITS.faculties} — or leave it empty. Most people can't answer this yet, and blank means "show me everything" rather than "show me nothing".`}
       />
     </div>
   );
