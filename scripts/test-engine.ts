@@ -5849,3 +5849,113 @@ test("an overdue thing still outranks both new branches", () => {
   assert.equal(move.id, "overdue");
   assert.equal(move.tone, "urgent");
 });
+
+test("the companion says nothing twice in a row as a student advances", () => {
+  // A companion that repeats itself reads as broken, and this is the only way
+  // to catch it: walk the ladder the way a real student walks it and compare
+  // each utterance with the one before. Every step below is a fact changing,
+  // so every step must produce something different to say.
+  const said: string[] = [];
+  let facts: StationFacts = {
+    pairsAnswered: 3,
+    picks: { work: 0, major: 0, place: 0, hub: 0, route: 0 },
+    tried: 0,
+    committed: 0,
+    started: 0,
+    overdue: 0,
+  };
+  const advance: (() => void)[] = [
+    () => {
+      facts = { ...facts, picks: { ...facts.picks, work: 1 } };
+    },
+    () => {
+      facts = { ...facts, tried: 1 };
+    },
+    () => {
+      facts = { ...facts, picks: { ...facts.picks, major: 1 } };
+    },
+    () => {
+      facts = { ...facts, picks: { ...facts.picks, place: 1 } };
+    },
+    () => {
+      facts = { ...facts, committed: 1, started: 1 };
+    },
+  ];
+
+  for (const step of advance) {
+    const move = nextMove(
+      moveInput({
+        picks: facts.picks,
+        tried: facts.tried,
+        committed: facts.committed,
+        started: facts.started,
+      }),
+    );
+    said.push(`${station(facts).id}|${move.headline}`);
+    step();
+  }
+  // The state after the last advance counts too — it is what the student sees
+  // once everything is moving, and "nothing to say" there would be a companion
+  // that goes quiet exactly when it has succeeded.
+  const last = nextMove(
+    moveInput({
+      picks: facts.picks,
+      tried: facts.tried,
+      committed: facts.committed,
+      started: facts.started,
+    }),
+  );
+  said.push(`${station(facts).id}|${last.headline}`);
+
+  for (let i = 1; i < said.length; i += 1) {
+    assert.notEqual(
+      said[i],
+      said[i - 1],
+      `the companion said the same thing twice in a row: ${said[i]}`,
+    );
+  }
+  assert.equal(new Set(said).size, said.length, "the walk repeats itself");
+});
+
+test("the companion never drags a prose registry into a client bundle", () => {
+  // key-dates builds a map over ~2,700 catalog rows at module load; careers,
+  // world, study-destinations and spine are thousands of lines of prose. Any
+  // runtime import of one of them from a client component ships it to every
+  // route the companion renders on — which, by design, is every route in the
+  // student's product. This is the repository's most expensive recurring
+  // mistake and the companion is the widest possible surface for it.
+  const banned = [
+    "@/lib/data/key-dates",
+    "@/lib/data/careers",
+    "@/lib/data/world",
+    "@/lib/data/study-destinations",
+    "@/lib/data/spine",
+    "@/lib/data/competitions-data",
+    "@/lib/data/majors",
+  ];
+  const files = [
+    "components/companion/Companion.tsx",
+    "components/companion/BeatPair.tsx",
+  ];
+  for (const file of files) {
+    const full = path.join(process.cwd(), file);
+    // Asserted, not skipped. A guard that quietly passes for a file that is not
+    // there guards nothing — and would go green again the day someone deletes
+    // the component it protects.
+    assert.ok(
+      existsSync(full),
+      `${file} is missing — this guard has no subject`,
+    );
+    const src = stripComments(readFileSync(full, "utf8"));
+    for (const mod of banned) {
+      // `import type` is free — it is erased. Anything else is not.
+      const runtime = new RegExp(
+        `import\s+(?!type\b)[^;]*from\s+["']${mod.replace(/[/@-]/g, "\$&")}["']`,
+      );
+      assert.ok(
+        !runtime.test(src),
+        `${file} imports ${mod} at runtime — that ships it to every page`,
+      );
+    }
+  }
+});
