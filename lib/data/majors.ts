@@ -718,12 +718,89 @@ export const MAJORS: Major[] = [
     leadsTo: ["words-and-media", "teaching-and-research", "data-and-ai"],
     fields: ["humanities_social"],
   },
-  // ── Thirty-two so far, across engineering, computer_science,
-  // business_economics, natural_sciences, medicine_health and
-  // humanities_social. Wave A1c continues below with law; A1d (arts, plus
-  // the reverse-edge test) adds the rest, to at least 44 total — spread so
-  // every one of the eight faculties has majors and every area of work in
-  // careers.ts is reachable from at least one major.
+  {
+    id: "communications",
+    name: "Communications",
+    alsoCalled: ["Journalism", "Media Studies", "Communication Studies"],
+    whatItActuallyIs:
+      "Studying how information, persuasion and stories actually reach and change an audience — reporting, media theory and practical production together — rather than only the theory of media or only the craft of writing.",
+    firstYear:
+      "A six-hundred-word deadline arrives within the first fortnight, on a story you have to report yourself rather than summarise from a textbook, and that shock — being marked on real, checkable work from week one rather than on an essay about the theory of media — is closer to an apprenticeship than most humanities subjects attempt. Media theory and media law run alongside the practical work, and the ones who leave are usually the ones who wanted only the theory or only the practice and resent having to do both at once.",
+    catch:
+      "The economics of the industry this degree points toward have been difficult for two decades: staff journalism jobs are fewer than they were, freelance and early content roles pay little and pay slowly, and the degree itself, being broad, competes for entry-level attention against narrower marketing, design or straight journalism qualifications.",
+    suitsYou:
+      "You would rather find out what is actually true and report it accurately than write beautifully about something unverified, and you can accept public, sometimes harsh feedback on published work without it stopping you from filing the next piece.",
+    notForYou:
+      "You want financial stability early in your career, or you only enjoy the theory side and dislike being edited in public. Staff roles are fewer than they were and freelance pay is low and slow, and a narrower journalism or marketing qualification reads as more deliberate to an entry-level employer than this broader degree does.",
+    schoolSubjects: ["English", "History or social studies", "A second language"],
+    hardGate: null,
+    leadsTo: ["words-and-media", "marketing-and-growth", "politics-policy-and-the-world"],
+    fields: ["humanities_social"],
+  },
+  {
+    id: "education",
+    name: "Education",
+    alsoCalled: ["Pedagogy", "Teacher Education"],
+    whatItActuallyIs:
+      "Training to teach — how people actually learn, how to plan a lesson that reaches a room of different abilities at once, and the classroom practice that turns subject knowledge into something someone else understands.",
+    firstYear:
+      "You are assessed twice for the same lesson: once on whether the content you taught was correct, and separately, by a supervisor watching from the back of the room, on whether anyone actually learned it — and it is that second, harder mark that surprises students who assumed strong subject knowledge would carry them. Placement teaching begins early, often within the first year, well before the education theory that explains classroom management has been fully covered, so you are managing a real room before you feel ready to.",
+    catch:
+      "The workload is heavier than the stable, respected reputation of the profession suggests — planning, marking and pastoral care routinely extend well past the hours actually in front of a class — and pay, in most of the countries we cover, is modest relative to that responsibility and to other degrees requiring a similar number of years to complete.",
+    suitsYou:
+      "You get real satisfaction from watching a specific person go from not understanding something to understanding it, and standing in front of a room and holding thirty different levels of attention at once does not drain you the way it drains most people.",
+    notForYou:
+      "You want a lighter workload than the classroom actually carries, or you are choosing this only because teaching sounds stable rather than because you want to be in the room. Planning, marking and pastoral care routinely extend the job well past the hours in front of a class, and a subject degree without the teaching placement keeps the content without that specific daily weight.",
+    schoolSubjects: ["English", "The subject you intend to teach", "Mathematics"],
+    hardGate: null,
+    leadsTo: ["teaching-and-research", "people-and-the-mind"],
+    fields: ["humanities_social"],
+  },
+  {
+    id: "law",
+    name: "Law",
+    alsoCalled: ["LLB", "Juris Doctor (JD)", "Jurisprudence"],
+    whatItActuallyIs:
+      "The systematic study of legal rules and how they are argued, interpreted and applied — taken as a first degree straight from school across most of the countries we cover, but only as a graduate degree, after an unrelated bachelor's, in the United States and Canada.",
+    firstYear:
+      "Several hundred pages of judgments a week is a normal reading load from the first fortnight, and the shock is less the volume than what you are asked to do with it: not learn the rule a case decided, but reconstruct the reasoning that produced it, then argue the opposite side just as convincingly in the next seminar. Students who wanted to learn 'the rules' and instead spent the term arguing against ones they had just learned are the ones who tend to leave first.",
+    catch:
+      "Qualification is national and rarely portable: a law degree earned in one country generally does not let you practise in another without substantial further exams and supervised training, which makes 'where do I actually want to practise' a question worth answering honestly before choosing where to study, not after. Commercial practice also runs on closely measured billable hours, and the profession reports high rates of stress and long-hours culture that is worth weighing before you commit, not once you are in it.",
+    suitsYou:
+      "You prepare obsessively rather than improvising, you can argue a position you personally disagree with as convincingly as one you believe, and mapping a multi-year qualification ladder before you commit to it does not put you off the way it puts off most applicants.",
+    notForYou:
+      "You assumed you can enter a law degree straight from school wherever you apply. In the United States and Canada it is a graduate degree, not a first one — political science, philosophy, history or economics are the usual undergraduate routes there — and this page mainly describes the direct route that exists almost everywhere else we cover instead.",
+    schoolSubjects: ["English", "History", "A second language where useful"],
+    hardGate:
+      "Whether you can even choose this as a first degree depends entirely on where you apply. Most of the countries we cover let a school-leaver enter directly; in the United States and Canada it is a graduate-entry degree, reached only after another bachelor's degree and a separate admissions test — check which shape applies to your target country before building a plan around this page.",
+    leadsTo: ["practising-law", "business-tech-and-ip-law", "courts-and-public-service"],
+    fields: ["law"],
+  },
+  {
+    id: "criminology",
+    name: "Criminology",
+    alsoCalled: ["Criminal Justice"],
+    whatItActuallyIs:
+      "The study of crime, punishment and the justice system as social phenomena — why crime happens, how criminal-justice systems actually respond to it, and whether those responses work — using social-science evidence rather than a law degree's focus on rules and procedure.",
+    firstYear:
+      "The true-crime instinct — what makes someone do it — gets roughly one seminar before the degree moves on to what the evidence actually says about who reoffends, which interventions measurably reduce it, and how thin the data is behind most confident public claims about crime. Statistics and research-methods training sit at the centre of the course from early on, and applicants who came for case studies and true-crime narrative, and instead spent the term reading regression tables, are the ones who tend to leave.",
+    catch:
+      "This degree studies the justice system; it does not, by itself, license you to work inside it as a lawyer, and the visible, front-line roles it is often associated with — police officer, prosecutor, forensic investigator — either need a separate professional qualification on top of it or are closed to international applicants in the country where you studied, which is worth checking before assuming the degree leads there directly.",
+    suitsYou:
+      "You want the evidence behind confident public claims about crime and punishment rather than the claims themselves, and you can find a policy detail, such as sentencing guidelines or reoffending statistics, as engaging as the human stories that first drew your interest.",
+    notForYou:
+      "You want to become a police officer or a lawyer directly, or you were drawn mainly by true-crime storytelling rather than by policy and statistics. Both those front-line and legal routes generally need a separate qualification on top of this degree, and a straight law degree is the more direct route into legal practice specifically.",
+    schoolSubjects: ["English", "Mathematics or statistics", "History or social studies"],
+    hardGate: null,
+    leadsTo: ["courts-and-public-service", "rights-and-advocacy", "teaching-and-research"],
+    fields: ["law", "humanities_social"],
+  },
+  // ── Thirty-six so far, across engineering, computer_science,
+  // business_economics, natural_sciences, medicine_health, humanities_social
+  // and law. Wave A1d (arts, plus the reverse-edge test) adds the rest, to
+  // at least 44 total — spread so every one of the eight faculties has
+  // majors and every area of work in careers.ts is reachable from at least
+  // one major.
   //
   // Add new entries above this comment, in the same style:
   //   * `firstYear` > 120 characters, and it must name what makes people leave.
