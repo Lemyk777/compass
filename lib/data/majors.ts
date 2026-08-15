@@ -412,7 +412,7 @@ export const MAJORS: Major[] = [
   },
   {
     id: "environmental-science",
-    name: "Environmental Science",
+    name: "Environmental science",
     alsoCalled: ["Environmental Studies", "Earth and Environmental Science"],
     whatItActuallyIs:
       "Studying how the natural world actually functions — air, water, soil and the life inside them — closely enough to measure what is changing and why.",
@@ -529,7 +529,7 @@ export const MAJORS: Major[] = [
   },
   {
     id: "public-health",
-    name: "Public Health",
+    name: "Public health",
     alsoCalled: ["Population Health", "Community Health Science"],
     whatItActuallyIs:
       "Studying disease and wellbeing at the level of a whole population rather than one patient at a time, using data to work out what actually keeps large numbers of people well.",
@@ -548,7 +548,7 @@ export const MAJORS: Major[] = [
   },
   {
     id: "biomedical-science",
-    name: "Biomedical Science",
+    name: "Biomedical science",
     alsoCalled: ["Biomedical Sciences", "Medical Science (pre-clinical)"],
     whatItActuallyIs:
       "The laboratory science behind medicine — studying disease mechanisms, diagnostics and treatments at the bench — without the clinical training or licence to treat a patient directly.",

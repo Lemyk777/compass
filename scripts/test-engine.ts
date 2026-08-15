@@ -5331,3 +5331,28 @@ test("majorsByField groups in the order given and drops empty fields", () => {
   assert.equal(groups[0].faculty, "computer_science");
   assert.ok(groups.every((g) => g.majors.length > 0));
 });
+
+// Sentence case, not Title Case. The product writes every label, heading and
+// button in sentence case, and this registry is written by four separate passes
+// — which is exactly how one of them drifted into "Environmental Science" and
+// "Public Health" while every other entry said "Computer science". Nobody
+// notices one entry; a reader going down a list of forty-four notices the list.
+//
+// The rule is expressed as "at most one capitalised word, and it is the first",
+// because a genuine proper noun inside a subject name is legitimate — "English
+// literature", "American studies". Those go in PROPER_NOUNS rather than
+// weakening the check.
+const PROPER_NOUNS = new Set<string>([]);
+
+test("every major's name is sentence case", () => {
+  for (const m of MAJORS) {
+    const [first, ...rest] = m.name.split(" ");
+    assert.match(first, /^[A-Z]/, `${m.id} does not start with a capital`);
+    for (const word of rest) {
+      assert.ok(
+        !/^[A-Z]/.test(word) || PROPER_NOUNS.has(word),
+        `${m.id} is Title Case ("${m.name}") — the product writes sentence case`,
+      );
+    }
+  }
+});
