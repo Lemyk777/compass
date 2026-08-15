@@ -330,11 +330,248 @@ export const MAJORS: Major[] = [
     leadsTo: ["marketing-and-growth", "words-and-media"],
     fields: ["business_economics"],
   },
-  // ── Twelve so far, across engineering, computer_science and
-  // business_economics. Waves A1b (sciences & medicine), A1c (humanities &
-  // law) and A1d (arts, plus the reverse-edge test) add the rest, to at least
-  // 44 total — spread so every one of the eight faculties has majors and every
-  // area of work in careers.ts is reachable from at least one major.
+  {
+    id: "biology",
+    name: "Biology",
+    alsoCalled: ["Biological Sciences", "Life Sciences"],
+    whatItActuallyIs:
+      "The systematic study of living things, from the molecules inside a single cell up to whole ecosystems, and the evidence used to prove a claim about any of them.",
+    firstYear:
+      "The volume of material, not its difficulty, is the actual shock: taxonomy, biochemistry, cell processes and physiology all arrive in the same term, each in its own vocabulary, well before any of them connect into one coherent picture. A statistics and genetics strand running alongside adds a second, more mathematical register that catches out people who chose biology specifically to leave equations behind, and it is that unexpected mathematics, more than the sheer memorising, that thins the class by the end of the year.",
+    catch:
+      "A bachelor's alone opens comparatively few of the specifically 'biologist' roles advertised — most research and specialist laboratory jobs expect a master's or a PhD on top, so the degree functions as a foundation rather than a finished qualification, and that extra stage costs years most applicants have not budgeted for.",
+    suitsYou:
+      "You would rather learn the actual mechanism behind a living process than accept the summary version, and treating a master's or further study as the real starting point of a career, not a costly extra, does not put you off.",
+    notForYou:
+      "You expect a bachelor's alone to open specialist biology jobs directly. Most research and technical roles expect a master's or PhD on top of it, so if you want a degree that stands alone at the end of four years, engineering or computer science reach paid, specific work faster.",
+    schoolSubjects: ["Biology", "Chemistry", "Mathematics or statistics"],
+    hardGate:
+      "Most programmes assume chemistry alongside biology at school; biology on its own, with no chemistry at all, is a weak application almost everywhere we cover.",
+    leadsTo: ["research-and-discovery", "environment-and-climate", "research-and-new-treatments"],
+    fields: ["natural_sciences"],
+  },
+  {
+    id: "chemistry",
+    name: "Chemistry",
+    alsoCalled: ["Chemical Sciences"],
+    whatItActuallyIs:
+      "The study of matter itself — what substances are made of, how they react, and how to predict and control that reaction rather than only observe it.",
+    firstYear:
+      "Three chemistries — organic, inorganic and physical — run in parallel from week one, each with its own logic and its own problem sets, and the physical strand is closer to applied mathematics than most applicants expect from a subject they associate with a lab coat. Laboratory sessions are graded on technique as strictly as exams are graded on answers, so a result that looks right but was reached the wrong way still loses marks. People who came only for the bench work, and treat the mathematical strand as a footnote, find the year genuinely difficult; the ones prepared to take all three chemistries equally seriously get through it.",
+    catch:
+      "Laboratory sessions carry real chemical hazard and a rigid safety culture that some students find stifling after school science, and the specific analytical instruments you spend years learning to operate are steadily replaced across a career, so what an employer wants you to already know keeps changing after you graduate.",
+    suitsYou:
+      "You like precise, repeatable practical work as much as the theory that explains it, and you are comfortable knowing the specific instruments and techniques you train on now will not be the ones you use in ten years.",
+    notForYou:
+      "You want mostly outdoor or field-based science rather than a bench and a fume hood. Environmental science or geology spend far more of their time outside a laboratory and answer that instinct far more directly than this degree does.",
+    schoolSubjects: ["Chemistry", "Mathematics", "Physics"],
+    hardGate:
+      "Mathematics matters here more than most applicants expect, particularly for the physical strand, but it is chemistry itself that every programme treats as the non-negotiable foundation — weak school chemistry is the harder gap to arrive with.",
+    leadsTo: ["applied-science-and-industry", "research-and-discovery", "research-and-new-treatments"],
+    fields: ["natural_sciences"],
+  },
+  {
+    id: "physics",
+    name: "Physics",
+    alsoCalled: ["Physical Sciences"],
+    whatItActuallyIs:
+      "Working out the rules that govern matter and energy at every scale, from subatomic particles to galaxies, and expressing those rules in mathematics precise enough to predict what happens next.",
+    firstYear:
+      "What surprises almost everyone who enjoyed physics at school is how much of the first term is spent setting the subject's familiar results aside and rebuilding them from mathematical first principles, in a far more formal language than school ever used. Practical sessions exist, but they are a small fraction of the timetable next to problem sheets, and it is that rebuilding from scratch — reproving things you already believed — that some people never quite forgive the course for.",
+    catch:
+      "Undergraduate physics trains people for research roles that do not exist in anything like the numbers graduates are produced in, so most physics graduates end up in finance, data or engineering work that values the mathematics without ever using most of the physics itself again.",
+    suitsYou:
+      "You want to understand a system from first principles rather than borrow a result someone else derived, and you are genuinely at ease knowing the mathematics you love may end up applied somewhere other than physics itself.",
+    notForYou:
+      "You need to see your work matter to somebody immediately. Physics trains you thoroughly and then routes most graduates into finance, data or engineering roles instead of physics itself — mathematics or data science name that destination honestly from the start instead of arriving at it by accident.",
+    schoolSubjects: ["Physics", "Mathematics"],
+    hardGate:
+      "Mathematics is not a supporting subject here, it is half the degree; without genuine comfort in calculus by the start of term one, physics stops feeling like physics and becomes an ongoing mathematics catch-up.",
+    leadsTo: ["space-and-the-universe", "research-and-discovery", "electronics-energy-and-hardware"],
+    fields: ["natural_sciences"],
+  },
+  {
+    id: "mathematics",
+    name: "Mathematics",
+    alsoCalled: ["Mathematical Sciences", "Pure and Applied Mathematics"],
+    whatItActuallyIs:
+      "The study of structure, quantity and proof for their own sake — not applying known formulas, but establishing which statements are actually true, and why.",
+    firstYear:
+      "This is not school mathematics done faster; it is a change of subject. Proof, not calculation, becomes the actual skill being assessed, so a student who was reliably fast and accurate at school can find themselves genuinely stuck on a two-line argument that involves no arithmetic at all, often for the first time in their life. That specific, disorienting experience, arriving after years of being good at the subject, is closer to the real content of the first year than any topic on the syllabus.",
+    catch:
+      "The degree gives almost no direct professional identity of its own — nobody is hired as 'a mathematician' the way they are hired as an engineer — so every graduate has to translate proof-based training into a field that will actually employ them, and that translation is left entirely to you.",
+    suitsYou:
+      "You find a two-line proof more satisfying than a page of correct calculation, and not yet knowing which career the degree points toward worries you far less than it would worry most people.",
+    notForYou:
+      "You want your degree to point at one obvious job on the far side of it. Mathematics gives you almost no professional identity of its own and leaves the translation into a career entirely to you — computer science or engineering apply the same reasoning inside a named destination instead.",
+    schoolSubjects: ["Mathematics", "Further mathematics where offered"],
+    hardGate:
+      "There is no track through this degree that avoids proof-based reasoning — a student who is fast and accurate at calculation but has never had to construct a rigorous argument should expect the hardest adjustment of any subject on this list.",
+    leadsTo: ["data-and-ai", "research-and-discovery", "money-and-markets"],
+    fields: ["natural_sciences"],
+  },
+  {
+    id: "environmental-science",
+    name: "Environmental Science",
+    alsoCalled: ["Environmental Studies", "Earth and Environmental Science"],
+    whatItActuallyIs:
+      "Studying how the natural world actually functions — air, water, soil and the life inside them — closely enough to measure what is changing and why.",
+    firstYear:
+      "Weeks of fieldwork — soil samples, water tests, species counts taken in whatever weather turns up — alternate with weeks spent entirely at a desk turning that data into statistics and a written report to a strict format. Most applicants picture the first kind of week and not the second, and the class quietly thins once it becomes clear the desk work is at least as large a share of the mark, and graded just as rigorously.",
+    catch:
+      "Fieldwork is genuinely seasonal and physically demanding — early starts, bad weather, remote sites — and a persistent share of the paid work sits inside monitoring and compliance for the same industries the subject is popularly imagined to challenge, which some graduates find sits uneasily with why they chose it.",
+    suitsYou:
+      "You are equally content collecting a water sample in bad weather and writing up afterward what it does and does not prove, and you can stay professionally neutral even when your own data says something inconvenient.",
+    notForYou:
+      "You pictured this as advocacy or campaigning work. Most paid roles sit inside consultancy for the construction, mining or energy industries this subject is popularly imagined to oppose — politics, policy and the world is the more direct route to campaigning itself.",
+    schoolSubjects: ["Biology", "Chemistry or geography", "Mathematics or statistics"],
+    hardGate: null,
+    leadsTo: ["environment-and-climate", "applied-science-and-industry", "health-of-whole-populations"],
+    fields: ["natural_sciences"],
+  },
+  {
+    id: "geology",
+    name: "Geology",
+    alsoCalled: ["Earth Science", "Geoscience", "Earth and Planetary Sciences"],
+    whatItActuallyIs:
+      "Reading the physical history and structure of the earth from what rock, sediment and landscape actually show, and using that to explain, predict or find what lies beneath the surface.",
+    firstYear:
+      "A residential field course — a week or two camped near an outcrop with a hammer, a hand lens and a notebook, in whatever weather the location provides — is compulsory and formally assessed, unlike almost anything else at school. It functions as the subject's real entrance exam: the mapping exercises and structural mathematics that follow in the lecture halls are far easier to sit through once you already know the trips themselves do not put you off.",
+    catch:
+      "Compulsory residential field courses run on the department's calendar, not yours, sometimes for weeks at a time and sometimes abroad, and the largest employers of the discipline remain the mining and oil and gas industries, which many applicants have not pictured themselves working inside.",
+    suitsYou:
+      "You want a science that gets you physically outdoors reading a real landscape rather than only a screen, and weeks away on a field course sound like the appealing part of the degree rather than the cost of it.",
+    notForYou:
+      "You want to work close to home in a capital city. The largest employers — mining, oil and gas exploration — operate wherever the resource actually is, rarely a capital, and civil engineering keeps more of earth science's physical, structural interest while staying closer to cities.",
+    schoolSubjects: ["Chemistry or physics", "Mathematics", "Geography where offered"],
+    hardGate: null,
+    leadsTo: ["applied-science-and-industry", "environment-and-climate", "building-and-infrastructure"],
+    fields: ["natural_sciences"],
+  },
+  {
+    id: "medicine",
+    name: "Medicine",
+    alsoCalled: ["Medical Studies", "MBBS", "MBChB"],
+    whatItActuallyIs:
+      "Training to diagnose and treat illness in real patients, under supervision from the first clinical placement onward, on a course built around a licence to practise rather than around a subject in the ordinary sense.",
+    firstYear:
+      "Because the course exists to produce a licensed clinician rather than to explore a subject, almost nothing in the first year is optional: anatomy, physiology and biochemistry are set, sequenced and compulsory, at a pace and volume closer to professional training than to a typical undergraduate timetable, with far less choice in what you study than friends on almost any other course have. What actually surprises people, despite that intensity, is how little contact with an actual patient the first year contains — the clinical exposure most applicants pictured on the way in arrives later, once the science underneath it is judged solid enough to build on.",
+    catch:
+      "The training does not end at graduation — a further supervised, examined stretch of years follows before independent practice, in every country we profile — and international students should expect that a qualification earned here rarely transfers cleanly to another country without further exams.",
+    suitsYou:
+      "You can make a decision on incomplete information and live with having made it, you can deliver news someone does not want to hear without flinching from it, and a decade of training with exams continuing past graduation is a timeline you have actually looked at rather than assumed away.",
+    notForYou:
+      "You are choosing this without having checked how your target country's licensing actually works, or you assumed a degree from one country transfers cleanly into practising in another. It rarely does — verify the exact ladder for your target country before committing a decade, and if hands-on care without that licensing weight is really what draws you, nursing reaches patients directly in far less time.",
+    schoolSubjects: ["Biology", "Chemistry", "Mathematics or physics"],
+    hardGate:
+      "Biology and chemistry at the highest level your school offers are close to a universal floor across every country we profile, and without both this door is shut almost everywhere — the exact extra requirement on top, whether an admissions test, an interview or a prior degree, is the part that actually varies by country.",
+    leadsTo: ["treating-patients", "research-and-new-treatments", "health-of-whole-populations"],
+    fields: ["medicine_health"],
+  },
+  {
+    id: "nursing",
+    name: "Nursing",
+    alsoCalled: ["Nursing Science", "Registered Nursing"],
+    whatItActuallyIs:
+      "Training to deliver and coordinate the hands-on clinical care that keeps a patient safe and recovering hour by hour — a distinct profession from medicine, not an assistant version of it.",
+    firstYear:
+      "Clinical placement hours begin within the first term at most schools, not after years of classroom preparation, so you are responsible, under close supervision, for real patients while still learning the theory that explains what you are doing. The two halves of the course — lecture-based science and supervised ward work — are assessed on entirely different criteria, and it is usually the ward half, not the academic half, that decides in the first year whether someone stays.",
+    catch:
+      "Clinical placements run on a hospital's rota, not a term timetable, so nights, weekends and long shifts on your feet start well before graduation, and the emotional weight of the work — including patients who do not recover — is a routine feature of training, not an occasional one.",
+    suitsYou:
+      "You would rather be the person providing continuous, hands-on care than the one making an occasional diagnosis, and long, physically demanding shifts do not wear you down the way they wear down most people.",
+    notForYou:
+      "You pictured diagnosing and directing treatment rather than delivering and coordinating it day to day. That is medicine's role, not nursing's, and the two are licensed, trained and paid quite differently everywhere we profile — look at medicine directly if that is really the work you are picturing.",
+    schoolSubjects: ["Biology", "English", "Mathematics"],
+    hardGate: null,
+    leadsTo: ["treating-patients", "health-of-whole-populations"],
+    fields: ["medicine_health"],
+  },
+  {
+    id: "pharmacy",
+    name: "Pharmacy",
+    alsoCalled: ["Pharmaceutical Sciences"],
+    whatItActuallyIs:
+      "The science of how drugs act in the body, how they are made and combined safely, and how to advise on and control their use — the discipline standing between a chemical compound and a patient who takes it correctly.",
+    firstYear:
+      "You will spend far more of the first year in an organic-chemistry lecture theatre than anywhere near a pharmacy counter, which is the reverse of what most applicants picture when they choose the subject. Pharmacology and pharmaceutics build directly on that chemistry rather than replacing it later, so a shaky foundation in it does not stay someone else's problem — it compounds into the second year rather than fading out of the course.",
+    catch:
+      "A growing share of routine dispensing is automated or protocol-driven, which is steadily narrowing the entry-level, community-facing side of the job that draws many applicants to the subject in the first place, and clinical or hospital roles generally require further specialisation on top of the base qualification.",
+    suitsYou:
+      "You like the exactness of chemistry — a dose, a compound, an interaction that is either right or wrong — and you would rather be the last careful check between a prescription and a patient than the person who wrote it.",
+    notForYou:
+      "You want direct, ongoing contact with a patient over time rather than a single careful check at the point a medicine is handed over. Nursing or medicine both give you a continuing relationship with a patient that pharmacy, built around discrete transactions, generally does not.",
+    schoolSubjects: ["Chemistry", "Biology", "Mathematics"],
+    hardGate:
+      "Chemistry through to the end of school is non-negotiable in every system we cover; pharmacy is built on it from week one in a way biology alone cannot substitute for.",
+    leadsTo: ["treating-patients", "research-and-new-treatments", "applied-science-and-industry"],
+    fields: ["medicine_health"],
+  },
+  {
+    id: "dentistry",
+    name: "Dentistry",
+    alsoCalled: ["Dental Surgery", "Oral Health Science"],
+    whatItActuallyIs:
+      "Training to diagnose and treat conditions of the teeth, gums and jaw, combining the same clinical judgement medicine requires with a specific manual and surgical skill medicine does not.",
+    firstYear:
+      "A preclinical simulation lab — practising procedures on a model tooth under magnification, marked for precision on a scale most students have never been evaluated against — arrives within the first few weeks, well before any theory course has finished explaining why the procedure works. It is deliberately the first real test of the course: the anatomy and biochemistry taught alongside it matter, but steady manual control under a microscope is the specific skill that first year is actually screening for.",
+    catch:
+      "Small, repetitive hand movements performed under magnification for hours are the physical core of the daily job, not an occasional task, and the equipment involved means the great majority of graduates end up practising inside one fixed clinic rather than in a more mobile clinical role.",
+    suitsYou:
+      "You have genuinely steady hands and patience for fine, repetitive physical work, and you would rather see a problem you can fix directly and completely in one sitting than manage something chronic over years.",
+    notForYou:
+      "You are not certain you can tolerate close, repetitive manual work for hours at a time — most admissions systems test exactly that before offering a place, honestly and early. Medicine keeps the clinical reasoning without demanding the same manual precision, if that is the part that actually draws you.",
+    schoolSubjects: ["Biology", "Chemistry", "Mathematics or physics"],
+    hardGate:
+      "Biology and chemistry sit at the same close-to-universal floor medicine sets, and on top of them most systems specifically test manual dexterity or spatial ability before offering a place — a screen unlike anything else on this list.",
+    leadsTo: ["treating-patients"],
+    fields: ["medicine_health"],
+  },
+  {
+    id: "public-health",
+    name: "Public Health",
+    alsoCalled: ["Population Health", "Community Health Science"],
+    whatItActuallyIs:
+      "Studying disease and wellbeing at the level of a whole population rather than one patient at a time, using data to work out what actually keeps large numbers of people well.",
+    firstYear:
+      "It reads, from outside, like medicine practised at a distance, and the first year corrects that within weeks: epidemiology, biostatistics and health economics dominate the timetable, and a semester can pass with barely a mention of a single named patient. The numbers arrive faster than the medicine does, and that speed — not any one hard topic — is what unsettles the students who came in expecting a softer, more social version of clinical training.",
+    catch:
+      "The clearest wins in this field are invisible by design — an epidemic that never happens produces no headline — and prevention funding is often the first budget line cut once the absence of a crisis makes it look unnecessary, which makes career stability depend more on politics than on performance.",
+    suitsYou:
+      "You would rather prevent a thousand ordinary cases than treat one dramatic one, and you can stay motivated by a success nobody else notices, because by definition the disease that never happened makes no headline.",
+    notForYou:
+      "You want to be at a patient's bedside, not behind a dataset describing thousands of people you will never meet individually. Treating patients directly — medicine or nursing — gives you that contact; this field trades it away deliberately in exchange for scale.",
+    schoolSubjects: ["Biology", "Mathematics or statistics", "English"],
+    hardGate: null,
+    leadsTo: ["health-of-whole-populations", "economics-and-policy"],
+    fields: ["medicine_health"],
+  },
+  {
+    id: "biomedical-science",
+    name: "Biomedical Science",
+    alsoCalled: ["Biomedical Sciences", "Medical Science (pre-clinical)"],
+    whatItActuallyIs:
+      "The laboratory science behind medicine — studying disease mechanisms, diagnostics and treatments at the bench — without the clinical training or licence to treat a patient directly.",
+    firstYear:
+      "It shares lecture theatres with the medical degree for anatomy and biochemistry at many universities, and the first year's real shape is defined by what that overlap leaves out: no clinical placement, no patient contact, and a much heavier laboratory and data-analysis load sitting in the space where medicine would put a ward round instead. Students expecting a lighter version of medicine are working from the wrong comparison entirely — this is a full, separate laboratory science with its own depth, not medicine minus the clinic.",
+    catch:
+      "The degree looks like a direct route into hospital diagnostic work, but in several of the countries we profile that specific role is a separately regulated profession with its own accreditation on top of this qualification, not an automatic destination for anyone who completes it.",
+    suitsYou:
+      "You want the science underneath medicine — disease mechanisms, diagnostics, how a treatment actually works — without committing to a clinical licence and years of patient-facing training to reach it.",
+    notForYou:
+      "You want to treat patients directly, not study the mechanisms behind their treatment from a bench. This degree does not carry a clinical licence anywhere we profile — medicine or nursing lead to that directly, and this one does not convert into it later without starting a fresh clinical degree.",
+    schoolSubjects: ["Biology", "Chemistry", "Mathematics"],
+    hardGate:
+      "Biology and chemistry together, not either alone, are assumed from the first term — this sits close enough to the medical curriculum that programmes often borrow its entry requirements almost unchanged.",
+    leadsTo: ["research-and-new-treatments", "health-technology-and-data", "research-and-discovery"],
+    fields: ["medicine_health", "natural_sciences"],
+  },
+  // ── Twenty-four so far, across engineering, computer_science,
+  // business_economics, natural_sciences and medicine_health. Waves A1c
+  // (humanities & law) and A1d (arts, plus the reverse-edge test) add the
+  // rest, to at least 44 total — spread so every one of the eight faculties
+  // has majors and every area of work in careers.ts is reachable from at
+  // least one major.
   //
   // Add new entries above this comment, in the same style:
   //   * `firstYear` > 120 characters, and it must name what makes people leave.
