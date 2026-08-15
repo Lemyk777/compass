@@ -100,7 +100,15 @@ export function station(facts: StationFacts): {
 
   // 3 ── Reading about work is not finding out whether you can stand it, and
   // this is the cheapest honest test there is.
-  if (facts.tried === 0) return at("try");
+  //
+  // `committed === 0` mirrors the identical guard on the `try-it` branch in
+  // next-move.ts, and the two MUST stay in step: both callers derive `tried`
+  // from the same started-intent count, so without it a student with three
+  // commitments and nothing started sat at "Trying it" while the plan's own
+  // card told them to start. Neither statement was false, which is exactly why
+  // it would have gone unnoticed — one step encoded by two conditions in two
+  // files drifts on the next edit to either.
+  if (facts.tried === 0 && facts.committed === 0) return at("try");
 
   // 4 ── The step the product did not have at all: what you actually apply with.
   if (facts.picks.major === 0) return at("study");

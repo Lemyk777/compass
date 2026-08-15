@@ -109,11 +109,21 @@ export const loadCompanion = cache(
     // being asked "which of these two Tuesdays is more like you?" is being
     // taken backwards — the questions belong to the stage that needs them.
     const at = station(facts);
-    const pair = at.id === "sense" || at.id === "look" ? nextPair(answers) : null;
+    // The stages where the sequence is still the point. A student with a running
+    // plan being asked "which of these two Tuesdays is more like you?" is being
+    // taken backwards.
+    const asking = at.id === "sense" || at.id === "look";
+    const pair = asking ? nextPair(answers) : null;
 
     return {
       station: at,
-      said: observationFromBeats(answers),
+      // The observation is gated the SAME way, and that is not symmetry for its
+      // own sake. `pairsAnswered` freezes the moment we stop asking — a student
+      // who answers three pairs and then adds a work pick sits at exactly the
+      // count `SPEAKS_AT` fires on, forever — so the conclusion would follow
+      // them across all 88 guide pages, the catalog and the plan. It lives with
+      // the station that earned it.
+      said: asking ? observationFromBeats(answers) : null,
       // Zeroes are safe ONLY up to here. Every branch reachable while nothing
       // is committed is written so a zero produces its number-free phrasing
       // rather than "0 countries" — rule 3, it never invents a figure. Past

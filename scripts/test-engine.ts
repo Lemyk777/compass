@@ -6068,3 +6068,53 @@ test("committing to things and starting none reaches 'start', not 'try it'", () 
   );
   assert.equal(move.id, "start");
 });
+
+test("'I don't get it' keeps the pair open — it is a question, not a verdict", () => {
+  // `unclear` means "I don't understand this sentence", not "I have decided".
+  // Treating it as seen threw the pair away the moment a student asked for it
+  // to be rephrased — and disagreed with `pairsAnswered`, which does not count
+  // such a pair either. The button's whole purpose is to let them answer AFTER
+  // understanding.
+  const [a, b] = BEAT_PAIRS[0];
+  const asked: BeatAnswers = { [a]: "unclear" };
+  assert.deepEqual(
+    nextPair(asked)?.map((x) => x.id),
+    [a, b],
+    "asking for plainer words skipped the pair",
+  );
+  assert.equal(pairsAnswered(asked), 0, "an unclear pair was counted as answered");
+  // And once they really answer, it advances.
+  const answered: BeatAnswers = { [a]: "picked", [b]: "passed" };
+  assert.notDeepEqual(nextPair(answered)?.map((x) => x.id), [a, b]);
+});
+
+test("the station and the move ladder agree about step three", () => {
+  // One step, two files. Both callers derive `tried` from the same started-
+  // intent count, so a student with commitments and nothing started must not be
+  // at "Trying it" while the plan's own card says "start". Neither statement
+  // would be false, which is exactly why the drift would go unnoticed.
+  const committedNothingStarted = {
+    ...NOWHERE,
+    pairsAnswered: 3,
+    picks: { work: 1, major: 0, place: 0, hub: 0, route: 0 },
+    tried: 0,
+    committed: 3,
+    started: 0,
+  };
+  assert.notEqual(
+    station(committedNothingStarted).id,
+    "try",
+    "the station still says 'trying it' after they committed to three things",
+  );
+  assert.equal(
+    nextMove(
+      moveInput({
+        picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 },
+        tried: 0,
+        committed: 3,
+        started: 0,
+      }),
+    ).id,
+    "start",
+  );
+});

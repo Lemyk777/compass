@@ -50,10 +50,15 @@ export function Companion({
   /** What we noticed. Null renders NOTHING — never a placeholder. */
   said: string | null;
   /**
-   * Null once the companion can no longer judge the next move honestly — see
-   * `lib/companion/load.ts`. It points at the plan instead of asserting.
+   * Three states, and they are three because collapsing them produced a control
+   * urging a student toward the page they were already on:
+   *
+   * - an object — render it;
+   * - `"deferred"` — we can no longer judge the move honestly (the agenda facts
+   *   live in the plan), so hand over and say so;
+   * - `null` — this PAGE owns the move and renders its own. Show nothing.
    */
-  move: { label: string; href: string; why: string } | null;
+  move: { label: string; href: string; why: string } | "deferred" | null;
   /** Server-rendered, so the beats registry never crosses into this bundle. */
   pair: React.ReactNode;
 }) {
@@ -149,7 +154,9 @@ export function Companion({
           <Needle />
         </span>
         <span className="min-w-0 flex-1 truncate text-sm text-ink">
-          {open ? "Close" : (move?.label ?? stationLabel)}
+          {open || typeof move !== "object" || move === null
+            ? stationLabel
+            : move.label}
         </span>
         <span data-num className="shrink-0 text-xs tabular-nums text-ink-faint">
           {stationIndex}/{stationTotal}
@@ -181,42 +188,46 @@ export function Companion({
 
         {pair}
 
-        <div className="mt-4 border-t border-line pt-3.5">
-          {move ? (
-            <>
-              <p className="max-w-[46ch] text-sm leading-relaxed text-ink-soft">
-                {move.why}
-              </p>
-              <Link
-                href={move.href}
-                className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-accent-ink underline-offset-4 transition hover:underline focus-visible:focus-ring"
-              >
-                {move.label}
-                <span aria-hidden className="ml-1">
-                  &rarr;
-                </span>
-              </Link>
-            </>
-          ) : (
-            // Past the point where this loader can judge honestly. It says so
-            // and hands over, rather than asserting something it cannot check.
-            <>
-              <p className="max-w-[46ch] text-sm leading-relaxed text-ink-soft">
-                You have things on the go now, so what comes next depends on
-                your dates — and your plan is where those live.
-              </p>
-              <Link
-                href="/planner"
-                className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-accent-ink underline-offset-4 transition hover:underline focus-visible:focus-ring"
-              >
-                Open your plan
-                <span aria-hidden className="ml-1">
-                  &rarr;
-                </span>
-              </Link>
-            </>
-          )}
-        </div>
+        {/* Nothing at all when the page owns the move — not even the rule,
+            because a divider above emptiness is still furniture. */}
+        {move !== null && (
+          <div className="mt-4 border-t border-line pt-3.5">
+            {move === "deferred" ? (
+              // Past the point where this loader can judge honestly. It says so
+              // and hands over, rather than asserting something it cannot check.
+              <>
+                <p className="max-w-[46ch] text-sm leading-relaxed text-ink-soft">
+                  You have things on the go now, so what comes next depends on
+                  your dates — and your plan is where those live.
+                </p>
+                <Link
+                  href="/planner"
+                  className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-accent-ink underline-offset-4 transition hover:underline focus-visible:focus-ring"
+                >
+                  Open your plan
+                  <span aria-hidden className="ml-1">
+                    &rarr;
+                  </span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="max-w-[46ch] text-sm leading-relaxed text-ink-soft">
+                  {move.why}
+                </p>
+                <Link
+                  href={move.href}
+                  className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-accent-ink underline-offset-4 transition hover:underline focus-visible:focus-ring"
+                >
+                  {move.label}
+                  <span aria-hidden className="ml-1">
+                    &rarr;
+                  </span>
+                </Link>
+              </>
+            )}
+          </div>
+        )}
 
         <button
           type="button"

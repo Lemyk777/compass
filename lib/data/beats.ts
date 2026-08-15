@@ -323,10 +323,21 @@ export function pairsAnswered(answers: BeatAnswers): number {
   return done.size;
 }
 
-/** The next pair to ask, or null when the sequence is finished. */
+/**
+ * The next pair to ask, or null when the sequence is finished.
+ *
+ * `unclear` leaves a pair OPEN. It means "I don't understand this sentence",
+ * not "I have decided" — treating it as seen threw the pair away the moment a
+ * student asked for it to be rephrased, which is the opposite of what that
+ * button is for, and it disagreed with `pairsAnswered`, which does not count
+ * such a pair either. One of the two had to move; this is the one that was
+ * wrong.
+ */
 export function nextPair(answers: BeatAnswers): [Beat, Beat] | null {
+  const open = (id: string) =>
+    answers[id] === undefined || answers[id] === "unclear";
   for (const [a, b] of BEAT_PAIRS) {
-    if (answers[a] === undefined && answers[b] === undefined) {
+    if (open(a) && open(b)) {
       const left = BY_ID.get(a);
       const right = BY_ID.get(b);
       // A pair naming a missing beat is skipped rather than thrown on: the test

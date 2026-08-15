@@ -97,10 +97,15 @@ export function BeatPair({ left, right }: { left: Beat; right: Beat }) {
     const isChosen = chosen === beat.id;
     return (
       <li
-        // Reduced motion drops the MOVEMENT and keeps the crossfade — design
-        // rule, and the reason the transition list is split rather than killed
-        // wholesale. A reader who asked for less still gets the acknowledgement.
-        className={`transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-[opacity] ${
+        // Under reduced motion the global guard in globals.css forces
+        // `transition-duration: 0.001ms !important` on everything, and a utility
+        // class cannot outrank `!important` — so a variant claiming to "keep the
+        // crossfade" would be a comment asserting something the CSS does not do.
+        // What CAN be honoured here is the 4px jump: `transform-none` removes it
+        // rather than leaving it to snap. The acknowledgement is then carried by
+        // the opacity change alone, instantly, which is the correct outcome for
+        // a reader who asked for less.
+        className={`transition-[transform,opacity] duration-200 ease-out motion-reduce:transform-none ${
           taken && !isChosen ? "opacity-40" : ""
         } ${isChosen ? "-translate-y-1" : ""}`}
       >

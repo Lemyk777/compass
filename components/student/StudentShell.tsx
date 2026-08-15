@@ -68,17 +68,21 @@ export async function StudentShell({
               stationLabel={label}
               said={companion.said}
               move={
-                // Suppressed where the page owns the answer. The planner
-                // renders NextMoveCard from a loader that carries the agenda,
-                // and two ladders reasoning from different inputs on one screen
-                // is how the section ends up contradicting itself.
-                showMove && companion.move
-                  ? {
-                      label: companion.move.action.label,
-                      href: companion.move.action.href,
-                      why: companion.move.why,
-                    }
-                  : null
+                // Three states, not two. `null` means THIS PAGE owns the move
+                // — the planner renders NextMoveCard from a loader that carries
+                // the agenda, and two ladders on one screen is how the section
+                // contradicts itself. `"deferred"` means the loader cannot
+                // judge one honestly. Collapsing them gave /planner a control
+                // urging the student to open /planner.
+                !showMove
+                  ? null
+                  : companion.move
+                    ? {
+                        label: companion.move.action.label,
+                        href: companion.move.action.href,
+                        why: companion.move.why,
+                      }
+                    : "deferred"
               }
               pair={
                 companion.pair ? (
@@ -99,6 +103,14 @@ export async function StudentShell({
                 ) : null
               }
             />
+            {/* The dock's reserved height. Below `xl` the companion is `fixed`,
+                so it is out of flow and sits on whatever is at the foot of the
+                page — which on a phone is usually the control the student was
+                reaching for. This spacer is the whole of "it never covers
+                content", and it was lost once already when the two-copy markup
+                was collapsed into one. Its reach is wider than it looks: since
+                the rail starts at `xl`, the dock covers 1024–1279px too. */}
+            <div aria-hidden className="h-16 xl:hidden" />
           </div>
         ) : (
           children
