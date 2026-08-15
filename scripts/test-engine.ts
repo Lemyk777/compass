@@ -5527,9 +5527,18 @@ test("every beat is concrete, has a plainer version, and names no profession", (
   for (const b of BEATS) {
     assert.ok(!ids.has(b.id), `duplicate beat id ${b.id}`);
     ids.add(b.id);
+    // The old band was 60–260, which never bit: every beat landed at a median
+    // of 154 characters and 29 words, and two of those side by side in a narrow
+    // rail is twenty lines of text for one question. The spec asked for 15–25
+    // words; the test has to be the thing that holds it to that.
+    const words = b.text.trim().split(/s+/).length;
     assert.ok(
-      b.text.trim().length > 60 && b.text.trim().length < 260,
-      `${b.id} is not one concrete moment — it is a paragraph or a fragment`,
+      b.text.trim().length > 50 && b.text.trim().length <= 135,
+      `${b.id} is ${b.text.trim().length} chars — a beat is one moment, not a paragraph`,
+    );
+    assert.ok(
+      words <= 24,
+      `${b.id} is ${words} words; a student reads two of these at once`,
     );
     // The button nobody builds. A student who cannot parse the sentence must
     // have somewhere to go that is not a wrong answer.
@@ -6241,6 +6250,26 @@ test("an off-field row sinks below everything the student matches", () => {
     assert.ok(
       firstOff > lastMatched,
       "an off-field row is sitting above one the student actually matches",
+    );
+  }
+});
+
+test("a beat opens with the ACTION, not with scenery", () => {
+  // This is the rule that was missing, and its absence is what turned the set
+  // into riddles. "No jargon, no profession named" was obeyed and overshot: the
+  // beats became evocative but unanchored — "The only two people left who
+  // remember how the old festival was run are both past eighty…" is a short
+  // story whose verb arrives at word 25, and a fifteen-year-old cannot tell
+  // what they are choosing between.
+  //
+  // Concrete and PLAIN, not concrete and literary. The cheapest test of that is
+  // where the verb sits: a beat must start by telling you what you are DOING.
+  const OPENERS = /^(You |Someone |Two |A person )/;
+  for (const b of BEATS) {
+    assert.match(
+      b.text,
+      OPENERS,
+      `${b.id} opens on scenery rather than on the thing you are doing`,
     );
   }
 });
