@@ -795,6 +795,105 @@ export const MAJORS: Major[] = [
     leadsTo: ["courts-and-public-service", "rights-and-advocacy", "teaching-and-research"],
     fields: ["law", "humanities_social"],
   },
+  {
+    id: "graphic-design",
+    name: "Graphic design",
+    alsoCalled: ["Communication design", "Visual communication design"],
+    whatItActuallyIs:
+      "Solving problems with images, type and layout so a stranger understands, trusts or is moved by something in the few seconds they give it — not decoration, but structured visual argument.",
+    firstYear:
+      "The portfolio that got you admitted was entirely your own choice of subject, medium and pace; the first studio brief hands you somebody else's problem, with constraints you did not set and a deadline that does not move, and that switch from personal project to a client's problem is the actual first lesson, usually arriving inside the first fortnight. The students who leave are almost always the ones who wanted to keep making their own work and resent being handed someone else's problem to solve on a schedule.",
+    catch:
+      "Admission and the first years both turn on a portfolio far more than on your transcript, which is a real door for a student with weak grades and a genuine wall for a student with strong grades and nothing made — and once working, a great deal of the paid output is a client's brand or product, not your own taste, which not everyone who loved making personal work adjusts to.",
+    suitsYou:
+      "You would rather solve somebody else's visual problem well than pursue your own aesthetic uninterrupted, you can explain in words why a layout works instead of just feeling that it does, and being edited by a client repeatedly does not wear down your interest in doing the next brief properly.",
+    notForYou:
+      "You want your own taste to survive untouched into paid work, or you assumed a design career runs mostly on personal projects. Commercial work here is edited by clients and constrained by budgets far more than personal portfolios suggest, and fine art keeps the personal authorship this field trades away for paid, briefed work.",
+    schoolSubjects: [
+      "Art",
+      "A self-built portfolio started well before your final year",
+      "English",
+    ],
+    hardGate:
+      "Almost every programme reviews a portfolio before it reads a transcript, and a strong academic record with nothing made to show for it is a weaker application here than average grades with several finished, considered pieces.",
+    leadsTo: ["digital-and-product-design", "making-objects-and-craft"],
+    fields: ["arts_design"],
+  },
+  {
+    id: "industrial-design",
+    name: "Industrial design",
+    alsoCalled: ["Product design", "Industrial and product design"],
+    whatItActuallyIs:
+      "Designing physical objects that will be manufactured in quantity — how they look, how they are held or used, and how they can actually be produced at a cost that makes sense.",
+    firstYear:
+      "Sketching a hundred concepts in a week turns out to be the easy part; the actual test is the tenth one, built by hand at real size out of card, foam or 3D-printed plastic, that fails to do the one thing it was meant to do once you hold it. Model-making and materials workshops eat far more of the timetable than drawing does, and the students who leave are usually the ones who pictured a drawing-based subject and found a fabrication-based one instead.",
+    catch:
+      "A prototype that fails costs time and material, and a production run that fails costs a great deal more, so the freedom to follow a personal idea is bounded tightly by what a factory can actually build at a sane cost — and much of the entry-level work is refining an existing product's manufacturability rather than inventing a new one.",
+    suitsYou:
+      "You are as interested in how a thing would be manufactured fifty at a time as in how it looks, and a prototype that breaks on the bench reads to you as information rather than as a failure worth abandoning the idea over.",
+    notForYou:
+      "You want the object to stay exactly as you first imagined it. Manufacturing cost and tooling reshape almost every design before it is made, which is a hard adjustment if you have never priced anything before — architecture keeps a similar hands-on design process at a larger, slower scale if that appeals more.",
+    schoolSubjects: [
+      "Art or design technology",
+      "Physics",
+      "A portfolio that shows made objects, not only drawings",
+    ],
+    hardGate:
+      "A portfolio comes before the transcript almost everywhere, and unlike a pure art portfolio it is expected to show some evidence you can reason about how a thing is actually made — sketches alone, with nothing built, read as incomplete here.",
+    leadsTo: ["making-objects-and-craft", "machines-and-manufacturing"],
+    fields: ["arts_design"],
+  },
+  {
+    id: "architecture",
+    name: "Architecture",
+    alsoCalled: [],
+    whatItActuallyIs:
+      "Designing buildings and the spaces around them, and carrying that design all the way through structure, regulation and budget into something that can actually be built and inhabited.",
+    firstYear:
+      "A term's work goes up on a wall and a panel of tutors — some of whom you have never met before that morning — discuss it out loud for twenty minutes, referring to 'the design' rather than to you, and that impersonal, structured format is deliberately how studio critique works from the very first project onward. Long studio hours arrive immediately rather than building up gradually, and the students who leave are usually the ones who did not expect the workload before any of the professional or creative reward shows up.",
+    catch:
+      "This is the longest qualification route among the creative subjects — a degree, then supervised practice, then professional examinations, commonly close to seven years before the title is legally yours — and pay through those years runs well behind the training's length. Long studio hours during the degree are well documented and continue into some practices afterward.",
+    suitsYou:
+      "You can produce something good inside constraints that were fixed before you arrived — a budget, a site, a planning rule — and a multi-year ladder of supervised practice and examinations between you and the title reads as a plan rather than as a discouragement.",
+    notForYou:
+      "You want design freedom early and a short route to a paid, finished career. The qualification ladder is the longest of the creative subjects and the studio hours during it are heavy — industrial design keeps a comparable hands-on design process with a shorter, less regulated route to paid work.",
+    schoolSubjects: [
+      "Mathematics",
+      "Physics",
+      "A portfolio of drawing and made models, not photographs of buildings you admire",
+    ],
+    hardGate:
+      "A portfolio is universal, but unlike a fine-art portfolio it is read for spatial and technical reasoning as much as for drawing, and most systems we cover also expect solid mathematics and physics behind it — this is not a route into the built environment for a purely artistic application.",
+    leadsTo: ["space-and-the-built-environment", "building-and-infrastructure"],
+    fields: ["arts_design"],
+  },
+  {
+    id: "film-production",
+    name: "Film production",
+    alsoCalled: [
+      "Film studies",
+      "Film and television production",
+      "Media production",
+    ],
+    whatItActuallyIs:
+      "Making moving-image work as a crew, not a solo art form — writing, shooting, editing and organising a production so a story actually gets finished, and finished on time.",
+    firstYear:
+      "Nobody hands a first-year student a camera and a script. Early productions cast you into crew positions on someone else's project — holding a boom, logging footage, running continuity — and it is often a full term or more before you direct anything of your own, which does not match the prospectus photographs of students behind cameras. A parallel course in production management and budgeting surprises people who signed up purely for the creative side, and it is usually that unglamorous, procedural half of the course that thins the class out.",
+    catch:
+      "Work in the industry is project by project: you are hired for a production and then it ends, so income is irregular and unpaid or barely-paid early work is common while you build a reputation. The industry also clusters in a small number of expensive cities, and far more people want to direct than the market will ever pay to let direct.",
+    suitsYou:
+      "You can be genuinely useful in somebody else's crew role for a long stretch before directing anything of your own, and irregular, project-based income is something your circumstances can absorb for a few years rather than something you are hoping to survive.",
+    notForYou:
+      "You pictured directing from early on, or you need steady income soon. Almost everyone starts in a crew role on someone else's production, work is project by project with real gaps between paid jobs, and animation offers a more solitary, less crew-dependent route into moving-image work if that suits you better.",
+    schoolSubjects: [
+      "A finished short film or edited video you made yourself, however small",
+      "English",
+      "Media studies where offered",
+    ],
+    hardGate: null,
+    leadsTo: ["film-animation-and-sound", "words-and-media"],
+    fields: ["arts_design"],
+  },
   // ── Thirty-six so far, across engineering, computer_science,
   // business_economics, natural_sciences, medicine_health, humanities_social
   // and law. Wave A1d (arts, plus the reverse-edge test) adds the rest, to

@@ -5215,7 +5215,7 @@ test("every major has a unique id, a name, and belongs to a field", () => {
   // The floor rises with each wave: 12 after A1, 24 after A1b, 36 after A1c,
   // 44 after A1d. Raise this literal in the wave that earns it — a floor that
   // stays at 12 stops being a floor.
-  assert.ok(MAJORS.length >= 36, "the majors layer is too thin to be a step");
+  assert.ok(MAJORS.length >= 44, "the majors layer is too thin to be a step");
   for (const m of MAJORS) {
     assert.ok(!ids.has(m.id), `duplicate major id ${m.id}`);
     ids.add(m.id);
