@@ -4584,6 +4584,12 @@ function moveInput(over: Partial<NextMoveInput> = {}): NextMoveInput {
     overdue: 0,
     openToYou: 0,
     reachableAreas: 0,
+    // `tried: 1` by default, deliberately. The fixture stands for a student who
+    // has cleared every earlier gate except the one the test is varying, and
+    // these cases were written to exercise the branches BELOW the try step. The
+    // try step has its own tests, which set this to 0 explicitly.
+    tried: 1,
+    reachableMajors: 0,
     reachableCountries: 0,
     citiesInPicked: 0,
     nextDeadline: null,
@@ -4600,12 +4606,14 @@ test("there is always exactly one next move, and it always says why", () => {
     { overdue: 2 },
     { overdue: 1, committed: 4, started: 3, dated: 9 },
     { picks: { ...NO_PICKS, work: 1 } },
-    { picks: { ...NO_PICKS, work: 1, place: 2 }, citiesInPicked: 5 },
-    { picks: { ...NO_PICKS, work: 1, place: 2 }, citiesInPicked: 0 },
-    { picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 } },
-    { picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 }, committed: 2 },
+    { picks: { ...NO_PICKS, work: 1 }, tried: 0 },
+    { picks: { ...NO_PICKS, work: 1, major: 1 } },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 2 }, citiesInPicked: 5 },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 2 }, citiesInPicked: 0 },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 } },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 }, committed: 2 },
     {
-      picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 },
+      picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 },
       committed: 2,
       started: 1,
       dated: 3,
@@ -4614,7 +4622,7 @@ test("there is always exactly one next move, and it always says why", () => {
     {
       committed: 1,
       started: 1,
-      picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 },
+      picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 },
     },
     { fieldsStated: 0 },
   ];
@@ -4683,7 +4691,10 @@ test("the next move runs from what has gone wrong to what is closest", () => {
   // 3-5. The guide's own zoom, in order: what work, then where, then which city
   // inside it. A country contains cities, so it comes first — the guide shipped
   // that backwards once.
-  const withWork = { ...NO_PICKS, work: 1 };
+  // `withWork` carries the SUBJECT too, because the ladder gained two steps
+  // between the work and the country: try it, then choose what you'd study.
+  // Both have their own tests; this one is about the zoom that follows them.
+  const withWork = { ...NO_PICKS, work: 1, major: 1 };
   assert.equal(nextMove(moveInput({ committed: 1 })).id, "pick-work");
   assert.equal(nextMove(moveInput({ picks: withWork })).id, "pick-place");
   assert.equal(
@@ -4701,7 +4712,7 @@ test("the next move runs from what has gone wrong to what is closest", () => {
     "commit",
   );
 
-  const decided = { ...NO_PICKS, work: 1, place: 1, hub: 1 };
+  const decided = { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 };
   // 6. Thought it through, did nothing about it — the gap the product measures.
   assert.equal(nextMove(moveInput({ picks: decided })).id, "commit");
   // 7. Said they would, never started. We ask "when will you start?" precisely
@@ -5784,4 +5795,57 @@ test("an overdue thing does not move the station", () => {
   // figure that fell because a deadline lapsed would read as punishment, and
   // this product does not treat not-entering as a verdict on a person.
   assert.equal(station({ ...NOWHERE, overdue: 2 }).id, "sense");
+});
+
+test("knowing the work but never trying it sends you to try it", () => {
+  const move = nextMove(
+    moveInput({ picks: { ...NO_PICKS, work: 1 }, tried: 0 }),
+  );
+  assert.equal(move.id, "try-it");
+  assert.ok(move.why.trim().length > 40, "a move without a reason is an order");
+});
+
+test("having tried it, the next question is what you'd study", () => {
+  const move = nextMove(
+    moveInput({
+      picks: { ...NO_PICKS, work: 1 },
+      tried: 1,
+      reachableMajors: 4,
+    }),
+  );
+  assert.equal(move.id, "pick-major");
+  assert.match(move.action.href, /^\/guide\/majors/);
+  assert.match(move.why, /4 subjects/);
+});
+
+test("the study step comes before the country step", () => {
+  // The major is what you apply WITH, so it cannot come after the place you
+  // apply TO. The guide's own order shipped backwards once for cities and
+  // countries; this is the same mistake one layer up.
+  const move = nextMove(
+    moveInput({ picks: { ...NO_PICKS, work: 1 }, tried: 1 }),
+  );
+  assert.notEqual(move.id, "pick-place");
+});
+
+test("with no subjects to name, the study move drops the number rather than guessing", () => {
+  // Rule 3 of the ladder: it never invents a figure. Where we have nothing
+  // honest to say, the copy is phrased without one.
+  const move = nextMove(
+    moveInput({
+      picks: { ...NO_PICKS, work: 1 },
+      tried: 1,
+      reachableMajors: 0,
+    }),
+  );
+  assert.equal(move.id, "pick-major");
+  assert.ok(!/\b0\b/.test(move.why), `it printed a zero: ${move.why}`);
+});
+
+test("an overdue thing still outranks both new branches", () => {
+  const move = nextMove(
+    moveInput({ overdue: 1, picks: { ...NO_PICKS, work: 1 }, tried: 0 }),
+  );
+  assert.equal(move.id, "overdue");
+  assert.equal(move.tone, "urgent");
 });

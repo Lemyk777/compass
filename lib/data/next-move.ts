@@ -32,6 +32,8 @@ export type NextMoveId =
   | "overdue"
   | "cold-start"
   | "pick-work"
+  | "try-it"
+  | "pick-major"
   | "pick-place"
   | "pick-city"
   | "commit"
@@ -74,6 +76,14 @@ export type NextMoveInput = {
   openToYou: number;
   /** Areas of work their fields open — walked out of the spine. */
   reachableAreas: number;
+  /**
+   * Tries they have taken on — an employer simulation, a free course, a
+   * competition. Reading about work is not finding out whether you can stand
+   * it, and this is the cheapest honest test there is.
+   */
+  tried: number;
+  /** Subjects their fields open — walked out of the spine. */
+  reachableMajors: number;
   /** Countries where that work lives — walked out of the spine. */
   reachableCountries: number;
   /** Cities we profile inside the countries they picked. */
@@ -161,6 +171,44 @@ export function nextMove(input: NextMoveInput): NextMove {
       action: {
         label: "Look at the kinds of work",
         href: guide("/guide/work", input.fieldsStated),
+      },
+      tone: "open",
+    };
+  }
+
+  // 3.5 ── They know what kind of work. They have never found out whether they
+  // can stand it. This is the cheapest honest test that exists, it is free, and
+  // until now it sat three clicks and a manual search away from the doubt that
+  // motivates it.
+  if (input.tried === 0) {
+    return {
+      id: "try-it",
+      headline: "You have read about it. You haven’t done any of it.",
+      why: "Liking the idea of work and liking the work are different facts, and an afternoon is enough to find out which one you have. Employers build these to recruit, so they are honest about what the job actually is — and they cost nothing.",
+      action: {
+        label: "Try it for an afternoon",
+        href: "/opportunities?kind=simulation",
+      },
+      tone: "open",
+    };
+  }
+
+  // 3.6 ── The step the product did not have at all: what you actually apply
+  // WITH. It comes after trying and before the country, because the subject is
+  // what you carry into every admissions system on the list — and a chain that
+  // asked for a country first would be the cities-before-countries mistake one
+  // layer up.
+  if (picks.major === 0) {
+    return {
+      id: "pick-major",
+      headline: "You know the work. Next is what you’d actually apply with.",
+      why:
+        input.reachableMajors > 0
+          ? `${count(input.reachableMajors, "subject leads", "subjects lead")} to it. Each one says what the first year is really made of, what it costs you, and who should study something else — which is the half a prospectus leaves out.`
+          : "A subject page says what the first year is really made of, what it costs you, and who should study something else instead — which is the half a prospectus leaves out.",
+      action: {
+        label: "See what you’d study",
+        href: guide("/guide/majors", input.fieldsStated),
       },
       tone: "open",
     };

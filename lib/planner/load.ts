@@ -8,6 +8,7 @@ import { loadPicks } from "@/lib/planner/picks";
 import { loadMaps, type MapSummary } from "@/lib/planner/maps-load";
 import { countPicks, type PlanPick } from "@/lib/data/plan-picks";
 import { nextMove, type NextMove } from "@/lib/data/next-move";
+import { majorsForFaculties } from "@/lib/data/majors";
 import {
   buildPlanner,
   tallyPlanner,
@@ -237,6 +238,12 @@ async function loadUncached(
     overdue: tally.overdue,
     openToYou: enterable.length,
     reachableAreas: areasForFields(fields).length,
+    // A try is a commitment to something try-shaped, counted the same way as
+    // any other intent — that is where the fact already lives, and a second
+    // table for "did they try" would be the snapshot this product refuses
+    // everywhere else.
+    tried: tally.started,
+    reachableMajors: majorsForFaculties(fields).length,
     reachableCountries: countries.size,
     citiesInPicked,
     nextDeadline: tally.nextDeadline,
