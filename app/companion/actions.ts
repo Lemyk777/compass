@@ -57,11 +57,15 @@ export async function recordReaction(input: {
     };
   }
 
-  // The companion is in the layout, so the whole tree re-reads the thread — the
-  // station, the observation and the move all change together, which is the
-  // point: a student who just answered must see the answer land.
+  // The three routes the companion actually renders on, named — NOT
+  // `revalidatePath("/", "layout")`, which is the only site-wide invalidation
+  // anyone here has ever written and which fires twice per press. It would
+  // purge the marketing landing page, the most expensive page in the product,
+  // for everyone, roughly two dozen times while one student answers a sequence.
   try {
-    revalidatePath("/", "layout");
+    for (const path of ["/opportunities", "/guide", "/planner"]) {
+      revalidatePath(path, "layout");
+    }
   } catch {
     // ignore cache revalidation errors
   }

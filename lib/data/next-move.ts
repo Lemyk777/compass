@@ -115,7 +115,12 @@ function count(n: number, one: string, many: string): string {
  */
 export function nextMove(input: NextMoveInput): NextMove {
   const { picks } = input;
-  const anyPick = picks.work + picks.place + picks.hub + picks.route > 0;
+  // `major` counts. The majors step is reachable directly, so a student can
+  // claim a subject before anything else — and telling them "your plan is
+  // empty" while the plan renders "Subjects you'd study — Computer science"
+  // directly underneath is the product contradicting itself on one screen.
+  const anyPick =
+    picks.work + picks.major + picks.place + picks.hub + picks.route > 0;
 
   // 1 ── Something closed while they were not looking. Nothing outranks this,
   // and the copy refuses to read as a scolding: not entering is information
@@ -180,7 +185,12 @@ export function nextMove(input: NextMoveInput): NextMove {
   // can stand it. This is the cheapest honest test that exists, it is free, and
   // until now it sat three clicks and a manual search away from the doubt that
   // motivates it.
-  if (input.tried === 0) {
+  // `committed === 0` as well, or this branch swallows the one below it: both
+  // callers derive `tried` from the same started-intent count, so a student who
+  // committed to three things and started none would be told "you haven't done
+  // any of it" instead of being nudged to start what they already chose. Having
+  // committed IS having acted on the question this branch asks.
+  if (input.tried === 0 && input.committed === 0) {
     return {
       id: "try-it",
       headline: "You have read about it. You haven’t done any of it.",

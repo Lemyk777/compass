@@ -323,10 +323,21 @@ export function pairsAnswered(answers: BeatAnswers): number {
   return done.size;
 }
 
-/** The next pair to ask, or null when the sequence is finished. */
+/**
+ * The next pair to ask, or null when the sequence is finished.
+ *
+ * `unclear` leaves a pair OPEN. It means "I don't understand this sentence",
+ * not "I have decided" — treating it as seen threw the pair away the moment a
+ * student asked for it to be rephrased, which is the opposite of what that
+ * button is for, and it disagreed with `pairsAnswered`, which does not count
+ * such a pair either. One of the two had to move; this is the one that was
+ * wrong.
+ */
 export function nextPair(answers: BeatAnswers): [Beat, Beat] | null {
+  const open = (id: string) =>
+    answers[id] === undefined || answers[id] === "unclear";
   for (const [a, b] of BEAT_PAIRS) {
-    if (answers[a] === undefined && answers[b] === undefined) {
+    if (open(a) && open(b)) {
       const left = BY_ID.get(a);
       const right = BY_ID.get(b);
       // A pair naming a missing beat is skipped rather than thrown on: the test
@@ -418,9 +429,22 @@ const AXIS_OBSERVATION: Record<WorkAxis, string> = {
     "You keep choosing the work that happens between people. That points at whole fields, and it rules out a few that look similar from outside.",
 };
 
+/**
+ * How many answered pairs an observation is worth speaking at.
+ *
+ * It speaks on the pair that EARNED it and then goes quiet, rather than
+ * standing there forever. Without this the same paragraph followed the reader
+ * across all 88 guide pages, the catalog and the plan, for as long as the
+ * leading axis held — which is the "never repeats itself" rule broken in the
+ * most tiring way available: not by saying two things, but by saying one thing
+ * without stopping.
+ */
+const SPEAKS_AT = [3, 6, 9, 12];
+
 export function observationFromBeats(answers: BeatAnswers): string | null {
-  // Rule 2: three pairs, not eight.
-  if (pairsAnswered(answers) < 3) return null;
+  const done = pairsAnswered(answers);
+  // Rule 2: three pairs, not eight — and only on the pair that earned it.
+  if (!SPEAKS_AT.includes(done)) return null;
   const [strongest] = scoreBeats(answers);
   // Everything picked was unclear or nothing was picked at all — we have no
   // grounds, so we say nothing rather than something shaped like a finding.

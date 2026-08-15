@@ -8,6 +8,7 @@ import { DashboardProvider } from "@/components/dashboard/DashboardContext";
 import { StudentShell } from "@/components/student/StudentShell";
 import { COMPETITIONS, type Competition } from "@/lib/data/key-dates";
 import { getSession } from "@/lib/auth/session";
+import { categoryFromParam } from "@/lib/data/opportunity-filter";
 import { fetchLivePool } from "@/lib/partners/queries";
 import { loadStudentContext } from "@/lib/dashboard/load";
 import { pageMeta } from "@/lib/seo";
@@ -33,7 +34,15 @@ export const metadata: Metadata = pageMeta({
   path: "/opportunities",
 });
 
-export default async function OpportunitiesPage() {
+export default async function OpportunitiesPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  // `?kind=` is where the thread's "try it for an afternoon" move points. The
+  // page ignored it, so that link landed on the All tab and the two-clicks-to-a
+  // -simulation promise was quietly undelivered.
+  const initialCategory = categoryFromParam(searchParams.kind);
   const session = await getSession();
 
   if (session) {
@@ -58,7 +67,7 @@ export default async function OpportunitiesPage() {
           isAdmin={session.role === "admin"}
           hasReport={Boolean(ctx.analysis)}
         >
-          <OpportunitiesView />
+          <OpportunitiesView initialCategory={initialCategory} />
         </StudentShell>
       </DashboardProvider>
     );
