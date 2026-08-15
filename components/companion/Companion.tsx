@@ -154,9 +154,16 @@ export function Companion({
           <Needle />
         </span>
         <span className="min-w-0 flex-1 truncate text-sm text-ink">
-          {open || typeof move !== "object" || move === null
-            ? stationLabel
-            : move.label}
+          {/* "Close" when open, because the explicit word is the clearest
+              affordance on a phone. Closed, it shows the move when there is one
+              and the station otherwise. `move === null` is load-bearing rather
+              than defensive: `typeof null === "object"`, so without it a null
+              move falls through to `move.label`. */}
+          {open
+            ? "Close"
+            : typeof move === "object" && move !== null
+              ? move.label
+              : stationLabel}
         </span>
         <span data-num className="shrink-0 text-xs tabular-nums text-ink-faint">
           {stationIndex}/{stationTotal}
