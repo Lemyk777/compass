@@ -368,3 +368,19 @@ export function toggleFilter<K extends "cost" | "timing" | "levels">(
     : [...current, value as string];
   return { ...f, [group]: next } as OpportunityFilters;
 }
+
+/**
+ * A category from the URL, or null.
+ *
+ * `/opportunities?kind=simulation` is what the thread's "try it for an
+ * afternoon" move links to, and without this it landed on the "All" tab — the
+ * release's own headline consequence (two clicks to a job simulation instead of
+ * six) quietly not delivered. Anything unrecognised is null rather than an
+ * error: a bad query string narrows nothing, it does not break the page.
+ */
+export function categoryFromParam(raw: unknown): CategoryFilter | null {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof value !== "string") return null;
+  const found = CATEGORY_TABS.find((t) => t.key === value);
+  return found ? found.key : null;
+}

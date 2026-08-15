@@ -55,6 +55,7 @@ const EXPECTED: { migration: string; table: string; columns: string[] }[] = [
   { migration: "0028 planner", table: "planner_items", columns: ["user_id", "title", "due_date", "status", "link_href"] },
   { migration: "0029 planner maps", table: "planner_map_nodes", columns: ["user_id", "map_id", "parent_id", "label", "position", "link_href"] },
   { migration: "0030 planner path", table: "planner_path", columns: ["user_id", "ref", "label", "href", "added_at"] },
+  { migration: "0031 beat reactions", table: "beat_reactions", columns: ["user_id", "beat_id", "reaction", "created_at"] },
 ];
 
 async function main() {

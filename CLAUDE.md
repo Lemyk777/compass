@@ -8,9 +8,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > fastest way to do work twice. §8 has the ordered next list, §5 the findings,
 > §7 the working method.
 >
-> **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine open
-> findings with evidence, none of them fixed. **A1 is marked do-not-touch by the
-> owner; do not "fix" it.**
+> **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine findings
+> with evidence. **A1 is now CLOSED**: its date passed on 2026-08-14, which
+> turned "a confirmed date is never already in the past" red on `main` for every
+> branch, and the owner's answer on 2026-08-15 was to remove the row (catalog
+> 173 → 172). The audit's do-not-touch instruction did its job — it said raise
+> it with the owner rather than fix it, and that is what happened. **The other
+> eight are still open.**
 
 ## What this is
 
