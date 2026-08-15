@@ -642,11 +642,87 @@ export const MAJORS: Major[] = [
     leadsTo: ["teaching-and-research", "politics-policy-and-the-world", "rights-and-advocacy"],
     fields: ["humanities_social"],
   },
-  // ── Twenty-eight so far, across engineering, computer_science,
-  // business_economics, natural_sciences, medicine_health and (as of this
-  // batch) humanities_social. Wave A1c continues below; A1d (arts, plus the
-  // reverse-edge test) adds the rest, to at least 44 total — spread so every
-  // one of the eight faculties has majors and every area of work in
+  {
+    id: "anthropology",
+    name: "Anthropology",
+    alsoCalled: ["Social Anthropology", "Cultural Anthropology"],
+    whatItActuallyIs:
+      "The comparative study of human cultures, past and present, understood on their own terms first — what people believe, build and practise — before any attempt to explain or generalise across them.",
+    firstYear:
+      "You do not study people from a lecture theatre for very long: a short observation exercise in the first term — sitting somewhere public and writing down, without judging it, everything a stranger does for an hour — is the method the whole discipline is built on, and it is far harder to do without imposing your own assumptions than it sounds. A parallel strand on human evolution and biology surprises students who signed up expecting only culture, and it is usually that unexpected science, not the fieldwork, that some people leave over.",
+    catch:
+      "The discipline's core method — living inside a community for an extended period to understand it from the inside — is difficult to do properly as an undergraduate and belongs mostly to postgraduate research, so a bachelor's gives you the theory and the method in miniature rather than the full fieldwork experience the subject is known for, and 'anthropologist' is rarely a job title outside academia and a small number of specialist agencies.",
+    suitsYou:
+      "You would rather understand why a practice makes sense from inside a community than judge it from outside, and long, patient, unglamorous observation genuinely interests you more than reaching a quick conclusion does.",
+    notForYou:
+      "You want the extended fieldwork the subject is known for to start in year one, or you are uncomfortable with a compulsory strand on human biology and evolution alongside the cultural material. The real fieldwork mostly waits for postgraduate study, and sociology gives you social patterns without that biological strand attached.",
+    schoolSubjects: ["Biology", "History or social studies", "English"],
+    hardGate: null,
+    leadsTo: ["teaching-and-research", "politics-policy-and-the-world", "people-and-the-mind"],
+    fields: ["humanities_social"],
+  },
+  {
+    id: "political-science",
+    name: "Political science",
+    alsoCalled: ["Politics", "Government", "Political Studies"],
+    whatItActuallyIs:
+      "The systematic study of power — how governments form, how decisions actually get made inside them, and why some political systems hold together while others fail — tested against evidence rather than argued from conviction.",
+    firstYear:
+      "Arguing well turns out to matter less than measuring well: the first term is survey design, statistical method and comparing institutions across countries side by side, not the debate-team argument some students arrive expecting to have every week. Comparative politics forces you to describe a system you personally find objectionable in the same neutral terms as one you admire, and that discipline — describing before judging — is what some strongly opinionated students find hardest to accept.",
+    catch:
+      "A political-science degree trains analysis of power, not the exercise of it, and very few graduates walk straight into elected office or a diplomatic post — most of the actual jobs are research, policy and administrative roles that support decisions rather than make them, and reaching the visible, headline version of 'politics' usually takes a further degree plus years of unglamorous groundwork.",
+    suitsYou:
+      "You can describe a political system you find objectionable in the same neutral, analytical terms as one you admire, and you would rather understand why a decision was actually made than simply argue that a different one should have been.",
+    notForYou:
+      "You want to argue your own convictions for a living, or you are picturing yourself in elected office soon. Most graduates end up in research, policy and administrative roles supporting decisions rather than making them, and a law or communications degree reaches advocacy and public argument more directly than this one does.",
+    schoolSubjects: ["History", "English", "Mathematics or statistics"],
+    hardGate: null,
+    leadsTo: ["politics-policy-and-the-world", "economics-and-policy", "practising-law"],
+    fields: ["humanities_social"],
+  },
+  {
+    id: "international-relations",
+    name: "International relations",
+    alsoCalled: ["International Studies", "International Affairs"],
+    whatItActuallyIs:
+      "The study of how states, international organisations and companies deal with each other across borders — trade, conflict, treaties and diplomacy — and the theories used to explain why they cooperate or fail to.",
+    firstYear:
+      "Model UN prepared you to argue a country's position; the actual degree spends its first months making you defend competing theories about why states behave the way they do at all, a more abstract register than the debate itself and one that some strong debaters find surprisingly dry. International law and international economics both arrive early as compulsory strands, and realising how much of the subject is law and economics, not history and diplomacy, is what changes some people's minds about it.",
+    catch:
+      "Diplomatic services are, in nearly every country we cover, closed or heavily restricted for non-citizens, which quietly removes the most obviously named career from the table for a large share of international students before they have even applied — the field's other destinations, such as international organisations, NGOs and trade or compliance work, are real but far more competitive to enter and usually expect a further degree.",
+    suitsYou:
+      "You can hold several countries' conflicting interests in your head at once without collapsing them into a single right answer, and a career built on relationship and reputation over many years, rather than on one visible early win, sounds acceptable rather than frustrating.",
+    notForYou:
+      "You are an international student specifically aiming at your host country's diplomatic service, which is closed or heavily restricted to non-citizens almost everywhere we cover. Political science stays closer to domestic institutions if that is really the interest, and rights-focused legal work reaches cross-border issues through a more concrete route than general international relations does.",
+    schoolSubjects: ["History", "English", "A second language"],
+    hardGate: null,
+    leadsTo: ["politics-policy-and-the-world", "rights-and-advocacy", "words-and-media"],
+    fields: ["humanities_social", "law"],
+  },
+  {
+    id: "linguistics",
+    name: "Linguistics",
+    alsoCalled: ["Language Sciences"],
+    whatItActuallyIs:
+      "The scientific study of how language itself works — sound, structure, meaning and change — as a system that can be analysed formally, distinct from learning to speak any particular language fluently.",
+    firstYear:
+      "Being fluent in three languages turns out to help less than expected: the first year is phonetics, syntax trees and formal semantic analysis, often applied to a language you do not speak at all, because the subject studies the machinery underneath language rather than practising a particular one. Building a syntax tree correctly is closer to a mathematical proof than to an essay, and it is that unexpected formality, not the vocabulary, that some multilingual applicants find hardest.",
+    catch:
+      "Speaking several languages well is neither the subject nor a substitute for it, so a strong multilingual applicant can still struggle if they expected the degree to feel like advanced language practice; 'linguist' is also rarely a job title outside a small number of speech-therapy, language-technology and language-documentation roles, so most graduates translate the analytical skill into an adjacent field rather than practising linguistics by name.",
+    suitsYou:
+      "You find the structure underneath a sentence as interesting as its meaning, and building a formal tree diagram that correctly predicts which sentences are possible in a language satisfies you more than simply being able to speak it.",
+    notForYou:
+      "You chose this expecting advanced practice in speaking several languages fluently. That is language learning, a different and valuable skill from analysing how language works as a system, and a modern-languages degree teaches fluency far more directly than linguistics does.",
+    schoolSubjects: ["English", "A second language", "Mathematics"],
+    hardGate: null,
+    leadsTo: ["words-and-media", "teaching-and-research", "data-and-ai"],
+    fields: ["humanities_social"],
+  },
+  // ── Thirty-two so far, across engineering, computer_science,
+  // business_economics, natural_sciences, medicine_health and
+  // humanities_social. Wave A1c continues below with law; A1d (arts, plus
+  // the reverse-edge test) adds the rest, to at least 44 total — spread so
+  // every one of the eight faculties has majors and every area of work in
   // careers.ts is reachable from at least one major.
   //
   // Add new entries above this comment, in the same style:
