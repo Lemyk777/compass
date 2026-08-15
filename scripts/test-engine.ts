@@ -182,6 +182,16 @@ import {
   facultyOfArea,
   spineForFaculty,
 } from "@/lib/data/spine";
+import {
+  BEATS,
+  BEAT_PAIRS,
+  nextPair,
+  observationFromBeats,
+  pairsAnswered,
+  scoreBeats,
+  topFieldsFromBeats,
+  type BeatAnswers,
+} from "@/lib/data/beats";
 import { competitionsFromRows } from "@/lib/partners/live";
 import sitemapRoutes from "@/app/sitemap";
 import robotsFile from "@/app/robots";
@@ -5473,4 +5483,133 @@ test("the sitemap lists the majors step and every subject page", () => {
       `${m.id} has a page the sitemap does not list`,
     );
   }
+});
+
+// ── The reaction engine ──────────────────────────────────────────────────────
+// How the thread learns who a student is without asking them the question they
+// came here unable to answer. Pure, fixed weights, same shape as the interest
+// quiz — and, unlike a personality test, it only ever reports what they picked.
+
+test("every beat is concrete, has a plainer version, and names no profession", () => {
+  const ids = new Set<string>();
+  assert.ok(BEATS.length >= 20, "too few beats to separate anything");
+  for (const b of BEATS) {
+    assert.ok(!ids.has(b.id), `duplicate beat id ${b.id}`);
+    ids.add(b.id);
+    assert.ok(
+      b.text.trim().length > 60 && b.text.trim().length < 260,
+      `${b.id} is not one concrete moment — it is a paragraph or a fragment`,
+    );
+    // The button nobody builds. A student who cannot parse the sentence must
+    // have somewhere to go that is not a wrong answer.
+    assert.ok(
+      b.plainer.trim().length > 40,
+      `${b.id} has no plainer version for "I don't get it"`,
+    );
+    assert.ok(
+      Object.keys(b.axes).length > 0,
+      `${b.id} measures nothing`,
+    );
+  }
+});
+
+test("no beat names a job title — that is the vocabulary the student does not have", () => {
+  const titles = /\b(engineer|lawyer|doctor|analyst|consultant|banker|designer|scientist|developer|manager|architect)\b/i;
+  for (const b of BEATS) {
+    assert.ok(
+      !titles.test(b.text),
+      `${b.id} names a profession: ${b.text.slice(0, 60)}`,
+    );
+  }
+});
+
+test("every pair is two real, distinct beats, and no beat appears in two pairs", () => {
+  const byId = new Map(BEATS.map((b) => [b.id, b]));
+  const seen = new Set<string>();
+  assert.ok(BEAT_PAIRS.length >= 8, "fewer than eight pairs is not a sequence");
+  for (const [a, b] of BEAT_PAIRS) {
+    assert.ok(byId.has(a), `pair names a missing beat: ${a}`);
+    assert.ok(byId.has(b), `pair names a missing beat: ${b}`);
+    assert.notEqual(a, b, "a pair asks the same thing twice");
+    assert.ok(!seen.has(a) && !seen.has(b), `beat reused across pairs: ${a}/${b}`);
+    seen.add(a);
+    seen.add(b);
+  }
+});
+
+test("nextPair walks the sequence and returns null when it is finished", () => {
+  assert.deepEqual(nextPair({})?.map((b) => b.id), BEAT_PAIRS[0]);
+  const first: BeatAnswers = {
+    [BEAT_PAIRS[0][0]]: "picked",
+    [BEAT_PAIRS[0][1]]: "passed",
+  };
+  assert.deepEqual(nextPair(first)?.map((b) => b.id), BEAT_PAIRS[1]);
+  const all: BeatAnswers = {};
+  for (const [a, b] of BEAT_PAIRS) {
+    all[a] = "picked";
+    all[b] = "passed";
+  }
+  assert.equal(nextPair(all), null);
+});
+
+test("scoring: nothing in ⇒ nothing out, and unclear contributes no signal", () => {
+  assert.deepEqual(scoreBeats({}), []);
+  assert.deepEqual(topFieldsFromBeats({}), []);
+  const unclearOnly: BeatAnswers = Object.fromEntries(
+    BEATS.slice(0, 4).map((b) => [b.id, "unclear" as const]),
+  );
+  assert.deepEqual(
+    scoreBeats(unclearOnly),
+    [],
+    "an answer of 'I don't get it' was counted as a preference",
+  );
+});
+
+test("scoring: only what was PICKED counts, and the result is ordered", () => {
+  const b = BEATS[0];
+  const scored = scoreBeats({ [b.id]: "picked" });
+  assert.ok(scored.length > 0, "picking a beat measured nothing");
+  for (let i = 1; i < scored.length; i += 1) {
+    assert.ok(scored[i - 1].score >= scored[i].score, "not ordered");
+  }
+  assert.deepEqual(
+    scoreBeats({ [b.id]: "passed" }),
+    [],
+    "passing on something was counted as choosing it",
+  );
+});
+
+test("pairsAnswered counts pairs, not beats, and ignores unclear-only pairs", () => {
+  assert.equal(pairsAnswered({}), 0);
+  const [a1, b1] = BEAT_PAIRS[0];
+  assert.equal(pairsAnswered({ [a1]: "picked", [b1]: "passed" }), 1);
+  assert.equal(
+    pairsAnswered({ [a1]: "unclear", [b1]: "unclear" }),
+    0,
+    "a pair nobody understood was counted as answered",
+  );
+});
+
+test("the observation waits for three pairs, then says something, and never types the student", () => {
+  const answers: BeatAnswers = {};
+  for (let i = 0; i < 2; i += 1) {
+    answers[BEAT_PAIRS[i][0]] = "picked";
+    answers[BEAT_PAIRS[i][1]] = "passed";
+  }
+  assert.equal(
+    observationFromBeats(answers),
+    null,
+    "it spoke before it had grounds to",
+  );
+  answers[BEAT_PAIRS[2][0]] = "picked";
+  answers[BEAT_PAIRS[2][1]] = "passed";
+  const said = observationFromBeats(answers);
+  assert.ok(said && said.length > 30, "three pairs in and it had nothing to say");
+  // Rule 1 of the engine: observations, never types. A personality label is a
+  // claim we cannot support, and this product does not assert what it does not
+  // know.
+  assert.ok(
+    !/you are (an?|the) [A-Z]/.test(said!),
+    `it typed the student instead of observing them: ${said}`,
+  );
 });
