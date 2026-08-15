@@ -142,9 +142,10 @@ export function BeatPair({ left, right }: { left: Beat; right: Beat }) {
         Which day sounds more like you?
       </h3>
       <p className="mt-1 text-xs leading-relaxed text-ink-faint">
-        Two real working days, from two different jobs. Answer a few and we can
-        start pointing you somewhere — no right answer, nothing saved to your
-        profile, and &ldquo;neither&rdquo; is useful too.
+        {/* Was forty words. In a 320px column that is six lines before the
+            student reaches the thing they are meant to read. */}
+        Two real working days, from different jobs. There is no right answer and
+        nothing is saved to your profile.
       </p>
 
       <ul className="mt-3 space-y-2">
