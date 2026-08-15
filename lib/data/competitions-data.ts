@@ -8,46 +8,17 @@ import type { Competition } from "./key-dates";
 
 export const COMPETITIONS: Competition[] = [
   // ── Pinned ────────────────────────────────────────────────────────────────
-  // One entry at a time lives here. `pinned` puts a row above fit and deadline
-  // both, which is an editorial override, so it is worth being able to see at a
-  // glance what is currently claiming that slot.
-  {
-    id: "nao-cup-2026",
-    name: "NAO Cup — debate tournament (Japanese theme)",
-    // Debating is argument construction and public speaking, which is why this
-    // is not filed under one subject: it is the transferable half of law,
-    // policy, economics and journalism at once.
-    fields: ["humanities_social", "law", "business_economics"],
-    deadline: "2026-08-14",
-    window: "One day — 14 August 2026, Sunkar School, Shymkent",
-    level: "regional",
-    category: "competition",
-    tier: "accessible",
-    // The organiser's own announcement, which is the one case a date is
-    // confirmed without a scrape or a hand check — the same rule a partner-set
-    // deadline gets. NOTE: this is the DAY OF THE EVENT. Registration closes
-    // before it, and the organiser has not published that date, so the card
-    // shows the date we can actually stand behind and the window says so.
-    dateConfirmed: true,
-    pinned: true,
-    eligibility:
-      "School students — no debating experience required, first-timers welcome",
-    // In person, in one city, in Russian. Region-scoped so it reaches students
-    // who can actually turn up and does not land on a student in Rome.
-    region: "KZ",
-    city: "Shymkent",
-    // The organiser's registration form, as supplied by them.
-    url: "https://docs.google.com/forms/u/6/d/1ExqYn1nwLlgUZ8YJ4j34NCJMA5hqyiVyE9IqYoV52hA/edit?pli=1&pli=1#response=ACYDBNgVJWdCyF18wgeVGLValklCZZ5Ky3GiB-x0Za7b3pb8o0v5LAYO9oAbgxAReA",
-    blurb:
-      "Three qualifying rounds, then a semi-final and a final, run in Russian. Resolutions follow the Japanese theme, there is a prize for the best costume and one for best speaker, and lunch is included. Open to students who have never debated before as well as to those who have.",
-    // Deliberately NOT "free": the announcement lists what you get and says
-    // nothing about an entry fee, and this product does not file something under
-    // "free" on the strength of it not being mentioned. Absent cost renders as
-    // "we have not verified this" and points at the official page, which is the
-    // honest thing to show.
-    costDetail:
-      "The announcement lists a certificate, food during the event and cash prizes, but does not say whether there is an entry fee — ask on the registration form before counting on either answer.",
-  },
+  // Empty right now, and that is a valid state rather than a gap. `pinned` is
+  // the only editorial override in the ordering: it lifts a row above the
+  // student's own fit and above the deadline, so ONE entry at a time lives
+  // here, and a pinned row still has to pass eligibility — a card telling a
+  // student they can enter something they cannot is the one failure this
+  // product does not get to make, and "we pinned it" is not a reason they can
+  // see.
+  //
+  // A pinned row is also short-lived, which is why the tests are written
+  // against whatever is pinned today rather than against a named id: a test
+  // naming one fails the day it expires.
 
   // ── Math / CS / engineering olympiads ──────────────────────────────────────
   {
