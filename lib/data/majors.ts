@@ -566,12 +566,88 @@ export const MAJORS: Major[] = [
     leadsTo: ["research-and-new-treatments", "health-technology-and-data", "research-and-discovery"],
     fields: ["medicine_health", "natural_sciences"],
   },
-  // ── Twenty-four so far, across engineering, computer_science,
-  // business_economics, natural_sciences and medicine_health. Waves A1c
-  // (humanities & law) and A1d (arts, plus the reverse-edge test) add the
-  // rest, to at least 44 total — spread so every one of the eight faculties
-  // has majors and every area of work in careers.ts is reachable from at
-  // least one major.
+  {
+    id: "history",
+    name: "History",
+    alsoCalled: ["Historical Studies"],
+    whatItActuallyIs:
+      "The disciplined reconstruction of the past from incomplete, biased and often contradictory evidence — building and defending an argument about what happened and why, not memorising a settled account of it.",
+    firstYear:
+      "Dates and names are not the subject; they are its raw material — the actual work is turning a handful of ambiguous, self-interested documents into an argument nobody else in the room has made from them, in a graded essay every week or two. Most applicants arrive expecting a narrative they can learn and are instead handed a stack of conflicting sources and told to argue a position from them; the ones who leave are usually the ones who wanted the story, not the argument about what the story even is.",
+    catch:
+      "A history degree trains argument from evidence better than it trains anyone for a specific job, so almost nobody graduates directly into 'a historian' role outside a small number of archive, museum and academic posts — the translation into paid work is left to you, the same way it is for a philosophy or a mathematics degree, and it takes real, separate effort during the degree rather than after it.",
+    suitsYou:
+      "You would rather build a case from documents that disagree with each other than accept a single tidy account, and you can rewrite the same argument five times as new evidence complicates it without losing patience with the process.",
+    notForYou:
+      "You want a straight line from your subject to your first job, or you dislike weekly written argument more than you expected. A vocational route — communications, education or law — gives you a nearer destination, and this degree's actual skill, argument from contested evidence, transfers there anyway.",
+    schoolSubjects: ["History", "English", "A second language where offered"],
+    hardGate: null,
+    leadsTo: ["teaching-and-research", "words-and-media", "politics-policy-and-the-world"],
+    fields: ["humanities_social"],
+  },
+  {
+    id: "philosophy",
+    name: "Philosophy",
+    alsoCalled: [],
+    whatItActuallyIs:
+      "The study of the most fundamental questions about knowledge, existence, morality and reasoning itself, using close argument rather than experiment or historical evidence to test an answer.",
+    firstYear:
+      "A two-page argument can take a genuine week to read properly, and that pace is what catches most people out — not the ideas, which are usually stated at school level, but the expectation that you dismantle every sentence of a text before you are allowed an opinion about it. Formal logic sits alongside the reading and gives the year a second, more mathematical register that some students who chose philosophy specifically to avoid mathematics did not expect at all.",
+    catch:
+      "The degree gives you a method — question the premise, test the argument, follow the logic wherever it leads — but almost no employer is hiring for 'philosopher', so like history or pure mathematics it depends entirely on you pairing it with a second, more visibly employable skill or a further qualification, and the degree itself will not do that pairing for you.",
+    suitsYou:
+      "You get real satisfaction from finding the hidden assumption in an argument that otherwise sounds airtight, and you can sit with a two-page text for a week without needing to move on to the next one.",
+    notForYou:
+      "You want your reading to move quickly, or you want a subject that names your future job directly. Formal logic and painstakingly slow close reading sit at the centre of this degree from week one, and psychology or political science answer similar curiosity about people and ideas while pointing at a more visible destination.",
+    schoolSubjects: ["English", "History", "Mathematics"],
+    hardGate: null,
+    leadsTo: ["teaching-and-research", "practising-law", "words-and-media"],
+    fields: ["humanities_social"],
+  },
+  {
+    id: "psychology",
+    name: "Psychology",
+    alsoCalled: ["Psychological Science"],
+    whatItActuallyIs:
+      "The scientific study of mind and behaviour — testing why people think, feel and act as they do with data and controlled method, rather than relying on intuition or personal experience about people.",
+    firstYear:
+      "Why did that person do that? is a question every applicant arrives already able to ask; statistics, not case studies, is the first year's actual answer to it, with a full research-methods course sitting alongside developmental, social and cognitive psychology from week one. The realisation that intuition about behaviour is treated as unreliable evidence, to be tested rather than trusted, is what thins the class out faster than any single hard topic does.",
+    catch:
+      "The licensed, patient-facing side of the field is long and competitive to reach: in most countries an undergraduate degree alone does not let you practise as a psychologist, the postgraduate clinical places are few, and a strong first degree is only the entry ticket to that competition rather than the qualification itself.",
+    suitsYou:
+      "You accept that a hunch about why someone behaved a certain way needs testing before it counts as knowledge, you can write up a study methodically even when the result disappoints you, and you can carry other people's difficulties through a working day without taking them home unprocessed.",
+    notForYou:
+      "You want to be doing practising, licensed clinical work soon, or you want to skip the statistics and go straight to helping people. In most countries a bachelor's alone does not license you, research methods sit at the centre of the training throughout, and the postgraduate clinical places are genuinely few relative to demand.",
+    schoolSubjects: ["Biology", "Mathematics or statistics", "English"],
+    hardGate: null,
+    leadsTo: ["people-and-the-mind", "health-of-whole-populations", "teaching-and-research"],
+    fields: ["humanities_social"],
+  },
+  {
+    id: "sociology",
+    name: "Sociology",
+    alsoCalled: [],
+    whatItActuallyIs:
+      "The systematic study of how societies are organised — class, family, institutions, inequality — and the evidence used to show why a pattern exists rather than simply describing that it does.",
+    firstYear:
+      "Explanations that feel obvious — poverty is laziness, crime is bad choices, a riot is simply criminality — are the first target, and a full term goes into showing, with data, why each one collapses under actual evidence. Surveys, interview transcripts and a small research project of your own arrive early, well before any of the grand theory that gives the subject its reputation for abstraction, and it is the theory reading — dense, contested, translated from German or French originals — that some students never quite get comfortable with.",
+    catch:
+      "The subject trains you to see structure behind individual choices, which is intellectually valuable and commercially vague: very few employers advertise for 'a sociologist', so the degree's actual audience — policy, research, the third sector, journalism — has to be chosen and pursued deliberately rather than arrived at automatically.",
+    suitsYou:
+      "You are more interested in why a pattern holds across thousands of people than in any one person's story, and you can hold two competing theoretical explanations for the same fact in your head at once without needing to resolve them immediately.",
+    notForYou:
+      "You want individual case work, not population-level patterns, or you find dense theoretical writing more frustrating than illuminating. Psychology reaches the individual level this degree deliberately steps back from, and a more applied social-policy or social-work route reaches paid work more directly than a general sociology degree does.",
+    schoolSubjects: ["English", "History or social studies", "Mathematics or statistics"],
+    hardGate: null,
+    leadsTo: ["teaching-and-research", "politics-policy-and-the-world", "rights-and-advocacy"],
+    fields: ["humanities_social"],
+  },
+  // ── Twenty-eight so far, across engineering, computer_science,
+  // business_economics, natural_sciences, medicine_health and (as of this
+  // batch) humanities_social. Wave A1c continues below; A1d (arts, plus the
+  // reverse-edge test) adds the rest, to at least 44 total — spread so every
+  // one of the eight faculties has majors and every area of work in
+  // careers.ts is reachable from at least one major.
   //
   // Add new entries above this comment, in the same style:
   //   * `firstYear` > 120 characters, and it must name what makes people leave.
