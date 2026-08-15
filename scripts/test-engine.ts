@@ -426,6 +426,10 @@ function opp(over: Partial<Opportunity> & { id: string }): Opportunity {
     tierResolved: "selective",
     categoryResolved: "competition",
     fit: "recommended",
+    // Defaults, so a case that is not about the two match gates does not have
+    // to mention them. The cases that ARE about them set them explicitly.
+    offField: false,
+    offRegion: false,
     ...over,
   };
 }
@@ -1794,21 +1798,29 @@ test("partner rows join the student pool as ordinary opportunities", () => {
   assert.equal(found?.partner?.verified, true);
 });
 
-test("a local partner post reaches its own country and nobody else", () => {
+test("a local partner post is for its own country, and says so elsewhere", () => {
+  // This used to assert the row VANISHED outside its country. It is marked
+  // `offRegion` now and the filter panel hides it by default, which keeps the
+  // student's list the same while giving them a way to see it and a count
+  // saying how many rows the narrowing removed — the gate used to be invisible
+  // and had no route past it at all.
   const live = competitionsFromRows(
     [postRow({ region: "KZ" })],
     [partnerRow()],
   );
-  const seen = (homeCountry: string | null) =>
+  const row = (homeCountry: string | null) =>
     buildExtracurriculars({
       today: TODAY,
       faculties: [],
       factors: [],
       liveCompetitions: live,
       homeCountry,
-    }).items.some((o) => o.id === "astana-hub-hackathon");
-  assert.equal(seen("KZ"), true);
-  assert.equal(seen("UZ"), false);
+    }).items.find((o) => o.id === "astana-hub-hackathon");
+
+  assert.equal(row("KZ")?.offRegion, false, "hidden from the country it is for");
+  assert.equal(row("UZ")?.offRegion, true, "not marked as belonging elsewhere");
+  // And with no country stated, a local row is nobody's outsider.
+  assert.equal(row(null)?.offRegion, false);
 });
 
 // ---------------------------------------------------------------------------
@@ -6117,4 +6129,118 @@ test("the station and the move ladder agree about step three", () => {
     ).id,
     "start",
   );
+});
+
+// ── Matching annotates, it does not hide ─────────────────────────────────────
+test("a student outside a row's field still sees it, marked", () => {
+  // The gate was invisible: ~58 of 172 rows vanished with no way to ask why and
+  // no route to the rest. It is a filter now, so matching must hand the filter
+  // something to filter ON rather than doing the hiding itself.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: ["law"],
+    factors: [],
+  });
+  const offField = plan.items.filter((o) => o.offField);
+  assert.ok(
+    offField.length > 0,
+    "nothing came back marked off-field — matching is still hiding",
+  );
+  for (const o of offField) {
+    assert.ok(
+      o.fields !== "all" && !o.fields.includes("law"),
+      `${o.id} is marked off-field but is in the student's field`,
+    );
+  }
+});
+
+test("stating no field marks nothing off-field", () => {
+  // Empty faculties means "show me everything", never "show me nothing" — so
+  // there is no field to be outside of.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
+  assert.ok(plan.items.every((o) => !o.offField));
+});
+
+test("nothing in the curated catalog is off-region, because nothing is local", () => {
+  // NOT a tautology, and worth failing on: `region` exists on a catalog row
+  // exactly so a Kazakh student meets things they can turn up to, and the
+  // curated catalog currently carries ZERO region-tagged rows — the last one
+  // was nao-cup-2026, removed on the owner's instruction. AUDIT §A8 already
+  // called local coverage the highest-value widening available; this pins how
+  // thin it actually is, so adding local rows will trip this test and make
+  // somebody read the comment.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+    homeCountry: "IT",
+  });
+  assert.equal(
+    plan.items.filter((o) => o.offRegion).length,
+    0,
+    "a region-tagged row appeared — good news, and this test now needs updating",
+  );
+});
+
+test("a confirmed date in the past is still GONE, not marked", () => {
+  // A closed date is a fact about the world, not a narrowing of the catalog.
+  // Offering to "show expired" would be offering rubbish.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
+  for (const o of plan.items) {
+    if (o.dateConfirmed) {
+      assert.ok(
+        o.daysToDeadline >= 0,
+        `${o.id} is confirmed and past but was returned`,
+      );
+    }
+  }
+});
+
+test("what comes back no longer depends on the student's field", () => {
+  const narrow = buildExtracurriculars({
+    today: TODAY,
+    faculties: ["law"],
+    factors: [],
+  });
+  const matched = narrow.items.filter((o) => !o.offField && !o.offRegion);
+  const wide = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
+  assert.ok(narrow.items.length > matched.length, "annotating widened nothing");
+  assert.equal(
+    narrow.items.length,
+    wide.items.length,
+    "the returned set still depends on the field, which it must no longer",
+  );
+});
+
+test("an off-field row sinks below everything the student matches", () => {
+  // Visible, not promoted. The list still opens on what fits, and widening is a
+  // thing you choose rather than a thing that happens to you.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: ["law"],
+    factors: [],
+  });
+  const firstOff = plan.items.findIndex((o) => o.offField || o.offRegion);
+  const lastMatched = plan.items.reduce(
+    (last, o, i) => (!o.offField && !o.offRegion ? i : last),
+    -1,
+  );
+  if (firstOff !== -1 && lastMatched !== -1) {
+    assert.ok(
+      firstOff > lastMatched,
+      "an off-field row is sitting above one the student actually matches",
+    );
+  }
 });

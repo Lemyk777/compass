@@ -516,6 +516,25 @@ export type Opportunity = Competition & {
   notYetEligible?: string;
   /** Entry runs through a national team rather than a direct application. */
   viaNationalSelection?: boolean;
+  /**
+   * Outside the student's stated fields.
+   *
+   * MARKED rather than hidden. This used to be a filter here, and it removed
+   * roughly a third of the catalog invisibly — a student saw 114 of 172 rows,
+   * had no way to ask why, and no route to the rest at all. It is a fact about
+   * the row now, and `lib/data/opportunity-filter.ts` turns it into an ordinary
+   * filter with a count.
+   *
+   * False when no field is stated: empty faculties means "show me everything",
+   * so there is no field to be outside of.
+   */
+  offField: boolean;
+  /**
+   * A local, region-tagged row belonging to somewhere the student does not
+   * live. Same reasoning as `offField`: a reason to rank something last, not a
+   * reason to pretend it does not exist.
+   */
+  offRegion: boolean;
 };
 
 export type ExtracurricularsPlan = {
@@ -595,25 +614,37 @@ export function buildExtracurriculars({
   const grade = gradeFromGraduationYear(graduationYear, today);
 
   const items: Opportunity[] = comps
-    .filter((c) => reachableFrom(c, homeCountry))
-    // An empty field selection means "we don't know yet", not "show almost
-    // nothing". Filtering on it left a profile-less student with 9 of 86
-    // opportunities — the exact dead end that makes people leave.
-    .filter(
-      (c) =>
-        fac.size === 0 ||
-        c.fields === "all" ||
-        c.fields.some((f) => fac.has(f)),
-    )
-    // Drop a CONFIRMED competition once its date has passed. Keep
-    // not-yet-announced ones (the catalog shows them as "Dates not yet
-    // announced") — their stored date is only an estimate, so we don't filter on
-    // it and we never present it as a hard deadline.
-    .filter((c) => !c.dateConfirmed || daysBetween(today, c.deadline) >= 0)
+    // NEITHER of these removes a row any more. They RECORD why a row would have
+    // been removed, and the filter panel turns that into two ordinary controls
+    // with counts — so a student can see that a third of the catalog is
+    // off-field and switch the narrowing off in one press.
+    //
+    // As filters they were invisible: they ran before the panel saw anything,
+    // so the product quietly showed a smaller catalog than it has and the only
+    // control that looked like a way to the rest said "Show everything we track
+    // for you (114)", where "everything" was false.
+    //
+    // An empty field selection still means "we don't know yet", not "show almost
+    // nothing" — so nothing is off-field when nothing was stated.
+    .map((c) => ({
+      c,
+      offRegion: !reachableFrom(c, homeCountry),
+      offField:
+        fac.size > 0 &&
+        c.fields !== "all" &&
+        !c.fields.some((f) => fac.has(f)),
+    }))
+    // Drop a CONFIRMED competition once its date has passed, and this one stays
+    // a hard filter: a closed date is a fact about the world rather than a
+    // narrowing of the catalog, and offering to "show expired" would be
+    // offering rubbish. Keep not-yet-announced ones (the catalog shows them as
+    // "Dates not yet announced") — their stored date is only an estimate, so we
+    // don't filter on it and never present it as a hard deadline.
+    .filter(({ c }) => !c.dateConfirmed || daysBetween(today, c.deadline) >= 0)
     // Eligibility gate. A student in Kazakhstan was being recommended
     // "Grades 9–12 at a US school" competitions, and a 9th grader was being
     // recommended final-year-only programmes. Unknown facts never exclude.
-    .map((c) => {
+    .map(({ c, offField, offRegion }) => {
       const gate = c.gate ?? parseEligibility(c.eligibility);
       // Age rules were being ignored entirely — we only ever passed the school
       // year, so every "Ages 13–18" entry counted as open to a 12-year-old and
@@ -625,11 +656,11 @@ export function buildExtracurriculars({
         grade,
         ageRange: grade == null ? null : plausibleAgeForGrade(grade),
       });
-      return { c, gate, verdict };
+      return { c, gate, verdict, offField, offRegion };
     })
     // Can never enter: wrong country, or already past the age/grade ceiling.
     .filter(({ verdict }) => verdict.ok || verdict.reason === "too_young")
-    .map(({ c, gate, verdict }) => {
+    .map(({ c, gate, verdict, offField, offRegion }) => {
       const tierResolved = competitionTier(c);
       const notYetEligible = verdict.ok ? undefined : verdict.detail;
       // Not yet eligible is always aspirational, never "do this now".
@@ -642,6 +673,8 @@ export function buildExtracurriculars({
             : "foundational";
       return {
         ...c,
+        offField,
+        offRegion,
         daysToDeadline: daysBetween(today, c.deadline),
         tierResolved,
         categoryResolved: competitionCategory(c),
@@ -657,6 +690,13 @@ export function buildExtracurriculars({
       const ap = a.pinned ? 0 : 1;
       const bp = b.pinned ? 0 : 1;
       if (ap !== bp) return ap - bp;
+      // Rows the student does not match sink below every row they do — above
+      // fit, because fit has no meaning across that line. They are VISIBLE, not
+      // promoted: the list still opens on what fits, and widening stays a thing
+      // the student chooses rather than a thing that happens to them.
+      const am = a.offField || a.offRegion ? 1 : 0;
+      const bm = b.offField || b.offRegion ? 1 : 0;
+      if (am !== bm) return am - bm;
       if (FIT_ORDER[a.fit] !== FIT_ORDER[b.fit])
         return FIT_ORDER[a.fit] - FIT_ORDER[b.fit];
       // Confirmed-date items first (actionable now), then "dates TBA".
