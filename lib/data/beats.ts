@@ -293,6 +293,25 @@ BEAT_PAIRS.forEach(([a, b], i) => {
 
 const BY_ID = new Map(BEATS.map((b) => [b.id, b]));
 
+const REACTION_SET = new Set<string>(["picked", "passed", "unclear"]);
+
+/**
+ * Is this an id the registry actually contains?
+ *
+ * Lives here rather than in the server action because a bound belongs with the
+ * thing it bounds, and because the action is a `"use server"` module a test
+ * cannot import. The action is a public HTTP endpoint, so this is the whole
+ * defence against an arbitrary string reaching the database under the name of a
+ * beat.
+ */
+export function isKnownBeat(id: string): boolean {
+  return BY_ID.has(id);
+}
+
+export function isBeatReaction(v: unknown): v is BeatReaction {
+  return typeof v === "string" && REACTION_SET.has(v);
+}
+
 /** A pair counts as answered when at least one of its beats got a real verdict. */
 export function pairsAnswered(answers: BeatAnswers): number {
   const done = new Set<number>();

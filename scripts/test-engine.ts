@@ -185,6 +185,8 @@ import {
 import {
   BEATS,
   BEAT_PAIRS,
+  isBeatReaction,
+  isKnownBeat,
   nextPair,
   observationFromBeats,
   pairsAnswered,
@@ -5667,4 +5669,20 @@ test("a pair pulls in different directions, or it is not a question", () => {
       `${leftId} / ${rightId} point at the same fields — that pair separates nobody`,
     );
   }
+});
+
+test("the reaction action's bounds reject anything the registry does not contain", () => {
+  // A server action is a public HTTP endpoint, and these two are the whole
+  // defence between an arbitrary POST and a row in beat_reactions. They live in
+  // the registry rather than in the action so a test can reach them — a
+  // "use server" module cannot be imported here.
+  assert.ok(isKnownBeat(BEATS[0].id));
+  assert.ok(!isKnownBeat("../../etc/passwd"));
+  assert.ok(!isKnownBeat(""));
+  assert.ok(isBeatReaction("picked"));
+  assert.ok(isBeatReaction("unclear"));
+  assert.ok(!isBeatReaction("PICKED"), "case was accepted where it should not be");
+  assert.ok(!isBeatReaction("loved"));
+  assert.ok(!isBeatReaction(null));
+  assert.ok(!isBeatReaction(7));
 });
