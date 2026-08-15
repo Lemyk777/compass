@@ -5613,3 +5613,58 @@ test("the observation waits for three pairs, then says something, and never type
     `it typed the student instead of observing them: ${said}`,
   );
 });
+
+test("the beats measure every field and both ends of every axis", () => {
+  // Coverage the count floors cannot express, and without it the engine can be
+  // green and useless: a set of beats that only ever offers "result lands
+  // today" measures nothing, because every student picks it and the scores
+  // never separate. Both ends of each dichotomy have to be on offer, or the
+  // choice carries no information.
+  const seenFields = new Set<string>();
+  const seenAxes = new Set<string>();
+  for (const b of BEATS) {
+    for (const f of Object.keys(b.fields)) seenFields.add(f);
+    for (const a of Object.keys(b.axes)) seenAxes.add(a);
+  }
+  for (const f of FACULTY_VALUES) {
+    assert.ok(
+      seenFields.has(f),
+      `no beat leans toward ${f} — a student in that direction learns nothing`,
+    );
+  }
+  const DICHOTOMIES: [string, string][] = [
+    ["result_today", "result_years"],
+    ["with_people", "with_things"],
+    ["inside_rules", "inside_fog"],
+    ["making_new", "keeping_alive"],
+    ["alone", "in_a_group"],
+  ];
+  for (const [a, b] of DICHOTOMIES) {
+    assert.ok(seenAxes.has(a), `nothing measures ${a}`);
+    assert.ok(
+      seenAxes.has(b),
+      `${b} is never on offer, so ${a} is not a choice — it is the only option`,
+    );
+  }
+});
+
+test("a pair pulls in different directions, or it is not a question", () => {
+  // Two beats that lean the same way are a survey, not a choice: whichever the
+  // student picks, the score moves the same direction and nothing was learned.
+  const byId = new Map(BEATS.map((b) => [b.id, b]));
+  for (const [leftId, rightId] of BEAT_PAIRS) {
+    const left = byId.get(leftId)!;
+    const right = byId.get(rightId)!;
+    const leftAxes = new Set(Object.keys(left.axes));
+    const rightAxes = Object.keys(right.axes);
+    assert.ok(
+      rightAxes.some((a) => !leftAxes.has(a)),
+      `${leftId} / ${rightId} measure the same things — that pair asks nothing`,
+    );
+    const leftFields = new Set(Object.keys(left.fields));
+    assert.ok(
+      Object.keys(right.fields).some((f) => !leftFields.has(f)),
+      `${leftId} / ${rightId} point at the same fields — that pair separates nobody`,
+    );
+  }
+});
