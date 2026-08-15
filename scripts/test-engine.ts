@@ -5306,10 +5306,21 @@ test("every major leads to at least one area of work that exists", () => {
   }
 });
 
-// NOTE: the REVERSE edge — every area of work reachable from some major — is
-// asserted in Task A1d, once the registry is complete. It cannot pass while the
-// registry is being written in waves, and a test that is expected to fail for
-// three tasks is a test nobody reads.
+test("every area of work is reachable from at least one major", () => {
+  // The reverse edge, and the one that actually protects a student: a kind of
+  // work nothing leads to is a page whose reader has nowhere to go next. The
+  // student most likely to hit it is the one with the least common interest —
+  // exactly who this layer exists for.
+  const reached = new Set<string>();
+  for (const m of MAJORS) for (const slug of m.leadsTo) reached.add(slug);
+  for (const { area } of allCareerAreas()) {
+    const slug = areaSlug(area.title);
+    assert.ok(
+      reached.has(slug),
+      `no subject leads to ${slug} — a student reaches a dead end there`,
+    );
+  }
+});
 
 test("majors: empty fields in ⇒ every major; a chosen field never widens it", () => {
   assert.equal(majorsForFaculties([]).length, MAJORS.length);

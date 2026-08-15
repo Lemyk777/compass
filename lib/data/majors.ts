@@ -894,12 +894,108 @@ export const MAJORS: Major[] = [
     leadsTo: ["film-animation-and-sound", "words-and-media"],
     fields: ["arts_design"],
   },
-  // ── Thirty-six so far, across engineering, computer_science,
-  // business_economics, natural_sciences, medicine_health, humanities_social
-  // and law. Wave A1d (arts, plus the reverse-edge test) adds the rest, to
-  // at least 44 total — spread so every one of the eight faculties has
-  // majors and every area of work in careers.ts is reachable from at least
-  // one major.
+  {
+    id: "animation",
+    name: "Animation",
+    alsoCalled: ["Animation and visual effects", "Character animation"],
+    whatItActuallyIs:
+      "Creating the illusion of movement and life in drawn, modelled or digital figures, frame by frame or pose by pose, for film, games and advertising.",
+    firstYear:
+      "A first-term exercise is measured in seconds: a bouncing ball, a simple walk cycle, four seconds of motion that can consume two full weeks of timing and retiming before it reads as believable rather than mechanical. The animation software sits on top of a second, unofficial curriculum in traditional drawing and observation of real movement, and the pace — enormous effort for a result you could watch in one breath — is what the people who leave usually did not expect.",
+    catch:
+      "The finished-seconds-per-week pace does not speed up much with experience; it is simply what the craft costs, and much of the paid work is servicing someone else's established characters and style guide rather than inventing your own. Studios staff up around productions and release schedules, so, as in the wider film industry, project-based hiring and real gaps between contracts are normal rather than exceptional.",
+    suitsYou:
+      "You get real satisfaction from four finished seconds that took two weeks, you can match somebody else's established style faithfully rather than always pushing your own, and repetitive, incremental refinement genuinely interests you more than it exhausts you.",
+    notForYou:
+      "You want fast-turnaround creative output or full authorship over the characters you work on. A finished, believable second of animation is expensive in time no matter how skilled you get, and most paid work matches an established style guide rather than inventing new characters — graphic design gives you a faster creative cycle if that pace matters more to you.",
+    schoolSubjects: [
+      "Art, with regular life drawing if it is offered",
+      "A sketchbook kept consistently, not only for assessment",
+      "Physics or design technology",
+    ],
+    hardGate:
+      "Most programmes screen on a drawing-based portfolio at entry, not on any prior animation or software experience — traditional life-drawing and observation of real movement is the actual prerequisite being tested, and it takes longer to build than software skill does.",
+    leadsTo: ["film-animation-and-sound", "games-and-interactive"],
+    fields: ["arts_design"],
+  },
+  {
+    id: "music",
+    name: "Music",
+    alsoCalled: ["Music performance", "Composition", "Musicology"],
+    whatItActuallyIs:
+      "The formal study of music — performance, composition and the theory underneath both — taken at a level well past playing an instrument for enjoyment.",
+    firstYear:
+      "An audition got you in the door already playing at a level most of your school never heard, and the first term promptly sits you back in a classroom for ear training, harmony and sight-singing exercises that have nothing to do with your instrument, marked to a precision most performers have never been tested against before. The gap between having been the strongest player anyone at your school had met and being an average first-year among people at the same level is what actually thins the class out, more than any single hard topic does.",
+    catch:
+      "This degree does not, by itself, describe a full performance career: this catalogue's own closest destination for music is sound and composition work for film, games and media, not the concert or recording career many applicants picture, and that specific performance track runs on a separate, audition-driven ladder outside anything a general university application measures. Paid work is also markedly uneven, with far less correlation to raw ability than applicants expect.",
+    suitsYou:
+      "Being evaluated on precision — pitch, rhythm, harmony — rather than on feeling alone does not put you off, and you can accept being merely average in a room where everyone else was also the strongest player at their own school, long before you get to call yourself exceptional again.",
+    notForYou:
+      "You are counting on this degree alone to build a performance career, or you dislike being tested on theory and ear training rather than only your instrument. A conservatoire audition track, judged on playing alone rather than academic study, is the real route to a performance career, and this page does not size that route up honestly enough to plan against.",
+    schoolSubjects: [
+      "Sustained instrumental or vocal training well before you apply, not started in your final year",
+      "Music theory where it is taught",
+      "Mathematics",
+    ],
+    hardGate:
+      "A live or recorded audition to a set standard is close to a universal requirement for performance-track programmes, and unlike a portfolio it cannot be built up in the months before you apply — years of instrumental training beforehand is the actual, non-negotiable prerequisite.",
+    leadsTo: ["film-animation-and-sound"],
+    fields: ["arts_design"],
+  },
+  {
+    id: "fine-art",
+    name: "Fine art",
+    alsoCalled: ["Studio art", "Fine arts", "Painting and sculpture"],
+    whatItActuallyIs:
+      "Making original visual work — painting, sculpture, print, photography or moving image — developed from your own ideas rather than a client's brief, and defended in your own words.",
+    firstYear:
+      "Arriving with a portfolio built almost entirely in one medium, usually drawing or painting, is normal, and the foundation year's actual design is to take that medium away from you for weeks at a time: sculpture, print, photography and moving image in rotation, whether or not you are any good at them yet. Group critique of unfinished, sometimes bad work happens in public from early on, and the students who leave are usually the ones who could take critique of a finished piece but not of something still obviously failing.",
+    catch:
+      "There is no brief telling you what to make, which is exactly the freedom that draws people in and exactly what a share of students find they wanted less than they thought — an open question is harder to answer well than a constrained one. Paid work afterward is heavily uneven and often has little to do with gallery sales specifically; teaching, curating, technical and commercial work support far more graduates than selling original pieces does.",
+    suitsYou:
+      "You can defend an idea that is not finished and might not work, in front of a room, without the safety of a brief someone else wrote — and having your specialism taken away for a term at a time to work in media you are not good at yet sounds like the appealing part rather than the cost.",
+    notForYou:
+      "You want a brief, a client and a defined problem to solve rather than an open question you set yourself. Graphic design gives you exactly that structure while keeping the visual craft, and a curatorial or teaching-focused route, rather than a personal studio practice, is the more common paid destination from this degree than most applicants expect.",
+    schoolSubjects: [
+      "Art, across more than one medium if possible",
+      "A sustained personal portfolio, not only classwork",
+      "English, for writing about your own work",
+    ],
+    hardGate:
+      "The portfolio is not a formality here — most programmes weight it above the transcript outright, and a strong academic record with no real personal body of work behind it is routinely turned down in favour of an applicant with weaker grades and a genuine one.",
+    leadsTo: ["making-objects-and-craft", "teaching-and-research"],
+    fields: ["arts_design"],
+  },
+  {
+    id: "fashion-design",
+    name: "Fashion design",
+    alsoCalled: ["Fashion", "Apparel design"],
+    whatItActuallyIs:
+      "Designing clothing and accessories from concept through to a physical, wearable garment — pattern, fabric and construction as much as the sketch.",
+    firstYear:
+      "Before a single original design is critiqued, most programmes spend real weeks on pattern-cutting and construction: copying an existing garment exactly, by hand, to a tolerance measured in millimetres, because a design that cannot actually be constructed is not a finished design yet. Sewing, draping and fitting are graded on technical precision as strictly as any science practical, and the students who leave are usually the ones who wanted to sketch and style, not spend a term proving they can construct someone else's garment first.",
+    catch:
+      "Sampling and small production runs cost real money to get wrong, so creative freedom is bounded by cost the same way it is in industrial design, and a large share of the field is freelance or self-employed — finding clients, managing a seasonal calendar and chasing payment are permanent, unglamorous parts of the job rather than occasional ones. Manufacturing itself is concentrated in specific regions, rarely wherever you happen to live.",
+    suitsYou:
+      "You find pattern-cutting and construction as satisfying as the sketch that came before them, and working out what a small production run would actually cost engages you rather than deflating the design.",
+    notForYou:
+      "You want to sketch and style without the construction and cost side, or you expect steady employment rather than freelance and seasonal work. Illustration or styling-focused work stays closer to the visual side alone, and much of this field runs on freelance income and a seasonal calendar rather than a steady wage.",
+    schoolSubjects: [
+      "Art or design technology",
+      "A portfolio that includes something you actually sewed or constructed, not only drawings",
+      "Mathematics, for pattern proportions and costing",
+    ],
+    hardGate:
+      "A portfolio and, at many schools, a hands-on construction or sewing test sit ahead of the transcript — strong design ideas with no evidence you can actually make a garment is a common, avoidable rejection reason here.",
+    leadsTo: ["making-objects-and-craft", "starting-and-running-a-business"],
+    fields: ["arts_design"],
+  },
+  // ── Forty-four total, across all eight faculties: engineering,
+  // computer_science, business_economics, natural_sciences, medicine_health,
+  // humanities_social, law and arts_design. Every area of work in careers.ts
+  // is reachable from at least one major here — the reverse-edge test below
+  // pins it, so a career area added later needs a matching major, and a
+  // major added later needs a `leadsTo` that actually resolves.
   //
   // Add new entries above this comment, in the same style:
   //   * `firstYear` > 120 characters, and it must name what makes people leave.
