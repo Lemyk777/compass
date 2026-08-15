@@ -1033,7 +1033,7 @@ test("every guide morph name is a valid, unique custom-ident", () => {
 test("the guide's steps are a chain that ends", () => {
   assert.deepEqual(
     GUIDE_SECTIONS.map((s) => s.step),
-    [1, 2, 3, 4],
+    [1, 2, 3, 4, 5],
   );
   const hrefs = new Set(GUIDE_SECTIONS.map((s) => s.href));
   assert.equal(hrefs.size, GUIDE_SECTIONS.length, "two steps share a route");
@@ -1044,11 +1044,14 @@ test("the guide's steps are a chain that ends", () => {
   // The zoom goes IN: a country contains cities, so it comes first. The guide
   // shipped with these the other way round, which asked a student to weigh
   // Berlin and then zoomed out to Germany a step later.
+  // The subject you apply WITH sits between the work and the country: knowing
+  // the work comes first, and the country is chosen with a subject in hand.
   assert.deepEqual(
     GUIDE_SECTIONS.map((s) => s.id),
-    ["work", "places", "cities", "from-home"],
+    ["work", "majors", "places", "cities", "from-home"],
   );
-  assert.equal(nextGuideSection("work")?.id, "places");
+  assert.equal(nextGuideSection("work")?.id, "majors");
+  assert.equal(nextGuideSection("majors")?.id, "places");
   assert.equal(nextGuideSection("places")?.id, "cities");
   // The last step must not point onwards — that footer becomes the CTA into the
   // catalog instead, which is the whole point of ending on "from home".
@@ -4485,8 +4488,11 @@ test("picks are grouped in the guide's own order, and empty groups are dropped",
       label: "Data & AI",
       href: "/guide/work/data-and-ai",
     },
-    // A row written by a version that knew a kind we no longer do.
-    { ref: "major:mech-eng", label: "Mechanical", href: "/guide/x" },
+    // A row written by a version that knew a kind we no longer do. It used to
+    // say `major:` — which is a REAL kind now, so the fixture had to move to
+    // one that never will be. That is the rule working: an unknown kind is
+    // dropped, and yesterday's unknown can become today's known.
+    { ref: "scholarship:daad", label: "DAAD", href: "/guide/x" },
   ];
 
   const groups = groupPicks(picks);
@@ -4498,7 +4504,7 @@ test("picks are grouped in the guide's own order, and empty groups are dropped",
 
   // Dropped, not coerced into a group it does not belong to.
   assert.ok(
-    groups.every((g) => g.picks.every((p) => p.ref !== "major:mech-eng")),
+    groups.every((g) => g.picks.every((p) => p.ref !== "scholarship:daad")),
     "an unrecognised pick was rendered under a kind it is not",
   );
 
@@ -4514,7 +4520,13 @@ test("picks are grouped in the guide's own order, and empty groups are dropped",
     "the picks were re-sorted, which is a ranking nobody asked for",
   );
 
-  assert.deepEqual(countPicks(picks), { work: 1, place: 1, hub: 1, route: 0 });
+  assert.deepEqual(countPicks(picks), {
+    work: 1,
+    major: 0,
+    place: 1,
+    hub: 1,
+    route: 0,
+  });
   assert.equal(groupPicks([]).length, 0);
 });
 
@@ -4544,7 +4556,7 @@ test("the plan's picks stay out of every prose registry", () => {
 // plan, so the product accompanied nobody past their first action. These are
 // the rules that stop that coming back.
 
-const NO_PICKS = { work: 0, place: 0, hub: 0, route: 0 };
+const NO_PICKS = { work: 0, major: 0, place: 0, hub: 0, route: 0 };
 
 function moveInput(over: Partial<NextMoveInput> = {}): NextMoveInput {
   return {
@@ -5366,4 +5378,69 @@ test("every major's name is sentence case", () => {
       );
     }
   }
+});
+
+// ── Majors as a guide step, and a thing the plan can hold ───────────────────
+test("the guide's steps are 1..N with no gaps, and majors sits between work and countries", () => {
+  const steps = GUIDE_SECTIONS.map((s) => s.step);
+  assert.deepEqual(
+    steps,
+    Array.from({ length: GUIDE_SECTIONS.length }, (_, i) => i + 1),
+    "the guide's step numbers have a gap or a duplicate",
+  );
+  const order = GUIDE_SECTIONS.map((s) => s.id);
+  assert.ok(
+    order.indexOf("work") < order.indexOf("majors"),
+    "you cannot choose what to study before knowing what the work is",
+  );
+  assert.ok(
+    order.indexOf("majors") < order.indexOf("places"),
+    "the major is what you apply WITH — it comes before the country",
+  );
+});
+
+test("every pick kind has a guide step, and every guide step can be picked", () => {
+  for (const meta of PICK_KINDS) {
+    const section = GUIDE_SECTIONS.find((s) => s.id === meta.section);
+    assert.ok(section, `pick kind ${meta.kind} names a missing guide step`);
+    assert.equal(
+      meta.step,
+      section!.step,
+      `pick kind ${meta.kind} disagrees with the guide about which step it is`,
+    );
+  }
+  for (const section of GUIDE_SECTIONS) {
+    assert.ok(
+      PICK_KINDS.some((k) => k.section === section.id),
+      `guide step ${section.id} produces nothing the plan can hold`,
+    );
+  }
+});
+
+test("pickHref can only produce an in-app guide path, including for a major", () => {
+  assert.equal(
+    pickHref("major", "computer-science"),
+    "/guide/majors/computer-science",
+  );
+  for (const meta of PICK_KINDS) {
+    const href = pickHref(meta.kind, "x");
+    assert.ok(
+      href.startsWith("/guide/"),
+      `${meta.kind} can produce a path outside the guide: ${href}`,
+    );
+  }
+});
+
+test("countPicks counts a major", () => {
+  const counts = countPicks([
+    {
+      ref: "major:computer-science",
+      label: "Computer science",
+      href: "/guide/majors/computer-science",
+    },
+    { ref: "work:data-and-ai", label: "Data & AI", href: "/guide/work/data-and-ai" },
+  ]);
+  assert.equal(counts.major, 1);
+  assert.equal(counts.work, 1);
+  assert.equal(counts.place, 0);
 });
