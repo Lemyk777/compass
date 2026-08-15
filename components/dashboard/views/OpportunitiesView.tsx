@@ -118,7 +118,17 @@ const SHOWN = 5;
 /** Rows a fit group opens with, and adds per "show more". */
 const PAGE = 8;
 
-export function OpportunitiesView() {
+export function OpportunitiesView({
+  /**
+   * The tab to open on, from `?kind=` — resolved on the server so an unknown
+   * value is already null by the time it arrives. The thread's "try it for an
+   * afternoon" move links to `?kind=simulation`, and without this it landed on
+   * "All".
+   */
+  initialCategory = null,
+}: {
+  initialCategory?: CategoryFilter | null;
+} = {}) {
   const { analysis, hasProfile, profileMeta, liveDates, basePath, isAdmin } =
     useDashboard();
   // Derived, not configured: this view is the dedicated section when it IS the
@@ -131,7 +141,9 @@ export function OpportunitiesView() {
   const [today, setToday] = useState<Date | null>(null);
   useEffect(() => setToday(new Date()), []);
 
-  const [category, setCategory] = useState<CategoryFilter>("all");
+  const [category, setCategory] = useState<CategoryFilter>(
+    initialCategory ?? "all",
+  );
   // Everything the filter panel owns (search text, money, timing, level,
   // eligibility). Kind stays its own state above because the sticky tabs are
   // its control — one criterion, one place to set it.

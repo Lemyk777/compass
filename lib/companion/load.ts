@@ -35,7 +35,20 @@ export type CompanionView = {
    * week.
    */
   said: string | null;
-  move: NextMove;
+  /**
+   * The next move, or NULL once we stop being able to judge it honestly.
+   *
+   * From the moment a student has committed to something, the move depends on
+   * facts this loader does not carry — what is overdue, what is dated, which
+   * deadline is nearest. Handing the ladder zeroes there does not produce vague
+   * copy, it produces a FALSE one: every such student fell into "nothing you're
+   * carrying has an announced date yet", which is a claim, not an omission.
+   *
+   * So we stop, and point at the plan, which loads those facts properly. That
+   * also removes the contradiction of two ladders reasoning from different
+   * inputs on the same screen.
+   */
+  move: NextMove | null;
   /** The next two things to react to, or null once the sequence is finished. */
   pair: { left: Beat; right: Beat } | null;
 };
@@ -92,33 +105,39 @@ export const loadCompanion = cache(
       overdue: 0,
     };
 
-    const pair = nextPair(answers);
+    // Only while the sequence is still the point. A student with a running plan
+    // being asked "which of these two Tuesdays is more like you?" is being
+    // taken backwards — the questions belong to the stage that needs them.
+    const at = station(facts);
+    const pair = at.id === "sense" || at.id === "look" ? nextPair(answers) : null;
 
     return {
-      station: station(facts),
+      station: at,
       said: observationFromBeats(answers),
-      // The zeroed counts below are deliberate and safe: every branch of the
-      // ladder is written so that a zero produces its number-free phrasing
-      // rather than "0 countries". That is rule 3 — it never invents a figure,
-      // and where we have nothing honest to say the copy carries none.
-      // Populating them means walking the catalog and the spine, which is
-      // `lib/planner/load.ts`'s job; the planner passes its own richer input to
-      // this same function.
-      move: nextMove({
-        fieldsStated: fields.length,
-        picks: facts.picks,
-        committed: facts.committed,
-        started: facts.started,
-        tried: facts.tried,
-        overdue: facts.overdue,
-        openToYou: 0,
-        reachableAreas: 0,
-        reachableMajors: 0,
-        reachableCountries: 0,
-        citiesInPicked: 0,
-        nextDeadline: null,
-        dated: 0,
-      }),
+      // Zeroes are safe ONLY up to here. Every branch reachable while nothing
+      // is committed is written so a zero produces its number-free phrasing
+      // rather than "0 countries" — rule 3, it never invents a figure. Past
+      // that point the branches need agenda facts this loader does not carry,
+      // and handing them zeroes produced an assertion rather than a vaguer
+      // sentence. So it stops. See the note on `move` above.
+      move:
+        committed > 0
+          ? null
+          : nextMove({
+              fieldsStated: fields.length,
+              picks: facts.picks,
+              committed: facts.committed,
+              started: facts.started,
+              tried: facts.tried,
+              overdue: facts.overdue,
+              openToYou: 0,
+              reachableAreas: 0,
+              reachableMajors: 0,
+              reachableCountries: 0,
+              citiesInPicked: 0,
+              nextDeadline: null,
+              dated: 0,
+            }),
       pair: pair ? { left: pair[0], right: pair[1] } : null,
     };
   },

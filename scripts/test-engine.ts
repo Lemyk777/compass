@@ -56,6 +56,7 @@ import {
   CATEGORY_TAB_LABEL,
   NO_FILTERS,
   activeChips,
+  categoryFromParam,
   activeFilterCount,
   filterOpportunities,
   opportunityFacets,
@@ -5948,14 +5949,122 @@ test("the companion never drags a prose registry into a client bundle", () => {
     );
     const src = stripComments(readFileSync(full, "utf8"));
     for (const mod of banned) {
-      // `import type` is free — it is erased. Anything else is not.
-      const runtime = new RegExp(
-        `import\s+(?!type\b)[^;]*from\s+["']${mod.replace(/[/@-]/g, "\$&")}["']`,
-      );
       assert.ok(
-        !runtime.test(src),
+        !runtimeImportOf(mod).test(src),
         `${file} imports ${mod} at runtime — that ships it to every page`,
       );
     }
   }
+});
+
+/**
+ * Matches a RUNTIME import of one module. `import type` is erased by the
+ * compiler and is free, so it must not match.
+ *
+ * Assembled from RegExp LITERALS via `.source`, never from a template string.
+ * The first version of this was written as a template literal, where `\s` is
+ * the letter s and `\b` is a backspace — it compiled to
+ * `imports+(?!type\b)[^;]*froms+…`, matched nothing, and therefore passed
+ * against a clean codebase exactly as it would have passed against the bug it
+ * exists to catch. Using `.source` hands the escaping to the JS parser, which
+ * cannot get it wrong.
+ */
+function runtimeImportOf(mod: string): RegExp {
+  const escaped = mod.replace(/[.*+?^${}()|[\]\\/-]/g, "\\$&");
+  return new RegExp(
+    /import\s+(?!type\b)[^;]*from\s+["']/.source + escaped + /["']/.source,
+  );
+}
+
+test("that bundle guard actually bites — a regex matching nothing is not a guard", () => {
+  // A guard that matches nothing is indistinguishable from a codebase with no
+  // violations, and this one really did match nothing for a while. So: prove it
+  // fires on a known-bad line and stays quiet on a type-only import.
+  const guard = runtimeImportOf("@/lib/data/careers");
+  assert.ok(
+    guard.test('import { allCareerAreas } from "@/lib/data/careers";'),
+    "the guard does not catch a real runtime import — it asserts nothing",
+  );
+  assert.ok(
+    guard.test('import { areaSlug } from "@/lib/data/careers"'),
+    "the guard needs a trailing semicolon to fire",
+  );
+  assert.ok(
+    !guard.test('import type { CareerArea } from "@/lib/data/careers";'),
+    "the guard rejects a type-only import, which is erased and costs nothing",
+  );
+  assert.ok(
+    !guard.test('import { HUBS } from "@/lib/data/world";'),
+    "the guard fires on a module it was not asked about",
+  );
+});
+
+test("a kind in the URL resolves to a real tab, and rubbish narrows nothing", () => {
+  // `/opportunities?kind=simulation` is where the thread's "try it" move points.
+  // Before this the page ignored the query and landed on "All", so the two-clicks
+  // -to-a-simulation promise was not delivered.
+  assert.equal(categoryFromParam("simulation"), "simulation");
+  assert.equal(categoryFromParam("all"), "all");
+  assert.equal(categoryFromParam(["competition"]), "competition");
+  assert.equal(categoryFromParam("not-a-kind"), null);
+  assert.equal(categoryFromParam(undefined), null);
+  assert.equal(categoryFromParam(7), null);
+  for (const tab of CATEGORY_TABS) {
+    assert.equal(categoryFromParam(tab.key), tab.key, `${tab.key} is unreachable from the URL`);
+  }
+});
+
+test("the observation speaks on the pair that earned it, then goes quiet", () => {
+  // "Never repeats itself" is broken in the most tiring way available by saying
+  // ONE thing without stopping: the first version returned a fixed string per
+  // axis forever, so the same paragraph followed the reader across all 88 guide
+  // pages, the catalog and the plan.
+  const answers: BeatAnswers = {};
+  const answerPair = (i: number) => {
+    answers[BEAT_PAIRS[i][0]] = "picked";
+    answers[BEAT_PAIRS[i][1]] = "passed";
+  };
+  answerPair(0);
+  answerPair(1);
+  assert.equal(observationFromBeats(answers), null, "it spoke too early");
+  answerPair(2);
+  assert.ok(observationFromBeats(answers), "three pairs in and it said nothing");
+  answerPair(3);
+  assert.equal(
+    observationFromBeats(answers),
+    null,
+    "it is still standing there repeating itself a pair later",
+  );
+  answerPair(4);
+  answerPair(5);
+  assert.ok(
+    observationFromBeats(answers),
+    "it never speaks again after the first time",
+  );
+});
+
+test("a subject alone is not an empty plan", () => {
+  // The majors step is reachable directly, so a student can claim a subject
+  // before anything else. Telling them "your plan is empty" while the plan
+  // renders "Subjects you'd study — Computer science" underneath is the product
+  // contradicting itself on one screen.
+  const move = nextMove(
+    moveInput({ picks: { ...NO_PICKS, major: 1 }, tried: 0 }),
+  );
+  assert.notEqual(move.id, "cold-start");
+});
+
+test("committing to things and starting none reaches 'start', not 'try it'", () => {
+  // Both callers derive `tried` from the same started-intent count, so without
+  // the committed check the try branch swallowed the one below it and a student
+  // who chose three things and began none was told "you haven't done any of it".
+  const move = nextMove(
+    moveInput({
+      picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 },
+      tried: 0,
+      committed: 3,
+      started: 0,
+    }),
+  );
+  assert.equal(move.id, "start");
 });

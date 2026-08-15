@@ -32,27 +32,60 @@ import type { Beat } from "@/lib/data/beats";
 export function BeatPair({ left, right }: { left: Beat; right: Beat }) {
   const [plainer, setPlainer] = useState<Record<string, boolean>>({});
   const [chosen, setChosen] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  /**
+   * Write both halves and UNDO the optimistic state if either fails.
+   *
+   * Discarding the results is what made the first version fatal: `chosen` was
+   * set before the write, a failing action returns without revalidating, so
+   * nothing re-rendered and the pair stayed disabled forever with no
+   * explanation. Migration 0031 is applied by hand, so "the table is not there
+   * yet" is a state a real student can meet on day one — and the action's
+   * carefully-worded message for exactly that was unreachable.
+   *
+   * A HALF-written pair is harmless and deliberately not rolled back: only
+   * `picked` scores, and `pairsAnswered`/`nextPair` key off either beat, so a
+   * lost `passed` row costs nothing but the badly-written-beat telemetry.
+   */
+  function write(writes: { beatId: string; reaction: string }[]) {
+    startTransition(async () => {
+      for (const w of writes) {
+        const res = await recordReaction(w);
+        if (!res.ok) {
+          setChosen(null);
+          setError(res.error);
+          return;
+        }
+      }
+    });
+  }
 
   function choose(picked: Beat, passed: Beat) {
     if (chosen) return;
     setChosen(picked.id);
-    startTransition(async () => {
-      await recordReaction({ beatId: picked.id, reaction: "picked" });
-      await recordReaction({ beatId: passed.id, reaction: "passed" });
-    });
+    setError(null);
+    write([
+      { beatId: picked.id, reaction: "picked" },
+      { beatId: passed.id, reaction: "passed" },
+    ]);
   }
 
   function neither() {
     if (chosen) return;
     setChosen("neither");
-    startTransition(async () => {
-      await recordReaction({ beatId: left.id, reaction: "passed" });
-      await recordReaction({ beatId: right.id, reaction: "passed" });
-    });
+    setError(null);
+    write([
+      { beatId: left.id, reaction: "passed" },
+      { beatId: right.id, reaction: "passed" },
+    ]);
   }
 
   function explain(beat: Beat) {
+    // Shown immediately and never rolled back: understanding the sentence is
+    // the point, and the `unclear` row is only our own telemetry about a badly
+    // written beat. A failure here must not take the plainer words away.
     setPlainer((p) => ({ ...p, [beat.id]: true }));
     startTransition(async () => {
       await recordReaction({ beatId: beat.id, reaction: "unclear" });
@@ -64,7 +97,10 @@ export function BeatPair({ left, right }: { left: Beat; right: Beat }) {
     const isChosen = chosen === beat.id;
     return (
       <li
-        className={`transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none ${
+        // Reduced motion drops the MOVEMENT and keeps the crossfade — design
+        // rule, and the reason the transition list is split rather than killed
+        // wholesale. A reader who asked for less still gets the acknowledgement.
+        className={`transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-[opacity] ${
           taken && !isChosen ? "opacity-40" : ""
         } ${isChosen ? "-translate-y-1" : ""}`}
       >
@@ -113,6 +149,15 @@ export function BeatPair({ left, right }: { left: Beat; right: Beat }) {
         >
           Neither of these
         </button>
+      )}
+
+      {/* Said out loud, and the controls come back. A press that silently does
+          nothing teaches a student the product is broken — and this is the
+          first thing they ever do here. */}
+      {error && (
+        <p role="status" className="mt-2 text-xs leading-relaxed text-reach-ink">
+          {error} Nothing was lost — press again.
+        </p>
       )}
     </section>
   );
