@@ -23,7 +23,12 @@
 // Pure data, no imports — the tabs are a client island and this must stay free
 // to travel into that bundle.
 
-export type GuideSectionId = "work" | "cities" | "places" | "from-home";
+export type GuideSectionId =
+  | "work"
+  | "majors"
+  | "cities"
+  | "places"
+  | "from-home";
 
 export type GuideSection = {
   id: GuideSectionId;
@@ -49,8 +54,20 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       "Areas of work a field opens — not one prescribed job. Each one lists the actual titles people hold inside it and how you get there.",
   },
   {
-    id: "places",
+    // Between the work and the country, because the major is what you actually
+    // apply WITH. The chain ran from "what kind of work" straight to "which
+    // country" and skipped the one row a student fills in on a form.
+    id: "majors",
     step: 2,
+    href: "/guide/majors",
+    label: "What you’d study",
+    title: "What you would actually study",
+    blurb:
+      "The subject you apply with — what the first year is really made of, what it costs you, and who should study something else instead.",
+  },
+  {
+    id: "places",
+    step: 3,
     href: "/guide/places",
     label: "Countries",
     title: "The countries, in full",
@@ -59,7 +76,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
   },
   {
     id: "cities",
-    step: 3,
+    step: 4,
     href: "/guide/cities",
     label: "Cities",
     title: "The cities inside them",
@@ -68,7 +85,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
   },
   {
     id: "from-home",
-    step: 4,
+    step: 5,
     href: "/guide/from-home",
     label: "From home",
     title: "You don’t have to move",
@@ -97,6 +114,9 @@ export function nextGuideSection(id: GuideSectionId): GuideSection | undefined {
  * document: the `guide-` prefix keeps it from starting with a digit, and the
  * subject's own id keeps it unique within a list.
  */
-export function guideMorph(kind: "area" | "hub" | "place", id: string): string {
+export function guideMorph(
+  kind: "area" | "major" | "hub" | "place",
+  id: string,
+): string {
   return `guide-${kind}-${id}`;
 }

@@ -15,6 +15,7 @@ import {
   type NamedUniversity,
 } from "@/lib/data/place-universities";
 import { HOME_ROUTES, type HomeRoute } from "@/lib/data/from-home";
+import { majorsForFaculties, type Major } from "@/lib/data/majors";
 
 // THE SPINE — the chain the guide already had the parts for and never joined.
 //
@@ -77,6 +78,12 @@ export type SpineStop = {
 
 export type Spine = {
   faculty: FacultyValue;
+  /**
+   * What you would actually apply with. The step that was missing: the chain
+   * ran from a kind of work straight to a country, skipping the one row a
+   * student fills in on a form.
+   */
+  majors: Major[];
   /** Where this work lives, home region first. */
   stops: SpineStop[];
   /** Ways in that need no visa and no move. */
@@ -192,6 +199,7 @@ export function spineForFaculty(faculty: FacultyValue): Spine {
 
   return {
     faculty,
+    majors: majorsForFaculties([faculty]),
     stops: reachable,
     homeRoutes: HOME_ROUTES.filter((r) => r.fields.includes(faculty)),
     hubCount: reachable.reduce((n, s) => n + s.hubs.length, 0),

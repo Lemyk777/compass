@@ -80,6 +80,13 @@ import {
 } from "@/lib/data/try-it";
 import { HOME_ROUTES, homeRoutesForFaculties } from "@/lib/data/from-home";
 import {
+  MAJORS,
+  majorById,
+  majorsByField,
+  majorsForArea,
+  majorsForFaculties,
+} from "@/lib/data/majors";
+import {
   LEGACY_GUIDE_PLACE_IDS,
   RENAMED_HUB_IDS,
 } from "@/lib/data/legacy-guide-urls";
@@ -175,6 +182,23 @@ import {
   facultyOfArea,
   spineForFaculty,
 } from "@/lib/data/spine";
+import {
+  BEATS,
+  BEAT_PAIRS,
+  isBeatReaction,
+  isKnownBeat,
+  nextPair,
+  observationFromBeats,
+  pairsAnswered,
+  scoreBeats,
+  topFieldsFromBeats,
+  type BeatAnswers,
+} from "@/lib/data/beats";
+import {
+  STATIONS,
+  station,
+  type StationFacts,
+} from "@/lib/data/thread";
 import { competitionsFromRows } from "@/lib/partners/live";
 import sitemapRoutes from "@/app/sitemap";
 import robotsFile from "@/app/robots";
@@ -1026,7 +1050,7 @@ test("every guide morph name is a valid, unique custom-ident", () => {
 test("the guide's steps are a chain that ends", () => {
   assert.deepEqual(
     GUIDE_SECTIONS.map((s) => s.step),
-    [1, 2, 3, 4],
+    [1, 2, 3, 4, 5],
   );
   const hrefs = new Set(GUIDE_SECTIONS.map((s) => s.href));
   assert.equal(hrefs.size, GUIDE_SECTIONS.length, "two steps share a route");
@@ -1037,11 +1061,14 @@ test("the guide's steps are a chain that ends", () => {
   // The zoom goes IN: a country contains cities, so it comes first. The guide
   // shipped with these the other way round, which asked a student to weigh
   // Berlin and then zoomed out to Germany a step later.
+  // The subject you apply WITH sits between the work and the country: knowing
+  // the work comes first, and the country is chosen with a subject in hand.
   assert.deepEqual(
     GUIDE_SECTIONS.map((s) => s.id),
-    ["work", "places", "cities", "from-home"],
+    ["work", "majors", "places", "cities", "from-home"],
   );
-  assert.equal(nextGuideSection("work")?.id, "places");
+  assert.equal(nextGuideSection("work")?.id, "majors");
+  assert.equal(nextGuideSection("majors")?.id, "places");
   assert.equal(nextGuideSection("places")?.id, "cities");
   // The last step must not point onwards — that footer becomes the CTA into the
   // catalog instead, which is the whole point of ending on "from home".
@@ -4478,8 +4505,11 @@ test("picks are grouped in the guide's own order, and empty groups are dropped",
       label: "Data & AI",
       href: "/guide/work/data-and-ai",
     },
-    // A row written by a version that knew a kind we no longer do.
-    { ref: "major:mech-eng", label: "Mechanical", href: "/guide/x" },
+    // A row written by a version that knew a kind we no longer do. It used to
+    // say `major:` — which is a REAL kind now, so the fixture had to move to
+    // one that never will be. That is the rule working: an unknown kind is
+    // dropped, and yesterday's unknown can become today's known.
+    { ref: "scholarship:daad", label: "DAAD", href: "/guide/x" },
   ];
 
   const groups = groupPicks(picks);
@@ -4491,7 +4521,7 @@ test("picks are grouped in the guide's own order, and empty groups are dropped",
 
   // Dropped, not coerced into a group it does not belong to.
   assert.ok(
-    groups.every((g) => g.picks.every((p) => p.ref !== "major:mech-eng")),
+    groups.every((g) => g.picks.every((p) => p.ref !== "scholarship:daad")),
     "an unrecognised pick was rendered under a kind it is not",
   );
 
@@ -4507,7 +4537,13 @@ test("picks are grouped in the guide's own order, and empty groups are dropped",
     "the picks were re-sorted, which is a ranking nobody asked for",
   );
 
-  assert.deepEqual(countPicks(picks), { work: 1, place: 1, hub: 1, route: 0 });
+  assert.deepEqual(countPicks(picks), {
+    work: 1,
+    major: 0,
+    place: 1,
+    hub: 1,
+    route: 0,
+  });
   assert.equal(groupPicks([]).length, 0);
 });
 
@@ -4537,7 +4573,7 @@ test("the plan's picks stay out of every prose registry", () => {
 // plan, so the product accompanied nobody past their first action. These are
 // the rules that stop that coming back.
 
-const NO_PICKS = { work: 0, place: 0, hub: 0, route: 0 };
+const NO_PICKS = { work: 0, major: 0, place: 0, hub: 0, route: 0 };
 
 function moveInput(over: Partial<NextMoveInput> = {}): NextMoveInput {
   return {
@@ -4548,6 +4584,12 @@ function moveInput(over: Partial<NextMoveInput> = {}): NextMoveInput {
     overdue: 0,
     openToYou: 0,
     reachableAreas: 0,
+    // `tried: 1` by default, deliberately. The fixture stands for a student who
+    // has cleared every earlier gate except the one the test is varying, and
+    // these cases were written to exercise the branches BELOW the try step. The
+    // try step has its own tests, which set this to 0 explicitly.
+    tried: 1,
+    reachableMajors: 0,
     reachableCountries: 0,
     citiesInPicked: 0,
     nextDeadline: null,
@@ -4564,12 +4606,14 @@ test("there is always exactly one next move, and it always says why", () => {
     { overdue: 2 },
     { overdue: 1, committed: 4, started: 3, dated: 9 },
     { picks: { ...NO_PICKS, work: 1 } },
-    { picks: { ...NO_PICKS, work: 1, place: 2 }, citiesInPicked: 5 },
-    { picks: { ...NO_PICKS, work: 1, place: 2 }, citiesInPicked: 0 },
-    { picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 } },
-    { picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 }, committed: 2 },
+    { picks: { ...NO_PICKS, work: 1 }, tried: 0 },
+    { picks: { ...NO_PICKS, work: 1, major: 1 } },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 2 }, citiesInPicked: 5 },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 2 }, citiesInPicked: 0 },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 } },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 }, committed: 2 },
     {
-      picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 },
+      picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 },
       committed: 2,
       started: 1,
       dated: 3,
@@ -4578,7 +4622,7 @@ test("there is always exactly one next move, and it always says why", () => {
     {
       committed: 1,
       started: 1,
-      picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 },
+      picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 },
     },
     { fieldsStated: 0 },
   ];
@@ -4647,7 +4691,10 @@ test("the next move runs from what has gone wrong to what is closest", () => {
   // 3-5. The guide's own zoom, in order: what work, then where, then which city
   // inside it. A country contains cities, so it comes first — the guide shipped
   // that backwards once.
-  const withWork = { ...NO_PICKS, work: 1 };
+  // `withWork` carries the SUBJECT too, because the ladder gained two steps
+  // between the work and the country: try it, then choose what you'd study.
+  // Both have their own tests; this one is about the zoom that follows them.
+  const withWork = { ...NO_PICKS, work: 1, major: 1 };
   assert.equal(nextMove(moveInput({ committed: 1 })).id, "pick-work");
   assert.equal(nextMove(moveInput({ picks: withWork })).id, "pick-place");
   assert.equal(
@@ -4665,7 +4712,7 @@ test("the next move runs from what has gone wrong to what is closest", () => {
     "commit",
   );
 
-  const decided = { ...NO_PICKS, work: 1, place: 1, hub: 1 };
+  const decided = { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 };
   // 6. Thought it through, did nothing about it — the gap the product measures.
   assert.equal(nextMove(moveInput({ picks: decided })).id, "commit");
   // 7. Said they would, never started. We ask "when will you start?" precisely
@@ -5197,4 +5244,718 @@ test("the category list is not hand-copied into a view", () => {
     /ADMIN_CATEGORIES = COMPETITION_CATEGORIES/,
     "the admin endpoint no longer accepts exactly the catalog's kinds",
   );
+});
+// ── Majors ───────────────────────────────────────────────────────────────────
+// The layer that was missing from the chain entirely: a student could learn what
+// work exists and where it lives, and never find out what you actually apply to.
+// Held to the same rules as every other prose registry here.
+
+test("every major has a unique id, a name, and belongs to a field", () => {
+  const ids = new Set<string>();
+  // The floor rises with each wave: 12 after A1, 24 after A1b, 36 after A1c,
+  // 44 after A1d. Raise this literal in the wave that earns it — a floor that
+  // stays at 12 stops being a floor.
+  assert.ok(MAJORS.length >= 44, "the majors layer is too thin to be a step");
+  for (const m of MAJORS) {
+    assert.ok(!ids.has(m.id), `duplicate major id ${m.id}`);
+    ids.add(m.id);
+    assert.match(m.id, /^[a-z0-9][a-z0-9-]{0,63}$/, `${m.id} is not a slug`);
+    assert.ok(m.name.trim().length > 2, `${m.id} has no name`);
+    assert.ok(m.fields.length > 0, `${m.id} belongs to no field`);
+  }
+});
+
+test("every major says what it actually is, what the first year is, and what school subjects it needs", () => {
+  for (const m of MAJORS) {
+    assert.ok(
+      m.whatItActuallyIs.trim().length > 60,
+      `${m.id} does not say what it actually is`,
+    );
+    // The field nobody writes down, and the reason half of first years leave.
+    assert.ok(
+      m.firstYear.trim().length > 120,
+      `${m.id} does not say what the first year is really made of`,
+    );
+    assert.ok(
+      m.schoolSubjects.length > 0,
+      `${m.id} names nothing a student could start today`,
+    );
+  }
+});
+
+test("every major states its catch and who should look elsewhere", () => {
+  const catches = new Set<string>();
+  const avoid = new Set<string>();
+  for (const m of MAJORS) {
+    assert.ok(
+      m.catch.trim().length > 100,
+      `${m.id} has no catch — that is a brochure`,
+    );
+    assert.ok(
+      m.suitsYou.trim().length > 100,
+      `${m.id} does not say who it suits`,
+    );
+    assert.ok(
+      m.notForYou.trim().length > 140,
+      `${m.id} does not name who should look somewhere else`,
+    );
+    catches.add(m.catch.trim());
+    avoid.add(m.notForYou.trim());
+  }
+  assert.equal(catches.size, MAJORS.length, "two majors share one catch");
+  assert.equal(avoid.size, MAJORS.length, "two majors warn off the same person");
+});
+
+test("no major quotes a price, a salary or a ranking", () => {
+  const forbidden =
+    /(\$|€|£|₸|\bUSD\b|\bEUR\b|\bper month\b|\bper year\b|\brank(ed|ing)? (?:#|no\.?\s?)\d|\btop \d+\b|\bbest\b|\bleading\b|\bprestigious\b)/i;
+  for (const m of MAJORS) {
+    for (const [field, text] of Object.entries(m)) {
+      if (typeof text !== "string") continue;
+      assert.ok(
+        !forbidden.test(text),
+        `${m.id}.${field} quotes a figure, ranking or superlative: ${text.slice(0, 80)}`,
+      );
+    }
+  }
+});
+
+test("no major carries a URL — the catalog owns links", () => {
+  const src = readFileSync(
+    path.join(process.cwd(), "lib/data/majors.ts"),
+    "utf8",
+  );
+  assert.ok(
+    !/https?:\/\//.test(stripComments(src)),
+    "majors.ts contains a URL; test:links only knows about the catalog",
+  );
+});
+
+test("every major leads to at least one area of work that exists", () => {
+  const areaSlugs = new Set(
+    allCareerAreas().map(({ area }) => areaSlug(area.title)),
+  );
+  for (const m of MAJORS) {
+    assert.ok(m.leadsTo.length > 0, `${m.id} leads to no work at all`);
+    for (const slug of m.leadsTo) {
+      assert.ok(
+        areaSlugs.has(slug),
+        `${m.id} points at a missing area of work: ${slug}`,
+      );
+    }
+  }
+});
+
+test("every area of work is reachable from at least one major", () => {
+  // The reverse edge, and the one that actually protects a student: a kind of
+  // work nothing leads to is a page whose reader has nowhere to go next. The
+  // student most likely to hit it is the one with the least common interest —
+  // exactly who this layer exists for.
+  const reached = new Set<string>();
+  for (const m of MAJORS) for (const slug of m.leadsTo) reached.add(slug);
+  for (const { area } of allCareerAreas()) {
+    const slug = areaSlug(area.title);
+    assert.ok(
+      reached.has(slug),
+      `no subject leads to ${slug} — a student reaches a dead end there`,
+    );
+  }
+});
+
+test("majors: empty fields in ⇒ every major; a chosen field never widens it", () => {
+  assert.equal(majorsForFaculties([]).length, MAJORS.length);
+  const cs = majorsForFaculties(["computer_science"]);
+  assert.ok(cs.length > 0 && cs.length <= MAJORS.length);
+  assert.ok(cs.every((m) => m.fields.includes("computer_science")));
+});
+
+test("majorById and majorsForArea resolve, and unknown ids return nothing", () => {
+  assert.equal(majorById(MAJORS[0].id)?.id, MAJORS[0].id);
+  assert.equal(majorById("no-such-major"), undefined);
+  const slug = MAJORS[0].leadsTo[0];
+  assert.ok(majorsForArea(slug).some((m) => m.id === MAJORS[0].id));
+  assert.deepEqual(majorsForArea("no-such-area"), []);
+});
+
+test("majorsByField groups in the order given and drops empty fields", () => {
+  const groups = majorsByField(["computer_science", "law"]);
+  assert.equal(groups[0].faculty, "computer_science");
+  assert.ok(groups.every((g) => g.majors.length > 0));
+});
+
+// Sentence case, not Title Case. The product writes every label, heading and
+// button in sentence case, and this registry is written by four separate passes
+// — which is exactly how one of them drifted into "Environmental Science" and
+// "Public Health" while every other entry said "Computer science". Nobody
+// notices one entry; a reader going down a list of forty-four notices the list.
+//
+// The rule is expressed as "at most one capitalised word, and it is the first",
+// because a genuine proper noun inside a subject name is legitimate — "English
+// literature", "American studies". Those go in PROPER_NOUNS rather than
+// weakening the check.
+const PROPER_NOUNS = new Set<string>([]);
+
+test("every major's name is sentence case", () => {
+  for (const m of MAJORS) {
+    const [first, ...rest] = m.name.split(" ");
+    assert.match(first, /^[A-Z]/, `${m.id} does not start with a capital`);
+    for (const word of rest) {
+      assert.ok(
+        !/^[A-Z]/.test(word) || PROPER_NOUNS.has(word),
+        `${m.id} is Title Case ("${m.name}") — the product writes sentence case`,
+      );
+    }
+  }
+});
+
+// ── Majors as a guide step, and a thing the plan can hold ───────────────────
+test("the guide's steps are 1..N with no gaps, and majors sits between work and countries", () => {
+  const steps = GUIDE_SECTIONS.map((s) => s.step);
+  assert.deepEqual(
+    steps,
+    Array.from({ length: GUIDE_SECTIONS.length }, (_, i) => i + 1),
+    "the guide's step numbers have a gap or a duplicate",
+  );
+  const order = GUIDE_SECTIONS.map((s) => s.id);
+  assert.ok(
+    order.indexOf("work") < order.indexOf("majors"),
+    "you cannot choose what to study before knowing what the work is",
+  );
+  assert.ok(
+    order.indexOf("majors") < order.indexOf("places"),
+    "the major is what you apply WITH — it comes before the country",
+  );
+});
+
+test("every pick kind has a guide step, and every guide step can be picked", () => {
+  for (const meta of PICK_KINDS) {
+    const section = GUIDE_SECTIONS.find((s) => s.id === meta.section);
+    assert.ok(section, `pick kind ${meta.kind} names a missing guide step`);
+    assert.equal(
+      meta.step,
+      section!.step,
+      `pick kind ${meta.kind} disagrees with the guide about which step it is`,
+    );
+  }
+  for (const section of GUIDE_SECTIONS) {
+    assert.ok(
+      PICK_KINDS.some((k) => k.section === section.id),
+      `guide step ${section.id} produces nothing the plan can hold`,
+    );
+  }
+});
+
+test("pickHref can only produce an in-app guide path, including for a major", () => {
+  assert.equal(
+    pickHref("major", "computer-science"),
+    "/guide/majors/computer-science",
+  );
+  for (const meta of PICK_KINDS) {
+    const href = pickHref(meta.kind, "x");
+    assert.ok(
+      href.startsWith("/guide/"),
+      `${meta.kind} can produce a path outside the guide: ${href}`,
+    );
+  }
+});
+
+test("countPicks counts a major", () => {
+  const counts = countPicks([
+    {
+      ref: "major:computer-science",
+      label: "Computer science",
+      href: "/guide/majors/computer-science",
+    },
+    { ref: "work:data-and-ai", label: "Data & AI", href: "/guide/work/data-and-ai" },
+  ]);
+  assert.equal(counts.major, 1);
+  assert.equal(counts.work, 1);
+  assert.equal(counts.place, 0);
+});
+
+test("the spine carries the study step, and every subject on it is under that field", () => {
+  // The chain used to run work -> country, skipping the row a student fills in
+  // on a form. This is the join that closes it.
+  for (const faculty of FACULTY_VALUES) {
+    const spine = spineForFaculty(faculty);
+    assert.ok(
+      spine.majors.length > 0,
+      `${faculty} has no subject to study — the chain breaks at step 2`,
+    );
+    assert.ok(
+      spine.majors.every((m) => m.fields.includes(faculty)),
+      `${faculty}'s chain lists a subject from another field`,
+    );
+  }
+});
+
+test("the sitemap lists the majors step and every subject page", () => {
+  const urls = new Set(sitemapRoutes().map((e) => e.url));
+  assert.ok(
+    urls.has(`${CANONICAL_URL}/guide/majors`),
+    "the majors step is not advertised to a crawler",
+  );
+  for (const m of MAJORS) {
+    assert.ok(
+      urls.has(`${CANONICAL_URL}/guide/majors/${m.id}`),
+      `${m.id} has a page the sitemap does not list`,
+    );
+  }
+});
+
+// ── The reaction engine ──────────────────────────────────────────────────────
+// How the thread learns who a student is without asking them the question they
+// came here unable to answer. Pure, fixed weights, same shape as the interest
+// quiz — and, unlike a personality test, it only ever reports what they picked.
+
+test("every beat is concrete, has a plainer version, and names no profession", () => {
+  const ids = new Set<string>();
+  assert.ok(BEATS.length >= 20, "too few beats to separate anything");
+  for (const b of BEATS) {
+    assert.ok(!ids.has(b.id), `duplicate beat id ${b.id}`);
+    ids.add(b.id);
+    assert.ok(
+      b.text.trim().length > 60 && b.text.trim().length < 260,
+      `${b.id} is not one concrete moment — it is a paragraph or a fragment`,
+    );
+    // The button nobody builds. A student who cannot parse the sentence must
+    // have somewhere to go that is not a wrong answer.
+    assert.ok(
+      b.plainer.trim().length > 40,
+      `${b.id} has no plainer version for "I don't get it"`,
+    );
+    assert.ok(
+      Object.keys(b.axes).length > 0,
+      `${b.id} measures nothing`,
+    );
+  }
+});
+
+test("no beat names a job title — that is the vocabulary the student does not have", () => {
+  const titles = /\b(engineer|lawyer|doctor|analyst|consultant|banker|designer|scientist|developer|manager|architect)\b/i;
+  for (const b of BEATS) {
+    assert.ok(
+      !titles.test(b.text),
+      `${b.id} names a profession: ${b.text.slice(0, 60)}`,
+    );
+  }
+});
+
+test("every pair is two real, distinct beats, and no beat appears in two pairs", () => {
+  const byId = new Map(BEATS.map((b) => [b.id, b]));
+  const seen = new Set<string>();
+  assert.ok(BEAT_PAIRS.length >= 8, "fewer than eight pairs is not a sequence");
+  for (const [a, b] of BEAT_PAIRS) {
+    assert.ok(byId.has(a), `pair names a missing beat: ${a}`);
+    assert.ok(byId.has(b), `pair names a missing beat: ${b}`);
+    assert.notEqual(a, b, "a pair asks the same thing twice");
+    assert.ok(!seen.has(a) && !seen.has(b), `beat reused across pairs: ${a}/${b}`);
+    seen.add(a);
+    seen.add(b);
+  }
+});
+
+test("nextPair walks the sequence and returns null when it is finished", () => {
+  assert.deepEqual(nextPair({})?.map((b) => b.id), BEAT_PAIRS[0]);
+  const first: BeatAnswers = {
+    [BEAT_PAIRS[0][0]]: "picked",
+    [BEAT_PAIRS[0][1]]: "passed",
+  };
+  assert.deepEqual(nextPair(first)?.map((b) => b.id), BEAT_PAIRS[1]);
+  const all: BeatAnswers = {};
+  for (const [a, b] of BEAT_PAIRS) {
+    all[a] = "picked";
+    all[b] = "passed";
+  }
+  assert.equal(nextPair(all), null);
+});
+
+test("scoring: nothing in ⇒ nothing out, and unclear contributes no signal", () => {
+  assert.deepEqual(scoreBeats({}), []);
+  assert.deepEqual(topFieldsFromBeats({}), []);
+  const unclearOnly: BeatAnswers = Object.fromEntries(
+    BEATS.slice(0, 4).map((b) => [b.id, "unclear" as const]),
+  );
+  assert.deepEqual(
+    scoreBeats(unclearOnly),
+    [],
+    "an answer of 'I don't get it' was counted as a preference",
+  );
+});
+
+test("scoring: only what was PICKED counts, and the result is ordered", () => {
+  const b = BEATS[0];
+  const scored = scoreBeats({ [b.id]: "picked" });
+  assert.ok(scored.length > 0, "picking a beat measured nothing");
+  for (let i = 1; i < scored.length; i += 1) {
+    assert.ok(scored[i - 1].score >= scored[i].score, "not ordered");
+  }
+  assert.deepEqual(
+    scoreBeats({ [b.id]: "passed" }),
+    [],
+    "passing on something was counted as choosing it",
+  );
+});
+
+test("pairsAnswered counts pairs, not beats, and ignores unclear-only pairs", () => {
+  assert.equal(pairsAnswered({}), 0);
+  const [a1, b1] = BEAT_PAIRS[0];
+  assert.equal(pairsAnswered({ [a1]: "picked", [b1]: "passed" }), 1);
+  assert.equal(
+    pairsAnswered({ [a1]: "unclear", [b1]: "unclear" }),
+    0,
+    "a pair nobody understood was counted as answered",
+  );
+});
+
+test("the observation waits for three pairs, then says something, and never types the student", () => {
+  const answers: BeatAnswers = {};
+  for (let i = 0; i < 2; i += 1) {
+    answers[BEAT_PAIRS[i][0]] = "picked";
+    answers[BEAT_PAIRS[i][1]] = "passed";
+  }
+  assert.equal(
+    observationFromBeats(answers),
+    null,
+    "it spoke before it had grounds to",
+  );
+  answers[BEAT_PAIRS[2][0]] = "picked";
+  answers[BEAT_PAIRS[2][1]] = "passed";
+  const said = observationFromBeats(answers);
+  assert.ok(said && said.length > 30, "three pairs in and it had nothing to say");
+  // Rule 1 of the engine: observations, never types. A personality label is a
+  // claim we cannot support, and this product does not assert what it does not
+  // know.
+  assert.ok(
+    !/you are (an?|the) [A-Z]/.test(said!),
+    `it typed the student instead of observing them: ${said}`,
+  );
+});
+
+test("the beats measure every field and both ends of every axis", () => {
+  // Coverage the count floors cannot express, and without it the engine can be
+  // green and useless: a set of beats that only ever offers "result lands
+  // today" measures nothing, because every student picks it and the scores
+  // never separate. Both ends of each dichotomy have to be on offer, or the
+  // choice carries no information.
+  const seenFields = new Set<string>();
+  const seenAxes = new Set<string>();
+  for (const b of BEATS) {
+    for (const f of Object.keys(b.fields)) seenFields.add(f);
+    for (const a of Object.keys(b.axes)) seenAxes.add(a);
+  }
+  for (const f of FACULTY_VALUES) {
+    assert.ok(
+      seenFields.has(f),
+      `no beat leans toward ${f} — a student in that direction learns nothing`,
+    );
+  }
+  const DICHOTOMIES: [string, string][] = [
+    ["result_today", "result_years"],
+    ["with_people", "with_things"],
+    ["inside_rules", "inside_fog"],
+    ["making_new", "keeping_alive"],
+    ["alone", "in_a_group"],
+  ];
+  for (const [a, b] of DICHOTOMIES) {
+    assert.ok(seenAxes.has(a), `nothing measures ${a}`);
+    assert.ok(
+      seenAxes.has(b),
+      `${b} is never on offer, so ${a} is not a choice — it is the only option`,
+    );
+  }
+});
+
+test("a pair pulls in different directions, or it is not a question", () => {
+  // Two beats that lean the same way are a survey, not a choice: whichever the
+  // student picks, the score moves the same direction and nothing was learned.
+  const byId = new Map(BEATS.map((b) => [b.id, b]));
+  for (const [leftId, rightId] of BEAT_PAIRS) {
+    const left = byId.get(leftId)!;
+    const right = byId.get(rightId)!;
+    const leftAxes = new Set(Object.keys(left.axes));
+    const rightAxes = Object.keys(right.axes);
+    assert.ok(
+      rightAxes.some((a) => !leftAxes.has(a)),
+      `${leftId} / ${rightId} measure the same things — that pair asks nothing`,
+    );
+    const leftFields = new Set(Object.keys(left.fields));
+    assert.ok(
+      Object.keys(right.fields).some((f) => !leftFields.has(f)),
+      `${leftId} / ${rightId} point at the same fields — that pair separates nobody`,
+    );
+  }
+});
+
+test("the reaction action's bounds reject anything the registry does not contain", () => {
+  // A server action is a public HTTP endpoint, and these two are the whole
+  // defence between an arbitrary POST and a row in beat_reactions. They live in
+  // the registry rather than in the action so a test can reach them — a
+  // "use server" module cannot be imported here.
+  assert.ok(isKnownBeat(BEATS[0].id));
+  assert.ok(!isKnownBeat("../../etc/passwd"));
+  assert.ok(!isKnownBeat(""));
+  assert.ok(isBeatReaction("picked"));
+  assert.ok(isBeatReaction("unclear"));
+  assert.ok(!isBeatReaction("PICKED"), "case was accepted where it should not be");
+  assert.ok(!isBeatReaction("loved"));
+  assert.ok(!isBeatReaction(null));
+  assert.ok(!isBeatReaction(7));
+});
+
+// ── The thread's stations ────────────────────────────────────────────────────
+const NOWHERE: StationFacts = {
+  pairsAnswered: 0,
+  picks: { work: 0, major: 0, place: 0, hub: 0, route: 0 },
+  tried: 0,
+  committed: 0,
+  started: 0,
+  overdue: 0,
+};
+
+test("stations are numbered 1..7 with no gaps and no duplicates", () => {
+  assert.equal(STATIONS.length, 7);
+  assert.deepEqual(
+    STATIONS.map((s) => s.index),
+    [1, 2, 3, 4, 5, 6, 7],
+  );
+  assert.equal(new Set(STATIONS.map((s) => s.id)).size, 7);
+});
+
+test("a student who has done nothing is at station one", () => {
+  const at = station(NOWHERE);
+  assert.equal(at.id, "sense");
+  assert.equal(at.index, 1);
+  assert.equal(at.total, 7);
+});
+
+test("the stations advance in order as real facts accumulate", () => {
+  const steps: [Partial<StationFacts>, string][] = [
+    [{ pairsAnswered: 3 }, "look"],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 0, place: 0, hub: 0, route: 0 },
+      },
+      "try",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 0, place: 0, hub: 0, route: 0 },
+        tried: 1,
+      },
+      "study",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 1, place: 0, hub: 0, route: 0 },
+        tried: 1,
+      },
+      "where",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 1, place: 1, hub: 0, route: 0 },
+        tried: 1,
+      },
+      "act",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 1, place: 1, hub: 0, route: 0 },
+        tried: 1,
+        committed: 1,
+        started: 1,
+      },
+      "keep",
+    ],
+  ];
+  for (const [patch, expected] of steps) {
+    assert.equal(
+      station({ ...NOWHERE, ...patch }).id,
+      expected,
+      `expected ${expected} for ${JSON.stringify(patch)}`,
+    );
+  }
+});
+
+test("the station is where they ARE, not the furthest thing they have touched", () => {
+  // Somebody who commits to an olympiad before answering a single pair is still
+  // at the beginning. Taking the maximum instead would tell a lost student they
+  // were nearly finished, which is the opposite of accompaniment.
+  assert.equal(station({ ...NOWHERE, committed: 3, started: 3 }).id, "sense");
+});
+
+test("an overdue thing does not move the station", () => {
+  // Urgency is the MOVE's business — it outranks everything there. A progress
+  // figure that fell because a deadline lapsed would read as punishment, and
+  // this product does not treat not-entering as a verdict on a person.
+  assert.equal(station({ ...NOWHERE, overdue: 2 }).id, "sense");
+});
+
+test("knowing the work but never trying it sends you to try it", () => {
+  const move = nextMove(
+    moveInput({ picks: { ...NO_PICKS, work: 1 }, tried: 0 }),
+  );
+  assert.equal(move.id, "try-it");
+  assert.ok(move.why.trim().length > 40, "a move without a reason is an order");
+});
+
+test("having tried it, the next question is what you'd study", () => {
+  const move = nextMove(
+    moveInput({
+      picks: { ...NO_PICKS, work: 1 },
+      tried: 1,
+      reachableMajors: 4,
+    }),
+  );
+  assert.equal(move.id, "pick-major");
+  assert.match(move.action.href, /^\/guide\/majors/);
+  assert.match(move.why, /4 subjects/);
+});
+
+test("the study step comes before the country step", () => {
+  // The major is what you apply WITH, so it cannot come after the place you
+  // apply TO. The guide's own order shipped backwards once for cities and
+  // countries; this is the same mistake one layer up.
+  const move = nextMove(
+    moveInput({ picks: { ...NO_PICKS, work: 1 }, tried: 1 }),
+  );
+  assert.notEqual(move.id, "pick-place");
+});
+
+test("with no subjects to name, the study move drops the number rather than guessing", () => {
+  // Rule 3 of the ladder: it never invents a figure. Where we have nothing
+  // honest to say, the copy is phrased without one.
+  const move = nextMove(
+    moveInput({
+      picks: { ...NO_PICKS, work: 1 },
+      tried: 1,
+      reachableMajors: 0,
+    }),
+  );
+  assert.equal(move.id, "pick-major");
+  assert.ok(!/\b0\b/.test(move.why), `it printed a zero: ${move.why}`);
+});
+
+test("an overdue thing still outranks both new branches", () => {
+  const move = nextMove(
+    moveInput({ overdue: 1, picks: { ...NO_PICKS, work: 1 }, tried: 0 }),
+  );
+  assert.equal(move.id, "overdue");
+  assert.equal(move.tone, "urgent");
+});
+
+test("the companion says nothing twice in a row as a student advances", () => {
+  // A companion that repeats itself reads as broken, and this is the only way
+  // to catch it: walk the ladder the way a real student walks it and compare
+  // each utterance with the one before. Every step below is a fact changing,
+  // so every step must produce something different to say.
+  const said: string[] = [];
+  let facts: StationFacts = {
+    pairsAnswered: 3,
+    picks: { work: 0, major: 0, place: 0, hub: 0, route: 0 },
+    tried: 0,
+    committed: 0,
+    started: 0,
+    overdue: 0,
+  };
+  const advance: (() => void)[] = [
+    () => {
+      facts = { ...facts, picks: { ...facts.picks, work: 1 } };
+    },
+    () => {
+      facts = { ...facts, tried: 1 };
+    },
+    () => {
+      facts = { ...facts, picks: { ...facts.picks, major: 1 } };
+    },
+    () => {
+      facts = { ...facts, picks: { ...facts.picks, place: 1 } };
+    },
+    () => {
+      facts = { ...facts, committed: 1, started: 1 };
+    },
+  ];
+
+  for (const step of advance) {
+    const move = nextMove(
+      moveInput({
+        picks: facts.picks,
+        tried: facts.tried,
+        committed: facts.committed,
+        started: facts.started,
+      }),
+    );
+    said.push(`${station(facts).id}|${move.headline}`);
+    step();
+  }
+  // The state after the last advance counts too — it is what the student sees
+  // once everything is moving, and "nothing to say" there would be a companion
+  // that goes quiet exactly when it has succeeded.
+  const last = nextMove(
+    moveInput({
+      picks: facts.picks,
+      tried: facts.tried,
+      committed: facts.committed,
+      started: facts.started,
+    }),
+  );
+  said.push(`${station(facts).id}|${last.headline}`);
+
+  for (let i = 1; i < said.length; i += 1) {
+    assert.notEqual(
+      said[i],
+      said[i - 1],
+      `the companion said the same thing twice in a row: ${said[i]}`,
+    );
+  }
+  assert.equal(new Set(said).size, said.length, "the walk repeats itself");
+});
+
+test("the companion never drags a prose registry into a client bundle", () => {
+  // key-dates builds a map over ~2,700 catalog rows at module load; careers,
+  // world, study-destinations and spine are thousands of lines of prose. Any
+  // runtime import of one of them from a client component ships it to every
+  // route the companion renders on — which, by design, is every route in the
+  // student's product. This is the repository's most expensive recurring
+  // mistake and the companion is the widest possible surface for it.
+  const banned = [
+    "@/lib/data/key-dates",
+    "@/lib/data/careers",
+    "@/lib/data/world",
+    "@/lib/data/study-destinations",
+    "@/lib/data/spine",
+    "@/lib/data/competitions-data",
+    "@/lib/data/majors",
+  ];
+  const files = [
+    "components/companion/Companion.tsx",
+    "components/companion/BeatPair.tsx",
+  ];
+  for (const file of files) {
+    const full = path.join(process.cwd(), file);
+    // Asserted, not skipped. A guard that quietly passes for a file that is not
+    // there guards nothing — and would go green again the day someone deletes
+    // the component it protects.
+    assert.ok(
+      existsSync(full),
+      `${file} is missing — this guard has no subject`,
+    );
+    const src = stripComments(readFileSync(full, "utf8"));
+    for (const mod of banned) {
+      // `import type` is free — it is erased. Anything else is not.
+      const runtime = new RegExp(
+        `import\s+(?!type\b)[^;]*from\s+["']${mod.replace(/[/@-]/g, "\$&")}["']`,
+      );
+      assert.ok(
+        !runtime.test(src),
+        `${file} imports ${mod} at runtime — that ships it to every page`,
+      );
+    }
+  }
 });
