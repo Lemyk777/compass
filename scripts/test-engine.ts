@@ -57,11 +57,14 @@ import {
   NO_FILTERS,
   activeChips,
   categoryFromParam,
+  matchedCount,
+  matchedOnly,
   activeFilterCount,
   filterOpportunities,
   opportunityFacets,
   withoutChip,
   type CostBucket,
+  type OpportunityFilters,
   type TimingBucket,
 } from "@/lib/data/opportunity-filter";
 import { emptyProfile } from "@/lib/types";
@@ -426,6 +429,10 @@ function opp(over: Partial<Opportunity> & { id: string }): Opportunity {
     tierResolved: "selective",
     categoryResolved: "competition",
     fit: "recommended",
+    // Defaults, so a case that is not about the two match gates does not have
+    // to mention them. The cases that ARE about them set them explicitly.
+    offField: false,
+    offRegion: false,
     ...over,
   };
 }
@@ -469,9 +476,25 @@ const FILTER_POOL: Opportunity[] = [
 
 const ids = (items: Opportunity[]) => items.map((o) => o.id).sort();
 
-test("no filters is the identity — the default render pays nothing", () => {
-  assert.equal(filterOpportunities(FILTER_POOL, NO_FILTERS), FILTER_POOL);
+test("the neutral state still narrows to the student's own list", () => {
+  // This used to assert reference identity — "no active filters, same array
+  // back". That stopped being true and, more importantly, stopped being RIGHT:
+  // the neutral state now keeps both match narrowings on, so a student who has
+  // touched nothing gets their own list rather than all 172. Returning the
+  // array untouched would have been the exact bug this group was added to fix.
+  //
+  // Nothing in the pool is off-field or off-region, so the CONTENT is
+  // unchanged, and the badge still reads zero: narrowing the student never
+  // asked for is not a choice they made.
+  assert.deepEqual(filterOpportunities(FILTER_POOL, NO_FILTERS), FILTER_POOL);
   assert.equal(activeFilterCount(NO_FILTERS), 0);
+
+  const withOutsiders = [...FILTER_POOL, opp({ id: "elsewhere", offField: true })];
+  assert.equal(
+    filterOpportunities(withOutsiders, NO_FILTERS).length,
+    FILTER_POOL.length,
+    "the default let an off-field row through",
+  );
 });
 
 test("filtering to free never includes a cost we haven't verified", () => {
@@ -590,12 +613,16 @@ test("facet counts lift their own group and keep the others", () => {
 });
 
 test("the chips and the badge can never disagree", () => {
-  const f = {
+  const f: OpportunityFilters = {
+    ...NO_FILTERS,
     query: "robotics",
     cost: ["free", "paid"] as CostBucket[],
     timing: ["closing"] as TimingBucket[],
     levels: ["national"] as CompetitionLevel[],
     openOnly: true,
+    // Widened too, so the invariant is checked across the one group that is
+    // counted by what is MISSING rather than by what is set.
+    matched: ["region" as const],
   };
   const chips = activeChips(f);
   assert.equal(chips.length, activeFilterCount(f));
@@ -1794,21 +1821,29 @@ test("partner rows join the student pool as ordinary opportunities", () => {
   assert.equal(found?.partner?.verified, true);
 });
 
-test("a local partner post reaches its own country and nobody else", () => {
+test("a local partner post is for its own country, and says so elsewhere", () => {
+  // This used to assert the row VANISHED outside its country. It is marked
+  // `offRegion` now and the filter panel hides it by default, which keeps the
+  // student's list the same while giving them a way to see it and a count
+  // saying how many rows the narrowing removed — the gate used to be invisible
+  // and had no route past it at all.
   const live = competitionsFromRows(
     [postRow({ region: "KZ" })],
     [partnerRow()],
   );
-  const seen = (homeCountry: string | null) =>
+  const row = (homeCountry: string | null) =>
     buildExtracurriculars({
       today: TODAY,
       faculties: [],
       factors: [],
       liveCompetitions: live,
       homeCountry,
-    }).items.some((o) => o.id === "astana-hub-hackathon");
-  assert.equal(seen("KZ"), true);
-  assert.equal(seen("UZ"), false);
+    }).items.find((o) => o.id === "astana-hub-hackathon");
+
+  assert.equal(row("KZ")?.offRegion, false, "hidden from the country it is for");
+  assert.equal(row("UZ")?.offRegion, true, "not marked as belonging elsewhere");
+  // And with no country stated, a local row is nobody's outsider.
+  assert.equal(row(null)?.offRegion, false);
 });
 
 // ---------------------------------------------------------------------------
@@ -5515,9 +5550,18 @@ test("every beat is concrete, has a plainer version, and names no profession", (
   for (const b of BEATS) {
     assert.ok(!ids.has(b.id), `duplicate beat id ${b.id}`);
     ids.add(b.id);
+    // The old band was 60–260, which never bit: every beat landed at a median
+    // of 154 characters and 29 words, and two of those side by side in a narrow
+    // rail is twenty lines of text for one question. The spec asked for 15–25
+    // words; the test has to be the thing that holds it to that.
+    const words = b.text.trim().split(/s+/).length;
     assert.ok(
-      b.text.trim().length > 60 && b.text.trim().length < 260,
-      `${b.id} is not one concrete moment — it is a paragraph or a fragment`,
+      b.text.trim().length > 50 && b.text.trim().length <= 135,
+      `${b.id} is ${b.text.trim().length} chars — a beat is one moment, not a paragraph`,
+    );
+    assert.ok(
+      words <= 24,
+      `${b.id} is ${words} words; a student reads two of these at once`,
     );
     // The button nobody builds. A student who cannot parse the sentence must
     // have somewhere to go that is not a wrong answer.
@@ -6117,4 +6161,252 @@ test("the station and the move ladder agree about step three", () => {
     ).id,
     "start",
   );
+});
+
+// ── Matching annotates, it does not hide ─────────────────────────────────────
+test("a student outside a row's field still sees it, marked", () => {
+  // The gate was invisible: ~58 of 172 rows vanished with no way to ask why and
+  // no route to the rest. It is a filter now, so matching must hand the filter
+  // something to filter ON rather than doing the hiding itself.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: ["law"],
+    factors: [],
+  });
+  const offField = plan.items.filter((o) => o.offField);
+  assert.ok(
+    offField.length > 0,
+    "nothing came back marked off-field — matching is still hiding",
+  );
+  for (const o of offField) {
+    assert.ok(
+      o.fields !== "all" && !o.fields.includes("law"),
+      `${o.id} is marked off-field but is in the student's field`,
+    );
+  }
+});
+
+test("stating no field marks nothing off-field", () => {
+  // Empty faculties means "show me everything", never "show me nothing" — so
+  // there is no field to be outside of.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
+  assert.ok(plan.items.every((o) => !o.offField));
+});
+
+test("nothing in the curated catalog is off-region, because nothing is local", () => {
+  // NOT a tautology, and worth failing on: `region` exists on a catalog row
+  // exactly so a Kazakh student meets things they can turn up to, and the
+  // curated catalog currently carries ZERO region-tagged rows — the last one
+  // was nao-cup-2026, removed on the owner's instruction. AUDIT §A8 already
+  // called local coverage the highest-value widening available; this pins how
+  // thin it actually is, so adding local rows will trip this test and make
+  // somebody read the comment.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+    homeCountry: "IT",
+  });
+  assert.equal(
+    plan.items.filter((o) => o.offRegion).length,
+    0,
+    "a region-tagged row appeared — good news, and this test now needs updating",
+  );
+});
+
+test("a confirmed date in the past is still GONE, not marked", () => {
+  // A closed date is a fact about the world, not a narrowing of the catalog.
+  // Offering to "show expired" would be offering rubbish.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
+  for (const o of plan.items) {
+    if (o.dateConfirmed) {
+      assert.ok(
+        o.daysToDeadline >= 0,
+        `${o.id} is confirmed and past but was returned`,
+      );
+    }
+  }
+});
+
+test("what comes back no longer depends on the student's field", () => {
+  const narrow = buildExtracurriculars({
+    today: TODAY,
+    faculties: ["law"],
+    factors: [],
+  });
+  const matched = narrow.items.filter((o) => !o.offField && !o.offRegion);
+  const wide = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
+  assert.ok(narrow.items.length > matched.length, "annotating widened nothing");
+  assert.equal(
+    narrow.items.length,
+    wide.items.length,
+    "the returned set still depends on the field, which it must no longer",
+  );
+});
+
+test("an off-field row sinks below everything the student matches", () => {
+  // Visible, not promoted. The list still opens on what fits, and widening is a
+  // thing you choose rather than a thing that happens to you.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: ["law"],
+    factors: [],
+  });
+  const firstOff = plan.items.findIndex((o) => o.offField || o.offRegion);
+  const lastMatched = plan.items.reduce(
+    (last, o, i) => (!o.offField && !o.offRegion ? i : last),
+    -1,
+  );
+  if (firstOff !== -1 && lastMatched !== -1) {
+    assert.ok(
+      firstOff > lastMatched,
+      "an off-field row is sitting above one the student actually matches",
+    );
+  }
+});
+
+test("a beat opens with the ACTION, not with scenery", () => {
+  // This is the rule that was missing, and its absence is what turned the set
+  // into riddles. "No jargon, no profession named" was obeyed and overshot: the
+  // beats became evocative but unanchored — "The only two people left who
+  // remember how the old festival was run are both past eighty…" is a short
+  // story whose verb arrives at word 25, and a fifteen-year-old cannot tell
+  // what they are choosing between.
+  //
+  // Concrete and PLAIN, not concrete and literary. The cheapest test of that is
+  // where the verb sits: a beat must start by telling you what you are DOING.
+  const OPENERS = /^(You |Someone |Two |A person )/;
+  for (const b of BEATS) {
+    assert.match(
+      b.text,
+      OPENERS,
+      `${b.id} opens on scenery rather than on the thing you are doing`,
+    );
+  }
+});
+
+// ── The gates, made visible ──────────────────────────────────────────────────
+test("by default the student still gets their own list", () => {
+  assert.deepEqual([...NO_FILTERS.matched].sort(), ["field", "region"]);
+  assert.equal(
+    activeFilterCount(NO_FILTERS),
+    0,
+    "the default must be quiet — it is not a choice the student made",
+  );
+});
+
+test("unchecking a match option widens the list and counts as an active filter", () => {
+  // This group is INVERTED from every other one: elsewhere an empty array means
+  // "no narrowing", here the default is both ON. So it is counted by what is
+  // MISSING — and it must count, because the panel's standing rule is that any
+  // active filter opens the full list on its own.
+  assert.equal(activeFilterCount({ ...NO_FILTERS, matched: ["region"] }), 1);
+  assert.equal(activeFilterCount({ ...NO_FILTERS, matched: [] }), 2);
+});
+
+test("the match group filters on the annotation, both ways", () => {
+  const rows = [
+    opp({ id: "mine" }),
+    opp({ id: "other-field", offField: true }),
+    opp({ id: "other-place", offRegion: true }),
+  ];
+  assert.deepEqual(
+    filterOpportunities(rows, NO_FILTERS).map((o) => o.id),
+    ["mine"],
+  );
+  assert.deepEqual(
+    filterOpportunities(rows, { ...NO_FILTERS, matched: ["region"] })
+      .map((o) => o.id)
+      .sort(),
+    ["mine", "other-field"],
+  );
+  assert.equal(
+    filterOpportunities(rows, { ...NO_FILTERS, matched: [] }).length,
+    3,
+  );
+});
+
+test("the match counts say what each narrowing is removing", () => {
+  const rows = [
+    opp({ id: "a" }),
+    opp({ id: "b", offField: true }),
+    opp({ id: "c", offField: true }),
+    opp({ id: "d", offRegion: true }),
+  ];
+  const facets = opportunityFacets(rows, NO_FILTERS);
+  // Counted with THIS control's own selection lifted, like every other group —
+  // "how many would I see if this one were off".
+  assert.equal(facets.matched.field, 3, "a=on-field, b+c off-field, d still off-region");
+  assert.equal(facets.matched.region, 2, "a plus d, with b+c still cut by field");
+});
+
+test("the honest count is computed, never written down", () => {
+  // The control that used to sit here read "Show everything we track for you
+  // (114)", where "everything" was false — it was everything we MATCHED, and a
+  // student read it as "they only have 114".
+  assert.deepEqual(
+    matchedCount([opp({ id: "a" }), opp({ id: "b", offField: true })]),
+    { shown: 1, total: 2 },
+  );
+  assert.deepEqual(matchedCount([]), { shown: 0, total: 0 });
+});
+
+test("a widened list leaves a chip that puts the narrowing back", () => {
+  const chips = activeChips({ ...NO_FILTERS, matched: ["field"] });
+  const chip = chips.find((c) => c.group === "matched");
+  assert.ok(chip, "widening the list left nothing the student could undo");
+  assert.deepEqual(
+    withoutChip({ ...NO_FILTERS, matched: ["field"] }, chip!).matched.sort(),
+    ["field", "region"],
+  );
+});
+
+test("every surface without a filter panel narrows to the student's own list", () => {
+  // Matching stopped hiding rows so the panel could own the narrowing — which
+  // means a surface with NO panel narrows nothing unless it asks. Three of them
+  // are in that position, and the leak is silent: nothing looks wrong, there
+  // are simply more rows than there should be. A student in Uzbekistan seeing a
+  // competition that only runs in Kazakhstan is the exact failure the region
+  // tag exists to prevent.
+  const files = [
+    "components/opportunities/EligibilityChecker.tsx",
+    "components/onboarding/FirstWin.tsx",
+    "lib/planner/load.ts",
+  ];
+  for (const file of files) {
+    const full = path.join(process.cwd(), file);
+    assert.ok(existsSync(full), `${file} is missing — this guard has no subject`);
+    const src = stripComments(readFileSync(full, "utf8"));
+    assert.match(
+      src,
+      /matchedOnly\(/,
+      `${file} reads the matched plan without calling matchedOnly — it will show a student other people's opportunities`,
+    );
+  }
+});
+
+test("matchedOnly keeps only what the student matches", () => {
+  const rows = [
+    opp({ id: "mine" }),
+    opp({ id: "other-field", offField: true }),
+    opp({ id: "other-place", offRegion: true }),
+    opp({ id: "both", offField: true, offRegion: true }),
+  ];
+  assert.deepEqual(
+    matchedOnly(rows).map((o) => o.id),
+    ["mine"],
+  );
+  assert.deepEqual(matchedOnly([]), []);
 });

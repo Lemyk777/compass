@@ -39,6 +39,7 @@ import {
   NO_FILTERS,
   activeFilterCount,
   filterOpportunities,
+  matchedCount,
   type CategoryFilter,
   type OpportunityFilters,
 } from "@/lib/data/opportunity-filter";
@@ -148,8 +149,6 @@ export function OpportunitiesView({
   // eligibility). Kind stays its own state above because the sticky tabs are
   // its control — one criterion, one place to set it.
   const [filters, setFilters] = useState<OpportunityFilters>(NO_FILTERS);
-  // The full grouped catalog is now opt-in. See SHOWN below for why.
-  const [showAll, setShowAll] = useState(false);
   // A year answered inline this session, before the server round-trip lands.
   const [yearOverride, setYearOverride] = useState<number | null>(null);
   const graduationYear = yearOverride ?? profileMeta.graduationYear;
@@ -261,7 +260,6 @@ export function OpportunitiesView({
   // list on its own: a student who searches "robotics" and gets the same five
   // recommendations back would reasonably conclude the search is broken.
   const filtering = activeFilterCount(filters) > 0;
-  const browsing = showAll || filtering;
 
   // How many sit behind each tab. Showing the number turns the filter from a
   // guess ("is there anything under Courses?") into a decision.
@@ -273,17 +271,28 @@ export function OpportunitiesView({
     return counts;
   }, [filtered]);
 
+  // `items` now holds the WHOLE catalog, annotated — matching stopped hiding
+  // rows so the panel could own the narrowing. So anything that means "yours"
+  // has to say so, or it silently counts other people's opportunities.
+  const mine = useMemo(
+    () => items.filter((o) => !o.offField && !o.offRegion),
+    [items],
+  );
   // What to act on now: eligible today, in the order buildExtracurriculars
   // already put them (matched to strength first, then datable, then soonest).
-  const openNow = items.filter((o) => !o.notYetEligible);
-  const shortlist = openNow.slice(0, SHOWN);
-  const nearest = shortlist
+  const openNow = mine.filter((o) => !o.notYetEligible);
+  const nearest = openNow
+    .slice(0, SHOWN)
     .filter((o) => o.dateConfirmed)
     .reduce<Opportunity | null>(
       (best, o) =>
         best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
       null,
     );
+  // How much of the catalog this student is being shown, and out of how much.
+  // Computed, never written down — the control that used to sit here said
+  // "Show everything we track for you (114)", where "everything" was false.
+  const { shown, total } = matchedCount(items);
 
   return (
     // Three zones, and the rules between them are the whole change.
@@ -408,94 +417,83 @@ export function OpportunitiesView({
                   resultCount={visible.length}
                 />
 
-                {/* The shortlist is the answer to "what should I do next", which
-                  a filtered list is not — so it steps aside while filtering
-                  rather than sitting above unrelated results. */}
-                {!filtering && (
-                  <Shortlist
-                    rows={shortlist}
-                    total={openNow.length}
-                    nearestDays={nearest?.daysToDeadline}
-                  />
-                )}
-
-                {!browsing ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowAll(true)}
-                    className="w-full rounded-2xl border border-dashed border-line bg-card py-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-ink/25 hover:text-ink focus-visible:focus-ring"
-                  >
-                    Show everything we track for you{" "}
-                    <span data-num className="text-ink-faint">
-                      ({plan.items.length})
-                    </span>
-                  </button>
-                ) : (
-                  <>
-                    {/* The tabs stay reachable while you scroll a hundred cards —
+                {/* ONE LIST from here down.
+                    The shortlist and the "Show everything we track for you"
+                    button are gone. They were two objects stacked on a third,
+                    the middle one vanished while filtering, and the button's
+                    word "everything" was false — it was everything we MATCHED,
+                    and it was the only route to the rest. The order is still
+                    the one buildExtracurriculars returns, so what fits comes
+                    first without a section heading saying so. */}
+                <>
+                  {/* The tabs stay reachable while you scroll a hundred cards —
                       having to scroll back up to change filter is the thing
                       that makes a long list feel like work. */}
-                    <div className="sticky top-2 z-20 -mx-1 px-1 py-1">
-                      <CategoryTabs
-                        active={category}
-                        onChange={setCategory}
-                        counts={categoryCounts}
-                      />
-                    </div>
-                    {/* What "All" counts, said once.
-                      The landing page counts the whole catalog and this row
-                      counts what survived the age and field gates, so the two
-                      numbers on the site disagreed with nothing to explain
-                      them — which reads as broken data rather than as a filter
-                      doing its job. The number itself stays out of here on
-                      purpose: importing the catalog to say "of 156" would drag
-                      all ~2,700 entries into this client bundle, the trap the
-                      dynamic import above exists to avoid. */}
-                    <p className="-mt-1 px-1 text-xs leading-relaxed text-ink-faint">
-                      These counts are what you can enter — the catalog is
-                      larger, and the rest is for other ages or other subjects.
-                    </p>
-                    {FIT_GROUPS.map((g) => {
-                      const rows = visible.filter((o) => o.fit === g.fit);
-                      if (rows.length === 0) return null;
-                      return (
-                        <FitSection
-                          key={`${g.fit}-${category}`}
-                          title={g.title}
-                          hint={g.hint}
-                          count={rows.length}
-                          rows={rows}
-                        />
-                      );
-                    })}
-                    {visible.length === 0 && (
-                      <Card>
-                        {filtering ? (
-                          <>
-                            <p className="text-sm text-ink-soft">
-                              Nothing matches all of that. The narrowest filter
-                              is usually the money one — try dropping a
-                              criterion rather than starting over.
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => setFilters(NO_FILTERS)}
-                              className="mt-3 inline-flex h-9 items-center rounded-lg border border-line px-3 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
-                            >
-                              Clear the filters
-                            </button>
-                          </>
-                        ) : (
-                          <p className="text-sm text-ink-soft">
-                            Nothing in this category matches your profile yet.
-                            Try another tab — everything we track for you is
-                            still in &ldquo;All&rdquo;.
-                          </p>
-                        )}
-                      </Card>
+                  <div className="sticky top-2 z-20 -mx-1 px-1 py-1">
+                    <CategoryTabs
+                      active={category}
+                      onChange={setCategory}
+                      counts={categoryCounts}
+                    />
+                  </div>
+                  {/* The honest line, and it replaces a sentence that told the
+                      truth and offered nothing to do about it: "the catalog is
+                      larger, and the rest is for other ages or other subjects".
+                      Both numbers are computed here rather than written down,
+                      and the filters named in it are real controls with their
+                      own counts. It renders only when the two differ — saying
+                      "113 of 113" would be noise. */}
+                  {shown !== total &&
+                    filters.matched.length === NO_FILTERS.matched.length && (
+                      <p className="-mt-1 px-1 text-xs leading-relaxed text-ink-faint">
+                        Showing{" "}
+                        <span data-num className="font-semibold text-ink-soft">
+                          {shown}
+                        </span>{" "}
+                        of {total} — the rest are in other subjects or other
+                        countries. Open the filters to put them back.
+                      </p>
                     )}
-                  </>
-                )}
+                  {FIT_GROUPS.map((g) => {
+                    const rows = visible.filter((o) => o.fit === g.fit);
+                    if (rows.length === 0) return null;
+                    return (
+                      <FitSection
+                        key={`${g.fit}-${category}`}
+                        title={g.title}
+                        hint={g.hint}
+                        count={rows.length}
+                        rows={rows}
+                      />
+                    );
+                  })}
+                  {visible.length === 0 && (
+                    <Card>
+                      {filtering ? (
+                        <>
+                          <p className="text-sm text-ink-soft">
+                            Nothing matches all of that. The narrowest filter is
+                            usually the money one — try dropping a criterion
+                            rather than starting over.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setFilters(NO_FILTERS)}
+                            className="mt-3 inline-flex h-9 items-center rounded-lg border border-line px-3 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
+                          >
+                            Clear the filters
+                          </button>
+                        </>
+                      ) : (
+                        <p className="text-sm text-ink-soft">
+                          Nothing in this category matches your profile yet. Try
+                          another tab — everything we track for you is still in
+                          &ldquo;All&rdquo;.
+                        </p>
+                      )}
+                    </Card>
+                  )}
+                </>
 
                 <p className="text-center text-xs text-ink-faint">
                   Dates are indicative — always confirm on the official site
@@ -691,69 +689,6 @@ function StrengthBanner({
           </p>
         </div>
       </div>
-    </Card>
-  );
-}
-
-/**
- * The five to act on, stated as a verdict rather than offered as a list. The
- * count is of what is on screen; the size of the matched set stays visible
- * underneath so nothing is being hidden, just de-emphasised.
- */
-function Shortlist({
-  rows,
-  total,
-  nearestDays,
-}: {
-  rows: Opportunity[];
-  total: number;
-  nearestDays?: number;
-}) {
-  if (rows.length === 0) return null;
-  return (
-    <Card>
-      <div className="border-l-2 border-ivy pl-4">
-        <h2 className="text-xl font-semibold leading-tight tracking-tight text-ink">
-          <span data-num className="text-ivy-ink">
-            {rows.length}
-          </span>{" "}
-          to enter next.
-        </h2>
-        <p className="mt-1 text-sm text-ink-soft">
-          Matched to where you are now
-          {nearestDays != null && (
-            <>
-              {" · "}the nearest closes in{" "}
-              <span data-num className="font-semibold text-ink">
-                {nearestDays} days
-              </span>
-            </>
-          )}
-          .
-        </p>
-        {total > rows.length && (
-          <p className="mt-1 text-xs text-ink-faint">
-            You can enter <span data-num>{total}</span> in total — these are the
-            ones to start with.
-          </p>
-        )}
-      </div>
-      <ul className="mt-4 grid gap-2.5 2xl:grid-cols-2">
-        {rows.map((o, i) => (
-          <li
-            key={o.id}
-            className="animate-fade-up"
-            // Same 45ms stagger as the public page — the two lists should feel
-            // like the same product.
-            style={{
-              animationDelay: `${i * 45}ms`,
-              animationFillMode: "backwards",
-            }}
-          >
-            <OpportunityRow o={o} commit />
-          </li>
-        ))}
-      </ul>
     </Card>
   );
 }

@@ -4,6 +4,7 @@ import { useId, useMemo, useState } from "react";
 import {
   COST_OPTIONS,
   LEVEL_OPTIONS,
+  MATCH_OPTIONS,
   NO_FILTERS,
   TIMING_OPTIONS,
   activeChips,
@@ -42,7 +43,11 @@ export function FilterBar({
   onChange,
   resultCount,
 }: {
-  /** The student's matched set — the pool the counts are computed over. */
+  /**
+   * The pool the counts are computed over — the WHOLE annotated catalog, not
+   * the student's own slice. It has to be, or the "Matched to you" group could
+   * not say how many rows it is removing.
+   */
   items: Opportunity[];
   value: OpportunityFilters;
   onChange: (next: OpportunityFilters) => void;
@@ -112,7 +117,10 @@ export function FilterBar({
             {resultCount}
           </span>{" "}
           {resultCount === 1 ? "matches" : "match"} your filters — of{" "}
-          <span data-num>{items.length}</span> matched to you.
+          {/* `items` is the whole annotated catalog now, not the student's own
+              slice, so "matched to you" would be a lie by one word. Matching
+              stopped hiding rows; this panel is what narrows them. */}
+          <span data-num>{items.length}</span> we track.
         </p>
       )}
 
@@ -221,6 +229,49 @@ export function FilterBar({
           >
             Only what I can enter now
           </Toggle>
+        </Group>
+
+        {/* The two narrowings that used to be invisible. They ran inside
+            matching, before this panel saw a row, so a student was shown a
+            smaller catalog than we have with no way to ask why and no route to
+            the rest — the one control that looked like the way there said "Show
+            everything we track for you", where "everything" was false.
+
+            Both are ON by default, which is the one place in this panel where a
+            switched-on toggle is the neutral state: the honest default is still
+            the student's own list. Turning one off widens, and the count says
+            by how much. */}
+        <Group
+          label="Matched to you"
+          note="On, you see your own list. Off, the ones in other subjects or other countries come back — the count says how many."
+        >
+          {MATCH_OPTIONS.map((o) => (
+            <Toggle
+              key={o.id}
+              on={value.matched.includes(o.id)}
+              count={facets.matched[o.id]}
+              title={
+                o.id === "field"
+                  ? "Off, the list also shows opportunities outside the fields you picked."
+                  : "Off, the list also shows local opportunities run in other countries."
+              }
+              onClick={() =>
+                onChange({
+                  ...value,
+                  // Rebuilt in MATCH_OPTIONS order rather than pushed, so this
+                  // set-shaped field keeps one canonical order and two equal
+                  // states never compare unequal.
+                  matched: MATCH_OPTIONS.map((x) => x.id).filter((id) =>
+                    id === o.id
+                      ? !value.matched.includes(o.id)
+                      : value.matched.includes(id),
+                  ),
+                })
+              }
+            >
+              {o.label}
+            </Toggle>
+          ))}
         </Group>
       </div>
     </div>

@@ -391,6 +391,8 @@ export function OpportunityForm({
  */
 function usePreview(v: OpportunityFormValues, partner: Partner): Opportunity {
   return useMemo(() => {
+    // Neither gate applies to a preview: it is the partner looking at their own
+    // entry, not a student being matched against it.
     const days = v.deadline
       ? Math.round(
           (new Date(v.deadline + "T00:00:00Z").getTime() -
@@ -435,6 +437,8 @@ function usePreview(v: OpportunityFormValues, partner: Partner): Opportunity {
       tierResolved: v.tier,
       categoryResolved: v.category,
       fit: "recommended",
+      offField: false,
+      offRegion: false,
     };
   }, [v, partner]);
 }

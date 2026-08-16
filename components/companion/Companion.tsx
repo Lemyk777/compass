@@ -138,7 +138,14 @@ export function Companion({
       // xl it becomes the sticky rail in the column that was gutter anyway.
       // `top-20` because StudentNav is sticky and ~57px tall — the same anchor
       // DetailShell's aside uses.
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-20 xl:rounded-2xl xl:border xl:border-accent/40 xl:shadow-card"
+      // `xl:self-start` is the difference between a companion and a banner, and
+      // it is one class. A grid item stretches to its row by default, so the
+      // aside stood 4054px tall — the whole page — and a sticky box that already
+      // spans the entire scroll range has nothing to stick to. It pinned never,
+      // scrolled away at the first flick, and did not come back. Measured, not
+      // guessed: `position` computed to `sticky`, `top` to `80px`, and the
+      // element still left the viewport, because height was the problem.
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-20 xl:self-start xl:rounded-2xl xl:border xl:border-accent/40 xl:shadow-card"
     >
       {/* The toggle exists only below xl; the rail is always open. It comes
           FIRST in the DOM so a screen reader meets the control before the
@@ -172,7 +179,13 @@ export function Companion({
 
       <div
         id={PANEL_ID}
-        className={`max-h-[70vh] overflow-y-auto px-4 pb-4 xl:max-h-none xl:overflow-visible xl:p-5 ${
+        // `xl:max-h-none` was wrong and measurably so: the rail is STICKY, so
+        // anything taller than the viewport has a bottom that can never be
+        // reached — scrolling moves the page, not the pinned element. Measured
+        // at 1280×720 it stood 816px tall, putting the move and the dismiss
+        // permanently 96px off-screen. It gets the viewport minus the nav, and
+        // scrolls inside itself past that.
+        className={`max-h-[70vh] overflow-y-auto px-4 pb-4 xl:max-h-[calc(100dvh-6rem)] xl:p-5 ${
           open ? "block" : "hidden"
         } xl:block`}
       >
@@ -195,9 +208,17 @@ export function Companion({
 
         {pair}
 
-        {/* Nothing at all when the page owns the move — not even the rule,
-            because a divider above emptiness is still furniture. */}
-        {move !== null && (
+        {/* ONE ASK AT A TIME, and this was the fault the owner was looking at.
+            With a pair on screen the companion was asking "which day sounds
+            more like you?" and, three centimetres below, telling them to go to
+            the catalog instead — two calls to action in a 320px column pointing
+            different ways, so neither read as the thing to do. The product's own
+            rule is exactly one move; the companion was breaking it against
+            itself.
+
+            When there is a pair, the pair IS the ask. The move comes back the
+            moment there is nothing to answer. */}
+        {pair === null && move !== null && (
           <div className="mt-4 border-t border-line pt-3.5">
             {move === "deferred" ? (
               // Past the point where this loader can judge honestly. It says so

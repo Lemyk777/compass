@@ -134,11 +134,18 @@ export function BeatPair({ left, right }: { left: Beat; right: Beat }) {
 
   return (
     <section aria-labelledby="beat-pair">
+      {/* The frame. Without it a student meets two unlabelled sentences and has
+          no idea why they are being asked or what happens to the answer — which
+          is how a question meant to help reads as a riddle. It says what these
+          are, what we do with them, and that there is nothing to get right. */}
       <h3 id="beat-pair" className="text-sm font-semibold text-ink">
-        Which of these is more like you?
+        Which day sounds more like you?
       </h3>
       <p className="mt-1 text-xs leading-relaxed text-ink-faint">
-        Two real working days. No right answer, and you can say neither.
+        {/* Was forty words. In a 320px column that is six lines before the
+            student reaches the thing they are meant to read. */}
+        Two real working days, from different jobs. There is no right answer and
+        nothing is saved to your profile.
       </p>
 
       <ul className="mt-3 space-y-2">

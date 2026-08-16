@@ -90,6 +90,29 @@ export type CostBucket = "free" | "funded" | "free_start" | "paid";
 /** What we can honestly say about when it happens. */
 export type TimingBucket = "closing" | "dated" | "open" | "tba";
 
+/**
+ * The two narrowings that used to happen invisibly, inside matching.
+ *
+ * This group is INVERTED from every other one here, and deliberately rather
+ * than sloppily: everywhere else an empty array means "no narrowing", and here
+ * the default is both ON. The honest default is still the student's own list —
+ * what changed is that the narrowing is visible, counted, and reversible.
+ * Turning one off asks "show me the ones I do not match either", which the
+ * product previously gave no way to ask: both gates ran before this panel saw a
+ * single row, and the one control that looked like a route to the rest read
+ * "Show everything we track for you (114)", where "everything" was false.
+ *
+ * The cost of the inversion is that `activeFilterCount` counts this group by
+ * what is MISSING. It is written down here because this is the one place in the
+ * module where "empty means unset" does not hold.
+ */
+export type MatchBucket = "field" | "region";
+
+export const MATCH_OPTIONS: { id: MatchBucket; label: string }[] = [
+  { id: "field", label: "In my fields" },
+  { id: "region", label: "Open where I live" },
+];
+
 export type OpportunityFilters = {
   /** Free text over the name, what it is, and who can enter. */
   query: string;
@@ -98,15 +121,25 @@ export type OpportunityFilters = {
   levels: CompetitionLevel[];
   /** Hide what the student is not yet old enough / far enough through school for. */
   openOnly: boolean;
+  /** Which narrowings are ON. Both by default — see `MatchBucket`. */
+  matched: MatchBucket[];
 };
 
-/** The neutral state — every filter off. Also the "cleared" target. */
+/**
+ * The neutral state — every filter off, and both narrowings ON.
+ *
+ * "Neutral" here means "the student has chosen nothing", not "nothing is
+ * narrowing the list": their own field and country still apply, because that is
+ * the list they came for. The difference from before is that they can now see
+ * it happening and switch it off.
+ */
 export const NO_FILTERS: OpportunityFilters = {
   query: "",
   cost: [],
   timing: [],
   levels: [],
   openOnly: false,
+  matched: ["field", "region"],
 };
 
 /** A deadline this close is the reason someone opens a filter at all. */
@@ -222,6 +255,10 @@ export function matchesQuery(o: Opportunity, query: string): boolean {
 }
 
 export function matchesFilters(o: Opportunity, f: OpportunityFilters): boolean {
+  // Groups are ANDed. A row survives when every narrowing still switched on
+  // either does not apply to it, or applies and it passes.
+  if (f.matched.includes("field") && o.offField) return false;
+  if (f.matched.includes("region") && o.offRegion) return false;
   if (f.openOnly && o.notYetEligible) return false;
   if (f.cost.length > 0 && !f.cost.some((b) => matchesCost(o, b))) return false;
   if (f.timing.length > 0 && !f.timing.some((b) => matchesTiming(o, b))) return false;
@@ -233,9 +270,15 @@ export function filterOpportunities(
   items: Opportunity[],
   f: OpportunityFilters,
 ): Opportunity[] {
-  // Cheap identity when nothing is set — the default render must not pay for a
-  // feature nobody has touched yet.
-  if (activeFilterCount(f) === 0) return items;
+  // There used to be a cheap identity here — "no active filters, return the
+  // list untouched" — and it is now WRONG rather than merely unnecessary. The
+  // neutral state narrows: both match options are on by default, so a student
+  // who has touched nothing must still get their own list rather than all 172.
+  // Skipping the pass returned everything, which is the opposite of the bug
+  // this group was added to fix.
+  //
+  // The saving it bought was one pass over ~172 rows on a render that already
+  // walks them to draw cards.
   return items.filter((o) => matchesFilters(o, f));
 }
 
@@ -246,7 +289,11 @@ export function activeFilterCount(f: OpportunityFilters): number {
     f.cost.length +
     f.timing.length +
     f.levels.length +
-    (f.openOnly ? 1 : 0)
+    (f.openOnly ? 1 : 0) +
+    // Counted by what is MISSING, because this group's default is "on". A
+    // widened list is an active choice and must open the full list, exactly
+    // like every other filter here.
+    (NO_FILTERS.matched.length - f.matched.length)
   );
 }
 
@@ -263,6 +310,12 @@ export type OpportunityFacets = {
   levels: Record<CompetitionLevel, number>;
   /** What would survive the "only what I can enter now" toggle. */
   openNow: number;
+  /**
+   * What would survive with each narrowing LIFTED — "how many would I see if
+   * this one were off". Same faceting rule as every other group, and the number
+   * that turns "the catalog is larger" from an excuse into a control.
+   */
+  matched: Record<MatchBucket, number>;
 };
 
 export function opportunityFacets(
@@ -276,6 +329,10 @@ export function opportunityFacets(
   const forTiming = without({ timing: [] });
   const forLevels = without({ levels: [] });
   const forEligibility = without({ openOnly: false });
+  const matched = {
+    field: without({ matched: f.matched.filter((m) => m !== "field") }).length,
+    region: without({ matched: f.matched.filter((m) => m !== "region") }).length,
+  } as Record<MatchBucket, number>;
 
   const cost = {} as Record<CostBucket, number>;
   for (const o of COST_OPTIONS) {
@@ -295,7 +352,41 @@ export function opportunityFacets(
     timing,
     levels,
     openNow: forEligibility.filter((x) => !x.notYetEligible).length,
+    matched,
   };
+}
+
+/**
+ * How much of the catalog this student is being shown, and out of how much.
+ *
+ * Computed, never written down. The control that used to sit here said "Show
+ * everything we track for you (114)" — and "everything" was false: it was
+ * everything we MATCHED. A student read it as "they only have 114 things", and
+ * there was no route from that screen to the other 58.
+ */
+export function matchedCount(items: Opportunity[]): {
+  shown: number;
+  total: number;
+} {
+  return { shown: matchedOnly(items).length, total: items.length };
+}
+
+/**
+ * Just the rows this student actually matches.
+ *
+ * **Every surface without a filter panel must call this**, and that is not a
+ * style preference — matching stopped hiding rows so the panel could own the
+ * narrowing, so a surface with no panel does no narrowing at all unless it asks.
+ * The guest eligibility checker, the onboarding first-win screen and the
+ * planner's loader are all in that position: without this a student in
+ * Uzbekistan is shown a competition that only runs in Kazakhstan, which is the
+ * exact failure the region tag exists to prevent.
+ *
+ * A unit test pins each of those three call sites, because the leak is silent —
+ * nothing looks wrong, there are simply more rows than there should be.
+ */
+export function matchedOnly(items: Opportunity[]): Opportunity[] {
+  return items.filter((o) => !o.offField && !o.offRegion);
 }
 
 // ── The active-filter summary ────────────────────────────────────────────────
@@ -309,7 +400,7 @@ export type FilterChip = {
   /** Stable react key, unique across groups. */
   id: string;
   label: string;
-  group: "query" | "cost" | "timing" | "levels" | "openOnly";
+  group: "query" | "cost" | "timing" | "levels" | "openOnly" | "matched";
   /** The option removed when the chip is dismissed (absent for the toggles). */
   value?: string;
 };
@@ -334,6 +425,22 @@ export function activeChips(f: OpportunityFilters): FilterChip[] {
   if (f.openOnly) {
     chips.push({ id: "openOnly", label: "Only what I can enter now", group: "openOnly" });
   }
+  // A chip per narrowing the student has switched OFF. It reads as what they
+  // did — widened the list — and dismissing it puts the narrowing back, so
+  // there is always a way home from a list that suddenly got bigger.
+  for (const opt of MATCH_OPTIONS) {
+    if (!f.matched.includes(opt.id)) {
+      chips.push({
+        id: `matched:${opt.id}`,
+        label:
+          opt.id === "field"
+            ? "Including other fields"
+            : "Including other countries",
+        group: "matched",
+        value: opt.id,
+      });
+    }
+  }
   return chips;
 }
 
@@ -353,6 +460,21 @@ export function withoutChip(
       return { ...f, timing: f.timing.filter((x) => x !== chip.value) };
     case "levels":
       return { ...f, levels: f.levels.filter((x) => x !== chip.value) };
+    // Inverted, like the group itself: dismissing this chip puts the narrowing
+    // BACK, because the chip exists to say "you have widened the list" rather
+    // than "you have narrowed it".
+    //
+    // Restored in MATCH_OPTIONS order rather than appended. This field is a set,
+    // and a set with an unstable order is a state object that compares unequal
+    // to an identical one — which quietly breaks memoisation now and URL
+    // round-tripping the moment anyone serialises it.
+    case "matched":
+      return {
+        ...f,
+        matched: MATCH_OPTIONS.map((o) => o.id).filter(
+          (id) => f.matched.includes(id) || id === chip.value,
+        ),
+      };
   }
 }
 

@@ -128,6 +128,10 @@ export async function partnerOpportunities(partnerId: string): Promise<Opportuni
     .filter((c) => c.partner?.id === partnerId)
     .map((c) => ({
       ...c,
+      // A partner viewing their own posts is not being narrowed by either gate —
+      // this list is scoped by partner id, not by a student profile.
+      offField: false,
+      offRegion: false,
       daysToDeadline: daysBetween(today, c.deadline),
       tierResolved: competitionTier(c),
       categoryResolved: competitionCategory(c),
