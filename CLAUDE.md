@@ -147,7 +147,26 @@ Everything here is **deterministic** — no model call — and the design rules 
   ([lib/data/values.ts](lib/data/values.ts)) may only **reorder** those areas —
   never filter them, and never change the chosen fields, which are what actually
   drive matching. Answers live in `localStorage`, not the profile.
-- **Bundle rule (easy to break):** `key-dates.ts` builds a lookup map over the whole ~2,700-entry catalog at module load, so *any* runtime import drags the dataset into that route's client bundle. Client components must import `formatDate`/`opportunityCost` from [lib/data/opportunity-format.ts](lib/data/opportunity-format.ts), and the three matching views (`OpportunitiesView`, `EligibilityChecker`, `FirstWin`) **dynamic-import** `buildExtracurriculars`. Keep it that way; type-only imports from key-dates are free.
+- **Bundle rule (easy to break, and the criterion is SIDE EFFECTS, not size):**
+  `key-dates.ts` builds a lookup map over the whole ~2,700-entry catalog at
+  module load, so it cannot be tree-shaken and *any* runtime import drags the
+  dataset into that route's client bundle. Client components must import
+  `formatDate`/`opportunityCost`/`daysBetween` from
+  [lib/data/opportunity-format.ts](lib/data/opportunity-format.ts), and anything
+  needing catalog-derived data — the three matching views (`OpportunitiesView`,
+  `EligibilityChecker`, `FirstWin`) and `RoadmapView` — **dynamic-imports** it.
+  Type-only imports are free.
+  **Reachability, not adjacency.** The rule is about what ends up in a bundle,
+  which is transitive, and the guard used to scan for a DIRECT import edge from
+  a client component. Two chains slipped through one hop of indirection and cost
+  eight routes 27–41 kB each: `RoadmapView → roadmap.ts → key-dates`, and
+  `LikelihoodGauge → app-deadlines.ts → key-dates` — the second one for a
+  two-line date helper. The test walks the module graph now, stopping at
+  `"use server"` files (a server action is an RPC stub, not a dependency).
+  **Size alone is not the test:** `world.ts` is 822 lines and shakes clean
+  because it is plain consts, which is measurable in `.next/static/chunks`. Do
+  not reason about this from line counts — grep the built chunk, or read the
+  guard.
 - **Never show a countdown for a date we can't stand behind.** A confirmed date renders as a countdown; anything else is "Dates TBA" or "open now". Verify a date against the organiser's own page before setting `dateConfirmed: true`, and read what the page says — `test:links` cannot tell you a contest was discontinued.
 - **`pinned` is the ONLY editorial override in the ordering, and it reorders
   only.** Everything else about the order is derived from the student's profile
@@ -158,6 +177,20 @@ Everything here is **deterministic** — no model call — and the design rules 
   student's own fit has no order at all. Tests assert all three, and they are
   written against whatever is pinned *today* rather than a named entry, because a
   pinned row is short-lived and a test naming one fails the day it expires.
+- **The commitment step lives INSIDE the detail panel, and it must stay
+  reachable.** "I'm doing this" → "when will you start?" (`CommitRow`) is the
+  product's only behavioural signal and the number `/admin/intents` counts. It
+  used to render as the card's footer on the five-row shortlist — so deleting
+  that shortlist for the one list deleted its only caller, and
+  `saveOpportunityIntent` became **unreachable from the UI for a whole release**
+  while still compiling, still exported, still type-checked. It now rides as
+  `OpportunityCard`'s `commit` **node** (passed, never imported — the public
+  checker has no `DashboardProvider`) and renders in a band of
+  `OpportunityDetail` that sits outside the scrolling body. Every row carries
+  it, because one tap inside the opportunity you opened is still a decision,
+  whereas a hundred of them lying open in the list is the checklist the
+  original rule banned. A three-link test pins the chain by name — plus a
+  second test proving those patterns BITE on the exact edit that broke it.
 - **An admin can post an opportunity from the top of the list**
   ([QuickAddOpportunity](components/admin/QuickAddOpportunity.tsx) →
   `quickAddOpportunity` in [app/admin/opportunities/actions.ts](app/admin/opportunities/actions.ts)).
@@ -657,6 +690,25 @@ Two things learned by measuring, worth not rediscovering:
   city cards 4-up cut the page by 2%, because the list is grouped by country and
   15 of the 19 groups hold a single city. Flowing the *groups* into columns cut
   it from 4487px to 2047px. Look at what repeats before adding `grid-cols`.
+- **A component that renders in two shells needs a CONTAINER query, not a
+  breakpoint.** The opportunity list lives in the student's section AND in the
+  report's panel, and at the same 1024px viewport it is **924px wide in one and
+  652px in the other** — so `lg:grid-cols-2` measured 457px cards in one and
+  321px in the other. It is `.opp-list`/`.opp-grid` in
+  [globals.css](app/globals.css): two columns once the list itself clears
+  800px. State the rule in terms of the thing that actually constrains it.
+- **Find the card's cliff before choosing a column count.** Forced through
+  exact widths in 20px steps, the opportunity card is flat at 272px tall from
+  380px up, jumps to 356px at 340–360 as the title takes a third line, and hits
+  421px at 320. A knee like that decides the grid: two columns everywhere, and
+  never three, because a third is 320px even at 1536. Don't copy the guide's
+  `sm:2 → xl:3 → 2xl:4` onto a denser card — `sm` measured 262px there.
+- **The companion is the spare gutter, so a second rail comes out of the
+  CONTENT.** A filter rail was specced beside the list and deliberately not
+  built: from `xl` the companion takes 20rem, so the student shell's content
+  column *drops* from 966px at 1024 to 854px at 1280, and a 256px rail on top
+  of that leaves 282px cards at the commonest desktop width. Before adding a
+  rail anywhere in the student's section, check what already owns the margin.
 
 `DetailShell`'s `aside` is the same idea at page level: below `lg` the onward
 links follow the content as before, from `lg` they become a sticky rail in the

@@ -532,8 +532,3 @@ export const HK_PROGRAMS: HkProgram[] = [
 export function findHkProgram(id: string): HkProgram | undefined {
   return HK_PROGRAMS.find((p) => p.id === id);
 }
-
-/** Display label for a program (used in intake + report). */
-export function hkProgramLabel(p: HkProgram): string {
-  return `${p.university} — ${p.program_name}`;
-}

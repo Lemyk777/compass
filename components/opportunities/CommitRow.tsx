@@ -22,23 +22,19 @@ import {
 } from "@/lib/data/intents";
 import type { Opportunity } from "@/lib/data/key-dates";
 
-export function OpportunityRow({
-  o,
-  commit,
-}: {
-  o: Opportunity;
-  commit?: boolean;
-}) {
+export function OpportunityRow({ o }: { o: Opportunity }) {
   // One card definition for the whole product — see OpportunityCard. The
   // commitment step is the only thing unique to the dashboard, so it rides in
-  // as the card's footer.
-  return (
-    <OpportunityCard
-      o={o}
-      density="compact"
-      footer={commit ? <CommitRow o={o} /> : undefined}
-    />
-  );
+  // as the card's `commit` node and surfaces inside the detail panel.
+  //
+  // It used to ride as the card's FOOTER, and only on the five-row shortlist.
+  // Deleting that shortlist for the one list deleted the only render of it,
+  // which took `saveOpportunityIntent` — the product's one behavioural signal,
+  // and the number /admin/intents counts — out of the UI entirely without a
+  // single test noticing. Every row carries it now, because a control one tap
+  // inside the opportunity you opened is still a decision; a hundred of them
+  // lying open in the list would have been the checklist the old rule banned.
+  return <OpportunityCard o={o} density="compact" commit={<CommitRow o={o} />} />;
 }
 
 /**
@@ -86,7 +82,7 @@ function CommitRow({ o }: { o: Opportunity }) {
 
   if (intent && intent.status !== "dropped") {
     return (
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <p className="text-xs font-medium text-ivy-ink">
           {intentSentence(intent)}
         </p>
@@ -137,11 +133,17 @@ function CommitRow({ o }: { o: Opportunity }) {
 
   if (!asking) {
     return (
-      <div className="mt-3 border-t border-line pt-3">
+      <div>
+        {/* A real 44px primary, not the 28px chip this was as a card footer.
+            It is the one action on this panel we can actually observe, and it
+            now sits beside a full-height "Open the official page" — a chip
+            next to that says the door out matters more than the commitment.
+            `bg-cta`, never `bg-ink`: `ink` is near-white on the dark theme, so
+            a filled `bg-ink` control becomes the brightest slab on the page. */}
         <button
           type="button"
           onClick={() => setAsking(true)}
-          className="rounded-lg bg-ink px-3 py-1.5 text-xs font-medium text-surface transition-colors hover:bg-ink/90 focus-visible:focus-ring"
+          className="inline-flex h-11 items-center rounded-xl bg-cta px-4 text-sm font-medium text-cta-ink transition-opacity hover:opacity-90 focus-visible:focus-ring"
         >
           I&rsquo;m doing this
         </button>
@@ -150,8 +152,8 @@ function CommitRow({ o }: { o: Opportunity }) {
   }
 
   return (
-    <div className="mt-3 border-t border-line pt-3">
-      <p className="text-xs font-medium text-ink">When will you start?</p>
+    <div>
+      <p className="text-sm font-medium text-ink">When will you start?</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {START_OPTIONS.map((when) => (
           <button
@@ -166,7 +168,9 @@ function CommitRow({ o }: { o: Opportunity }) {
                 startDetail: detail,
               })
             }
-            className="h-9 rounded-lg border border-line px-3 text-xs font-medium capitalize text-ink transition-colors hover:border-ink/30 focus-visible:focus-ring disabled:opacity-50"
+            // 44px, same as the trigger that opened this step: these ARE the
+            // answer, and they are the smallest targets in the flow.
+            className="h-11 rounded-xl border border-line px-3.5 text-sm font-medium capitalize text-ink transition-colors hover:border-ink/30 focus-visible:focus-ring disabled:opacity-50"
           >
             {when}
           </button>

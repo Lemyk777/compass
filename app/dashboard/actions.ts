@@ -8,6 +8,7 @@ import { HK_PROGRAMS } from "@/lib/data/hk-universities";
 import { UAE_PROGRAMS } from "@/lib/data/uae-universities";
 import { KOREA_PROGRAMS } from "@/lib/data/korea-universities";
 import { normalizeDestinations } from "@/lib/types";
+import type { AvailableDestinationCode } from "@/lib/data/destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { LIMITS } from "@/lib/limits";
 import {
@@ -23,7 +24,7 @@ export type SaveResult = { ok: true } | { ok: false; error: string };
 // them so the matching analysis pathway runs. Shared by every per-country list
 // save below. Returns the row id and the merged destination list, or an error.
 async function profileForCountryList(
-  code: "US" | "IT" | "HK" | "AE" | "KR",
+  code: AvailableDestinationCode,
 ): Promise<
   | { ok: true; id: string; destinations: string[] }
   | { ok: false; error: string }

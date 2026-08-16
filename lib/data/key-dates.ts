@@ -63,7 +63,16 @@ export const SAT_REGISTER_URL =
 //    "one clean win" a strong applicant should chase).
 // Both are optional on the TYPE so live rows from a DB that predates the columns
 // still validate; `competitionTier`/`competitionCategory` supply a sane default.
-export type CompetitionLevel = "international" | "national" | "regional";
+// Array first, union derived — the same shape `COMPETITION_CATEGORIES` uses
+// below, and for the same reason: `lib/discovery/discover.ts` kept a
+// `CompetitionLevel[]` literal to validate scraped rows, and such a literal is
+// checked for wrong members but never for MISSING ones.
+export const COMPETITION_LEVELS = [
+  "international",
+  "national",
+  "regional",
+] as const;
+export type CompetitionLevel = (typeof COMPETITION_LEVELS)[number];
 // The Opportunities pool is designed to GROW well beyond competitions: courses,
 // research programs and summer schools/programs are next. The category union is
 // pre-widened so adding them later is data-only (the UI filter derives its tabs
@@ -106,7 +115,8 @@ export const COMPETITION_CATEGORIES = [
 ] as const;
 
 export type CompetitionCategory = (typeof COMPETITION_CATEGORIES)[number];
-export type CompetitionTier = "accessible" | "selective" | "elite";
+export const COMPETITION_TIERS = ["accessible", "selective", "elite"] as const;
+export type CompetitionTier = (typeof COMPETITION_TIERS)[number];
 
 // ── Cost & accessibility ──────────────────────────────────────────────────────
 // The second question after "can I enter this" is "what does it cost me", and
@@ -313,16 +323,13 @@ export function resolveCompetitions(live?: Competition[]): Competition[] {
   return merged;
 }
 
-// ── Date helpers (UTC, date-only — no timezone drift) ─────────────────────────
-function toUTC(d: Date | string): number {
-  const x = typeof d === "string" ? new Date(d + "T00:00:00Z") : d;
-  return Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate());
-}
-
-/** Whole days from `from` to `to` (negative if `to` is in the past). */
-export function daysBetween(from: Date | string, to: Date | string): number {
-  return Math.round((toUTC(to) - toUTC(from)) / 86_400_000);
-}
+// ── Date helpers ──────────────────────────────────────────────────────────────
+// `daysBetween` now lives in `opportunity-format.ts` and is re-exported here so
+// existing imports resolve. It moved because it is data-free and this module is
+// not: importing it from here was enough to put the whole catalog in the odds
+// page's client bundle (see the note on it there).
+export { daysBetween } from "./opportunity-format";
+import { daysBetween } from "./opportunity-format";
 
 // ── The engine: build a dated study plan from today + the student's profile ───
 export type StudyPlanInputs = {

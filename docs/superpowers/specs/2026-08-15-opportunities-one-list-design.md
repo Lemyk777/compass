@@ -1,9 +1,13 @@
 # Opportunities — one list, honest counts, and a readable width
 
 **Date:** 2026-08-15
-**Status:** design approved. **Parked** — the guided thread
-(`2026-08-15-guided-thread-design.md`) finishes and merges first, on the owner's
-call. This is its own branch and its own PR afterwards.
+**Status:** **DELIVERED.** §2 and §3 (one list, the gates as filters, the honest
+count) shipped in PR [#114](https://github.com/Lemyk777/compass/pull/114). §4
+shipped 2026-08-16 — but the measurement it called for changed what was built,
+so **read §4a before touching this: the filter rail is deliberately not built,
+the columns are a container query rather than `sm:2 → xl:3`, and the typography
+pass was measured as unnecessary.** §4's original bullets are kept above §4a
+because the reasoning that overturned them only makes sense next to them.
 
 ---
 
@@ -125,6 +129,56 @@ never the problem — flatness and missing groups were. If the rail and the
 columns alone make it read properly, this section shrinks to *verify at the new
 width* rather than *rebuild*. Do the layout first and measure before touching
 type.
+
+### 4a. What was actually built, and why the rail was not — 2026-08-16
+
+The measurement this section asked for was taken, and it **overturned two of
+the three bullets above.** Recorded here in full so nobody re-derives it, and
+so nobody "finishes" the rail as an unfinished task.
+
+**The filter rail is not built. Owner's call, from the numbers.** The section
+told us to check the companion first, and the answer was worse than the
+contingency allowed for: the companion's 20rem column IS the spare gutter, so a
+second rail is squeezed out of the content rather than out of the margin. The
+student shell's content column measures 966px at 1024, then **drops to 854px at
+1280** when the companion appears, 864 at 1440, 1024 at 1536. A 256px rail
+leaves two-column cards of 338 / **282** / 287 / 367px. The 282 is at 1280, the
+commonest desktop width, and it is narrower than anything the product ships —
+against this spec's own ~340px target and the guide's 336–399px cards. The rail
+costs ~140px a card at *every* width. The section's fallback ("it waits until
+`xl` too and the two share the row") does not help, because `xl` is exactly
+where the companion arrives.
+
+**The list is not `sm:grid-cols-2 xl:grid-cols-3` either, and it is not a
+viewport breakpoint at all.** Two findings:
+
+1. *This card has a cliff, not a curve.* Forced to exact widths in 20px steps
+   it is flat at **272px tall from 380px up**; at 340–360 the title takes a
+   third line and it jumps to 356px; at 320 the title wraps to **four** lines,
+   the blurb to three at 23 characters, and it stands 421px. So 380px a card is
+   the knee — and a third column is 320px even at 1536, precisely the width
+   that breaks. Two columns, never three. `sm` was measured at 262px a card and
+   is nowhere near.
+2. *One viewport breakpoint cannot serve both shells.* This list renders in the
+   student's section AND in the report's, whose sidebar spends the width
+   differently: at 1024 the same list is **924px wide in one and 652px in the
+   other**. `lg:grid-cols-2` measured 457px cards in one and 321px — below the
+   knee — in the other.
+
+So the columns are a **container query** (`.opp-list` / `.opp-grid` in
+`globals.css`): two columns once the list itself is ≥800px, which is the
+narrowest that clears the 380px knee with room to spare. Both shells get the
+right answer without either knowing about the other, and the rule is stated in
+terms of the thing that actually constrains it.
+
+Result: 457 / 401 / 406 / 486px cards in the student's section, 652 (one
+column) / 449 / 529 in the report's, and the list is **39% shorter** at 1440.
+
+**The typography pass was not needed** — the outcome this section explicitly
+allowed for. Measured on the card at its new 406px: four size tiers
+(15 / 13 / 12 / 11px), floor exactly at 11, title/body step 1.154 in size and
+200 in weight, eligibility and deadline already one group. Every band passes,
+so nothing was rebuilt.
 
 ---
 

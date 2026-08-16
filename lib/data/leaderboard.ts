@@ -3,6 +3,7 @@
 // component.
 
 import { krLanguageGateScore } from "@/lib/data/country-scorecard";
+import type { AvailableDestinationCode } from "@/lib/data/destinations";
 //
 // One board per destination, switched between in the view. Each board ranks by
 // and shows that COUNTRY'S OWN overall (0–100): the US board uses the US
@@ -22,7 +23,14 @@ export type LeaderboardFactor = {
 // Which destination cohorts a student belongs to. A student can appear on more
 // than one board (e.g. applying to both the US and Italy). Derived from the
 // analysis content: Italy/HK/UAE/Korea programs present → that country's board.
-export type CountryCode = "US" | "IT" | "HK" | "AE" | "KR";
+/**
+ * Derived, never re-typed — the rankings board covers exactly the countries we
+ * can analyse. This was a hand-written copy of the same five codes.
+ *
+ * Note the name clash with `lib/data/geo.ts`'s `CountryCode`, which is a
+ * different thing entirely (any ISO-2 code, for where the STUDENT lives).
+ */
+export type CountryCode = AvailableDestinationCode;
 
 export type LeaderboardRow = {
   userId: string;

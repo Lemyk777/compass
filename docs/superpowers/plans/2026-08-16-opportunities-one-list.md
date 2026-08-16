@@ -581,11 +581,23 @@ git commit -m "feat(opportunities): one list, and it says what it is not showing
 
 ### Task 4: A rail and real columns
 
-**Files:**
-- Modify: `components/dashboard/views/OpportunitiesView.tsx`
-- Modify: `components/opportunities/FilterBar.tsx`
+> **DONE 2026-08-16, and the measurement changed the answer. Read
+> [§4a of the design](../specs/2026-08-15-opportunities-one-list-design.md) —
+> the unticked boxes below are NOT outstanding work.**
+>
+> - **Step 1 (the rail) was not built, on the owner's call.** The companion's
+>   20rem column is the spare gutter, so a filter rail comes out of the content:
+>   a 256px rail measured 282px cards at 1280, against this spec's own ~340px
+>   target. It costs ~140px a card at every width, and the "wait until `xl`"
+>   fallback fails because `xl` is where the companion arrives.
+> - **Step 2 (the columns) shipped as a CONTAINER query, not `sm:2 → xl:3`.**
+>   This list lives in two shells that leave it different room (924px vs 652px
+>   at the same 1024 viewport), so no viewport breakpoint is right in both. Two
+>   columns once the list clears 800px; never three.
+> - **Step 3 (measure) is where those two came from.** The card has a cliff at
+>   380px, not a curve.
 
-- [ ] **Step 1: The rail**
+- [ ] **Step 1: The rail** — NOT BUILT, see above
 
 From `lg`, `FilterBar` moves into a left column and becomes sticky at `top-20`
 (StudentNav is sticky and ~57px tall — the same anchor `DetailShell`'s aside
@@ -623,10 +635,18 @@ git commit -m "feat(opportunities): a filter rail and three columns instead of 1
 
 ### Task 5: Typography at the new width, and the release gate
 
-**Files:**
-- Modify: `components/opportunities/OpportunityCard.tsx` (only if measurement says so)
+> **DONE 2026-08-16 — measured, and the answer was "stop here", which this task
+> explicitly allowed for.** On the card at its new 406px: four size tiers
+> (15 / 13 / 12 / 11px), floor exactly 11, title/body step 1.154 in size and 200
+> in weight, eligibility and deadline already one group. Every band passes, so
+> `OpportunityCard`'s type was not touched.
+>
+> Two things WERE changed, and neither is the typography pass: the commitment
+> step moved into the detail panel (it had become unreachable — see the branch's
+> PR), and its controls went from a 28px chip to 44px `bg-cta`, because it is
+> now the primary action of a panel rather than a footer on a compact row.
 
-- [ ] **Step 1: Measure before touching anything**
+- [ ] **Step 1: Measure before touching anything** — DONE, no change needed
 
 The card's tiers were laid out for a width that no longer exists. At ~340px
 check: nothing below 11px; the title/body step is 1.14–1.25 in size **and** 200

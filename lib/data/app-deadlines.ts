@@ -20,7 +20,7 @@
 //  • RD   — Regular Decision
 
 import { findUniversity } from "@/lib/data/universities";
-import { daysBetween } from "@/lib/data/key-dates";
+import { daysBetween } from "@/lib/data/opportunity-format";
 
 export type DeadlineStage = "ED" | "ED2" | "EA" | "REA" | "RD";
 
@@ -335,7 +335,7 @@ const MONTHS = [
 ];
 
 /** Human month/day with no year, e.g. "Nov 1" — for cycle-agnostic hints. */
-export function formatMonthDay(month: number, day: number): string {
+function formatMonthDay(month: number, day: number): string {
   return `${MONTHS[month - 1]} ${day}`;
 }
 

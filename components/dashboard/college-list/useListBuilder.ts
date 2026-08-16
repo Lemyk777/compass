@@ -3,13 +3,21 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Analysis } from "@/lib/ai/schema";
-import type { DestinationCode } from "@/lib/data/destinations";
+import type {
+  AvailableDestinationCode,
+  DestinationCode,
+} from "@/lib/data/destinations";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
 // The countries with an interactive college-list builder.
-export type BuilderCountry = "US" | "IT" | "HK" | "AE" | "KR";
+/**
+ * Derived, never re-typed. This was a hand-written copy of the five live
+ * destination codes; promoting a sixth would have left this builder silently
+ * unable to name it, with no type error to say so.
+ */
+export type BuilderCountry = AvailableDestinationCode;
 
 /**
  * Selection + search state shared by every builder: a capped multi-select over a
