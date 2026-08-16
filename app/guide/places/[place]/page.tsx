@@ -106,7 +106,7 @@ function DestinationBody({
             <h3 className="text-sm font-semibold text-ivy-ink">
               What only this place gives you
             </h3>
-            <p className="mt-2 max-w-[60ch] text-base leading-relaxed text-ink">
+            <p className="mt-2 max-w-[54ch] text-base leading-relaxed text-ink">
               {d.unique}
             </p>
           </section>
@@ -155,7 +155,7 @@ function DestinationBody({
       title: "Who is named here",
       body: (
         <>
-          <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+          <p className="max-w-[54ch] text-sm leading-relaxed text-ink-soft">
             Not a ranking, and deliberately not in any order of merit — these
             are the places a subject is actually studied and taught at here, so
             you have something to search for. A position in a league table is
@@ -203,11 +203,11 @@ function DestinationBody({
               </li>
             ))}
           </ul>
-          <p className="text-xs text-ink-faint">
-            Language of teaching is the one thing here that moves within a cycle
-            — a country can widen or cut its English-taught intake in a single
-            year. Check it on the university&rsquo;s own page for your own entry
-            year.
+          <p className="max-w-[54ch] text-xs text-ink-faint">
+            Language of teaching is the one thing here that moves within a
+            cycle. A country can widen or cut its English-taught intake in a
+            single year. Check it on the university&rsquo;s own page, for your
+            own entry year.
           </p>
         </>
       ),
@@ -241,7 +241,7 @@ function DestinationBody({
     title: "Check it yourself",
     body: (
       <>
-        <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+        <p className="max-w-[54ch] text-sm leading-relaxed text-ink-soft">
           The rules on this page are set by these bodies, not by us. Immigration
           and fee rules in particular change between the year you read this and
           the year you graduate, so open the one that decides your case and read
@@ -284,7 +284,7 @@ function DestinationBody({
       title: "The cities inside it",
       body: (
         <>
-          <p className="max-w-[60ch] text-sm text-ink-soft">
+          <p className="max-w-[54ch] text-sm text-ink-soft">
             Each one opens its own page: what clusters there, the catch, and the
             door in for someone who is not from there.
           </p>
@@ -451,7 +451,7 @@ function Column({
       }`}
     >
       <h3 className="text-sm font-semibold text-ink">{title}</h3>
-      <ul className="mt-3 max-w-[60ch] space-y-2.5">
+      <ul className="mt-3 max-w-[54ch] space-y-2.5">
         {items.map((item) => (
           <li
             key={item}

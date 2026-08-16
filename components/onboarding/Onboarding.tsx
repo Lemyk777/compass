@@ -160,7 +160,7 @@ function Wizard({
             any more — this is the admission report's intake, reached on
             purpose — but a five-step form with no explanation still reads as
             "finish setting up your account", which is the wall we removed. */}
-          <p className="mt-2 max-w-[60ch] text-pretty text-sm leading-relaxed text-ink-soft">
+          <p className="mt-2 max-w-[54ch] text-pretty text-sm leading-relaxed text-ink-soft">
             This is the intake for the{" "}
             <span className="font-medium text-ink">admission report</span> — the
             scores, the per-school odds and the benchmarks. It is optional: your

@@ -178,7 +178,7 @@ function Frame({
         </span>
       </summary>
       <div className="space-y-3 border-t border-line px-4 py-4 sm:px-5">
-        <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+        <p className="max-w-[54ch] text-sm leading-relaxed text-ink-soft">
           {note}
         </p>
         <CardGrid items={items} />

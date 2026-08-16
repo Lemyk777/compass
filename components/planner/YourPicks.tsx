@@ -66,7 +66,7 @@ export function YourPicks({ picks }: { picks: PlanPick[] }) {
           Add more
         </Link>
       </div>
-      <p className="mt-1 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+      <p className="mt-1 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
         Each one opens where you read it. This is what the plan is built out of
         — nothing here commits you to anything.
       </p>

@@ -154,7 +154,7 @@ export default async function GuideAreaPage({
                   </span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-ink">{label}</p>
-                    <p className="mt-0.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+                    <p className="mt-0.5 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
                       {body}
                     </p>
                   </div>

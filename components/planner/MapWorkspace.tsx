@@ -314,7 +314,7 @@ export function MapWorkspace({
         <div className="order-2 lg:order-1">
           <MapOutline root={root} currentId={currentId} onPick={setCurrentId} />
           {root.children.length === 0 && (
-            <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+            <p className="mt-3 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
               One question so far. Pick a branch above, then{" "}
               <span className="font-medium text-ink">Add a branch</span> — an
               option, a place, or a thing you would have to do.

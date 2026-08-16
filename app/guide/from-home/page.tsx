@@ -93,7 +93,7 @@ export default async function GuideFromHomePage({
           without leaving" and saw nothing they could do. The rest of the
           argument closes the page, where a reflection belongs; what has to be
           at the top is the part that is actionable. */}
-      <p className="max-w-[60ch] text-pretty text-base leading-relaxed text-ink-soft">
+      <p className="max-w-[54ch] text-pretty text-base leading-relaxed text-ink-soft">
         Every one of these is open to you this month, from where you already
         live.
       </p>
@@ -101,7 +101,7 @@ export default async function GuideFromHomePage({
       <div className="space-y-8">
         {parts.map(({ id, title, route: r }, i) => (
           <GuidePart key={id} id={id} step={i + 1} title={title}>
-            <p className="max-w-[60ch] text-pretty text-base leading-relaxed text-ink-soft">
+            <p className="max-w-[54ch] text-pretty text-base leading-relaxed text-ink-soft">
               {r.what}
             </p>
 
@@ -169,7 +169,7 @@ export default async function GuideFromHomePage({
         <h2 className="text-sm font-semibold text-ink">
           &ldquo;But I don&rsquo;t know how to do any of this yet&rdquo;
         </h2>
-        <div className="mt-1.5 max-w-[60ch] space-y-2.5 text-sm leading-relaxed text-ink-soft">
+        <div className="mt-1.5 max-w-[54ch] space-y-2.5 text-sm leading-relaxed text-ink-soft">
           <p>
             Neither did anyone who does. The honest answer to &ldquo;how did you
             learn this?&rdquo; is almost always the same one: they entered
@@ -195,7 +195,7 @@ export default async function GuideFromHomePage({
         </div>
       </section>
 
-      <p className="max-w-[60ch] text-pretty text-sm leading-relaxed text-ink-faint">
+      <p className="max-w-[54ch] text-pretty text-sm leading-relaxed text-ink-faint">
         Leaving is one route. It is not the only one, and for plenty of students
         it is not the best one — a strong record built from where you are is
         what makes leaving possible later, if you still want to.

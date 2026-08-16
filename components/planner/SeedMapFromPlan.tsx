@@ -32,7 +32,7 @@ export function SeedMapFromPlan({ picks }: { picks: PlanPick[] }) {
       <h2 className="text-base font-semibold text-ink">
         Start from what&rsquo;s already on your plan
       </h2>
-      <p className="mt-1 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+      <p className="mt-1 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
         You took {what} out of the guide.{" "}
         {usePlaces
           ? "We'll lay them out as branches, with the cities you picked nested inside the right country — then you add what each one would actually need."

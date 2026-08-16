@@ -93,7 +93,7 @@ export default async function GuideHubPage({
           </GuideBlock>
           <GuideBlock label="How the money works">
             {hub.money}
-            <span className="mt-1.5 block max-w-[60ch] text-xs text-ink-faint">
+            <span className="mt-1.5 block max-w-[54ch] text-xs text-ink-faint">
               Described in shape rather than figures on purpose: rents and
               salaries move every year and we cannot keep numbers true, but what
               is expensive and what quietly eats income stays true for far
@@ -131,7 +131,7 @@ export default async function GuideHubPage({
       title: "Who is named here",
       body: (
         <>
-          <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+          <p className="max-w-[54ch] text-sm leading-relaxed text-ink-soft">
             Not a ranking and not in order of merit — the places a subject is
             actually studied and taught at in this city, so you have something
             to search for.
