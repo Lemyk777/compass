@@ -5,8 +5,8 @@ order.
 
 1. **Opportunities** — the front door, and the thing a student arrives for. A
    curated, link-checked registry of competitions, olympiads, courses,
-   programmes, communities and job simulations — **173 entries as of
-   2026-08-14** — matched to their field, country, school year and age, with
+   programmes, communities and job simulations — **172 entries as of
+   2026-08-16** — matched to their field, country, school year and age, with
    honest dates and honest costs. Works signed out, with no analysis: see
    `/opportunities`.
 

@@ -266,12 +266,16 @@ fixed, structurally rather than by copy:
   cycles ("dates TBA"). Candidate fee/date research notes live in
   [OPPORTUNITIES_CANDIDATES.md](OPPORTUNITIES_CANDIDATES.md).
 
-**Catalog** — 156 curated opportunities in `lib/data/competitions-data.ts` (the
-array moved out of `key-dates.ts`, which now holds the matching logic and
-re-exports the data). Every link
-verified: `npm run test:links` reports 155/156 healthy (only `ijso` down — an SSL
-failure on its official domain, left in place per the "don't delete on a same-day
-outage" trap).
+**Catalog** — **172 curated opportunities as of 2026-08-16** in
+`lib/data/competitions-data.ts` (the array moved out of `key-dates.ts`, which now
+holds the matching logic and re-exports the data). The figure is asserted against
+`COMPETITIONS.length` by a unit test where the README states it, because this
+paragraph said 156 for a fortnight after it stopped being true.
+
+Link health was last measured at 156 entries (155/156, `ijso` down on an SSL
+failure, left in place per the "don't delete on a same-day outage" trap).
+`npm run test:links` is not in CI — it makes ~172 network calls — so **run it
+after any catalog edit** and re-date this line when you do.
 
 **Age is eligibility, so it is verified, not assumed.** The +8 free industry
 certificates people share as "free and valuable" were added only after each
@@ -348,7 +352,7 @@ students without approval at `/admin/opportunities`.
 
 **Dates** — `/api/cron/sync-dates` runs daily over a rotating batch of 8. It
 reads the landing page *and* the linked "key dates"/"apply" page, because
-landing pages carry no deadlines. **12 of 156 entries have a confirmed date**
+landing pages carry no deadlines. **12 of 172 entries have a confirmed date** (re-measured 2026-08-16)
 plus SAT sittings — see step (3), date coverage is still the constraint on
 everything in the "remove the work" direction.
 
@@ -642,8 +646,9 @@ the repeated headings are fixed, the body prose is not.
 
 ## Next steps, in order
 
-1. **Keep expanding the catalog.** Now **156 entries** across 5 types
-   (competition, olympiad, course, summer_program, research_program). The
+1. **Keep expanding the catalog.** Now **172 entries as of 2026-08-16**, across
+   7 kinds (competition, olympiad, course, summer_program, research_program,
+   community, simulation). The
    guiding filter for new entries is the mission: would a student in Kazakhstan
    or Uzbekistan, with no first-tier network, actually be able to do this? Prefer
    global + online + free/aided over anything US-school-bound. Per-field coverage
@@ -800,8 +805,9 @@ the repeated headings are fixed, the body prose is not.
    materials checklist, scheduled reminder. This is the largest effect size in
    the college-access literature (information alone ≈ 0; information plus
    someone doing the form with you ≈ +25–30% enrollment). The calendar file
-   ships already — but it is **blocked on date coverage**: 8 confirmed dates in
-   100 entries covers three cards out of five. See (3).
+   ships already — but it is **blocked on date coverage**: 12 confirmed dates in
+   172 entries (7%, re-measured 2026-08-16) covers a fraction of the cards.
+   See (3).
 
 8. **Run discovery for real and review what it finds.** The whole local
    (Kazakhstan) path is untested against reality. A few cents per run, and it

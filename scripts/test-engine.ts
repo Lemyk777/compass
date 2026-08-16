@@ -48,6 +48,8 @@ import {
   reachableFrom,
   COMPETITIONS,
   COMPETITION_CATEGORIES,
+  COMPETITION_LEVELS,
+  COMPETITION_TIERS,
 } from "@/lib/data/key-dates";
 import type { CompetitionLevel, Opportunity } from "@/lib/data/key-dates";
 import {
@@ -145,6 +147,7 @@ import {
   plannerStatusFromIntent,
   stepStatus,
   tallyPlanner,
+  PLANNER_STATUSES,
   type PlannerInputs,
   type PlannerItem,
   type PlannerStatus,
@@ -2541,6 +2544,18 @@ const sourceFiles = (): string[] => {
     walk(path.join(process.cwd(), r)),
   );
 };
+/** Every .ts/.tsx under app/, components/ AND lib/ — the whole authored tree. */
+const allRepoSources = (): string[] => {
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return e.name === "node_modules" ? [] : walk(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+  return ["app", "components", "lib"].flatMap((r) =>
+    walk(path.join(process.cwd(), r)),
+  );
+};
 const rel = (f: string) =>
   path.relative(process.cwd(), f).split(path.sep).join("/");
 const stripComments = (s: string) =>
@@ -4117,24 +4132,169 @@ test("every area of work resolves to exactly one field", () => {
   }
 });
 
-test("the spine stays out of every client bundle", () => {
-  // It reaches into five prose registries totalling ~4,000 lines. Same trap as
-  // `careers.ts` and the catalog: a single runtime import from a client
-  // component drags all of it into that route's bundle.
-  const offenders: string[] = [];
+// ── The heavy registries stay out of every client bundle ─────────────────────
+//
+// This guard used to scan for a DIRECT import edge from a client component, and
+// that is exactly how the catalog escaped: `RoadmapView` (a client component)
+// imported `lib/data/roadmap.ts`, which imported `buildStudyPlan` from
+// `key-dates.ts`, which builds a lookup map over the whole ~2,700-row catalog at
+// module load and therefore cannot be tree-shaken. ONE HOP of indirection, and
+// the catalog sat in the initial bundle of four dashboard routes and their four
+// demo twins — measured at 27–28 kB apiece, on pages that never show it.
+//
+// Bundling is a REACHABILITY property, so the guard is now a graph walk. Two
+// edge kinds are deliberately excluded, because neither ships anything:
+// `import type`, which the compiler erases, and dynamic `import()`, which is the
+// sanctioned escape the matching views and `RoadmapView` use.
+const HEAVY_REGISTRIES = [
+  "lib/data/key-dates",
+  "lib/data/competitions-data",
+  "lib/data/careers",
+  "lib/data/world",
+  "lib/data/study-destinations",
+  "lib/data/spine",
+  "lib/data/majors",
+  "lib/data/place-universities",
+];
+
+/** Static, value-carrying import specifiers in one file. */
+function staticImports(src: string): string[] {
+  const out: string[] = [];
+  // Tempered: an import body may not contain another `import`, or a greedy
+  // match spans the whole header and reports the wrong specifier.
+  const re = /^import\s+((?:(?!^import\s)[\s\S])*?)from\s+["']([^"']+)["']/gm;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src))) {
+    const clause = m[1].trim();
+    if (/^type\b/.test(clause)) continue; // `import type { X } from`
+    const inner = clause.match(/\{([\s\S]*)\}/)?.[1];
+    if (inner) {
+      const specs = inner.split(",").map((x) => x.trim()).filter(Boolean);
+      // `import { type A, type B }` carries no value either.
+      if (specs.length > 0 && specs.every((x) => /^type\s/.test(x))) continue;
+    }
+    out.push(m[2]);
+  }
+  return out;
+}
+
+/** `@/x/y` or `./y` → a repo-relative module id, or null if it leaves the repo. */
+function resolveModule(fromFile: string, spec: string): string | null {
+  let base: string;
+  if (spec.startsWith("@/")) base = path.join(process.cwd(), spec.slice(2));
+  else if (spec.startsWith(".")) base = path.resolve(path.dirname(fromFile), spec);
+  else return null; // node_modules
+  for (const cand of [
+    `${base}.ts`,
+    `${base}.tsx`,
+    path.join(base, "index.ts"),
+    path.join(base, "index.tsx"),
+  ]) {
+    if (existsSync(cand)) return rel(cand);
+  }
+  return null;
+}
+
+/** Everything a client component drags into its bundle, transitively. */
+function clientReachable(): Map<string, string[]> {
+  const cache = new Map<string, string[]>();
+  const readImports = (id: string): string[] => {
+    const hit = cache.get(id);
+    if (hit) return hit;
+    const full = path.join(process.cwd(), id);
+    const raw = existsSync(full) ? readFileSync(full, "utf8") : "";
+    // A `"use server"` module is a BUNDLING BOUNDARY, not a dependency: the
+    // client gets an RPC stub, never the module. Walking through one reported
+    // the admin quick-add form as shipping the catalog (client form → server
+    // action → key-dates), which the build manifest disproves — the catalog
+    // chunk is in eight routes and /admin/opportunities is not one of them.
+    // Modelling the boundary is the difference between a guard people trust and
+    // one they start ignoring.
+    const deps = /^\s*["']use server["']/m.test(raw)
+      ? []
+      : staticImports(stripComments(raw))
+          .map((s) => resolveModule(full, s))
+          .filter((x): x is string => x !== null);
+    cache.set(id, deps);
+    return deps;
+  };
+  // id → the path by which a client component reaches it
+  const reached = new Map<string, string[]>();
   for (const file of sourceFiles()) {
     const src = readFileSync(file, "utf8");
     if (!/^\s*["']use client["']/m.test(src)) continue;
-    if (
-      /from "@\/lib\/data\/spine"/.test(src.replace(/import type[^;]+;/g, ""))
-    ) {
-      offenders.push(rel(file));
+    const root = rel(file);
+    const stack: { id: string; trail: string[] }[] = [{ id: root, trail: [root] }];
+    const seen = new Set<string>([root]);
+    while (stack.length > 0) {
+      const { id, trail } = stack.pop()!;
+      for (const dep of readImports(id)) {
+        if (seen.has(dep)) continue;
+        seen.add(dep);
+        const next = [...trail, dep];
+        if (!reached.has(dep)) reached.set(dep, next);
+        stack.push({ id: dep, trail: next });
+      }
     }
+  }
+  return reached;
+}
+
+test("no heavy registry is REACHABLE from a client component", () => {
+  const reached = clientReachable();
+  const offenders: string[] = [];
+  for (const mod of HEAVY_REGISTRIES) {
+    const trail = reached.get(`${mod}.ts`);
+    if (trail) offenders.push(`${mod}\n      via ${trail.join("\n       → ")}`);
   }
   assert.deepEqual(
     offenders,
     [],
-    `a client component imports the spine at runtime:\n${offenders.join("\n")}`,
+    `a heavy registry ships in a client bundle:\n  ${offenders.join("\n  ")}`,
+  );
+});
+
+test("the reachability guard actually bites — on a DIRECT and an INDIRECT edge", () => {
+  // The direct half is what the old guard checked. The indirect half is the one
+  // that mattered: it is the shape the catalog escaped through, and a walk that
+  // only reports depth 1 would pass against it exactly as the old guard did.
+  const here = rel(path.join(process.cwd(), "scripts/test-engine.ts"));
+  assert.deepEqual(
+    staticImports('import { buildRoadmap } from "@/lib/data/roadmap";'),
+    ["@/lib/data/roadmap"],
+    "a value import is not seen as an edge — the walk would traverse nothing",
+  );
+  assert.deepEqual(
+    staticImports('import type { Roadmap } from "@/lib/data/roadmap";'),
+    [],
+    "a type-only import is counted as an edge — it is erased and ships nothing",
+  );
+  assert.deepEqual(
+    staticImports('import { type A, type B } from "@/lib/data/roadmap";'),
+    [],
+    "an inline type-only import is counted as an edge",
+  );
+  assert.deepEqual(
+    staticImports('const m = await import("@/lib/data/roadmap");'),
+    [],
+    "a dynamic import is counted as an edge — it is the sanctioned escape",
+  );
+  // The resolver has to actually find real files, or every walk ends at depth 0
+  // and the whole guard silently asserts nothing.
+  assert.equal(
+    resolveModule(path.join(process.cwd(), here), "@/lib/data/roadmap"),
+    "lib/data/roadmap.ts",
+    "the resolver cannot find a module that exists",
+  );
+  // And the chain the outage travelled must be a real chain in the tree today:
+  // roadmap.ts still reaches key-dates, which is WHY RoadmapView may only load
+  // it dynamically.
+  const roadmapDeps = staticImports(
+    stripComments(readFileSync(path.join(process.cwd(), "lib/data/roadmap.ts"), "utf8")),
+  );
+  assert.ok(
+    roadmapDeps.includes("@/lib/data/key-dates"),
+    "roadmap.ts no longer reaches key-dates — re-check whether RoadmapView still needs its dynamic import",
   );
 });
 
@@ -6409,4 +6569,343 @@ test("matchedOnly keeps only what the student matches", () => {
     ["mine"],
   );
   assert.deepEqual(matchedOnly([]), []);
+});
+
+// ── A number in the README has to be the number ─────────────────────────────
+//
+// The landing page never drifts because it COUNTS the data at request time.
+// Prose cannot do that, so the README said 173 entries for two days after the
+// nao-cup row was removed, and OPPORTUNITIES_PLAN — the file a resuming session
+// is pointed at first — still said 156 and 100 from an August 2 measurement.
+// A stale count is worse than no count: it is the input to somebody's plan.
+//
+// So the counts that matter are asserted here. The date beside each one is not
+// decoration either: a figure with no date cannot be told apart from a figure
+// that is merely old.
+test("the README's counts are the counts", () => {
+  const readme = readFileSync(path.join(process.cwd(), "README.md"), "utf8");
+
+  // `\s+`, not a space: the claim wraps across a line in the README, and a
+  // pattern that assumed one line reported "the README no longer states a
+  // count" — a guard failing for the wrong reason is a guard nobody trusts.
+  const entries = readme.match(
+    /\*\*(\d+)\s+entries\s+as\s+of\s+(\d{4}-\d{2}-\d{2})\*\*/,
+  );
+  assert.ok(entries, "the README no longer states a dated catalog size");
+  assert.equal(
+    Number(entries[1]),
+    COMPETITIONS.length,
+    `README says ${entries[1]} catalog entries, the catalog holds ${COMPETITIONS.length}`,
+  );
+
+  const guide = readme.match(
+    /(\d+) areas of work, (\d+) country profiles, (\d+) cities/,
+  );
+  assert.ok(guide, "the README no longer states the guide's shape");
+  assert.equal(Number(guide[1]), allCareerAreas().length, "areas of work");
+  assert.equal(Number(guide[2]), STUDY_DESTINATIONS.length, "country profiles");
+  assert.equal(Number(guide[3]), HUBS.length, "cities");
+});
+
+// ── No dictionary key that nobody asks for ──────────────────────────────────
+//
+// 163 of 393 keys were referenced nowhere — 137 of them `ob.*`, stranded when
+// the onboarding wizard moved to inline English. This map is imported by the
+// language provider in the ROOT layout, so every key ships in the client bundle
+// of every route on the site; the file's own header records ~80 landing keys
+// being removed for that reason once already, which is the argument for a test
+// rather than a second cleanup.
+//
+// Four prefixes are built dynamically and can never appear at a call site. That
+// list is the whole risk in this guard: `dest.*` became dynamic in this very
+// change (the registry now derives `labelKey` as `dest.${code}` instead of
+// spelling out seven literals), and a first run without it happily deleted all
+// eight live country names.
+const DYNAMIC_KEY_PREFIXES = ["tier.", "conf.", "effort.", "dest."];
+
+test("every dictionary key is asked for somewhere", () => {
+  const dictPath = path.join(process.cwd(), "lib/i18n/dictionary.ts");
+  const keys = [...readFileSync(dictPath, "utf8").matchAll(/^ {2}"([^"]+)":/gm)]
+    .map((m) => m[1]);
+  assert.ok(keys.length > 100, "the dictionary parsed as almost empty — check the key pattern");
+
+  const corpus = [...allRepoSources(), ...[path.join(process.cwd(), "middleware.ts")]]
+    .filter((f) => existsSync(f) && f !== dictPath)
+    .map((f) => readFileSync(f, "utf8"))
+    .join("\n");
+
+  const unused = keys.filter(
+    (k) =>
+      !DYNAMIC_KEY_PREFIXES.some((p) => k.startsWith(p)) &&
+      !corpus.includes(`"${k}"`) &&
+      !corpus.includes(`'${k}'`) &&
+      !corpus.includes("`" + k + "`"),
+  );
+  assert.deepEqual(
+    unused,
+    [],
+    `${unused.length} dictionary keys are never read — they ship to every route:\n${unused.join("\n")}`,
+  );
+});
+
+test("the dictionary guard bites, and spares the dynamic prefixes", () => {
+  const corpus = 'const a = t("nav.plan");';
+  const check = (k: string) =>
+    DYNAMIC_KEY_PREFIXES.some((p) => k.startsWith(p)) || corpus.includes(`"${k}"`);
+  assert.ok(check("nav.plan"), "a key that IS read is reported unused");
+  assert.ok(!check("ob.longGone"), "a key nothing reads slips through");
+  // The four that are assembled at runtime must survive a corpus that never
+  // spells them out — this is the case that nearly deleted every country name.
+  assert.ok(check("dest.US"), "a template-built key would be deleted");
+  assert.ok(check("tier.reach"), "a template-built key would be deleted");
+  assert.ok(check("conf.high"), "a template-built key would be deleted");
+  assert.ok(check("effort.low"), "a template-built key would be deleted");
+});
+
+// ── Nothing exports a value that nobody uses ────────────────────────────────
+//
+// Twenty-four exported symbols were referenced nowhere in the tree — four
+// parallel `*ProgramLabel` helpers left behind by the country-registry refactor,
+// the old onboarding wizard's step model, `UNIVERSITY_NAMES`, the language
+// toggle's leftovers. None could fail a type-check or a lint, because every one
+// of them was valid code; they were simply nobody's.
+//
+// The point of running the audit as a TEST rather than doing the delete once:
+// dead code is not a state you clean up, it is a rate. Something falls out of
+// use on nearly every refactor, and the only difference between a tree with
+// twenty-four dead exports and one with none is whether anything is counting.
+//
+// VALUES only. A `type X = (typeof CONST)[number]` alias beside a live constant
+// costs nothing at runtime and is the pattern that stops the next person
+// hand-writing the union — deleting those would be cleanup as cargo cult.
+const NEXT_CONTRACT_EXPORT =
+  /^(metadata|dynamic|revalidate|runtime|maxDuration|generateMetadata|generateStaticParams|viewport|fetchCache|dynamicParams|preferredRegion|alt|size|contentType|config|middleware|default)$/;
+
+test("every exported value is used somewhere", () => {
+  // `scripts/` counts as a CONSUMER — `scoreHolistic` is called only by
+  // check-scoring and sim-scorecard, and a corpus that skipped them reported a
+  // live function as dead. Root-level `middleware.ts` counts for the same
+  // reason: it is the only caller of `updateSession`.
+  const walkScripts = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return walkScripts(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+  const files = [
+    ...allRepoSources(),
+    ...walkScripts(path.join(process.cwd(), "scripts")),
+    ...["middleware.ts"]
+      .map((f) => path.join(process.cwd(), f))
+      .filter((f) => existsSync(f)),
+  ];
+  // One tokenised pass over the tree, then arithmetic — checking each symbol
+  // against every file separately is quadratic and makes the suite crawl.
+  const perFile = new Map<string, Map<string, number>>();
+  const total = new Map<string, number>();
+  const declared: { file: string; name: string }[] = [];
+  for (const f of files) {
+    const src = stripComments(readFileSync(f, "utf8"))
+      // Strings too: a name mentioned in copy is not a use.
+      .replace(/`(?:\\.|[^`\\])*`/g, "``")
+      .replace(/"(?:\\.|[^"\\])*"/g, '""')
+      .replace(/'(?:\\.|[^'\\])*'/g, "''");
+    const counts = new Map<string, number>();
+    for (const m of src.matchAll(/[A-Za-z_$][\w$]*/g)) {
+      counts.set(m[0], (counts.get(m[0]) ?? 0) + 1);
+      total.set(m[0], (total.get(m[0]) ?? 0) + 1);
+    }
+    perFile.set(rel(f), counts);
+    const isRoute =
+      /\/(page|layout|route|loading|error|not-found|sitemap|robots|icon|opengraph-image|template|default|global-error)\.tsx?$/.test(
+        rel(f),
+      );
+    for (const m of src.matchAll(
+      /^export\s+(?:async\s+)?(function|const|let|class|enum)\s+([A-Za-z_$][\w$]*)/gm,
+    )) {
+      if (isRoute && NEXT_CONTRACT_EXPORT.test(m[2])) continue;
+      declared.push({ file: rel(f), name: m[2] });
+    }
+  }
+  // DEAD means the identifier occurs exactly once in the whole tree: its own
+  // declaration. A symbol used inside its own file is merely over-exported —
+  // the `export` keyword is unnecessary, the code is not dead — and failing the
+  // build on that would bury the real thing under 160 items of tidying.
+  const dead = declared.filter(({ name }) => (total.get(name) ?? 0) === 1);
+  assert.deepEqual(
+    dead.map((d) => `${d.file} → ${d.name}`),
+    [],
+    "these exported values are referenced nowhere — delete them, or use them",
+  );
+});
+
+test("the dead-export scan actually bites", () => {
+  // It has to find a symbol that IS dead, or it is an empty loop reporting
+  // success. `__deadOnPurpose` below is exported and used by nothing; the scan
+  // must be able to see it, and the real test must be excluding it by name
+  // rather than by luck.
+  const src = `export const __deadOnPurpose = 1;\nexport const used = 2;\nconsole.log(used);`;
+  const names = [...src.matchAll(/^export\s+(?:async\s+)?(?:const)\s+([A-Za-z_$][\w$]*)/gm)]
+    .map((m) => m[1]);
+  assert.deepEqual(names, ["__deadOnPurpose", "used"], "the scan cannot see exports at all");
+  const count = (n: string) => [...src.matchAll(new RegExp(`\\b${n}\\b`, "g"))].length;
+  assert.equal(count("__deadOnPurpose"), 1, "a dead export must appear exactly once");
+  assert.ok(count("used") > 1, "a used export must appear more than once");
+});
+
+// ── One list, or the compiler cannot help you ───────────────────────────────
+//
+// Every set below used to exist twice: a union in one file, a hand-written copy
+// somewhere else, with nothing relating them. That is the shape audit finding A4
+// came in — a kind of opportunity the tab strip did not know about, which made
+// the counts stop summing — and four more of them were still in the tree.
+//
+// The type system now owns each relationship, so these tests guard the one thing
+// it cannot: somebody typing the members out again.
+test("the five live destination codes are written down exactly once", () => {
+  // `AvailableDestinationCode` is derived from AVAILABLE_DESTINATION_CODES, and
+  // the college-list builder, the rankings board, the map markers and
+  // dashboard/actions all alias it. Before that, promoting CN or CA would have
+  // left all four silently short with no type error anywhere.
+  const offenders: string[] = [];
+  const literal = /"US"\s*\|\s*"IT"\s*\|\s*"HK"\s*\|\s*"[AK][ER]"\s*\|\s*"[AK][ER]"/;
+  for (const file of allRepoSources()) {
+    if (rel(file) === "lib/data/destinations.ts") continue;
+    if (rel(file) === "scripts/test-engine.ts") continue;
+    if (literal.test(stripComments(readFileSync(file, "utf8")))) {
+      offenders.push(rel(file));
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `the destination list is written out again instead of imported:\n${offenders.join("\n")}`,
+  );
+});
+
+test("that destination guard bites on the literal it is looking for", () => {
+  const literal = /"US"\s*\|\s*"IT"\s*\|\s*"HK"\s*\|\s*"[AK][ER]"\s*\|\s*"[AK][ER]"/;
+  assert.ok(
+    literal.test('export type BuilderCountry = "US" | "IT" | "HK" | "AE" | "KR";'),
+    "the guard misses the exact copy that was in useListBuilder",
+  );
+  assert.ok(
+    // map-markers had drifted in member ORDER, which is how one set starts
+    // reading as two.
+    literal.test('export type CountryCode = "US" | "IT" | "HK" | "KR" | "AE";'),
+    "the guard misses a reordered copy",
+  );
+  assert.ok(
+    !literal.test("export type X = AvailableDestinationCode;"),
+    "the guard fires on the derived form it is meant to allow",
+  );
+});
+
+test("every vocabulary array covers its whole union", () => {
+  // The direction matters. Declared the other way — union first, array second —
+  // TypeScript checks that each member is VALID and never that the set is
+  // COMPLETE, so a new member is silently missing from the array that validates
+  // it. Each of these is now `as const` with the union derived from it; these
+  // assertions state the invariant that buys.
+  assert.deepEqual([...PLANNER_STATUSES].sort(), ["doing", "done", "dropped", "todo"]);
+  assert.equal(new Set(PLANNER_STATUSES).size, PLANNER_STATUSES.length);
+  assert.equal(new Set(COMPETITION_LEVELS).size, COMPETITION_LEVELS.length);
+  assert.equal(new Set(COMPETITION_TIERS).size, COMPETITION_TIERS.length);
+  // A tier or level the catalog actually uses must be in its own vocabulary, or
+  // discovery's sanitiser silently rewrites it to the fallback.
+  for (const c of COMPETITIONS) {
+    if (c.level)
+      assert.ok(
+        (COMPETITION_LEVELS as readonly string[]).includes(c.level),
+        `${c.id} has level "${c.level}", absent from COMPETITION_LEVELS`,
+      );
+    if (c.tier)
+      assert.ok(
+        (COMPETITION_TIERS as readonly string[]).includes(c.tier),
+        `${c.id} has tier "${c.tier}", absent from COMPETITION_TIERS`,
+      );
+  }
+});
+
+test("the scoring core has one factor list, not two", () => {
+  // `Factor` in tier-score.ts is now an alias of the rubric's `FactorKey`. A
+  // type alias leaves nothing to assert at runtime, so this checks the thing
+  // that would actually rot: the rubric naming a factor the alias cannot serve.
+  const keys = RUBRIC.map((f) => f.key).sort();
+  assert.equal(new Set(keys).size, keys.length, "the rubric names a factor twice");
+  assert.deepEqual(keys, [
+    "academics",
+    "awards",
+    "course_rigor",
+    "extracurricular_depth",
+    "leadership",
+    "narrative_fit",
+    "test_scores",
+  ]);
+});
+
+// ── The commitment step has to be REACHABLE ─────────────────────────────────
+// The bug this catches shipped to production and no test noticed, because
+// every part still compiled: `CommitRow` was rendered only by the five-row
+// `Shortlist`, and deleting that for the one list deleted the only caller.
+// `saveOpportunityIntent` — the product's single behavioural signal, and the
+// number `/admin/intents` reports — became unreachable from the UI while
+// remaining a valid, exported, type-checked server action.
+//
+// So the chain is pinned by name: the list's row builds the node, the card
+// hands it to the panel, and the panel renders it. Any one of those three
+// links quietly removed puts the metric back in the dark.
+const COMMIT_CHAIN: { file: string; must: RegExp; why: string }[] = [
+  {
+    file: "components/opportunities/CommitRow.tsx",
+    must: /commit=\{<CommitRow\b/,
+    why: "OpportunityRow no longer builds the commitment node, so nothing in the list can offer it",
+  },
+  {
+    file: "components/opportunities/OpportunityCard.tsx",
+    must: /<OpportunityDetail[\s\S]{0,200}?\bcommit=\{commit\}/,
+    why: "the card takes a commit node and never passes it to the detail panel, so it renders nowhere",
+  },
+  {
+    file: "components/opportunities/OpportunityDetail.tsx",
+    must: /\{commit\s*&&/,
+    why: "the detail panel accepts a commit node and never renders it",
+  },
+];
+
+test("the commitment step is reachable from the opportunity list", () => {
+  for (const { file, must, why } of COMMIT_CHAIN) {
+    const full = path.join(process.cwd(), file);
+    assert.ok(existsSync(full), `${file} is missing — this guard has no subject`);
+    assert.match(stripComments(readFileSync(full, "utf8")), must, `${file}: ${why}`);
+  }
+});
+
+test("the commitment-chain guard actually bites", () => {
+  // A guard written as a template literal once compiled to a pattern that
+  // matched nothing and was cited as a guarantee in a PR description. Every
+  // hand-built pattern here is therefore shown failing on the exact edit that
+  // caused the outage: the node stops being built, or stops being handed on.
+  const brokenRow = `return <OpportunityCard o={o} density="compact" />;`;
+  const brokenCard = `{detail && <OpportunityDetail o={o} onClose={close} />}`;
+  const brokenPanel = `<div className="border-t">{children}</div>`;
+  assert.ok(
+    !COMMIT_CHAIN[0].must.test(brokenRow),
+    "the row guard passes a card that builds no commitment node",
+  );
+  assert.ok(
+    !COMMIT_CHAIN[1].must.test(brokenCard),
+    "the card guard passes a panel call that drops the commit prop",
+  );
+  assert.ok(
+    !COMMIT_CHAIN[2].must.test(brokenPanel),
+    "the panel guard passes a panel that never renders the node",
+  );
+  // …and passes the real thing, so it is not merely a pattern that never matches.
+  for (const { file, must } of COMMIT_CHAIN) {
+    const src = stripComments(
+      readFileSync(path.join(process.cwd(), file), "utf8"),
+    );
+    assert.match(src, must);
+  }
 });
