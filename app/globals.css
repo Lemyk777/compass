@@ -419,6 +419,37 @@
   }
 }
 
+/* ---- THE OPPORTUNITY LIST GOES TWO-UP ON ITS OWN WIDTH -------------------
+   Not on the viewport's, and that distinction is the whole reason this is CSS
+   rather than a `lg:grid-cols-2`.
+
+   One list renders in two shells with different room in them. The student's
+   section gives it the full column below `xl` and then hands 20rem to the
+   companion, so its width goes 924 → 812 → 822 → 982px as the window grows
+   from 1024 to 1536. The report's shell spends its width on a sidebar instead,
+   so the SAME list is 652px at 1024 where the student's is 924. Any viewport
+   breakpoint is therefore right in one shell and wrong in the other: `lg`
+   measured 457px cards in the student's section and 321px in the report's.
+
+   The threshold is measured, and the card has a cliff rather than a curve.
+   Forced to exact widths in 20px steps it is flat at 272px tall from 380px up;
+   at 340–360px the title takes a third line and it jumps to 356px; at 320px
+   the title wraps to FOUR lines, the blurb to three at 23 characters, and it
+   stands 421px. 380px per card is therefore the knee, and 800px of container
+   is the narrowest that clears it with room to spare (395px a card).
+
+   Never three columns: a third would be 320px even at 1536 — the exact width
+   that breaks. `min-width` is on the CONTAINER, so both shells get the right
+   answer without either of them knowing about the other. */
+.opp-list {
+  container-type: inline-size;
+}
+@container (min-width: 800px) {
+  .opp-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ---- Reliable entrance: CSS-only, ends visible, runs without JS ----------- */
 @keyframes rise-in {
   from {

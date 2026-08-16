@@ -47,12 +47,24 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
 export function OpportunityCard({
   o,
   density = "comfortable",
-  footer,
+  commit,
 }: {
   o: Opportunity;
   density?: CardDensity;
-  /** Extra row under the card — the dashboard's commitment step lives here. */
-  footer?: React.ReactNode;
+  /**
+   * The dashboard's commitment step ("I'm doing this" → when will you start?),
+   * rendered inside the DETAIL PANEL rather than on the card.
+   *
+   * Passed in rather than imported, because this card is also the public
+   * checker's card and that page has no `DashboardProvider` for `CommitRow` to
+   * read. Same reason the companion takes pre-rendered nodes.
+   *
+   * On the card itself it would be a commitment control on every row of a
+   * hundred-row list, which is the checklist the original design ruled out;
+   * one tap in, on the opportunity the reader actually opened, it is a
+   * decision.
+   */
+  commit?: React.ReactNode;
 }) {
   const [detail, setDetail] = useState(false);
   const compact = density === "compact";
@@ -69,7 +81,13 @@ export function OpportunityCard({
             "rounded-2xl border border-line bg-card p-6 shadow-card transition-shadow duration-200 hover:shadow-lift sm:p-7"
       }
     >
-      {detail && <OpportunityDetail o={o} onClose={() => setDetail(false)} />}
+      {detail && (
+        <OpportunityDetail
+          o={o}
+          commit={commit}
+          onClose={() => setDetail(false)}
+        />
+      )}
 
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1">
@@ -236,8 +254,6 @@ export function OpportunityCard({
           </button>
         )}
       </div>
-
-      {footer}
     </article>
   );
 }
