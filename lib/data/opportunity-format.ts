@@ -8,6 +8,25 @@
 
 import type { Competition, CostInfo, CostModel, CostTone } from "./key-dates";
 
+// ── Date helpers (UTC, date-only — no timezone drift) ─────────────────────────
+//
+// `daysBetween` lived in key-dates until it was found to be the reason the odds
+// page shipped the catalog: `app-deadlines.ts` imported this two-line function,
+// and that one edge pulled key-dates — which builds a lookup map at module load
+// and so cannot be tree-shaken — into `LikelihoodGauge`'s client bundle. The
+// header above already claimed this module held every key-dates runtime value
+// the client card, roadmap and odds components need; this is the one that was
+// left behind. key-dates re-exports it, so every existing import still resolves.
+function toUTC(d: Date | string): number {
+  const x = typeof d === "string" ? new Date(d + "T00:00:00Z") : d;
+  return Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate());
+}
+
+/** Whole days from `from` to `to` (negative if `to` is in the past). */
+export function daysBetween(from: Date | string, to: Date | string): number {
+  return Math.round((toUTC(to) - toUTC(from)) / 86_400_000);
+}
+
 const COST_COPY: Record<
   CostModel,
   { label: string; short: string; tone: CostTone; fallback: string }
