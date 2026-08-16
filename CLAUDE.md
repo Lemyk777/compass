@@ -80,6 +80,35 @@ Everything here is **deterministic** — no model call — and the design rules 
 
 - **The default intake is two inline questions**, both on the Opportunities view: school year (`YearPrompt` → `saveGraduationYear`) then field (`FieldPrompt` → `saveFaculties`, both in [app/dashboard/actions.ts](app/dashboard/actions.ts)). A student who can't answer the second takes the optional **interest quiz** ([lib/data/interest-quiz.ts](lib/data/interest-quiz.ts) — fixed per-option weights, pure scoring). **The full analysis questionnaire is opt-in** — new signups land on `/dashboard/opportunities`, not `/onboarding`. Don't re-add a mandatory intake gate.
 - **Empty faculties is a valid answer** meaning "show everything", not "show nothing". Unknown facts never exclude.
+- **Matching ANNOTATES; it does not hide — and that makes `matchedOnly`
+  mandatory.** `buildExtracurriculars` used to drop rows outside the student's
+  field or country, which meant a student saw 114 of 172 with no way to ask why
+  and **no route to the rest at all**; the control that looked like the way
+  there read "Show everything we track for you (114)", where "everything" was
+  false. It returns every row now, carrying `offField` / `offRegion`, and the
+  filter panel owns the narrowing.
+  **Every surface WITHOUT a filter panel must call `matchedOnly`**
+  ([lib/data/opportunity-filter.ts](lib/data/opportunity-filter.ts)) — the guest
+  eligibility checker, onboarding's `FirstWin`, and `lib/planner/load.ts`. This
+  is not tidiness: without it a student in Uzbekistan is shown a competition
+  that only runs in Kazakhstan, and **nothing looks wrong** — there are simply
+  more rows than there should be. A unit test pins all three files by name, and
+  the session check asserts the guarantee where a student meets it (the row
+  comes back MARKED, and `matchedOnly` drops it).
+  Still hard filters, deliberately: a **past confirmed date** (a closed date is
+  a fact about the world, not a narrowing — "show expired" is offering rubbish)
+  and rows the student can never enter. `too_young` stays visible.
+- **The "matched to you" filter group is INVERTED from every other group**, and
+  the type says so. Everywhere else an empty array means "no narrowing"; here
+  the default is both options ON, because the honest default is still the
+  student's own list. Two consequences, both implemented: `activeFilterCount`
+  counts the group by what is **missing** (a widened list is a choice and must
+  open the full list like any other filter), and `withoutChip` restores in
+  `MATCH_OPTIONS` order because this field is a set and an unstable order makes
+  two equal states compare unequal.
+  It also killed a shortcut that had been correct for years:
+  `filterOpportunities` returned the array untouched when no filter was active,
+  which now returns all 172 — the exact bug the group exists to fix.
 - **The filter panel is pure, and its rules are the product's rules**
   ([lib/data/opportunity-filter.ts](lib/data/opportunity-filter.ts), rendered by
   [components/opportunities/FilterBar.tsx](components/opportunities/FilterBar.tsx)):
@@ -148,17 +177,39 @@ detail behind every card was a modal with no URL. Every step and every subject
 is its own route now:
 
 ```
-/guide                    index — the four steps, with counts
+/guide                    index — the five steps, with counts
 /guide/work               1 · areas of work      → /guide/work/[area]
-/guide/places             2 · countries in full  → /guide/places/[place]
-/guide/cities             3 · the cities in them → /guide/cities/[hub]
-/guide/from-home          4 · routes that need no move
+/guide/majors             2 · what you'd study   → /guide/majors/[major]
+/guide/places             3 · countries in full  → /guide/places/[place]
+/guide/cities             4 · the cities in them → /guide/cities/[hub]
+/guide/from-home          5 · routes that need no move
 /guide/compare?a=&b=      two countries on the same axes
 ```
 
 - **The order is a zoom IN, and it shipped backwards once.** Cities came before
   countries, so the guide asked a student to weigh Berlin and then zoomed out to
   Germany a step later. A country contains cities; it comes first.
+- **The MAJOR sits between the work and the country, and that placement is the
+  argument.** You apply *with* a subject, so choosing a country before you have
+  one is the cities-before-countries mistake a layer up. `lib/data/majors.ts`
+  holds 44 of them and is held to the same rules as every other prose registry
+  — `catch` and `notForYou` mandatory, no prices, rankings, superlatives or
+  URLs — plus three fields that exist because nobody else writes them down:
+  **`alsoCalled`** (one subject is taught under three names across the countries
+  we profile, and a student who does not know that cannot tell they found the
+  same door twice), **`firstYear`** (what the year is really made of and what
+  makes people leave in it), and **`schoolSubjects`** (the only thing on the
+  page that can be started today).
+  **The chain is asserted in BOTH directions**: every major leads to at least
+  one real area of work, and every one of the 33 areas is reachable from at
+  least one major. The reverse edge is the one that protects a student — a kind
+  of work nothing leads to is a page whose reader has nowhere to go next, and
+  the person most likely to hit it is the one with the least common interest.
+- **A major needed no migration.** `planner_path` has no `kind` column — a
+  pick's kind is its `ref` prefix — so `major:computer-science` was storable the
+  day the registry existed. `PickKind` gained a case, `pickHref` gained a line,
+  and the existing test that `pickHref` can only produce `/guide/…` covered it
+  for free.
 - **One hub is one city.** Four hubs used to carry a paired label — `Toronto &
   Waterloo`, `Dubai & Abu Dhabi`, `Zurich & Lausanne`, `Osaka & Kyoto` — because
   a hub models a *labour market*, and those pairs recruit across. It reads as a
@@ -281,6 +332,93 @@ is its own route now:
   never in a shell** — hoisting it would drag framer into the guide's route
   bundles, which are server-rendered apart from two islands.
 - **The loading skeleton is on the LIST routes only, and that is load-bearing.** A `loading.tsx` is a Suspense boundary, and a boundary lets the server flush the response — status line included — before the page under it renders. One section-wide `app/guide/loading.tsx` therefore made every unknown id answer **200** carrying a not-found page. The skeleton (`components/guide/Skeleton.tsx`) now sits in six scoped files, which is why `/guide`, `/guide/work`, `/guide/places` and `/guide/cities` each live in a `(index)`/`(list)` route group — a group adds nothing to the URL but stops the subject pages inheriting the boundary. It is also where the wait actually is: a list page resolves the session (`guideView`), a subject page reads static data. Don't "tidy" the groups away or hoist the file back up.
+
+## The companion — the thread, on every screen (read [the spec](docs/superpowers/specs/2026-08-15-guided-thread-design.md) first)
+
+The diagnosis it answers: **we built an excellent library and called it
+accompaniment.** A library answers a question that is already formed, and our
+student cannot form the question — that is the reason they came. The complaint
+was never about the entrance ("I get more confused the more I use the site"), so
+a guided route that hands a student to a section and stops is not a fix: it
+leaves them alone in the library one step later.
+
+It is mounted once, in [StudentShell](components/student/StudentShell.tsx), and
+appears on Opportunities, the whole guide and the plan. It is the compass
+needle — not a new thing to learn, the product finally doing what its name says.
+
+- **Its stage is DERIVED, never stored** ([lib/data/thread.ts](lib/data/thread.ts)).
+  Seven stations, each reached by a fact that already exists: reactions in
+  `beat_reactions`, picks in `planner_path`, commitments in
+  `opportunity_intents`. **"Opened the page" is deliberately not a condition** —
+  per-student page reads are not recorded (`page_views` is the anonymous traffic
+  table and stays that way), and recording them to drive a step counter would be
+  a tracking system built for a progress bar.
+  Two rules, both tested: the stage is **where they ARE, not the furthest thing
+  they have touched** (someone who commits before answering a pair is still at
+  the beginning, and taking the maximum would tell a lost student they were
+  nearly finished); and **nothing moves it backwards** — an overdue deadline is
+  the move ladder's business, and a figure that fell because something lapsed
+  would read as punishment.
+- **It stops talking when it cannot judge honestly.** From the moment a student
+  has committed to something, the next move depends on agenda facts
+  `lib/companion/load.ts` does not carry. Handing the ladder zeroes there did
+  not produce vaguer copy, it produced a FALSE claim ("nothing you're carrying
+  has an announced date yet"). So `move` is `NextMove | "deferred" | null`:
+  an object to render, `"deferred"` to hand over to the plan, and `null` where
+  **the page owns the move** — the planner renders its own `NextMoveCard`, and
+  two ladders reasoning from different inputs on one screen is how a section
+  contradicts itself.
+- **One ask at a time.** While a reaction pair is on screen the move is not
+  rendered at all. It shipped with both, three centimetres apart, pointing
+  different ways — the product's own "exactly one move" rule broken by the
+  companion against itself.
+- **`xl:self-start` is load-bearing.** A grid item stretches to its row, so the
+  aside stood 4054px tall and a sticky box spanning the whole scroll range has
+  nothing to stick to: it pinned never and left at the first flick. The panel
+  is also capped at `calc(100dvh-6rem)` — a sticky element taller than the
+  viewport has a bottom that cannot be reached, because scrolling moves the page
+  and not the pinned box.
+- **Below `xl` it is a 44px dock, and the shell reserves its height**
+  (`h-16 xl:hidden`). Without that spacer the fixed dock sits on the last
+  control on the page, which on a phone is the one the student was reaching for.
+  `xl` and not `lg`, because a guide subject page already carries its own rail
+  from `lg` and nesting two left 256px of prose at 1024px.
+- **Nothing heavy may reach it.** It renders on every route, so a runtime import
+  of `key-dates`, `careers`, `world`, `study-destinations`, `spine` or `majors`
+  ships that registry everywhere. Everything is resolved in
+  [lib/companion/load.ts](lib/companion/load.ts) and handed down as values and
+  pre-rendered nodes. A unit test fails the build on a violation — **and a
+  second test proves that guard actually matches a real import**, because the
+  first version was written as a template literal, where `\s` is the letter s:
+  it compiled to `imports+(?!type\b)[^;]*froms+…`, matched nothing, and was
+  cited as a guarantee in a PR description.
+
+### The reaction engine ([lib/data/beats.ts](lib/data/beats.ts), migration 0031)
+
+How the product learns who someone is without asking the question they arrived
+unable to answer. Two concrete working days, and which is more like you.
+
+- **Observations, never types.** Never "you are an Investigator" — only "you
+  picked the one where the result lands the same evening, twice". A personality
+  label is a claim we cannot support, and this product does not assert what it
+  does not know.
+- **A beat opens with the ACTION, in the second person, in ≤24 words.** The
+  first version obeyed "no jargon, no profession named" and overshot into
+  riddles: median 29 words, with the verb arriving at word 25. Concrete and
+  PLAIN, not concrete and literary. Both rules are test-enforced, and the length
+  band is tight on purpose — the old one (60–260 characters) never bit once.
+- **"I don't get it" is a first-class answer.** It swaps that card for
+  `plainer` in place, records `unclear`, contributes **no signal**, and **keeps
+  the pair open** so the student can still answer once they understand.
+  `nextPair` and `pairsAnswered` must agree about that; they did not at first,
+  and the pair was silently thrown away.
+- **The observation speaks on the pair that earned it, then goes quiet**
+  (`SPEAKS_AT`). It is only offered at the first two stations, so `pairsAnswered`
+  freezes the moment we stop asking — without the gate the same paragraph
+  followed a reader across all 88 guide pages.
+- **`beat_reactions` is the ONLY new stored fact.** Everything else — the stage,
+  the observation, the move — is computed. Reaction ids are referenced by
+  production rows: **never rename a beat id.**
 
 ## The planner — ONE route, three lenses (read [docs/PLANNER_PLAN.md](docs/PLANNER_PLAN.md) first)
 

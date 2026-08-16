@@ -12,18 +12,69 @@ The planner's own design of record is [PLANNER_PLAN.md](PLANNER_PLAN.md).
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**As of 2026-08-14 the branch is AHEAD of production. Check this before
-assuming anything is live.**
+**As of 2026-08-16 everything through release 5 is IN PRODUCTION.** The habit of
+this file is to warn that the branch is ahead of `main`; right now it is not.
+Verify anyway — it takes ten seconds, and a stale note here has cost a release
+twice:
+
+```bash
+git fetch origin && git log --oneline origin/main..HEAD
+```
 
 | | |
 |---|---|
-| On `main` (deployed) | everything up to and including the **spine** (#16). PR [#106](https://github.com/Lemyk777/compass/pull/106) merged 2026-08-13 20:04 UTC at `7e9bec5` |
-| **NOT deployed** | 10 commits in PR [#107](https://github.com/Lemyk777/compass/pull/107) — community + catalog 173, the planner's release 3, and the brand-link fix |
-| Branch | `feat/guide-spine` (misnamed by now — it carries three releases' worth) |
-| Progress | **20 of 23 done**, 1 half-done (#23 animation), 2 untouched (**#11**, **#14**), plus **#24**, **#26**, **#27** done, plus the planner's **release 4** |
-| Unit tests | **192** (`npm run test:unit`) |
-| Catalog | **173 entries · 0 broken links** (`npm run test:links`) |
-| Migrations | **All applied**, `0030_planner_path.sql` included — `npm run db:check` reports 32/32 as of 2026-08-14. |
+| On `main` (deployed) | the guided thread in full — the majors layer, the companion, the reaction engine. PRs [#111](https://github.com/Lemyk777/compass/pull/111) + [#112](https://github.com/Lemyk777/compass/pull/112) into `develop`, released via [#113](https://github.com/Lemyk777/compass/pull/113) |
+| Open | [#114](https://github.com/Lemyk777/compass/pull/114) — Opportunities: one list, honest counts, `matchedOnly`. Tasks 1–3 of its spec; **4–5 (filter rail, column grid, card type) not started** |
+| Branch | `feat/opportunities-one-list` |
+| Unit tests | **256** (`npm run test:unit`) |
+| Session checks | **61** (`node --import tsx scripts/test-session-checks.ts`) |
+| Catalog | **172 entries · 0 broken links** (2 unverifiable — bot walls, reported without failing) |
+| Migrations | **All applied through `0031_beat_reactions.sql`** — `npm run db:check` reports 33/33 |
+
+### What shipped in release 5 — the guided thread, 2026-08-15/16
+
+Design of record: `docs/superpowers/specs/2026-08-15-guided-thread-design.md`.
+The one-line diagnosis it answers: **we built an excellent library and called it
+accompaniment.** A library answers a question that is already formed; our
+student cannot form the question, which is the reason they came.
+
+Three things a fresh session needs to know exist:
+
+- **The majors layer** — 44 subjects, each with a page, as **step 2 of the
+  guide**, between the work and the country, because the major is what you apply
+  *with*. It needed no migration: `planner_path` has no `kind` column, so
+  `major:computer-science` was storable the day the registry existed.
+- **The companion** — a rail from `xl`, a 44px dock below it, on every page of
+  the student's section. Its stage is DERIVED (`lib/data/thread.ts`), never
+  stored.
+- **The reaction engine** — two concrete working days, "which is more like you",
+  and **"I don't get it" is a first-class answer** that rephrases and keeps the
+  pair open. `0031_beat_reactions` is the only new stored fact in the release.
+
+### Four lessons from release 5, each of which cost something
+
+1. **PR #111 was merged while its review was still running.** All three fix
+   commits stranded on the branch, and `develop` briefly carried a version whose
+   centrepiece did not work. **This is the third time.** The rule is not "check
+   the PR state before pushing" — it is **run the whole-branch review BEFORE
+   asking for the merge**, because this owner merges fast and that is fine.
+2. **A test asserted nothing for its whole life.** The companion's bundle guard
+   was built as a template literal, where `\s` is the letter s and `\b` is a
+   backspace: it compiled to `imports+(?!type\b)[^;]*froms+…`, matched nothing,
+   and was cited as a guarantee in a PR description. Any hand-built regex now
+   needs a second test proving it BITES on a known-bad input. Assemble from
+   RegExp literals via `.source` so the parser owns the escaping.
+3. **Three code reviews found six criticals and missed the three that mattered
+   most.** The companion was never sticky (a grid item stretches to its row, so
+   a 4054px "sticky" box has nothing to stick to), its bottom sat 96px below the
+   fold, and it asked two things at once. Those are visible only by OPENING THE
+   PAGE. Reading code cannot find them — see §7 for how to look when a surface
+   is session-gated.
+4. **`develop` was 75 commits behind `main` with none of its own.** Branching
+   from it per CONTRIBUTING produced a tree with no planner, no spine and no
+   plan-picks, which surfaced as "weird type errors". Fast-forwarded. Check
+   `git rev-list --count origin/develop..origin/main` before trusting the branch
+   model.
 
 ### Release 4 — the planner, 2026-08-14 (read PLANNER_PLAN.md § "Release 4")
 

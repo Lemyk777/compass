@@ -34,6 +34,11 @@ almost never a prompt change.
 | Who may enter an opportunity | `lib/data/eligibility.ts` |
 | The "what do you like?" quiz | `lib/data/interest-quiz.ts` (questions + weights + pure scoring) |
 | Where a field can lead (career areas + the jobs in them) | `lib/data/careers.ts` — spheres, never one prescribed profession |
+| **What a student actually applies with** (44 subjects) | `lib/data/majors.ts` — guide step 2, between the work and the country. `catch`/`notForYou` mandatory; `alsoCalled`, `firstYear` and `schoolSubjects` are the three fields nobody else writes down |
+| **Where the student is on the thread** (the "step 3 of 7") | `lib/data/thread.ts` — pure, seven stations, DERIVED from stored facts. Never store a stage |
+| **What the companion asks** (two working days, "which is more like you") | `lib/data/beats.ts` — fixed weights, pure scoring. A beat opens with the ACTION in ≤24 words; never rename a beat id, production rows reference them |
+| **What the companion renders** | `lib/companion/load.ts` (server, cached) → `components/companion/Companion.tsx` + `BeatPair.tsx`. Mounted once in `StudentShell` |
+| Narrowing a list to what the student actually matches | `matchedOnly` in `lib/data/opportunity-filter.ts` — **mandatory on every surface without a filter panel**; see the rules section |
 | "What do you want out of work?" | `lib/data/values.ts` (3 questions + pure scoring) — may only REORDER the areas, never filter or change the fields |
 | Where in the world a sphere of work lives | `lib/data/world.ts` — hubs with a catch and a route in, both mandatory |
 | A full destination profile (US, UK, HK, …) | `lib/data/study-destinations.ts` → `/guide/places/[place]`; trade-offs must outnumber strengths, `notForYou` is mandatory, no prices or rankings |
@@ -169,6 +174,27 @@ work that does not ship in the app.
   dynamic-import `buildExtracurriculars` inside an effect. Type-only imports
   from key-dates are free. Reverting any of this to a static import + `useMemo`
   silently adds ~25 kB back to First Load JS.
+- **Matching annotates; it does not hide — so `matchedOnly` is mandatory on any
+  surface with no filter panel.** `buildExtracurriculars` returns the whole
+  catalog carrying `offField`/`offRegion`, and the filter panel does the
+  narrowing. Three surfaces have no panel — the guest `EligibilityChecker`,
+  onboarding's `FirstWin`, and `lib/planner/load.ts` — and without
+  `matchedOnly` each silently shows a student other people's opportunities. The
+  leak is invisible: nothing looks broken, there are just more rows. A unit test
+  pins all three files by name.
+- **A hand-built regex needs a second test proving it BITES.** The companion's
+  bundle guard was written as a template literal, where `\s` is the letter s and
+  `\b` is a backspace — it compiled to `imports+(?!type\b)[^;]*froms+…`, matched
+  nothing, and passed against a clean codebase exactly as it would have passed
+  against the bug it existed to catch. Assemble patterns from RegExp literals
+  via `.source` so the parser owns the escaping.
+- **Some faults are only visible by opening the page.** Three review passes on
+  the companion found six real bugs by reading code and none of the three that
+  mattered most: it was never sticky (a grid item stretches to its row, so a
+  4054px "sticky" box has nothing to stick to), its bottom sat below the fold
+  and could not be scrolled to, and it asked two things at once. When a surface
+  is session-gated, a temporary local fixture in its loader is the honest way to
+  look — patch, measure in the browser, revert before committing.
 - **Only two questions are ever mandatory** (school year, field), both answered
   inline on Opportunities. Everything else — the quiz, careers, the full
   analysis intake — is optional and dismissible.
