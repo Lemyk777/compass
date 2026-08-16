@@ -304,7 +304,7 @@ function Group({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap gap-1.5">{children}</div>
         {note && (
-          <p className="mt-1.5 max-w-[60ch] text-xs leading-relaxed text-ink-faint">
+          <p className="mt-1.5 max-w-[54ch] text-xs leading-relaxed text-ink-faint">
             {note}
           </p>
         )}

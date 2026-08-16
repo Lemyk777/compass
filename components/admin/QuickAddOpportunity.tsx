@@ -106,7 +106,7 @@ export function QuickAddOpportunity() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-ink">Add an opportunity</h2>
-          <p className="mt-1 max-w-[60ch] text-xs leading-relaxed text-ink-soft">
+          <p className="mt-1 max-w-[54ch] text-xs leading-relaxed text-ink-soft">
             Publishes immediately, into the same list and the same card as
             everything else. Every field below is one a student actually reads.
           </p>

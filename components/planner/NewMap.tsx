@@ -39,7 +39,7 @@ export function NewMap({ empty = false }: { empty?: boolean }) {
           <h2 className="text-base font-semibold text-ink">
             Start with a question
           </h2>
-          <p className="mt-1 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+          <p className="mt-1 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
             A map is one question broken into branches. Put your options on it,
             and what each one would actually need — then send any branch to your
             plan when you decide.

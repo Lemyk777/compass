@@ -557,9 +557,10 @@ export default async function LandingPage() {
               {/* Its own cap, in `ch`, because the parent’s `max-w-2xl` is a
                 rem measure and does not track the type: at 16px it rendered 89
                 real characters per line once the band widened to 1440. The
-                repo’s idiom is `max-w-[60ch]`, which lands at ~72 — a `ch` is
-                the width of a ZERO, not of an average letter. */}
-              <p className="mt-2 max-w-[60ch] text-pretty text-base font-light leading-relaxed text-ink/60">
+                repo’s idiom is `max-w-[54ch]`, measured at 68–72 real
+                characters — a `ch` is the width of a ZERO, not of an average
+                letter, so the count runs ~1.3x the number you write. */}
+              <p className="mt-2 max-w-[54ch] text-pretty text-base font-light leading-relaxed text-ink/60">
                 Post it under your own name, logo and verification tick, and it
                 appears on the list students actually read — with your deadline
                 treated as the organiser&rsquo;s own word, not a scrape.

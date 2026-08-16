@@ -679,13 +679,22 @@ obvious-looking mistake: **a wider container must be answered with more cards
 per row, or a side rail moved up beside the content — never with longer text.**
 Widening alone took the country page to 131 characters per line against a
 readable measure of 60–75. Long-form prose therefore carries its own cap
-(`max-w-[60ch]`) regardless of how wide the shell is.
+(`max-w-[54ch]`) regardless of how wide the shell is.
 
 Two things learned by measuring, worth not rediscovering:
 
-- **`ch` is the width of a zero, not of an average letter.** `68ch` rendered as
-  ~82 real characters in this font; `60ch` lands at ~72. Set the cap by
-  measuring, not by reading the number as characters.
+- **`ch` is the width of a zero, not of an average letter**, and in this font
+  the real count runs about **1.3×** the number you write. So `54ch` measures
+  68–72 characters and `60ch` measures **79–80** — outside the band, which is
+  why the cap is 54 and not 60. Set it by measuring, not by reading the number
+  as characters.
+  **Measure the way a reader reads: exclude the ragged last line.** The
+  earlier note here claimed `60ch` landed at ~72 and the cap stood at 60 for
+  several releases on the strength of it. Averaging the final part-line in
+  drags the mean down by roughly a whole tier and makes an over-wide column
+  look compliant. Count characters per *full* line — walk the text node with a
+  `Range` and group by `getBoundingClientRect().top`, which is font-independent
+  and cannot be fooled the way a canvas `measureText` can.
 - **Density has to be applied at the level that actually repeats.** Making the
   city cards 4-up cut the page by 2%, because the list is grouped by country and
   15 of the 19 groups hold a single city. Flowing the *groups* into columns cut

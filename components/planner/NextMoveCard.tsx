@@ -53,7 +53,7 @@ export function NextMoveCard({ move }: { move: NextMove }) {
         {move.headline}
       </h2>
 
-      <p className="mt-2.5 max-w-[60ch] text-pretty text-[0.95rem] leading-relaxed text-ink-soft">
+      <p className="mt-2.5 max-w-[54ch] text-pretty text-[0.95rem] leading-relaxed text-ink-soft">
         {move.why}
       </p>
 

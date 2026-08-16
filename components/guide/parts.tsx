@@ -275,7 +275,7 @@ export function DetailShell({
         </h1>
         {sub && <p className="mt-1 text-sm text-ink-faint">{sub}</p>}
         {lead && (
-          <p className="mt-3 max-w-[60ch] text-pretty text-base leading-relaxed text-ink-soft">
+          <p className="mt-3 max-w-[54ch] text-pretty text-base leading-relaxed text-ink-soft">
             {lead}
           </p>
         )}
@@ -432,14 +432,14 @@ export function ForYou({
     <section className={`grid gap-3 ${avoid ? "sm:grid-cols-2" : ""}`}>
       <div className="rounded-2xl border border-accent/40 bg-accent-soft/25 p-4 sm:p-5">
         <h2 className="text-sm font-semibold text-ink">{suitsLabel}</h2>
-        <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+        <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
           {suits}
         </p>
       </div>
       {avoid && (
         <div className="rounded-2xl border border-reach/40 bg-reach-soft/25 p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-ink">{avoidLabel}</h2>
-          <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+          <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
             {avoid}
           </p>
         </div>
@@ -481,7 +481,7 @@ export function GuideBlock({
   // columns, never longer lines. Unbounded, these ran to 131 characters on a
   // 1900px screen — nearly double the readable measure.
   const body = (
-    <div className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+    <div className="mt-1.5 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
       {children}
     </div>
   );

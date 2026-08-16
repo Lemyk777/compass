@@ -118,7 +118,7 @@ export default async function OpportunityPage({
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
               {o.name}
             </h1>
-            <p className="mt-3 max-w-[60ch] text-pretty text-base leading-relaxed text-ink-soft">
+            <p className="mt-3 max-w-[54ch] text-pretty text-base leading-relaxed text-ink-soft">
               {o.blurb}
             </p>
             {/* `fields: "all"` is a real value and means every subject — the
@@ -177,7 +177,7 @@ export default async function OpportunityPage({
             <ShareLink path={`/opportunities/${o.id}`} />
           </div>
 
-          <p className="max-w-[60ch] text-sm leading-relaxed text-ink-faint">
+          <p className="max-w-[54ch] text-sm leading-relaxed text-ink-faint">
             Sending this to someone sends the four facts above, not just a name
             — they will see who can enter and what it costs before they decide.
           </p>
