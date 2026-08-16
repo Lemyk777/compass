@@ -40,17 +40,5 @@ export const TIER_HEX: Record<Tier, string> = {
   likely: "rgb(var(--likely))",
 };
 
-export const CONFIDENCE_LABEL: Record<Confidence, string> = {
-  low: "Low confidence",
-  medium: "Medium confidence",
-  high: "High confidence",
-};
-
-export const TIER_ORDER: Record<Tier, number> = {
-  likely: 0,
-  target: 1,
-  reach: 2,
-};
-
 /** Chart fill for the brand accent. A variable, so it lightens in dark mode. */
 export const ACCENT = "rgb(var(--accent))";

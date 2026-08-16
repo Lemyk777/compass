@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { REGION_LABEL, type RegionKey } from "@/lib/data/world";
+import { REGION_LABEL, type RegionKey } from "@/lib/data/regions";
 import {
   GUIDE_FILTER_KEYS,
   parseGuideFilters,
@@ -22,9 +22,12 @@ import {
 // regions should not cost four presses of Back, and narrowing a list you are
 // halfway down should not throw you to the top.
 //
-// `REGION_LABEL` is a five-entry constant, the only runtime import here. The
-// datasets it sits next to in `world.ts` never enter this bundle — the rows and
-// their counts are computed on the server and arrive as props.
+// `REGION_LABEL` comes from `lib/data/regions.ts`, a leaf module, and NOT from
+// `world.ts` where the taxonomy used to live beside the 822-line registry. That
+// import was measured and did shake clean — but it read as a violation to every
+// reviewer, and the identical-looking one in `RoadmapView` shipped the whole
+// catalog to eight routes because `key-dates.ts` cannot be shaken. The rows and
+// their counts still arrive as props, computed on the server.
 
 /** Debounce for the search box. */
 const TYPING_MS = 250;

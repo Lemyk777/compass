@@ -11,15 +11,15 @@
 // it still never emits the number. The number always comes from tier → table.
 
 import { gpaToPercent, type Activity, type Honor, type Grades, type Tests } from "@/lib/types";
+import type { FactorKey } from "@/lib/rubric";
 
-export type Factor =
-  | "academics"
-  | "test_scores"
-  | "course_rigor"
-  | "leadership"
-  | "extracurricular_depth"
-  | "awards"
-  | "narrative_fit";
+/**
+ * The rubric's factor list, not a second copy of it. These were two identical
+ * seven-member unions in two files with nothing relating them — in the part of
+ * the product that produces the numbers a student is shown, where a rubric
+ * change touching one and not the other is a silent scoring divergence.
+ */
+export type Factor = FactorKey;
 export type Tier = 1 | 2 | 3 | 4;
 
 export type ArguedScore = {

@@ -165,7 +165,3 @@ export function simulationsForArea(slug: string): JobSimulation[] {
   return JOB_SIMULATIONS.filter((s) => s.areas.includes(slug)).slice(0, 3);
 }
 
-/** How many areas we can offer a try at — for anything that wants to say so. */
-export function areasWithSimulations(): Set<string> {
-  return new Set(JOB_SIMULATIONS.flatMap((s) => s.areas));
-}

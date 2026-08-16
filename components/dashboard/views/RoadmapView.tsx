@@ -7,12 +7,18 @@ import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { PageHeader } from "@/components/dashboard/states";
 import { formatDate } from "@/lib/data/opportunity-format";
 import { COUNTRY_CONTENT } from "@/lib/data/country-content";
-import {
-  buildRoadmap,
-  type Regime,
-  type Roadmap,
-  type RoadmapAction,
-  type RoadmapPhase,
+// TYPE-ONLY, and that is load-bearing. `roadmap.ts` reaches `key-dates.ts` for
+// `buildStudyPlan`, and key-dates builds a lookup map over the whole ~2,700-row
+// catalog at module load — so it cannot be tree-shaken, and a runtime import
+// here put the catalog in the INITIAL bundle of four dashboard routes and their
+// four demo twins. Measured at 27–28 kB each. `buildRoadmap` is loaded through
+// a dynamic `import()` below instead, exactly as the three matching views load
+// `buildExtracurriculars`.
+import type {
+  Regime,
+  Roadmap,
+  RoadmapAction,
+  RoadmapPhase,
 } from "@/lib/data/roadmap";
 import { useT } from "@/lib/i18n/client";
 
@@ -38,27 +44,53 @@ export function RoadmapView() {
   // one's real, verified deadline (US via app-deadlines, others via the
   // hand-verified intl-deadlines dataset). Per-country reads come from the
   // content registry (lib/data/country-content.ts).
-  const uniq = (a: string[]) => [...new Set(a.filter(Boolean))];
-  const targets = analysis
-    ? COUNTRY_CONTENT.map((c) => ({
-        code: c.code,
-        universities: uniq(c.universities(analysis)),
-      })).filter((t) => t.universities.length > 0)
-    : [];
-
-  const roadmap = today
-    ? buildRoadmap({
-        today,
-        graduationYear: profileMeta.graduationYear,
-        faculties: profileMeta.faculties,
-        satScore: profileMeta.satScore,
-        homeCountry: profileMeta.homeCountry,
-        targets,
-        planActions: analysis?.timeline ?? [],
-        liveSatSittings: liveDates.satSittings,
-        liveCompetitions: liveDates.competitions,
-      })
-    : null;
+  // Built in an effect off a dynamic import, so the catalog `roadmap.ts` pulls
+  // in is a separate async chunk rather than this route's initial JS. The plan
+  // is null for one paint, which the skeleton below already handled — it was
+  // null until `today` resolved anyway.
+  //
+  // `targets` is derived INSIDE the effect on purpose: it builds a fresh array
+  // every render, so as a dependency it would re-run this on every paint.
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
+  useEffect(() => {
+    if (!today) return;
+    let cancelled = false;
+    const uniq = (a: string[]) => [...new Set(a.filter(Boolean))];
+    const targets = analysis
+      ? COUNTRY_CONTENT.map((c) => ({
+          code: c.code,
+          universities: uniq(c.universities(analysis)),
+        })).filter((t) => t.universities.length > 0)
+      : [];
+    import("@/lib/data/roadmap").then((m) => {
+      if (cancelled) return;
+      setRoadmap(
+        m.buildRoadmap({
+          today,
+          graduationYear: profileMeta.graduationYear,
+          faculties: profileMeta.faculties,
+          satScore: profileMeta.satScore,
+          homeCountry: profileMeta.homeCountry,
+          targets,
+          planActions: analysis?.timeline ?? [],
+          liveSatSittings: liveDates.satSittings,
+          liveCompetitions: liveDates.competitions,
+        }),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    today,
+    analysis,
+    profileMeta.graduationYear,
+    profileMeta.faculties,
+    profileMeta.satScore,
+    profileMeta.homeCountry,
+    liveDates.satSittings,
+    liveDates.competitions,
+  ]);
 
   return (
     <div className="space-y-5">

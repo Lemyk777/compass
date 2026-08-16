@@ -3,7 +3,39 @@
 // all read from here. Adding a country later (once it has a dataset + an
 // analysis path) is a one-line change in DESTINATIONS plus its data file.
 
-export type DestinationCode = "US" | "IT" | "HK" | "AE" | "KR" | "CN" | "CA";
+// Availability is a TYPE here, not only a runtime flag, and that is the whole
+// point of the shape below.
+//
+// The comment above has promised since the file was written that adding a
+// country is a one-line change. It was not true: four other places hand-wrote
+// `"US" | "IT" | "HK" | "AE" | "KR"` — the college-list builder, the rankings
+// board, the map markers and a parameter in dashboard/actions — with nothing
+// relating any of them to this registry. Flipping CN or CA on would have grown
+// the runtime array and left all four silently short, with no type error
+// anywhere, because no relationship had ever been declared.
+//
+// Now `AvailableDestinationCode` is derived from the live list, every one of
+// those places imports it, and promoting a country really is one line: move the
+// code from PLANNED to AVAILABLE and the compiler names each place that has to
+// answer for it.
+export const AVAILABLE_DESTINATION_CODES = [
+  "US",
+  "IT",
+  "HK",
+  "AE",
+  "KR",
+] as const;
+
+/** Profiled but not yet live: no dataset and no analysis path. */
+export const PLANNED_DESTINATION_CODES = ["CN", "CA"] as const;
+
+/** A country a student can actually be analysed for today. */
+export type AvailableDestinationCode =
+  (typeof AVAILABLE_DESTINATION_CODES)[number];
+
+export type DestinationCode =
+  | AvailableDestinationCode
+  | (typeof PLANNED_DESTINATION_CODES)[number];
 
 export type Destination = {
   code: DestinationCode;
@@ -15,26 +47,27 @@ export type Destination = {
   available: boolean;
 };
 
-// Order is the display order on the destination step. Available ones first.
-export const DESTINATIONS: Destination[] = [
-  { code: "US", labelKey: "dest.US", flag: "🇺🇸", available: true },
-  { code: "IT", labelKey: "dest.IT", flag: "🇮🇹", available: true },
-  { code: "HK", labelKey: "dest.HK", flag: "🇭🇰", available: true },
-  { code: "AE", labelKey: "dest.AE", flag: "🇦🇪", available: true },
-  { code: "KR", labelKey: "dest.KR", flag: "🇰🇷", available: true },
-  { code: "CN", labelKey: "dest.CN", flag: "🇨🇳", available: false },
-  { code: "CA", labelKey: "dest.CA", flag: "🇨🇦", available: false },
+const FLAG: Record<DestinationCode, string> = {
+  US: "🇺🇸",
+  IT: "🇮🇹",
+  HK: "🇭🇰",
+  AE: "🇦🇪",
+  KR: "🇰🇷",
+  CN: "🇨🇳",
+  CA: "🇨🇦",
+};
+
+export const ALL_DESTINATION_CODES: DestinationCode[] = [
+  ...AVAILABLE_DESTINATION_CODES,
+  ...PLANNED_DESTINATION_CODES,
 ];
 
-export const ALL_DESTINATION_CODES: DestinationCode[] = DESTINATIONS.map(
-  (d) => d.code
-);
+// Order is the display order on the destination step. Available ones first —
+// which is now a property of how the list is built, not a hand-kept ordering.
+export const DESTINATIONS: Destination[] = ALL_DESTINATION_CODES.map((code) => ({
+  code,
+  labelKey: `dest.${code}`,
+  flag: FLAG[code],
+  available: (AVAILABLE_DESTINATION_CODES as readonly string[]).includes(code),
+}));
 
-export const AVAILABLE_DESTINATION_CODES: DestinationCode[] = DESTINATIONS.filter(
-  (d) => d.available
-).map((d) => d.code);
-
-/** Human label key for a code (falls back to the raw code). */
-export function destinationLabelKey(code: string): string | undefined {
-  return DESTINATIONS.find((d) => d.code === code)?.labelKey;
-}

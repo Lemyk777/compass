@@ -1,10 +1,16 @@
+import type { AvailableDestinationCode } from "@/lib/data/destinations";
+
 // University markers for the landing-page country-outline map.
 // Each country is rendered as a colored vector map (see OutlineMap) with these
 // universities placed as logo chips by [lon, lat]. Keep the lists short — the
 // point of the contour view is to show only the handful of top schools per
 // country and skip the empty space between them.
 
-export type CountryCode = "US" | "IT" | "HK" | "KR" | "AE";
+/**
+ * Derived, never re-typed. This copy had even drifted in member ORDER from the
+ * other two, which is how a set written down twice starts reading as two sets.
+ */
+export type CountryCode = AvailableDestinationCode;
 
 export type UniMarker = {
   name: string;

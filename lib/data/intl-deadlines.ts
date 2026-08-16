@@ -16,7 +16,7 @@
 // most years); the calendar year is resolved from the student's graduation year,
 // exactly like app-deadlines.ts. ⚠️ VERIFY ANNUALLY — sources checked 2026-07-02.
 
-import { daysBetween } from "@/lib/data/key-dates";
+import { daysBetween } from "@/lib/data/opportunity-format";
 
 export type IntlRound = { label: string; month: number; day: number };
 

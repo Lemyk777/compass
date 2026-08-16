@@ -127,8 +127,6 @@ export const UNIVERSITIES: University[] = [
   { id: "temple-japan", name: "Temple University, Japan Campus", acceptance_rate: 0.8, sat_p25: 1150, sat_p75: 1370, intl_aid: "scholarships", notes_international: "Branch campus in Tokyo, Japan — US Temple degree; test-optional with year-round rolling admissions via TUJ's own application (decisions in ~4 weeks); accessible admit rate, some merit aid." },
 ];
 
-export const UNIVERSITY_NAMES = UNIVERSITIES.map((u) => u.name);
-
 export function findUniversity(nameOrId: string): University | undefined {
   const q = nameOrId.trim().toLowerCase();
   return UNIVERSITIES.find(

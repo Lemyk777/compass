@@ -98,9 +98,16 @@ const TIER_WHY: Record<CompetitionTier, string> = {
 
 export function OpportunityDetail({
   o,
+  commit,
   onClose,
 }: {
   o: Opportunity;
+  /**
+   * The commitment step, when the surface that opened this panel has one — see
+   * `OpportunityCard`. A NODE, not an import: this panel also serves the public
+   * checker, which has no `DashboardProvider` for `CommitRow` to read from.
+   */
+  commit?: React.ReactNode;
   onClose: () => void;
 }) {
   const cost = opportunityCost(o);
@@ -305,6 +312,21 @@ export function OpportunityDetail({
             )}
           </Section>
         </div>
+
+        {/* ── The decision ───────────────────────────────────────────────
+            "I'm doing this" → when will you start? It sits OUTSIDE the
+            scrolling body, directly above the links out, for the reason the
+            whole step exists: it is the only action on this panel that we can
+            observe, and one that scrolls away is one a reader meets by luck.
+
+            Above the actions rather than among them, because those two are
+            doors OUT — the organiser's page, a calendar file, a shareable
+            address — and this is the one thing that happens here. */}
+        {commit && (
+          <div className="border-t border-line bg-surface/60 px-5 py-4 sm:px-6">
+            {commit}
+          </div>
+        )}
 
         {/* ── Actions ────────────────────────────────────────────────────── */}
         <div className="flex flex-wrap items-center gap-2.5 border-t border-line px-5 py-4 sm:px-6">

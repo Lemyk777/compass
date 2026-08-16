@@ -11,7 +11,6 @@
 //
 // Bocconi is private (different system; not DSU-eligible).
 
-export type ItalyAdmissionBranch = "guaranteed" | "graduatoria";
 export type ItalianProgramField =
   | "engineering"
   | "economics"
@@ -665,10 +664,6 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
   },
 ];
 
-export const ITALIAN_PROGRAM_NAMES = ITALIAN_PROGRAMS.map(
-  (p) => `${p.university} — ${p.program_name}`
-);
-
 export function findItalianProgram(idOrName: string): ItalianProgram | undefined {
   const q = idOrName.trim().toLowerCase();
   return ITALIAN_PROGRAMS.find(
@@ -676,10 +671,4 @@ export function findItalianProgram(idOrName: string): ItalianProgram | undefined
       p.id === q ||
       `${p.university} — ${p.program_name}`.toLowerCase() === q
   );
-}
-
-export function getItalianProgramsByField(
-  field: ItalianProgramField
-): ItalianProgram[] {
-  return ITALIAN_PROGRAMS.filter((p) => p.field === field);
 }

@@ -920,20 +920,54 @@ function FitSection({
         </h2>
         <p className="text-xs text-ink-faint">{hint}</p>
       </div>
-      <ul className="mt-3 grid gap-2.5 2xl:grid-cols-2">
-        {page.map((o, i) => (
-          <li
-            key={o.id}
-            // Only the newly revealed rows animate in — re-animating the whole
-            // group on every "show more" would read as a flicker.
-            className={
-              i >= limit - PAGE && limit > PAGE ? "animate-fade-up" : undefined
-            }
-          >
-            <OpportunityRow o={o} />
-          </li>
-        ))}
-      </ul>
+      {/* Width buys COLUMNS, never line length — and this list was the one
+          place in the product still spending it as height. It was
+          `2xl:grid-cols-2`: one column until 1536px, so the product's MAIN
+          list was its least dense, while the guide's have run `sm:2 → xl:3 →
+          2xl:4` for three releases.
+
+          Two columns, never three, and the number is measured rather than
+          copied from the guide — this card has a cliff, not a curve. Stepped
+          through exact widths it is flat at 272px tall from 380px up, jumps to
+          356px at 340–360 as the title takes a third line, and reaches 421px
+          at 320. 380px a card is the knee; a third column would be 320px even
+          at 1536, which is precisely the width that breaks.
+
+          It is a CONTAINER query (`.opp-list`/`.opp-grid` in globals.css)
+          rather than a `lg:grid-cols-2`, because this list renders in two
+          shells that leave it different room: 924px in the student's section
+          at 1024 against 652px in the report's, whose sidebar spends the width
+          instead. One viewport breakpoint cannot be right in both — `lg`
+          measured 457px cards in one and 321px in the other.
+
+          The companion is why the student's numbers dip in the middle: from
+          `xl` it takes a 20rem column, so that list goes 924 → 812 → 822 →
+          982px as the window grows from 1024 to 1536. It is also why the
+          specced filter rail is NOT built — the companion already owns the one
+          spare column, and a 256px rail measured out at 282px cards at 1280.
+          The numbers are in the design doc so nobody re-derives them. */}
+      <div className="opp-list mt-3">
+        <ul className="opp-grid grid gap-2.5">
+          {page.map((o, i) => (
+            <li
+              key={o.id}
+              // `grid` so the card stretches to the tallest in its row. Cards
+              // only ever sat alone in a row before, so ragged bottoms could
+              // not happen; in columns they are the default.
+              //
+              // Only the newly revealed rows animate in — re-animating the
+              // whole group on every "show more" would read as a flicker.
+              className={
+                i >= limit - PAGE && limit > PAGE
+                  ? "grid animate-fade-up"
+                  : "grid"
+              }
+            >
+              <OpportunityRow o={o} />
+            </li>
+          ))}
+        </ul>
+      </div>
       {rest > 0 && (
         <button
           type="button"

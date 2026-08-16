@@ -49,9 +49,3 @@ function useCtx(): Ctx {
 export function useT(): TFunc {
   return useCtx().t;
 }
-
-/** Current language + setter (for the language toggle). */
-export function useLang() {
-  const { lang, setLang } = useCtx();
-  return { lang, setLang };
-}

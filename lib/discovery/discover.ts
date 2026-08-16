@@ -27,6 +27,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { FACULTY_LABEL, FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
 import type { LocalTarget } from "@/lib/data/geo";
 import {
+  COMPETITION_CATEGORIES,
+  COMPETITION_LEVELS,
+  COMPETITION_TIERS,
   COMPETITIONS,
   type CompetitionCategory,
   type CompetitionLevel,
@@ -109,15 +112,31 @@ export function slugify(name: string): string {
     .slice(0, 60);
 }
 
-const LEVELS: CompetitionLevel[] = ["international", "national", "regional"];
-const TIERS: CompetitionTier[] = ["accessible", "selective", "elite"];
-const CATEGORIES: CompetitionCategory[] = [
-  "competition",
-  "olympiad",
-  "course",
-  "research_program",
-  "summer_program",
-];
+// These three sanitize the model's enum output, and all three used to be
+// hand-written copies of the catalog's own vocabularies. A `CompetitionLevel[]`
+// literal is checked for wrong members and never for missing ones, so a new
+// level or tier would have been silently rewritten to the fallback here — the
+// same hole that lost a whole kind of opportunity its tab in release 3.
+const LEVELS = COMPETITION_LEVELS;
+const TIERS = COMPETITION_TIERS;
+
+/**
+ * Kinds discovery may NOT assign, stated as an exclusion so that adding a kind
+ * forces a decision instead of quietly inheriting one.
+ *
+ * `community` is a place rather than an event and `simulation` names a real
+ * employer's exercise — both are curated by hand, and a scraper guessing at
+ * either would produce exactly the rows those kinds exist to keep honest.
+ */
+const NOT_DISCOVERABLE = [
+  "community",
+  "simulation",
+] as const satisfies readonly CompetitionCategory[];
+
+const CATEGORIES: readonly CompetitionCategory[] = COMPETITION_CATEGORIES.filter(
+  (c): c is CompetitionCategory =>
+    !(NOT_DISCOVERABLE as readonly string[]).includes(c),
+);
 
 function daysFromToday(iso: string): number {
   const ms = new Date(iso + "T00:00:00Z").getTime() - Date.now();
@@ -417,9 +436,9 @@ export async function verifyCandidates(
     seenThisRun.add(id);
 
     // Sanitize enums.
-    const level = (LEVELS as string[]).includes(c.level) ? (c.level as CompetitionLevel) : "national";
-    const tier = (TIERS as string[]).includes(c.tier) ? (c.tier as CompetitionTier) : "accessible";
-    const category = (CATEGORIES as string[]).includes(c.category)
+    const level = (LEVELS as readonly string[]).includes(c.level) ? (c.level as CompetitionLevel) : "national";
+    const tier = (TIERS as readonly string[]).includes(c.tier) ? (c.tier as CompetitionTier) : "accessible";
+    const category = (CATEGORIES as readonly string[]).includes(c.category)
       ? (c.category as CompetitionCategory)
       : "competition";
     const fields =

@@ -507,8 +507,3 @@ export const UAE_PROGRAMS: UaeProgram[] = [
 export function findUaeProgram(id: string): UaeProgram | undefined {
   return UAE_PROGRAMS.find((p) => p.id === id);
 }
-
-/** Display label for a program (used in intake + report). */
-export function uaeProgramLabel(p: UaeProgram): string {
-  return `${p.university} — ${p.program_name}`;
-}

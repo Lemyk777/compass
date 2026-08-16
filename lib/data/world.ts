@@ -23,29 +23,15 @@ import type { FacultyValue } from "@/lib/data/faculties";
 // exists), not figures that rot: no salary numbers, no rankings, no counts.
 // Scholarship names still need a yearly sanity check.
 
-export type RegionKey =
-  | "central_asia"
-  | "europe"
-  | "asia_pacific"
-  | "middle_east"
-  | "north_america";
-
-export const REGION_LABEL: Record<RegionKey, string> = {
-  central_asia: "Central Asia & the Caucasus",
-  europe: "Europe",
-  asia_pacific: "Asia-Pacific",
-  middle_east: "Middle East & Türkiye",
-  north_america: "North America",
-};
-
-/** Curated display order — home region first, deliberately. */
-export const REGION_ORDER: RegionKey[] = [
-  "central_asia",
-  "europe",
-  "middle_east",
-  "asia_pacific",
-  "north_america",
-];
+// The region taxonomy moved to `lib/data/regions.ts` — a leaf module a client
+// component can import without dragging this registry behind it. Re-exported
+// here so every existing `from "@/lib/data/world"` keeps resolving.
+import {
+  REGION_LABEL,
+  REGION_ORDER,
+  type RegionKey,
+} from "@/lib/data/regions";
+export { REGION_LABEL, REGION_ORDER, type RegionKey };
 
 export type Hub = {
   id: string;
