@@ -57,11 +57,13 @@ import {
   NO_FILTERS,
   activeChips,
   categoryFromParam,
+  matchedCount,
   activeFilterCount,
   filterOpportunities,
   opportunityFacets,
   withoutChip,
   type CostBucket,
+  type OpportunityFilters,
   type TimingBucket,
 } from "@/lib/data/opportunity-filter";
 import { emptyProfile } from "@/lib/types";
@@ -473,9 +475,25 @@ const FILTER_POOL: Opportunity[] = [
 
 const ids = (items: Opportunity[]) => items.map((o) => o.id).sort();
 
-test("no filters is the identity — the default render pays nothing", () => {
-  assert.equal(filterOpportunities(FILTER_POOL, NO_FILTERS), FILTER_POOL);
+test("the neutral state still narrows to the student's own list", () => {
+  // This used to assert reference identity — "no active filters, same array
+  // back". That stopped being true and, more importantly, stopped being RIGHT:
+  // the neutral state now keeps both match narrowings on, so a student who has
+  // touched nothing gets their own list rather than all 172. Returning the
+  // array untouched would have been the exact bug this group was added to fix.
+  //
+  // Nothing in the pool is off-field or off-region, so the CONTENT is
+  // unchanged, and the badge still reads zero: narrowing the student never
+  // asked for is not a choice they made.
+  assert.deepEqual(filterOpportunities(FILTER_POOL, NO_FILTERS), FILTER_POOL);
   assert.equal(activeFilterCount(NO_FILTERS), 0);
+
+  const withOutsiders = [...FILTER_POOL, opp({ id: "elsewhere", offField: true })];
+  assert.equal(
+    filterOpportunities(withOutsiders, NO_FILTERS).length,
+    FILTER_POOL.length,
+    "the default let an off-field row through",
+  );
 });
 
 test("filtering to free never includes a cost we haven't verified", () => {
@@ -594,12 +612,16 @@ test("facet counts lift their own group and keep the others", () => {
 });
 
 test("the chips and the badge can never disagree", () => {
-  const f = {
+  const f: OpportunityFilters = {
+    ...NO_FILTERS,
     query: "robotics",
     cost: ["free", "paid"] as CostBucket[],
     timing: ["closing"] as TimingBucket[],
     levels: ["national"] as CompetitionLevel[],
     openOnly: true,
+    // Widened too, so the invariant is checked across the one group that is
+    // counted by what is MISSING rather than by what is set.
+    matched: ["region" as const],
   };
   const chips = activeChips(f);
   assert.equal(chips.length, activeFilterCount(f));
@@ -6272,4 +6294,80 @@ test("a beat opens with the ACTION, not with scenery", () => {
       `${b.id} opens on scenery rather than on the thing you are doing`,
     );
   }
+});
+
+// ── The gates, made visible ──────────────────────────────────────────────────
+test("by default the student still gets their own list", () => {
+  assert.deepEqual([...NO_FILTERS.matched].sort(), ["field", "region"]);
+  assert.equal(
+    activeFilterCount(NO_FILTERS),
+    0,
+    "the default must be quiet — it is not a choice the student made",
+  );
+});
+
+test("unchecking a match option widens the list and counts as an active filter", () => {
+  // This group is INVERTED from every other one: elsewhere an empty array means
+  // "no narrowing", here the default is both ON. So it is counted by what is
+  // MISSING — and it must count, because the panel's standing rule is that any
+  // active filter opens the full list on its own.
+  assert.equal(activeFilterCount({ ...NO_FILTERS, matched: ["region"] }), 1);
+  assert.equal(activeFilterCount({ ...NO_FILTERS, matched: [] }), 2);
+});
+
+test("the match group filters on the annotation, both ways", () => {
+  const rows = [
+    opp({ id: "mine" }),
+    opp({ id: "other-field", offField: true }),
+    opp({ id: "other-place", offRegion: true }),
+  ];
+  assert.deepEqual(
+    filterOpportunities(rows, NO_FILTERS).map((o) => o.id),
+    ["mine"],
+  );
+  assert.deepEqual(
+    filterOpportunities(rows, { ...NO_FILTERS, matched: ["region"] })
+      .map((o) => o.id)
+      .sort(),
+    ["mine", "other-field"],
+  );
+  assert.equal(
+    filterOpportunities(rows, { ...NO_FILTERS, matched: [] }).length,
+    3,
+  );
+});
+
+test("the match counts say what each narrowing is removing", () => {
+  const rows = [
+    opp({ id: "a" }),
+    opp({ id: "b", offField: true }),
+    opp({ id: "c", offField: true }),
+    opp({ id: "d", offRegion: true }),
+  ];
+  const facets = opportunityFacets(rows, NO_FILTERS);
+  // Counted with THIS control's own selection lifted, like every other group —
+  // "how many would I see if this one were off".
+  assert.equal(facets.matched.field, 3, "a=on-field, b+c off-field, d still off-region");
+  assert.equal(facets.matched.region, 2, "a plus d, with b+c still cut by field");
+});
+
+test("the honest count is computed, never written down", () => {
+  // The control that used to sit here read "Show everything we track for you
+  // (114)", where "everything" was false — it was everything we MATCHED, and a
+  // student read it as "they only have 114".
+  assert.deepEqual(
+    matchedCount([opp({ id: "a" }), opp({ id: "b", offField: true })]),
+    { shown: 1, total: 2 },
+  );
+  assert.deepEqual(matchedCount([]), { shown: 0, total: 0 });
+});
+
+test("a widened list leaves a chip that puts the narrowing back", () => {
+  const chips = activeChips({ ...NO_FILTERS, matched: ["field"] });
+  const chip = chips.find((c) => c.group === "matched");
+  assert.ok(chip, "widening the list left nothing the student could undo");
+  assert.deepEqual(
+    withoutChip({ ...NO_FILTERS, matched: ["field"] }, chip!).matched.sort(),
+    ["field", "region"],
+  );
 });
