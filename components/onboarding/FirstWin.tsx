@@ -1,5 +1,6 @@
 "use client";
 
+import { matchedOnly } from "@/lib/data/opportunity-filter";
 import { useEffect, useMemo, useState } from "react";
 import type { ExtracurricularsPlan } from "@/lib/data/key-dates";
 import { useOnboardingContext } from "./context/OnboardingContext";
@@ -62,7 +63,10 @@ export function FirstWin() {
 
   if (!plan) return null;
 
-  const openNow = plan.items.filter((o) => !o.notYetEligible);
+  // No filter panel here either — see matchedOnly. This screen is the first
+  // thing a new student ever sees, so a row from another country or another
+  // subject is the worst possible first impression of "matched to you".
+  const openNow = matchedOnly(plan.items).filter((o) => !o.notYetEligible);
   if (openNow.length === 0) return null;
 
   const shown = openNow.slice(0, SHOWN);

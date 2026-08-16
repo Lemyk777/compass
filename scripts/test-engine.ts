@@ -58,6 +58,7 @@ import {
   activeChips,
   categoryFromParam,
   matchedCount,
+  matchedOnly,
   activeFilterCount,
   filterOpportunities,
   opportunityFacets,
@@ -6370,4 +6371,42 @@ test("a widened list leaves a chip that puts the narrowing back", () => {
     withoutChip({ ...NO_FILTERS, matched: ["field"] }, chip!).matched.sort(),
     ["field", "region"],
   );
+});
+
+test("every surface without a filter panel narrows to the student's own list", () => {
+  // Matching stopped hiding rows so the panel could own the narrowing — which
+  // means a surface with NO panel narrows nothing unless it asks. Three of them
+  // are in that position, and the leak is silent: nothing looks wrong, there
+  // are simply more rows than there should be. A student in Uzbekistan seeing a
+  // competition that only runs in Kazakhstan is the exact failure the region
+  // tag exists to prevent.
+  const files = [
+    "components/opportunities/EligibilityChecker.tsx",
+    "components/onboarding/FirstWin.tsx",
+    "lib/planner/load.ts",
+  ];
+  for (const file of files) {
+    const full = path.join(process.cwd(), file);
+    assert.ok(existsSync(full), `${file} is missing — this guard has no subject`);
+    const src = stripComments(readFileSync(full, "utf8"));
+    assert.match(
+      src,
+      /matchedOnly\(/,
+      `${file} reads the matched plan without calling matchedOnly — it will show a student other people's opportunities`,
+    );
+  }
+});
+
+test("matchedOnly keeps only what the student matches", () => {
+  const rows = [
+    opp({ id: "mine" }),
+    opp({ id: "other-field", offField: true }),
+    opp({ id: "other-place", offRegion: true }),
+    opp({ id: "both", offField: true, offRegion: true }),
+  ];
+  assert.deepEqual(
+    matchedOnly(rows).map((o) => o.id),
+    ["mine"],
+  );
+  assert.deepEqual(matchedOnly([]), []);
 });

@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { matchedOnly } from "@/lib/data/opportunity-filter";
 import { FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
 import { loadStudentContext } from "@/lib/dashboard/load";
 import { createClient } from "@/lib/supabase/server";
@@ -189,7 +190,10 @@ async function loadUncached(
     homeCountry: ctx.profileMeta.homeCountry,
     graduationYear: ctx.profileMeta.graduationYear,
   });
-  const enterable = plan.items.filter((o) => !o.notYetEligible);
+  // Same reason as the guest checker: the planner has no filter panel, so it
+  // must narrow to the student's own list itself or its counts and its
+  // suggestions quietly include other people's opportunities.
+  const enterable = matchedOnly(plan.items).filter((o) => !o.notYetEligible);
 
   // THE BRIDGE. The spine is dynamically imported for the same reason key-dates
   // is: it reaches five prose registries and must not join this module's static

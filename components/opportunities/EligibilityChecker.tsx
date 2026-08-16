@@ -1,5 +1,6 @@
 "use client";
 
+import { matchedOnly } from "@/lib/data/opportunity-filter";
 import { useEffect, useRef, useState } from "react";
 import type {
   Competition,
@@ -89,8 +90,13 @@ export function EligibilityChecker({
   // Open now vs later. The "later" ones stay knowable — a younger student
   // should be able to see what they are aiming at — but they never compete for
   // attention with what is actionable today.
-  const openNow = plan?.items.filter((o) => !o.notYetEligible) ?? [];
-  const later = plan?.items.filter((o) => o.notYetEligible) ?? [];
+  // `matchedOnly` because this page has NO filter panel: matching stopped
+  // hiding rows so the panel could own the narrowing, and a surface without one
+  // narrows nothing unless it asks. Without it a visitor in Uzbekistan is shown
+  // a competition that only runs in Kazakhstan.
+  const mine = matchedOnly(plan?.items ?? []);
+  const openNow = mine.filter((o) => !o.notYetEligible);
+  const later = mine.filter((o) => o.notYetEligible);
   // Actionable first. A real deadline earns the top spot (the promise on this
   // page is "and when they close"), then the ones with no deadline at all —
   // which a student can start tonight — and only then the "dates TBA" rows we

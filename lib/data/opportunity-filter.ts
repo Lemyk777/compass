@@ -368,10 +368,25 @@ export function matchedCount(items: Opportunity[]): {
   shown: number;
   total: number;
 } {
-  return {
-    shown: items.filter((o) => !o.offField && !o.offRegion).length,
-    total: items.length,
-  };
+  return { shown: matchedOnly(items).length, total: items.length };
+}
+
+/**
+ * Just the rows this student actually matches.
+ *
+ * **Every surface without a filter panel must call this**, and that is not a
+ * style preference — matching stopped hiding rows so the panel could own the
+ * narrowing, so a surface with no panel does no narrowing at all unless it asks.
+ * The guest eligibility checker, the onboarding first-win screen and the
+ * planner's loader are all in that position: without this a student in
+ * Uzbekistan is shown a competition that only runs in Kazakhstan, which is the
+ * exact failure the region tag exists to prevent.
+ *
+ * A unit test pins each of those three call sites, because the leak is silent —
+ * nothing looks wrong, there are simply more rows than there should be.
+ */
+export function matchedOnly(items: Opportunity[]): Opportunity[] {
+  return items.filter((o) => !o.offField && !o.offRegion);
 }
 
 // ── The active-filter summary ────────────────────────────────────────────────
