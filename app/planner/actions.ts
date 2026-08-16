@@ -6,6 +6,7 @@ import { LIMITS } from "@/lib/limits";
 import type { SaveResult } from "@/app/dashboard/actions";
 import {
   intentStatusFromPlanner,
+  PLANNER_STATUSES,
   type PlannerOrigin,
   type PlannerStatus,
 } from "@/lib/data/planner";
@@ -25,10 +26,11 @@ import {
 // Every bound below is enforced HERE and not only in the form: a server action
 // is a public HTTP endpoint and the form is a convenience.
 
-const PLANNER_STATUSES: PlannerStatus[] = ["todo", "doing", "done", "dropped"];
-
 function isPlannerStatus(v: unknown): v is PlannerStatus {
-  return PLANNER_STATUSES.includes(v as PlannerStatus);
+  // The list is imported, not restated. It used to be a `PlannerStatus[]`
+  // literal here, which type-checks while being INCOMPLETE — add a fifth status
+  // to the union and this endpoint silently rejects it.
+  return (PLANNER_STATUSES as readonly string[]).includes(v as string);
 }
 
 /**
@@ -152,44 +154,18 @@ export async function createPlannerItem(input: {
   return { ok: true };
 }
 
-export async function updatePlannerItem(input: {
-  id: string;
-  title?: string;
-  note?: string | null;
-  dueISO?: string | null;
-}): Promise<SaveResult> {
-  const uid = await currentUserId();
-  if (!uid) return { ok: false, error: "Please log in again." };
-
-  const patch: Record<string, unknown> = {
-    updated_at: new Date().toISOString(),
-  };
-  if (input.title !== undefined) {
-    const title = clean(input.title, LIMITS.plannerTitle);
-    if (!title) return { ok: false, error: "Give it a name first." };
-    patch.title = title;
-  }
-  if (input.note !== undefined)
-    patch.note = clean(input.note, LIMITS.plannerNote);
-  if (input.dueISO !== undefined) patch.due_date = cleanDate(input.dueISO);
-
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("planner_items")
-    .update(patch)
-    .eq("id", input.id)
-    .eq("user_id", uid);
-
-  if (error) {
-    return {
-      ok: false,
-      error: migrationHint(error.code) ?? "Could not save that. Try again.",
-    };
-  }
-
-  refresh();
-  return { ok: true };
-}
+// `updatePlannerItem` (title / note / due date) lived here and was removed: it
+// had never been reachable — the board offers Move and Delete and no edit — so
+// a student has always fixed a typo by deleting the task and retyping it.
+//
+// Deleted rather than wired up, and the difference from `deleteMap` next door is
+// the point. `createMap` REFUSES the thirteenth map with "delete one before
+// starting another", so the missing delete control was a promise the product
+// broke; nothing anywhere offers to edit a task, so this was only capability
+// nobody had asked for. Editing should arrive with its control designed, not sit
+// as an orphan gathering drift the way the old wizard's `StepKey` did — it still
+// listed three destinations after we had shipped five. The git history has it if
+// it is wanted.
 
 export async function deletePlannerItem(id: string): Promise<SaveResult> {
   const uid = await currentUserId();

@@ -102,10 +102,6 @@ export const PICK_KINDS: PickKindMeta[] = [
 
 const KIND_SET = new Set<string>(PICK_KINDS.map((k) => k.kind));
 
-export function pickKindMeta(kind: PickKind): PickKindMeta {
-  // Non-null: the ids are a closed union and the array covers all of them.
-  return PICK_KINDS.find((k) => k.kind === kind)!;
-}
 
 /** One thing the student claimed, as stored. */
 export type PlanPick = {

@@ -23,7 +23,7 @@ function icsText(s: string): string {
 }
 
 /** Build an iCalendar document (VEVENT per confirmed item, alarm 7 days out). */
-export function buildIcs(items: Competition[]): string {
+function buildIcs(items: Competition[]): string {
   const events = items
     .filter((c) => c.dateConfirmed)
     .map((c) =>

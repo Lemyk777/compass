@@ -543,8 +543,3 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
 export function findKoreaProgram(id: string): KoreaProgram | undefined {
   return KOREA_PROGRAMS.find((p) => p.id === id);
 }
-
-/** Display label for a program (used in intake + report). */
-export function koreaProgramLabel(p: KoreaProgram): string {
-  return `${p.university} — ${p.program_name}`;
-}
