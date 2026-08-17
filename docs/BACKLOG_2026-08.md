@@ -1,7 +1,7 @@
 # The backlog — state, findings, and what to do next
 
 The founder gave a 23-item fix/redesign list on 2026-08-10; items #24, #26 and
-#27 were added after. **Last updated 2026-08-14.** This file carries everything
+#27 were added after. **Last updated 2026-08-17.** This file carries everything
 a fresh session needs to continue without re-deriving it.
 
 Read [CLAUDE.md](../CLAUDE.md) first — it holds the product rules. This file
@@ -12,10 +12,10 @@ The planner's own design of record is [PLANNER_PLAN.md](PLANNER_PLAN.md).
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**As of 2026-08-16 everything through release 5 is IN PRODUCTION.** The habit of
-this file is to warn that the branch is ahead of `main`; right now it is not.
-Verify anyway — it takes ten seconds, and a stale note here has cost a release
-twice:
+**As of 2026-08-17 everything in this repository is in production.** `develop`
+and `origin/main` are the same commit. The habit of this file is to warn that
+the branch is ahead of `main`; right now it is not. Verify anyway — it takes ten
+seconds, and a stale note here has cost a release twice:
 
 ```bash
 git fetch origin && git log --oneline origin/main..HEAD
@@ -23,13 +23,93 @@ git fetch origin && git log --oneline origin/main..HEAD
 
 | | |
 |---|---|
-| On `main` (deployed) | the guided thread in full — the majors layer, the companion, the reaction engine. PRs [#111](https://github.com/Lemyk777/compass/pull/111) + [#112](https://github.com/Lemyk777/compass/pull/112) into `develop`, released via [#113](https://github.com/Lemyk777/compass/pull/113) |
-| Open | [#114](https://github.com/Lemyk777/compass/pull/114) — Opportunities: one list, honest counts, `matchedOnly`. Tasks 1–3 of its spec; **4–5 (filter rail, column grid, card type) not started** |
-| Branch | `feat/opportunities-one-list` |
-| Unit tests | **256** (`npm run test:unit`) |
+| On `main` (deployed) | everything through **release 7**. `origin/main` = `origin/develop` = `b745ab7`, merged via [#118](https://github.com/Lemyk777/compass/pull/118) |
+| Open PRs | none |
+| Branch | `develop` |
+| Unit tests | **268** (`npm run test:unit`) |
 | Session checks | **61** (`node --import tsx scripts/test-session-checks.ts`) |
 | Catalog | **172 entries · 0 broken links** (2 unverifiable — bot walls, reported without failing) |
 | Migrations | **All applied through `0031_beat_reactions.sql`** — `npm run db:check` reports 33/33 |
+
+Two catalog facts that surprise people, both deliberate and both currently zero:
+**nothing is `pinned`** and **nothing is `region`-tagged**. The NAO Cup row was
+the only instance of each, and it was removed on the owner's instruction — see
+the audit's A1, and A8, which is now the highest-value data work available. A
+unit test pins each zero, so the first row that changes either will fail and
+make somebody read why.
+
+### What shipped in release 7 — the copy pass, 2026-08-16
+
+The complaint was that the text reads as machine-written. It was measured rather
+than argued about, and **the usual suspect was innocent**: across 48,000 words of
+student-facing prose the AI vocabulary was already absent — one "comprehensive",
+five "landscape", and no "delve", "leverage", "utilize" or "robust" anywhere.
+
+The tell was **rhythm**, not vocabulary. Almost every sentence had one shape:
+claim, em dash, qualifier. Across the five prose registries, words per sentence
+went 22.4 → 16.9, sentences over 30 words 21.7% → 6.6%, and em dashes per
+sentence ~0.27 → 0.00. Contractions went from 4 against 514 long forms to 337
+against 193 — the earlier ratio of 1:128 was not "few" but effectively none, and
+that absolute uniformity is itself the tell, because real writing mixes them.
+
+**Why a regex cannot do this job**, and it is worth not rediscovering: every
+individual sentence was defensible. Only the distribution was wrong, and a
+distribution is invisible one line at a time.
+
+The pass also corrected a measurement this repo had recorded wrongly for several
+releases: the guide's lead paragraph carried `max-w-[60ch]`, honoured it, and
+still ran 79–80 characters a line. The old note claimed 60ch "lands at ~72". It
+does not, and the reason is that the earlier measurement averaged in the ragged
+final line of each paragraph, which drags the mean down by roughly a whole tier.
+**Count characters per _full_ line** — walk the text node with a `Range` and
+group by `getBoundingClientRect().top`. The cap is `54ch` now.
+
+### What shipped in release 6 — the rest of the one list, and an audit, 2026-08-16
+
+Two halves, merged through [#116](https://github.com/Lemyk777/compass/pull/116)
+and released via [#117](https://github.com/Lemyk777/compass/pull/117).
+
+**The half that was specified.** Tasks 4 and 5 of the one-list spec, and neither
+landed as written:
+
+- **The filter rail was DECLINED, on measurement.** From `xl` the companion
+  already takes 20rem, so the student shell's content column *drops* from 966px
+  at 1024 to 854px at 1280. A 256px rail on top of that measured 282px cards at
+  the commonest desktop width. **Check what already owns the margin before
+  specifying a rail.**
+- **Columns shipped as a CONTAINER QUERY, not a breakpoint.** The opportunity
+  list renders in the student's section *and* in the report's panel, and at the
+  same 1024px viewport it is 924px wide in one and 652px in the other. A
+  viewport breakpoint measured 457px cards in one shell and 321px in the other.
+  `.opp-list` / `.opp-grid` go two-up once the list itself clears 800px.
+- **Typography was measured and left alone.** The reported problem was not there.
+- **The "I'm doing this" flow was restored.** [#114](https://github.com/Lemyk777/compass/pull/114)
+  deleted the five-row shortlist, which was `CommitRow`'s only caller — so
+  `saveOpportunityIntent`, the product's single behavioural signal, was
+  **unreachable from the UI for a whole release** while still compiling, still
+  exported, still type-checked.
+
+**The half that was not.** A whole-tree audit, nine findings, all fixed:
+
+- **The catalog was reaching eight client bundles** through two chains of one
+  hop each: `RoadmapView → roadmap.ts → key-dates`, and `LikelihoodGauge →
+  app-deadlines.ts → key-dates` — the second for a two-line date helper.
+  plan/timeline went 164 → 121 kB, odds/college-list 171/173 → 138/140.
+- **`deleteMap` was dead code while `createMap` told users to use it.**
+- **Five vocabularies existed twice**, which is the soil three separate bugs
+  grew in. One list each now, so the compiler can help.
+- **163 of 393 dictionary keys were dead.**
+
+**The durable lesson, and it is the reason release 6 is worth reading about at
+all: in five of the nine findings the root cause was the DETECTOR, not the
+defect.** The bundle guard scanned for a *direct* import edge from a client
+component, so one hop of indirection was invisible to it — and it had been cited
+as a guarantee. It walks the module graph now, stopping at `"use server"` files
+(a server action is an RPC stub, not a dependency). Dead exports and unread
+dictionary keys are scanned in CI.
+
+**Fix the root, then fix the detector that missed it.** A guard that has never
+failed on a known-bad input is a belief, not a test.
 
 ### What shipped in release 5 — the guided thread, 2026-08-15/16
 
@@ -74,7 +154,8 @@ Three things a fresh session needs to know exist:
    from it per CONTRIBUTING produced a tree with no planner, no spine and no
    plan-picks, which surfaced as "weird type errors". Fast-forwarded. Check
    `git rev-list --count origin/develop..origin/main` before trusting the branch
-   model.
+   model. **Resolved as of release 7** — the last two releases went `develop` →
+   `main`, so the documented model and the practice now agree.
 
 ### Release 4 — the planner, 2026-08-14 (read PLANNER_PLAN.md § "Release 4")
 
@@ -117,21 +198,24 @@ git fetch origin && git log --oneline origin/main..HEAD
 
 Empty means everything is deployed. Anything listed is not.
 
-### The migrations are applied — verified 2026-08-13
+### The migrations are applied — verified 2026-08-17
 
-`npm run db:check` reports **all 31 checks pass**, which includes
-`planner_items` (0028) and `planner_map_nodes` (0029). The warning that used
-to stand here is gone: the agenda, the board, the student's own tasks, "In
-progress" and the mind maps are all live against a real schema.
+`npm run db:check` reports **all 33 checks pass**, which includes
+`planner_items` (0028), `planner_map_nodes` (0029), `planner_path` (0030) and
+`beat_reactions` (0031). The warning that used to stand here is gone: the
+agenda, the board, the student's own tasks, "In progress", the mind maps, the
+guide→plan join and the companion's reactions are all live against a real
+schema.
 
 That is what unblocked the planner being **advertised** on the landing page —
 this product's own rule is that a feature is not described until it works, and
-until today two of the three planner surfaces would have returned a readable
-error naming a migration.
+there was a period when two of the three planner surfaces would have returned a
+readable error naming a migration.
 
 Re-run `npm run db:check` before believing any note about what is applied,
 including this one. It is read-only, takes a couple of seconds, and it is the
 only thing here that cannot go stale silently — a note can.
+
 
 ### The one trap that will waste an hour
 
@@ -200,7 +284,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 | | |
 |---|---|
-| NAO Cup | First **pinned** entry — a debate tournament in Shymkent, region-scoped to KZ, auto-expiring the day after the event. |
+| NAO Cup | First **pinned** entry — a debate tournament in Shymkent, region-scoped to KZ, auto-expiring the day after the event. **Removed 2026-08-15** on the owner's instruction once its date passed; it was the catalog's only `pinned` row and its only `region`-tagged one, so both mechanisms now apply to nothing. See the audit's A1 and A8. |
 | Pinning | `Competition.pinned` — the one editorial override in an otherwise derived ordering. Reorders only; never bypasses eligibility. See §5.10. |
 | Admin quick-add | Post an opportunity from the top of the Opportunities list, writing the same live row a partner post writes. See §5.10. |
 | Georgia's sources | `npm run test:links`' sibling gate was **red and nobody knew**. See §5.11. |
@@ -209,34 +293,19 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 ## 4. What is left, in detail
 
-**Two untouched (#11, #14), one half-done (#23), and #15 is verification.**
-#22 closed 2026-08-13, **#16 closed 2026-08-14** — the big structural work is
-done. By item count that is ~87% complete; by effort it is nearer two thirds, because **#16** (the
-coherent spine) is now the largest thing left, and it could not have been started
-earlier because it depends on #9 and #14.
+**Two untouched (#11, #14), and #15 is verification.** Everything else on the
+founder's list is closed: #22 and #24 on 2026-08-13, #16 and #25 and #27 on
+2026-08-14, #17 over four releases ending 2026-08-14, and #23's animation half
+with release 4. By item count that is ~91% complete; by effort the remainder is
+larger than it looks, because all three of the survivors are **content and
+verification work** rather than code — the kind that cannot be finished by
+anyone who does not know the answer.
 
-Suggested order, and the reason for it:
+**The ordered list of what to do next lives in §8, not here**, and it now
+interleaves these with the audit's open findings, which are cheaper. This
+section is the detail behind each item: the ask, what is already known, the
+files, and the decision needed.
 
-**#24 is done** — it was taken first because the founder asked for it directly
-on 2026-08-13, and it turned out to be the natural way in to the animation half
-of #23: the open question there was always *which* moment had earned an authored
-one, and the answer arrived as a complaint. What is left:
-
-1. **#14** — Malaysia and Australia. Self-contained. #16 shipped without it;
-   two more countries now simply widen a chain that already works.
-2. **#15** — verify the unconfirmed dates. Pure verification, no design decisions,
-   and it protects the product's central promise. It is also worth more than it
-   was: an unconfirmed date now costs a row its place in the planner's calendar
-   as well as its countdown, so every one verified moves a card onto the agenda.
-3. **#11** — careers depth and the quiz. Two separable halves: re-tune the weights,
-   rewrite the content in the direct tone already chosen.
-5. The rest of the animation half of **#23**, and then the progress-tracker copy in **#22** —
-   **no longer blocked**, because #17 now exists and can honestly be advertised.
-6. The planner's **release 2**: mind maps, and the drag-and-drop enhancement over
-   the existing move action. See [PLANNER_PLAN.md](PLANNER_PLAN.md) §10.
-
-Each entry below states the ask, what is already known, the files, and the
-decision needed.
 
 ### #24 — the hero background — DONE 2026-08-13
 
@@ -327,7 +396,8 @@ the questions it already answers well. Two candidates already visible:
 
 - **Local (KZ / Central Asia) rows.** The catalog is overwhelmingly
   international, and `region` exists precisely so a Shymkent row can be shown
-  only to students who can reach it. NAO Cup is currently the only one.
+  only to students who can reach it. NAO Cup was the only one, and it was
+  removed on 2026-08-15 — the count is now zero. See A8.
 - **Job simulations and "try the work" rows.** Named directly by the founder
   (Forage's JP Morgan simulation is the example). They belong to the spine's
   "test it this month" step and would give the guide's career layer something
@@ -1002,7 +1072,8 @@ never see. `next/dynamic` fixed it: `/dashboard/opportunities` went 187 → **18
 kB**, a kilobyte below where it started. Same trap as importing the catalog or
 `careers.ts` into a client component, in a new place.
 
-**NAO Cup is the first pinned entry** and shows the shape: region-scoped to `KZ`
+**NAO Cup was the first pinned entry** (removed 2026-08-15; nothing is pinned
+today) and shows the shape: region-scoped to `KZ`
 with `city: "Shymkent"` so it reaches students who can physically turn up and
 never lands on a student in Rome, `dateConfirmed: true` on the organiser's own
 announcement (the same trust a partner-set date gets), and no `cost` — the
@@ -1544,10 +1615,10 @@ Two things worth carrying:
 
 ```bash
 npm run build            # the gate — never while `npm run dev` is running
-npm run test:unit        # 192 tests
+npm run test:unit        # 268 tests
 npx tsc --noEmit
 npm run lint
-npm run db:check         # read-only: is the DB what the code assumes? 32/32
+npm run db:check         # read-only: is the DB what the code assumes? 33/33
 node --import tsx scripts/test-session-checks.ts   # 61 checks
 npm run test:guide-links # 27/27 official sources — NOT in CI, run it anyway
 npm run db:check         # after applying a migration, and before believing any note about one
@@ -1769,111 +1840,119 @@ this, or it will "fix" it back.
 
 ---
 
-## 8. What to do next — the ordered list, 2026-08-14
+## 8. What to do next — the ordered list, 2026-08-17
 
-**Before anything: merge PR [#107](https://github.com/Lemyk777/compass/pull/107)
-or the next session builds on ten commits that are not in production.**
+**Nothing is waiting to be merged.** `develop` and `origin/main` are the same
+commit and every PR is closed, so a session starting here begins from a clean
+production state rather than from someone else's unshipped branch. Confirm it
+anyway with the ten-second check in §1.
 
-### The two gaps release 3 left open, and they are the top of the list
+> **There is a second list: [AUDIT_2026-08-14.md](AUDIT_2026-08-14.md).** Nine
+> findings turned up while answering one question from the founder ("why does
+> the site say 114 when the docs say 173?"). **Two are now closed — A1 and A3 —
+> and seven are still open.** They are kept in their own file rather than folded
+> in here because this backlog is the founder's 23-item list and its history is
+> worth keeping legible, but the audit is the more urgent read of the two, and
+> its open items are cheaper than anything left on this list.
 
-> **There is a second list now: [AUDIT_2026-08-14.md](AUDIT_2026-08-14.md).**
-> Nine findings turned up while answering one question from the founder ("why
-> does the site say 114 when the docs say 173?"). None of them is fixed. They
-> are kept in their own file rather than folded in here because this backlog is
-> the founder's 23-item list and its history is worth keeping legible — but the
-> audit is the more urgent read of the two, and **A1 carries an explicit
-> do-not-touch instruction** that a later session must not override.
+### What the founder's own list still has open
 
-**8.0 — DONE.** `0030_planner_path.sql` applied 2026-08-14, `db:check` 32/32.
+**Two untouched (#11, #14) and one verification pass (#15).** Everything
+structural is done: #16 (the spine) closed 2026-08-14, #17 (the planner) over
+four releases, #22 and #24 (the landing page and its hero) on 2026-08-13, #25
+(readability) and #27 (the catalog's community kind) on 2026-08-14. #23's
+animation half closed with release 4.
 
-**8.1 — DONE.** A student can put a country, a city, a kind of work or a route
-from home onto their plan from the guide page they read it on (`planner_path`);
-a first map can be seeded from those picks with the cities nested inside the
-right country (`createMapFromPlan`); and a subject can now be added to an
-**existing** map from the guide, writing a `planner_map_nodes` row whose
-`link_href` is the page you are on — which is all `mapNodeKind` needs to type
-it. No migration was needed for the last part.
-
-The restraint problem this entry warned about was real, and the answer was
-**progressive disclosure rather than a second control**: the map option only
-unfolds once the reader has claimed the subject, and only if they already keep
-maps. A guide page still has exactly one call to action on it, and nobody is
-invited to start a map they have no use for.
-
-**8.2 — Majors do not exist as a layer, and the founder asked for them twice.**
-The chain today is: area of work → **field** (`FacultyValue`, 8 of them) →
-country → city → university-`knownFor`-that-field. There is no per-university
-programme list, and `knownFor` is field-level.
-
-This is the biggest remaining *content* decision, and it needs one answer before
-any code:
-
-> Is a "major" a **named degree programme at a named university** ("BSc
-> Mechanical Engineering, TUM"), or a **field of study one level finer than our
-> eight** ("mechanical engineering" under "engineering")?
-
-They imply completely different work. The first is a large, fast-rotting dataset
-per institution and would need a yearly verification pass we do not have
-capacity for — the same class of claim as `englishTaught`, but a hundred times
-larger. The second is a taxonomy edit: one more level under `FacultyValue`,
-which every registry already keys on, and it would sharpen matching, the spine
-and the guide's filters at once **without any per-university promise**.
-
-**The second is almost certainly right** and should be proposed as such. It also
-composes with everything already built, whereas the first would need a new
-verification gate before a single row could ship.
+**#8.2 — majors — is DONE and the decision it was waiting on was taken.** The
+question was whether a "major" is a named degree programme at a named
+university or a field of study one level finer than our eight. The second was
+proposed and chosen, for the reason recorded here at the time: the first is a
+large, fast-rotting per-institution dataset needing a yearly verification pass
+we do not have capacity for, while the second composes with every registry that
+already keys on `FacultyValue`. It shipped in release 5 as `lib/data/majors.ts`
+— 44 subjects, guide step 2 — and needed no migration.
 
 ### Then, in order
 
-1. **#14 — Malaysia and Australia.** Two country profiles. Self-contained, and
-   it widens the spine's chain immediately. Rules are test-enforced: trade-offs
+The order below is by value per hour, and the first two are both data work that
+needs no code and no migration.
+
+1. **A8 — local (KZ / Central Asia) catalog rows. The catalog now has ZERO.**
+   This was item 6 on the old list, where it read "`region` exists exactly for
+   this and NAO Cup is still the only one". That row was removed on 2026-08-15,
+   so the local-opportunity mechanism now applies to nothing curated at all.
+   The product exists for students outside the first tier and currently reaches
+   them with nothing they can turn up to in person: republican olympiads,
+   university-run competitions, local hackathons, regional debate leagues. A
+   unit test pins the zero, so the first row added will fail it and force
+   whoever adds it to read the audit entry. **Highest value available, and it is
+   data, not code.**
+2. **#15 / A7 — verify the unconfirmed dates, but measure production first.**
+   **12 of 172** committed rows carry `dateConfirmed: true`; 57 are `alwaysOpen`
+   and correctly have no date to confirm. That leaves roughly a hundred rows
+   reading "Dates not announced". **The repository figure is not the live one** —
+   production overlays dates from the `sync-dates` cron, which an audit of a
+   checkout cannot see. Read the real number off `/admin/opportunities`, which
+   already has a date-health panel, and scope the verification against that
+   rather than against 7%. Each date verified also moves a card onto the
+   planner's agenda, so this is worth more than when it was written.
+3. **A5 + A6 — close the last two vocabulary splits.** Release 6 gave categories
+   one list (`COMPETITION_CATEGORIES` / `CATEGORY_ORDER`, read by both the
+   student's tabs and the admin form) and the same move works twice more:
+   - `school` is a fourth level the write path accepts (`ADMIN_LEVELS`) and the
+     read path has never heard of (`COMPETITION_LEVELS` has three). Such a row
+     is invisible to the filter and counted in no facet, silently. A
+     school-level competition is a genuinely useful thing for our students — the
+     first rung, and the one most likely to exist in Shymkent — so adding it to
+     the union is probably right rather than removing it from the form.
+   - `funded` — *they pay you*, the strongest cost signal we have — cannot be
+     selected in the admin quick-add form, which still hardcodes nine of the ten
+     cost models.
+
+   Both are small. They are third rather than sixth because this exact pattern
+   (a union on the read side, a hand-written array on the write side, nothing
+   tying them together) is what produced three separate shipped bugs.
+4. **A2 — 401 must fail the link gate.** `BOT_WALL` in
+   [scripts/test-links.ts](../scripts/test-links.ts) still contains `401`, so a
+   private document or an expired share link is reported as healthy. 403/429/412
+   mean "we think you are a robot"; 401 means "this needs credentials you do not
+   have", which for a public catalog link is precisely what the gate exists to
+   catch. Move it to its own bucket that fails, with a message naming the likely
+   cause. Leave 403/406/409/429 alone.
+5. **#14 — Malaysia and Australia.** Two country profiles, self-contained, and
+   they widen the spine's chain immediately. Rules are test-enforced: trade-offs
    must outnumber strengths, `notForYou` is mandatory, no prices or rankings,
-   `sources` must be official bodies over https and must answer
+   and `sources` must be official bodies over https that actually answer
    (`npm run test:guide-links`). Each new country needs its cities in `hubs` or
    the containment test fails.
-2. **#15 — verify the unconfirmed dates.** Pure verification, no design calls,
-   and it protects the product's central promise. Worth more than it was: an
-   unconfirmed date now also costs a row its place on the planner's agenda, so
-   each one verified moves a card into a period.
-3. **#11 — careers depth and the interest quiz.** Two separable halves. The
-   content half is the direct tone already agreed. **The quiz half now has a
-   constraint from §7:** it may inform an offer, it may never be the answer, and
-   it must not become a RIASEC clone.
-4. **DONE — a job simulation is named where the work is**
-   (`lib/data/try-it.ts` → `TryTheWork`, inside "Test it this month"). Money &
-   markets gets J.P. Morgan, Data & AI gets three, treating patients gets
-   nothing. **We build none of these and we link to none of them directly:** the
-   file holds zero URLs, and the one link goes through the catalog row the gate
-   can actually keep alive. Two decisions worth keeping: the entry names the
-   EMPLOYER and describes the task in our own words, because a company outlives
-   its course listing and is also the search term; and an area with no honest
-   answer renders nothing, because a near-miss costs a reader an evening and
-   teaches them the wrong thing about a career.
-5. **DONE — the rest of #23's animation half.** The period steps in from the
-   direction of travel, the lens panel replays on switch, and a board card now
-   morphs between columns. The last one needed a design change, not an
-   animation: the move is applied in the CLIENT first, so the transition has
-   nothing to wait on. See §5.23.
-6. **Local (KZ / Central Asia) catalog rows.** `region` exists exactly for this
-   and NAO Cup is still the only one. The highest-value widening we can do for
-   the students the product is actually for.
+6. **#11 — careers depth and the interest quiz.** Two separable halves. The
+   content half is the direct tone already agreed in §2. **The quiz half carries
+   a constraint from §7:** it may inform an offer, it may never be the answer,
+   and it must not become a RIASEC clone.
+7. **A9 — three copies of `CATEGORY_LABEL`.** Not a bug today and last on
+   purpose. All three are `Record<CompetitionCategory, string>`, so the compiler
+   keeps them complete; the risk is only that a fourth gets added. If they are
+   ever merged, the right shape is one map plus an override for the long form,
+   because the difference between them ("Research" on a badge, "Research
+   program" on a page heading) is deliberate.
 
 ### Standing debts worth knowing about
 
-- **The branch name lies.** `feat/guide-spine` carries the spine, the catalog
-  work, release 3 and the nav fix. Cut a fresh branch after #107 merges.
 - **The guide is still `force-dynamic` and uncacheable**, deliberately — two
   measured causes, both owner calls, written up in CLAUDE.md.
-- **`ijso` was broken before anyone noticed**, which means the link gate is only
-  as good as the frequency it is run at. It is not in CI (it makes ~173 network
-  calls); run it after any catalog edit.
+- **The link gate is only as good as how often it is run.** `ijso` was broken
+  before anyone noticed. It is not in CI, because it makes ~172 network calls;
+  run it after any catalog edit.
 - **Nothing in the planner can be verified in a browser by an agent** — it is
   behind a session and entering credentials is not permitted. That is *why* the
   planner's logic keeps being pushed into pure functions in `lib/data/planner.ts`
   and `lib/data/planner-start.ts`. Keep doing that: it is the only verification
   available.
+- **Three fields rot on a yearly cycle and are written to be re-checked, not
+  trusted:** post-study work rules on every country profile, `englishTaught` in
+  `place-universities.ts`, and the employer simulations in `try-it.ts`. They are
+  phrased as "current rule, check it" for that reason.
 
----
 
 ## 9. Session log — 2026-08-13 / 14
 

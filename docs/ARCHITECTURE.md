@@ -71,9 +71,9 @@ almost never a prompt change.
 | | |
 | --- | --- |
 | `(marketing)/` | The public landing page, told in the product's own order: Opportunities → the guide → the report. Session-aware: a signed-in visitor gets "Dashboard", not "Log in"/"Sign up". Every count on it is read from the catalog and the guide registries at request time, so the page cannot claim a number the student won't see |
-| `opportunities/` | **Public eligibility checker — the guest surface only.** A signed-in student is redirected to `/dashboard/opportunities` so there is one Opportunities experience per state, not two |
+| `opportunities/` | **Public.** `page.tsx` renders the guest eligibility checker, and a signed-in student gets the full list in the same route rather than a second address. `[id]/page.tsx` is one opportunity at its own URL — server-rendered, public, in the sitemap, with Open Graph tags carrying the four facts a card carries. That route exists because a modal has no URL, so sharing a contest was impossible |
 | `planner/` | **Private, and ONE route**: `page.tsx` serves `/planner?view=next\|board\|map` — the agenda (everything with a date), the board (everything with a state they own) and the mind maps are three lenses over one loader, not three pages. `/planner/board` and `/planner/maps` are enumerated 308s in `next.config.mjs`; `maps/[id]/` is still a real page, because one map is a document a student can send to someone. `lib/planner/load.ts` is the only place the planner touches the catalog or the roadmap, and it does so through dynamic `import()` |
-| `guide/` | **Public**: the four-step guide, its own route per step and per subject |
+| `guide/` | **Public**: the five-step guide (work → majors → places → cities → from-home), its own route per step and per subject. The list routes sit in `(index)`/`(list)` groups so their loading skeleton does not become a Suspense boundary over the subject pages — that made every unknown id answer 200 instead of 404 |
 | `onboarding/` | The full intake wizard — now **opt-in** (the analysis path), no longer where signups land; `actions.ts` holds the Zod schema that is the single source of truth for a valid profile |
 | `dashboard/` | The logged-in product. `layout.tsx` loads everything once and hands it to `DashboardContext`; each subroute is a thin view |
 | `demo/` | The same dashboard over a sample analysis, no auth |
@@ -90,12 +90,20 @@ export crashes the production build (not dev) with an opaque digest error.
 
 ### `components/` — grouped by surface, not by type
 
-`dashboard/`, `onboarding/`, `marketing/`, `opportunities/`, `admin/`,
-`ambassador/`, `partners/`, `auth/`, `report/`, `charts/`, `legal/`, `ui/`.
+The student sections: `opportunities/`, `guide/`, `planner/`, `companion/`, and
+`student/` (the shell the first three share). The report and its neighbours:
+`dashboard/`, `report/`, `charts/`, `onboarding/`. The rest: `marketing/`,
+`admin/`, `ambassador/`, `partners/`, `auth/`, `analytics/`, `legal/`, `ui/`.
 
 `ui/` is the shared primitive layer (Button, Link, Logo, view transitions).
 Everything else belongs to one surface and should not be imported across
 surfaces — if two surfaces need it, it moves to `ui/`.
+
+`companion/` is mounted **once**, in `student/StudentShell.tsx`, so it renders on
+Opportunities, the whole guide and the plan. That is why nothing heavy may reach
+it: a runtime import of a registry there ships that registry on every route. It
+takes values and pre-rendered nodes from `lib/companion/load.ts`, and a unit test
+fails the build on a violation.
 
 ### `lib/` — the logic
 
@@ -105,6 +113,12 @@ surfaces — if two surfaces need it, it moves to `ui/`.
 | `data/` | Deterministic datasets and the code over them: universities, programmes, deadlines, the opportunity registry, geography, the roadmap |
 | `planner/` | `load.ts` — the planner's one loader. Server-only, and the boundary that keeps the catalog out of the section's client bundle; the pure core is `data/planner.ts`, which imports no dataset at all. `maps-load.ts` does the same for mind maps over `data/mindmap.ts`, which stores structure and computes the picture. `picks.ts` reads what the student claimed out of the guide (`planner_path`, 0030) — split out because the GUIDE needs it too, and a country page must not reach the planner's loader to answer one boolean |
 | `guide/` | `student-fields.ts` (the reader, and their fields, read once per request) and `plan-state.ts` — the only thing the guide asks the planner: is this subject already on your plan, and which maps could it go on |
+| `companion/` | `load.ts` — resolves the thread on the server and hands the client values and pre-rendered nodes. The one place allowed to touch the heavy registries on the companion path |
+| `traffic/` | `track.ts` (`cleanPath` is the privacy boundary — path only, never the query string) and `summarize.ts` (every metric definition, pure and unit-tested) |
+| `partners/` | `live.ts` — the single mapping from live rows to `Competition` for both student surfaces, and the filter that drops rows whose partner is not `active` |
+| `cron/` | `auth.ts` — the gate in front of both cron endpoints. **Fails closed**: no `CRON_SECRET` means 503 |
+| `dashboard/` | `load.ts` — the one loader feeding both the report shell and the student shell |
+| `calendar/`, `seo.ts`, `site.ts`, `limits.ts`, `tiers.ts`, `utils.ts` | ICS export, canonical/metadata helpers, the canonical host, input caps, tier colours, and `cn` (clsx + tailwind-merge) |
 | `auth/` | Session, roles, post-signup provisioning |
 | `supabase/` | Three clients — `server.ts` (respects RLS, the default), `admin.ts` (service role, bypasses RLS, server-only), `client.ts` (browser) |
 | `discovery/`, `scraper/` | Finding new opportunities and refreshing their dates |
@@ -122,7 +136,8 @@ migration runner and no state table, so:
 - **add the expected columns to `scripts/check-schema.ts` in the same commit**,
   which is what lets `npm run db:check` answer "is the database actually what
   this code assumes?" in a couple of seconds — read-only, one probe per table.
-  It reports **32/32 as of 2026-08-14**, `planner_path` (0030) included.
+  It reports **33/33 as of 2026-08-17**, everything through `beat_reactions`
+  (0031) included.
 
 **This drifts silently — check it, don't assume it.** On 2026-08-05 an audit of
 the live database found `0010_graduation_year` had never been applied: every
@@ -137,7 +152,7 @@ this incident, and it is the only note here that cannot go stale.
 Verification, run directly with `node --import tsx`. Two pure suites, both in
 the CI gate and neither needing a key, network or DB:
 
-- `test-engine.ts` (`npm run test:unit`, node:test) — **192 tests** over the
+- `test-engine.ts` (`npm run test:unit`, node:test) — **268 tests** over the
   deterministic core: rubric/overall scoring, benchmarks, eligibility
   arithmetic, the interest quiz, the careers registry, matching invariants, the
   guide's chain, and the whole of the planner. **Add a case here when you touch
@@ -166,14 +181,24 @@ work that does not ship in the app.
 - **Prompt caching**: the static system prompt must stay byte-identical across
   requests. Per-user data goes in the user message, never the system block, and
   dataset ordering must stay stable.
-- **Keep the catalog out of client bundles.** `key-dates.ts` builds a lookup map
-  over the whole ~2,700-entry catalog at module load, so *any* runtime import
+- **Keep the catalog out of client bundles, and the test is REACHABILITY, not
+  adjacency.** `key-dates.ts` builds a lookup map over the whole ~2,700-entry
+  catalog at module load, so it cannot be tree-shaken and *any* runtime import
   pulls the dataset into that route's JS. Client components import
-  `formatDate`/`opportunityCost` from `opportunity-format.ts`, and the three
-  matching views (`OpportunitiesView`, `EligibilityChecker`, `FirstWin`)
-  dynamic-import `buildExtracurriculars` inside an effect. Type-only imports
-  from key-dates are free. Reverting any of this to a static import + `useMemo`
-  silently adds ~25 kB back to First Load JS.
+  `formatDate`/`opportunityCost`/`daysBetween` from `opportunity-format.ts`, and
+  the surfaces needing catalog-derived data — `OpportunitiesView`,
+  `EligibilityChecker`, `FirstWin` and `RoadmapView` — dynamic-import it.
+  Type-only imports are free.
+
+  **The guard used to check for a DIRECT import edge, and two chains slipped
+  through one hop of indirection**, costing eight routes 27–41 kB each:
+  `RoadmapView → roadmap.ts → key-dates`, and `LikelihoodGauge →
+  app-deadlines.ts → key-dates`, the second for a two-line date helper. It walks
+  the module graph now, stopping at `"use server"` files, because a server action
+  is an RPC stub and not a dependency. **Size alone is not the test:**
+  `world.ts` is 822 lines and shakes clean, because it is plain consts. Do not
+  reason about this from line counts — grep the built chunk in
+  `.next/static/chunks`, or read the guard.
 - **Matching annotates; it does not hide — so `matchedOnly` is mandatory on any
   surface with no filter panel.** `buildExtracurriculars` returns the whole
   catalog carrying `offField`/`offRegion`, and the filter panel does the

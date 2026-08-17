@@ -1,5 +1,14 @@
 # Compass: Project Emotional UX & Accessibility Strategy
 
+> **Written June 2026, and kept for the reasoning rather than as a description of
+> what exists.** It was written when the admission report *was* the product; the
+> centre has since moved to Opportunities, the guide and the plan, and the report
+> is one opt-in input. Several components it names by file are gone —
+> `DashboardClient.tsx`, `MascotGallery.tsx`, `registry.ts`, `StepOrigin.tsx`,
+> `StepReview.tsx`. The tone and accessibility principles still hold and are
+> worth reading; **check anything structural against
+> [ARCHITECTURE.md](ARCHITECTURE.md) before acting on it.**
+
 ## 1. Introduction
 
 ### Purpose of the Strategy

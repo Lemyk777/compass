@@ -7,9 +7,17 @@ Read [CLAUDE.md](../CLAUDE.md) first — it holds the product rules this design 
 written against. Read [BACKLOG_2026-08.md](BACKLOG_2026-08.md) §4 for where #17
 sits among the rest, and §7 for the working method.
 
-**Status:** both releases approved 2026-08-12. **Release 1** (§1–§10) = the
-agenda and the board, shipped. **Release 2** (§11) = mind maps, which complete
-#17.
+**Status: COMPLETE and in production.** Both releases were approved 2026-08-12.
+**Release 1** (§1–§10) = the agenda and the board. **Release 2** (§11) = mind
+maps. **Release 4** (§ below) rebuilt the section as one route with three
+lenses, added the guide→plan join and the one next move, and is what closed #17.
+Migrations `0028`–`0030` are applied (`npm run db:check` 33/33).
+
+Since this document was last revised, the section also gained a neighbour it has
+to share a screen with: **the companion**, mounted in `StudentShell` on every
+page of the student area. Where the planner renders its own `NextMoveCard`, the
+companion deliberately renders **nothing** — two ladders reasoning from
+different inputs on one screen is how a section contradicts itself.
 
 **Task-by-task implementation plan** for release 1:
 [docs/superpowers/plans/2026-08-12-planner.md](superpowers/plans/2026-08-12-planner.md).
@@ -852,21 +860,27 @@ right country. Containment we know, never guessed.
 | `planner_path` + RLS + grants | `supabase/migrations/0030_planner_path.sql` (**apply by hand, then `npm run db:check`**) |
 | the pure pick model | `lib/data/plan-picks.ts` (type-only imports, tested) |
 | the guidance | `lib/data/next-move.ts` + `tallyPlanner` in `lib/data/planner.ts` |
-| add from the guide | `components/guide/AddToPlan.tsx`, on all four steps; `lib/guide/plan-state.ts` |
+| add from the guide | `components/guide/AddToPlan.tsx`, on every guide subject page — **five steps** since majors became step 2; `lib/guide/plan-state.ts` |
 | one window | `components/planner/PlannerWindow.tsx`, `PlannerLenses`, redirects in `next.config.mjs` |
 | picks in the plan | `components/planner/YourPicks.tsx` |
 | the map | `MapWorkspace` rebuilt; `SeedMapFromPlan`; `PlacedNode.linkHref` |
 | motion | `.lens-in`, `.period-in-forward`, `.period-in-back` in `app/globals.css` |
 
-**185 unit tests** (was 175), build clean, `/planner` 105 kB carrying all three
-lenses (was 110 kB carrying one).
+**185 unit tests** at the time of release 4 (was 175), build clean, `/planner`
+105 kB carrying all three lenses (was 110 kB carrying one). *The suite is at
+**268** as of 2026-08-17; that figure is left as it was measured, because it is
+part of the record of this release.*
 
 ## 7. What release 4 did NOT do
 
 - **No path, no stages** — the owner's call, recorded above. If the plan ever
   reads as directionless again, that decision is the first thing to revisit, and
   the concern was stated before it was taken rather than after.
-- **Majors still do not exist as a layer.** Backlog §8.2.
+- ~~**Majors still do not exist as a layer.**~~ **Shipped in release 5** as
+  `lib/data/majors.ts` — 44 subjects, guide step 2. It needed no migration:
+  `planner_path` has no `kind` column, so `major:computer-science` was storable
+  the day the registry existed. `PickKind` gained a case and `pickHref` gained a
+  line.
 - **Nothing seeds a map from the guide page itself** — you can seed one from
   your picks, which covers most of backlog §8.1, but "add this to a map" while
   reading is still not there.

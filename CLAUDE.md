@@ -9,12 +9,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > §7 the working method.
 >
 > **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine findings
-> with evidence. **A1 is now CLOSED**: its date passed on 2026-08-14, which
-> turned "a confirmed date is never already in the past" red on `main` for every
-> branch, and the owner's answer on 2026-08-15 was to remove the row (catalog
-> 173 → 172). The audit's do-not-touch instruction did its job — it said raise
-> it with the owner rather than fix it, and that is what happened. **The other
-> eight are still open.**
+> with evidence. **Two are closed and seven are open** (status table at the top
+> of that file, re-verified 2026-08-17). A1 closed because its date passed on
+> 2026-08-14, which turned "a confirmed date is never already in the past" red on
+> `main` for every branch, and the owner's answer on 2026-08-15 was to remove the
+> row (catalog 173 → 172). The audit's do-not-touch instruction did its job — it
+> said raise it with the owner rather than fix it, and that is what happened. A3
+> closed with the one-list release. **Two side effects of removing that row are
+> live rules now: the catalog has ZERO `pinned` entries and ZERO `region`-tagged
+> entries, and a unit test pins each zero.**
 
 ## What this is
 
@@ -29,11 +32,12 @@ npm run dev            # dev server at http://localhost:3000
 npm run build          # production build — also runs ESLint + type-check (use as the main gate)
 npm run lint           # ESLint only
 npx tsc --noEmit       # type-check only
-npm run test:unit      # unit tests for the deterministic engine (node:test, no key/network)
+npm run test:unit      # 268 unit tests for the deterministic engine (node:test, no key/network)
+npm run test:onboarding # 126 tests over the intake schema + server action (db/auth mocked, not in CI)
 npm run test:links     # every catalog URL; non-zero exit if any is DEAD
 npm run test:guide-links # the guide's official sources (ministries, portals)
 npm run test:analyze   # run the §12 sample profile through the LIVE analysis engine
-node --import tsx scripts/test-session-checks.ts   # 60 pure logic checks
+node --import tsx scripts/test-session-checks.ts   # 61 pure logic checks
 ```
 
 The **CI gate** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on every push and PR without secrets: `npm run build`, the session logic checks, then `npm run test:unit`. Locally that trio is the verification path — `test:analyze` is the only one needing a real `ANTHROPIC_API_KEY` in `.env.local` (loaded via `node --env-file`).
@@ -44,17 +48,29 @@ The **CI gate** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on e
 
 ## Environment
 
-Five vars (see [.env.example](.env.example)) in `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SITE_URL`. Without them the app still builds and `/demo` renders the full report from a sample; auth and analysis require them.
+**Six** vars (see [.env.example](.env.example)) in `.env.local`. Five run the app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SITE_URL`. Without them the app still builds and `/demo` renders the full report from a sample; auth and analysis require them.
+
+The sixth is **`CRON_SECRET`**, and it is easy to miss because nothing looks broken without it: both cron endpoints fail CLOSED with a 503, so the date sync and the discovery run simply never happen. It must be set in Vercel or the scheduled runs stop. See "Cost & abuse" below for why that direction is deliberate.
 
 ## Site structure: the student's section vs the report
 
 Two shells, and the distinction is load-bearing:
 
-- **The student's section** — `/opportunities` (what you can enter) and `/guide/*`
-  (where it leads). Frame: [components/student/StudentShell.tsx](components/student/StudentShell.tsx)
-  — one narrow column, two destinations, the report a link away. Both are
-  session-aware and work signed out; `/opportunities` shows the guest
-  eligibility checker, the guide opens on every field instead of the student's.
+- **The student's section** — `/opportunities` (what you can enter), `/guide/*`
+  (where it leads) and `/planner` (what it becomes). Frame:
+  [components/student/StudentShell.tsx](components/student/StudentShell.tsx)
+  — one narrow column, the companion beside it, the report a link away. The
+  first two are session-aware and work signed out; `/opportunities` shows the
+  guest eligibility checker, the guide opens on every field instead of the
+  student's. `/planner` is private.
+  **Every opportunity also has its own address** — `/opportunities/[id]`,
+  server-rendered, public, in the sitemap, and the reason the detail stopped
+  being a modal: a modal has no URL, so the most natural thing a student does
+  with this product (find a contest and send it to a friend) was impossible. Its
+  Open Graph tags carry the four facts every card carries, so a shared link
+  unfurls into who can enter, what it costs and when it closes rather than into
+  the site-wide banner. Sending the organiser's own link sends a page that says
+  none of that.
 - **The report** — `/dashboard/*`, the opt-in admission analysis, in the sidebar
   shell. **Whether Opportunities appears as a tab there depends on one thing:
   does the student have an analysis?**
@@ -297,7 +313,7 @@ is its own route now:
   level with strengths. On mobile the columns stack, so each answer is labelled
   with its country — an unlabelled stack is not a comparison.
 
-- **The four steps are JOINED, and the join is a function**
+- **The five steps are JOINED, and the join is a function**
   ([lib/data/spine.ts](lib/data/spine.ts), rendered by
   [components/guide/Spine.tsx](components/guide/Spine.tsx)). Every layer already
   carried `FacultyValue` — `CAREER_AREAS_BY_FACULTY` is keyed by it,
@@ -325,7 +341,7 @@ is its own route now:
 - **An area of work says how to TRY it, and we never build the try ourselves**
   ([lib/data/try-it.ts](lib/data/try-it.ts) → `TryTheWork`, inside "Test it this
   month"). A student weighing investment banking meets the bank's own simulation
-  on that page rather than in a catalog of 173 rows — the best-evidenced item on
+  on that page rather than in a catalog of 172 rows — the best-evidenced item on
   the backlog, and free. Three rules, test-enforced:
   **no URLs in the file** (the catalog owns links because `test:links` keeps
   them alive, and the individual company pages sit behind bot protection the
@@ -632,8 +648,13 @@ survives signing in.
 ## Being findable is a feature (`sitemap.ts`, `robots.ts`, canonicals)
 
 The guide is public on purpose — a family choosing between Germany and Korea
-should read it without an account — and for a while nothing told a crawler its
-77 evergreen pages existed. Four things now do, and each has a rule:
+should read it without an account — and for a while nothing told a crawler that
+any of it existed. Four things now do, and each has a rule:
+
+The sitemap is **316 URLs** as of 2026-08-17 — 138 guide pages, 172 opportunity
+pages, and the public marketing and partner routes. **Do not write that number
+down anywhere it has to be maintained**; it is stated here only to give a sense
+of scale, and it is derived at build time from the registries.
 
 - **[app/sitemap.ts](app/sitemap.ts) is generated from the registries**
   (`GUIDE_SECTIONS`, `allCareerAreas`, `STUDY_DESTINATIONS`, `HUBS`), never
@@ -727,7 +748,7 @@ sticky and ~57px tall.
 
 ## The landing page: the front door has to be on the front page
 
-[app/(marketing)/page.tsx](app/(marketing)/page.tsx) was built end-to-end for
+[app/(marketing)/page.tsx](app/%28marketing%29/page.tsx) was built end-to-end for
 the admission report — hero, three pains, "how we score you", a scorecard, a
 campus-mascot gallery, an FAQ about the score. Opportunities appeared on it as a
 button. It now runs in the product's own order: **what you can enter → what the

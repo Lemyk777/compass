@@ -6598,13 +6598,19 @@ test("the README's counts are the counts", () => {
     `README says ${entries[1]} catalog entries, the catalog holds ${COMPETITIONS.length}`,
   );
 
+  // All FIVE steps, because the guide has five and a guard that covers three
+  // leaves two counts free to rot. Majors became step 2 in release 5, and the
+  // README carried that number for a while with nothing asserting it — the
+  // same gap this whole test exists to close, one layer in.
   const guide = readme.match(
-    /(\d+) areas of work, (\d+) country profiles, (\d+) cities/,
+    /(\d+) areas of work, (\d+) majors, (\d+) country profiles, (\d+) cities,\s+(\d+) routes from\s+home/,
   );
   assert.ok(guide, "the README no longer states the guide's shape");
   assert.equal(Number(guide[1]), allCareerAreas().length, "areas of work");
-  assert.equal(Number(guide[2]), STUDY_DESTINATIONS.length, "country profiles");
-  assert.equal(Number(guide[3]), HUBS.length, "cities");
+  assert.equal(Number(guide[2]), MAJORS.length, "majors");
+  assert.equal(Number(guide[3]), STUDY_DESTINATIONS.length, "country profiles");
+  assert.equal(Number(guide[4]), HUBS.length, "cities");
+  assert.equal(Number(guide[5]), HOME_ROUTES.length, "routes from home");
 });
 
 // ── No dictionary key that nobody asks for ──────────────────────────────────

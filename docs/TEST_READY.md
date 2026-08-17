@@ -2,6 +2,12 @@
 
 This document certifies that the E2E and integration test suite for the onboarding flow has been established and verified. All test cases are executed against the actual schemas and server action implementation, returning a 100% pass rate.
 
+> **Re-verified 2026-08-17: `npm run test:onboarding` passes, 126 tests.** The
+> per-feature totals below add up to the 118 that existed when this was written;
+> eight have been added since. The suite is **not in CI**, because it needs
+> `--experimental-test-module-mocks` — run it by hand after touching the intake
+> schema in `app/onboarding/actions.ts` or the caps in `lib/limits.ts`.
+
 ---
 
 ## Test Run Summary

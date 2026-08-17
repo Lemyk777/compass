@@ -19,7 +19,7 @@ import { majorsForFaculties, type Major } from "@/lib/data/majors";
 
 // THE SPINE — the chain the guide already had the parts for and never joined.
 //
-// The guide's four steps each answered their own question and then stopped. An
+// The guide's five steps each answered their own question and then stopped. An
 // area of work listed the cities it lives in as bare chips: no country, no
 // university, no way in from home. A country listed its cities and its
 // universities but never said what WORK any of it leads to. So a student who
