@@ -12,26 +12,13 @@ The planner's own design of record is [PLANNER_PLAN.md](PLANNER_PLAN.md).
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-> **⚠️ 2026-08-19: there is UNCOMMITTED work on `docs/accuracy-pass-2026-08-17`
-> that is NOT in production.** A whole-tree performance and correctness pass:
-> eight optimisations, **three defects**, 13 new unit tests (268 → 281), and the
-> documentation for all of it. Nothing needs a migration or an environment
-> variable. Full account in
-> [PERFORMANCE_2026-08-19.md](PERFORMANCE_2026-08-19.md); the short version is
-> in the CHANGELOG entry of the same date.
->
-> The three defects matter more than the speed, and one of them is a security
-> fix: a partner-supplied link could inject arbitrary events into a student's
-> `.ics` download, a mind map's indent button could overflow the stack, and
-> `visitDurationMs` had a ceiling that only a constant in another file kept it
-> under. **Do not assume any of this is live** until it is merged — that is the
-> exact mistake this section exists to prevent.
-
-**As of 2026-08-17 everything COMMITTED in this repository is in production.**
-`develop` and `origin/main` are the same commit. The habit of this file is to
-warn that the branch is ahead of `main`; on the committed history it is not.
-Verify anyway — it takes ten seconds, and a stale note here has cost a release
-twice:
+**As of 2026-08-19 everything in this repository is in production**, including
+release 8 — the performance and correctness pass, merged through
+[#119](https://github.com/Lemyk777/compass/pull/119) into `develop` and released
+via [#120](https://github.com/Lemyk777/compass/pull/120). Vercel is green and
+the live pages were smoke-tested. The habit of this file is to warn that the
+branch is ahead of `main`; right now it is not. Verify anyway — it takes ten
+seconds, and a stale note here has cost a release twice:
 
 ```bash
 git fetch origin && git log --oneline origin/main..HEAD
@@ -39,13 +26,38 @@ git fetch origin && git log --oneline origin/main..HEAD
 
 | | |
 |---|---|
-| On `main` (deployed) | everything through **release 7**. `origin/main` = `origin/develop` = `b745ab7`, merged via [#118](https://github.com/Lemyk777/compass/pull/118) |
+| On `main` (deployed) | everything through **release 8**. `origin/main` = `4c87cc0`, released via [#120](https://github.com/Lemyk777/compass/pull/120) from `origin/develop` = `0d8f798` |
 | Open PRs | none |
 | Branch | `develop` |
 | Unit tests | **281** (`npm run test:unit`) |
 | Session checks | **61** (`node --import tsx scripts/test-session-checks.ts`) |
-| Catalog | **172 entries · 0 broken links** (2 unverifiable — bot walls, reported without failing) |
+| Catalog | **172 entries · 0 broken links locally** (1 unverifiable — a bot wall, reported without failing). **The weekly job on `main` reads differently and has failed since at least 2026-08-03** — see below |
 | Migrations | **All applied through `0031_beat_reactions.sql`** — `npm run db:check` reports 33/33 |
+
+**The `Link health` workflow has been red for at least three weekly runs**
+(2026-08-03, 08-10, 08-17), and it is not a regression from anything recent. It
+reports 161/172 with **2 broken** — `future-problem-solving` and
+`odysseyofthemind` — and 9 unverifiable, where a run from a home connection the
+same week gets 171/172, **0 broken** and 1 unverifiable. Both "broken" URLs
+answer **200** when fetched with an ordinary browser user agent, so this is the
+datacenter-IP problem `ARCHITECTURE.md` already names as the reason the job sits
+outside the CI gate — the checker is being blocked, not finding dead links. It
+still needs a decision, because a check that is permanently red is a check
+nobody reads: either the job tolerates a connection-level failure the way it
+already tolerates a 403/429/412, or it stops running in CI.
+
+### What shipped in release 8 — the performance pass, 2026-08-19
+
+Every measured bottleneck was a **formatter or a parser**, never an algorithm —
+`formatDate` alone cost 90.76 µs a call and ran once per card. Eight
+optimisations, and **three defects nobody had reported**: a mind map's indent
+button could overflow the stack (`subtreeHeight` recursed into cycles while its
+neighbour `depthOf` was explicitly cycle-safe), a partner's link could inject
+events into a student's `.ics` download (`z.string().url()` accepts a CR/LF and
+`URL:` was written unescaped), and `visitDurationMs` had an argument-count
+ceiling held back only by a constant in another file. 268 → 281 unit tests.
+Full account in [PERFORMANCE_2026-08-19.md](PERFORMANCE_2026-08-19.md), §4 for
+what was deliberately left alone and §5 for the two things left to the owner.
 
 Two catalog facts that surprise people, both deliberate and both currently zero:
 **nothing is `pinned`** and **nothing is `region`-tagged**. The NAO Cup row was
