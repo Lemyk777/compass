@@ -6,7 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > [docs/BACKLOG_2026-08.md](docs/BACKLOG_2026-08.md) **§1 first** — it says what
 > is deployed versus what is only on the branch, and getting that wrong is the
 > fastest way to do work twice. §8 has the ordered next list, §5 the findings,
-> §7 the working method.
+> §7 the working method, and **§9 the direction** — what the next build is for,
+> as opposed to what it is. §8 also ends with a list of **problems** that are
+> nobody's work item, the first of which is that **three** source-scanning
+> guards in this repo have failed OPEN — the third found by grepping 433 regex
+> literals for the signature — and that a correctly-written guard still needs
+> one assertion proving it bites.
 >
 > **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine findings
 > with evidence. **Two are closed and seven are open** (status table at the top
@@ -465,6 +470,9 @@ unable to answer. Two concrete working days, and which is more like you.
   riddles: median 29 words, with the verb arriving at word 25. Concrete and
   PLAIN, not concrete and literary. Both rules are test-enforced, and the length
   band is tight on purpose — the old one (60–260 characters) never bit once.
+  **Neither did the word count, until 2026-08-19**: it split on `/s+/`, the
+  letter s, so it read a maximum of 9 words where the real maximum is 23 and
+  would have passed a sixty-word beat. Third guard here to lose its backslashes.
 - **"I don't get it" is a first-class answer.** It swaps that card for
   `plainer` in place, records `unclear`, contributes **no signal**, and **keeps
   the pair open** so the student can still answer once they understand.
