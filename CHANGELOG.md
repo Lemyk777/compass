@@ -21,6 +21,270 @@ record.
 
 ---
 
+## 2026-08-19 — Every bottleneck was a formatter, and three defects nobody had hit
+
+A whole-tree pass over `app/`, `components/`, `lib/` and `scripts/`, measuring
+before changing anything. **Not one bottleneck was an algorithm.** Every single
+one was a formatter or a parser rebuilding an answer that could not change —
+invisible because this codebase already reasons hard about bundle size and about
+`O(n)` shape, and a 172-row catalog makes any loop look free. Full numbers and
+method in [docs/PERFORMANCE_2026-08-19.md](docs/PERFORMANCE_2026-08-19.md).
+
+### What a student notices
+
+- **Typing in the opportunity search stops the page stuttering.** Each keystroke
+  used to re-filter the catalog, recompute the facet counts and reconcile up to
+  161 cards synchronously, between the key going down and the character
+  appearing — so the box got heavier the more of the catalog you had widened it
+  to. The computation is 3.1× cheaper and the list now renders at low priority
+  behind the input, which stays exact.
+- **Every screen that shows a date draws faster.** `formatDate` cost **90.76 µs
+  a call** because it rebuilt an `Intl.DateTimeFormat` every time, and it runs
+  once per card: 3.47 ms for the forty on a screen, paid again on every
+  re-render. It is 2.08 µs now. Nothing about what the dates say has changed —
+  521 outputs were checked character for character against the old code.
+- **The traffic dashboard opens in a quarter of a second instead of seven
+  tenths.** Same class of fault: one timestamp was being parsed seven times per
+  row, and the day and hour labels formatted a full ISO timestamp only to throw
+  most of it away.
+- **The indent button on a mind map cannot 500 any more.** See below — it could,
+  and on data that was not even corrupt.
+
+### Under the hood
+
+- **Six caches, every one keyed on an object rather than a string**, because the
+  second input to several of them is a database: `gateFor` and the search
+  haystack are WeakMaps over the row, `SPINES` / `DESTINATION_BY_HUB` /
+  `UNIVERSITIES_BY_HUB` are Maps over closed vocabularies, and `STAMPS` is a
+  WeakMap over a page view. Keying the eligibility cache on the sentence would
+  have grown a table nothing empties.
+- `buildExtracurriculars` went from five chained `map`/`filter` stages to one
+  loop (0.583 → 0.290 ms), `spineForFaculty` is memoised over the eight
+  faculties (390 → 0.25 µs for a full walk), and `universitiesForHub` stopped
+  flattening the whole institution registry on every call (94.67 → 1.20 µs).
+- `matchesFilters` became genuinely dead once the query tokenising moved out of
+  it. The repo's own dead-export scan caught it; it was deleted rather than
+  propped up by a test written to keep it alive.
+- **Route bundles are unchanged.** `/opportunities` stays at 191 kB;
+  `/dashboard/opportunities` moved 184 → 185 kB for `useDeferredValue` and two
+  memo hooks.
+
+### Three defects, found by looking rather than by a failure
+
+None had ever been reported, and each is now pinned by a test that fails on the
+old code.
+
+- **A mind map's indent button could crash the server.** `subtreeHeight`
+  recursed into its children with no visited set and no ceiling, while
+  `depthOf` — four lines above it, doing the same kind of walk for the same
+  check — was explicitly cycle-safe. Verified against the shipped code: it threw
+  `RangeError: Maximum call stack size exceeded` on a cycle, on a self-loop, and
+  on **a merely long chain**, which is not corruption at all. Fixed by moving
+  it: `branchDepth`/`branchHeight` now live in `lib/data/mindmap.ts` beside
+  `canIndent`/`canOutdent`, iterative rather than recursive. That was the actual
+  cause — the helper had drifted because it lived outside the module that owned
+  the discipline, and a private function in a `"use server"` file can never be
+  unit tested.
+- **A partner's link could write events into a student's calendar.**
+  `lib/calendar/ics.ts` escaped the URL inside `DESCRIPTION` and wrote `URL:`
+  raw, and the partner form's `z.string().trim().url()` **accepts a CR/LF inside
+  a URL** (the WHATWG parser tolerates them) and stored it verbatim. So an
+  approved organisation could post a link containing
+  `\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nSUMMARY:…` and add arbitrary events, with
+  their own summaries and alarms, to the calendar of anyone who downloaded the
+  file. It matters more than a usual injection because trust here is granted
+  once per organisation rather than per post, and the safety net is removal —
+  which does not reach a file already in someone's calendar. Fixed at both ends.
+  Writing the test found a second hole: `icsText` escaped newlines and let every
+  other control character through.
+- **A latent ceiling in `visitDurationMs`.** `Math.min(...times)` passes one
+  argument per view and throws past roughly 100,000. It never threw in
+  production, and the only reason is a constant in a different file —
+  `/admin/traffic` caps its query at 50,000 rows. A loop has no ceiling, so the
+  bound stops having to be remembered.
+
+### For anyone working on the code
+
+- **Never call a `toLocale*` method with an options object in a loop or a
+  render.** It constructs and discards an `Intl` formatter every time. This is
+  now a rule in CLAUDE.md with the measurement attached.
+- **A cache that returns the wrong row does not throw** — it shows a student
+  someone else's opportunity. Every new guard in `scripts/test-engine.ts`
+  re-derives the answer the slow way, with the code that shipped before, and
+  asserts they agree over the real catalog. Never write one as "is it fast".
+- **Write a control-character class as `\u0000`-style escapes, never as literal
+  bytes** — a raw NUL or CR does not survive an editor or a patch, and a mangled
+  class fails open: it strips the wrong things and still looks like a guard.
+  This happened twice while making the ICS fix.
+- 281 unit tests (was 268), 61 session checks, 126 onboarding tests, clean build
+  and lint. No migration, no environment variable, nothing to apply by hand.
+- **Two things left open for the owner**, both in §5 of the performance doc:
+  `lookupAuthMethod` pages through at most 2,000 accounts to answer one failed
+  login, so it stops working silently past that; and 12 of 172 catalog rows have
+  a confirmed date, which means the countdown — the strongest promise the
+  product makes — currently applies to 7% of the list.
+
+---
+
+## 2026-08-17 — The writing sounds like a person
+
+The complaint was that the text is unreadable and sounds machine-written. It was
+measured rather than argued about, and **the usual suspect turned out innocent**:
+across 48,000 words of student-facing prose the AI vocabulary was already absent.
+One "comprehensive", five "landscape", and no "delve", "leverage", "utilize",
+"robust" or "It's worth noting" anywhere. Three other things were wrong.
+
+### What a student notices
+
+- **The guide reads faster without losing anything.** Almost every sentence had
+  the same shape — claim, em dash, qualifier — and that uniformity is what a
+  reader calls dry. Sentences are shorter and more varied now: 22.4 words on
+  average down to 16.9, the longest 133 down to 69, and the share running over
+  30 words 21.7% down to 6.6%. The subject pages were the worst of it, at 34.5
+  words a sentence against about 19 everywhere else.
+- **It sounds like someone talking to you.** There were four contractions in the
+  whole body of prose against 514 long forms. Not "few" — effectively none, and
+  that absolute uniformity is itself the tell, because real writing mixes them.
+  Now 337 against 193.
+- **Lines are shorter on every guide subject page.** The lead paragraph ran
+  79–80 characters a line against the 60–75 this repo names as readable, while
+  carrying a cap and honouring it.
+
+### Under the hood
+
+- **A `ch` is the width of a zero, not of an average letter** — in this font the
+  real character count runs about 1.3× the number you write. The cap on
+  long-form prose is `54ch`, which measures 68–72 characters. `60ch` measures
+  79–80.
+- **The earlier measurement of that was wrong, and the way it was wrong is worth
+  keeping.** CLAUDE.md recorded that 60ch "lands at ~72" and the cap stood at 60
+  for several releases on the strength of it. Averaging in each paragraph's
+  ragged final line drags the mean down by roughly a whole tier and makes an
+  over-wide column look compliant. **Count characters per _full_ line** — walk
+  the text node with a `Range` and group by `getBoundingClientRect().top`, which
+  is font-independent and cannot be fooled the way a canvas `measureText` can.
+- **A regex cannot do this job**, and it is worth not attempting. Every
+  individual sentence was defensible; only the distribution was wrong, and a
+  distribution is invisible one line at a time.
+- No migration. No new environment variable.
+
+---
+
+## 2026-08-16 — One list, and the nine things an audit found
+
+Two halves. The first finished the Opportunities spec; the second was not
+planned at all.
+
+### What a student notices
+
+- **The list is the whole list.** Matching used to hide: rows outside your field
+  or country were dropped before anything rendered, so you saw 114 of 172 with
+  no way to ask why and no route to the rest — and the control that looked like
+  the way there said "Show everything we track for you (114)", where
+  "everything" was false. Every row comes back now, marked, and a filter panel
+  does the narrowing with a count on every option.
+- **"I'm doing this" works again.** It had been **unreachable from the UI for a
+  whole release**. The previous release deleted the five-row shortlist, which
+  was the only thing that rendered the commitment control — so the product's
+  single behavioural signal quietly could not be given, while the code still
+  compiled and still type-checked. It now lives inside the detail panel, so
+  every row carries it.
+- **Two columns on a wide screen**, in both places the list appears.
+- **Four report pages load noticeably less JavaScript** — the plan and timeline
+  went from 164 kB to 121 kB, the odds and college-list pages from 171/173 kB to
+  138/140 kB.
+
+### What was specified and deliberately not built
+
+- **A filter rail beside the list.** It was measured instead: from `xl` the
+  companion already takes 20rem, so the content column *drops* from 966px at
+  1024 to 854px at 1280, and a 256px rail on top of that leaves 282px cards at
+  the commonest desktop width. Declined.
+- **Typography changes.** Measured and found fine. The reported problem was not
+  there.
+
+### Under the hood
+
+- **Columns are a container query, not a breakpoint.** This list renders in the
+  student's section and in the report's panel, and at the same 1024px viewport
+  it is 924px wide in one and 652px in the other — so a viewport breakpoint
+  measured 457px cards in one shell and 321px in the other.
+- **`matchedOnly` is now mandatory** on any surface without a filter panel. Three
+  have none, and without it each silently shows a student other people's
+  opportunities. The failure is invisible: nothing looks broken, there are just
+  more rows than there should be.
+- **The catalog was reaching eight client bundles** through two chains of one hop
+  each, one of them for a two-line date helper.
+- **`deleteMap` was dead code while `createMap` told users to use it.** Five
+  vocabularies existed twice. 163 of 393 dictionary keys were dead.
+- **The lesson this release exists to record: in five of the nine findings the
+  root cause was the DETECTOR, not the defect.** The bundle guard checked for a
+  *direct* import edge, so one hop of indirection was invisible to it — and it
+  had been cited as a guarantee. It walks the module graph now, stopping at
+  `"use server"` files, because a server action is an RPC stub and not a
+  dependency. Dead exports and unread dictionary keys are scanned in CI. **Fix
+  the root, then fix the detector that missed it.**
+- 268 unit tests, up from 232. No migration.
+
+---
+
+## 2026-08-16 — The thread: the product finally does what its name says
+
+The diagnosis: **we built an excellent library and called it accompaniment.** A
+library answers a question that is already formed, and our student cannot form
+the question — that is the reason they came. The complaint was never about the
+entrance ("I get more confused the more I use the site"), so a guided route that
+hands a student to a section and stops would not have been a fix; it leaves them
+alone in the library one step later.
+
+### What a student notices
+
+- **Something travels with you.** A companion sits beside every page of the
+  student's section — a rail on a wide screen, a small dock on a phone — saying
+  where you are and what the single next move is. It is the compass needle, not
+  a new thing to learn.
+- **It asks about two ordinary working days and asks which is more like you.**
+  Not a personality quiz, and it never tells you that you are a type. It says
+  what it saw: "you picked the one where the result lands the same evening,
+  twice." **"I don't get it" is a real answer** — it rephrases the card in place
+  and keeps the question open, and it counts for nothing in the scoring.
+- **A subject to apply with.** 44 majors became step 2 of the guide, between the
+  kind of work and the country, because you apply *with* a subject and choosing
+  a country first is the wrong order. Each one names what it is also called
+  elsewhere (one subject is taught under three names across the countries we
+  profile), what the first year is actually made of, and what school subjects
+  can be started today.
+
+### Under the hood
+
+- **The companion's stage is DERIVED, never stored** — seven stations, each
+  reached by a fact that already exists: reactions, picks, commitments. "Opened
+  the page" is deliberately not a condition, because per-student page reads are
+  not recorded and recording them to drive a step counter would be a tracking
+  system built for a progress bar. Nothing moves it backwards.
+- **It stops talking when it cannot judge honestly.** Past the point where a
+  student has committed to something, the next move depends on facts the
+  companion's loader does not carry — and handing it zeroes produced a *false*
+  claim rather than a vaguer one. So it defers to the plan, or renders nothing
+  where the page owns the move.
+- **Migration `0031_beat_reactions.sql`** — the only new stored fact in the
+  release. Reaction ids are referenced by production rows, so **a beat id must
+  never be renamed.**
+- **Majors needed no migration**, because `planner_path` has no `kind` column: a
+  pick's kind is its ref prefix.
+
+### One bug worth recording
+
+A test asserted nothing for its whole life. The companion's bundle guard was
+built as a template literal, where `\s` is the letter s and `\b` is a backspace
+— it compiled to a pattern that matched nothing, passed against a clean codebase
+exactly as it would have passed against the bug it existed to catch, and was
+cited as a guarantee in a PR description. Any hand-built regex now needs a second
+test proving it **bites** on a known-bad input.
+
+---
+
+
 ## 2026-08-14 — The plan is the guide, answered
 
 The section this release rebuilds had already been rebuilt once, three days

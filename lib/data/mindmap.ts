@@ -102,6 +102,88 @@ export function buildTree(rows: MapNodeRow[], rootId: string): MapNode | null {
   return build(root, 0);
 }
 
+// ── Branch arithmetic (the depth check the move actions run) ─────────────────
+//
+// These two lived as private helpers inside `app/planner/maps/actions.ts`, and
+// splitting them apart is what let one of them rot: `depthOf` was written with
+// a visited set and a ceiling, its neighbour `subtreeHeight` recursed into its
+// children with neither. Both answer questions about the SAME table, and
+// `buildTree` above is built on the stated assumption that the table can hold a
+// cycle — so a cycle that the renderer survived would overflow the stack inside
+// the indent action.
+//
+// They belong here, beside `canIndent`/`canOutdent`, for the same reason those
+// do: the server action and the button have to agree, and a pure function is
+// the only version of that agreement anyone can test.
+
+/** The least a row needs for its position in the tree to be answerable. */
+export type TreeRow = { id: string; parentId: string | null };
+
+/** Children indexed once. Both walks below are O(n) because of this. */
+function childrenByParent(rows: TreeRow[]): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const r of rows) {
+    if (r.parentId == null) continue;
+    const bucket = out.get(r.parentId);
+    if (bucket) bucket.push(r.id);
+    else out.set(r.parentId, [r.id]);
+  }
+  return out;
+}
+
+/**
+ * How far `id` sits below its root — 0 for a root, 1 for its child.
+ *
+ * Walks UP. A row whose parent is missing stops the walk, which is the honest
+ * answer: an orphan is as deep as the chain we can actually see.
+ */
+export function branchDepth(rows: TreeRow[], id: string): number {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const seen = new Set<string>();
+  let depth = 0;
+  let cur = byId.get(id);
+  while (cur?.parentId) {
+    if (seen.has(cur.id)) break; // a cycle: stop rather than walk it round
+    seen.add(cur.id);
+    cur = byId.get(cur.parentId);
+    depth += 1;
+    if (depth > MINDMAP_MAX_DEPTH + 2) break;
+  }
+  return depth;
+}
+
+/**
+ * The deepest descendant below `id`, measured from `id` itself (0 = a leaf).
+ *
+ * Walks DOWN, level by level rather than by recursion, so the ceiling is a
+ * bound this module chooses instead of the JavaScript stack. A node reached
+ * twice is a cycle and is not descended through again.
+ *
+ * Capped like `branchDepth`: past the cap the only thing this number is used
+ * for — "would indenting push the branch past the limit?" — already answers
+ * yes, so counting further changes no decision.
+ */
+export function branchHeight(rows: TreeRow[], id: string): number {
+  const kidsOf = childrenByParent(rows);
+  const seen = new Set<string>([id]);
+  let frontier = [id];
+  let height = 0;
+  while (height <= MINDMAP_MAX_DEPTH + 2) {
+    const next: string[] = [];
+    for (const parent of frontier) {
+      for (const kid of kidsOf.get(parent) ?? []) {
+        if (seen.has(kid)) continue;
+        seen.add(kid);
+        next.push(kid);
+      }
+    }
+    if (next.length === 0) return height;
+    frontier = next;
+    height += 1;
+  }
+  return height;
+}
+
 /** Position first, then id — a total order, so the tree is deterministic. */
 function byPosition(a: MapNodeRow, b: MapNodeRow): number {
   return a.position === b.position

@@ -87,4 +87,4 @@ npm run test:onboarding
 node --experimental-test-module-mocks --import tsx --test scripts/test-onboarding.ts
 ```
 
-All test outcomes are output in standard TAP format. A successful run will produce zero errors with all 118 test cases marked `ok`.
+All test outcomes are output in standard TAP format. A successful run will produce zero errors with every test case marked `ok` — **126 as of 2026-08-17** (it was 118 when this guide was written).

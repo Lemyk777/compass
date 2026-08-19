@@ -53,23 +53,34 @@ gh pr create --base main --head develop --title "release: what is going out"
 The body lists what a user will notice and anything that must be done by hand —
 a migration to apply, an environment variable to set.
 
-> **What is actually happening, as of 2026-08-14.** The last several releases
-> have gone `feat/…` → `main` directly — PR #107 and PR #108 both did — so
-> `develop` has not been the integration point for a while and this section
-> describes an intention rather than the practice. That is written down here
-> rather than quietly corrected, because which of the two is right is the
-> owner's call and not a documentation edit: either `develop` starts being used
-> again, or this section should say "a feature branch, PRed into `main`, one
-> release at a time". Until it is decided, **the rule that matters is the one
-> below it** — never push to `main`, and open the PR.
+> **Resolved as of 2026-08-17: the practice matches this section again.** For a
+> while it did not — PRs #107, #108, #114, #115 and #116 all went `feat/…` →
+> `main` directly, so `develop` was not the integration point and this section
+> described an intention rather than what happened. The question was left open
+> here rather than quietly corrected, because which of the two was right was the
+> owner's call. It was answered by practice: the last two releases,
+> [#117](https://github.com/Lemyk777/compass/pull/117) and
+> [#118](https://github.com/Lemyk777/compass/pull/118), both went `develop` →
+> `main`, and `develop` now tracks `main` exactly. **Follow this section as
+> written.** The failure mode to watch for is the opposite one, and it has bitten
+> once: `develop` drifting 75 commits behind `main` with none of its own, so that
+> branching from it per this document produced a tree missing whole features.
+> Check `git rev-list --count origin/develop..origin/main` before branching.
 
 ### Never keep pushing to a branch whose PR has merged
 
 A merged pull request is closed and does not take new commits. Anything pushed
 to that branch afterwards **silently accumulates instead of shipping**, and the
-branch keeps looking like it is up to date. This has happened here twice: PR
-#106 and again PR #107, the second time leaving ten commits and then two more
-stranded on `feat/guide-spine` while the branch name suggested otherwise.
+branch keeps looking like it is up to date. This has happened here **three
+times**: PR #106, PR #107 (leaving ten commits and then two more stranded on
+`feat/guide-spine` while the branch name suggested otherwise), and PR #111,
+which was merged while its review was still running so that all three of the
+resulting fix commits stranded — and `develop` briefly carried a release whose
+centrepiece did not work.
+
+The deeper rule the third one taught: **run the whole-branch review BEFORE asking
+for the merge.** Checking the PR state before pushing is necessary and not
+sufficient, because this owner merges fast, which is fine.
 
 So, before pushing to a branch that has a PR:
 
@@ -104,7 +115,7 @@ Pull requests are the way in. `main` deploys to production, so pushing straight
 to it means shipping unreviewed — the [CI workflow](.github/workflows/ci.yml)
 runs the gate on every pull request, and that signal is the point.
 
-## The gate — CI runs the first two, run all three before merging
+## The gate — CI runs these three, and so should you
 
 ```bash
 npm run build
@@ -115,13 +126,30 @@ node --import tsx scripts/test-session-checks.ts
 ```
 
 ```bash
-npm run test:links
+npm run test:unit
 ```
 
 `npm run build` is the lint and type-check gate, not just a bundler.
 `test-session-checks.ts` is pure logic — no API key, no database, no network.
-`test:links` fails only on genuinely dead links; a bot wall or a one-off 5xx is
-reported without failing.
+`test:unit` covers the deterministic engine: scoring, eligibility arithmetic,
+the filter rules, the guide chain, the planner, and the guards that keep heavy
+registries out of client bundles. [CI](.github/workflows/ci.yml) runs all three
+on every push and pull request, without secrets.
+
+After touching the catalog or the guide sources, add:
+
+```bash
+npm run test:links
+```
+
+It is **not** in the main gate — it makes ~200 third-party requests, and shared
+CI runners get different answers than a student does. A weekly
+[link-health](.github/workflows/link-health.yml) job runs it on Mondays instead,
+and a failure there is a "go and look", not a verdict. `test:links` fails only on
+genuinely dead links; a bot wall or a one-off 5xx is reported without failing.
+**One known hole:** `401` is currently counted as a bot wall, so a private
+document or an expired share link is reported healthy. That is open finding A2 in
+[docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md).
 
 **Stop the dev server before running the build.** They share `.next/`, and the
 build removes chunks the running dev server still references — the resulting
@@ -161,6 +189,10 @@ The registries are shipped data, so the bar is the same as for code:
 
 ## Secrets
 
-`.env.local` is git-ignored and stays that way. The five required variables are
-listed in [.env.example](.env.example). The hard spend cap for the Anthropic key
-can only be set in the Anthropic console — it cannot be enforced from code.
+`.env.local` is git-ignored and stays that way. The six variables are listed in
+[.env.example](.env.example): five are needed to run the app, and the sixth,
+`CRON_SECRET`, gates the two cron endpoints. That gate **fails closed** — no
+secret means a 503 and the scheduled jobs silently never run, which is the safe
+direction, because those routes fetch pages, call the model and write with the
+service-role key. The hard spend cap for the Anthropic key can only be set in the
+Anthropic console — it cannot be enforced from code.

@@ -19,12 +19,14 @@ import type { GuideSectionId } from "@/lib/data/guide-sections";
 // pick from its stored label and href, which is all a chip needs.
 
 /**
- * The four things a student can claim, and they are the guide's four steps.
+ * The five things a student can claim, and they are the guide's five steps.
  *
  * The kinds ARE the sections, deliberately: the join is only legible if the
- * plan groups what you picked the way the guide grouped what you read. A fifth
+ * plan groups what you picked the way the guide grouped what you read. A sixth
  * kind added here without a step in `GUIDE_SECTIONS` would be a thing the plan
- * can hold and the guide cannot produce.
+ * can hold and the guide cannot produce. ("major" was the fifth, and it arrived
+ * with a step, which is why it needed no migration: a pick's kind is its ref
+ * prefix, so there is no column to widen.)
  */
 export type PickKind = "work" | "major" | "place" | "hub" | "route";
 

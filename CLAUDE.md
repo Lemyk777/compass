@@ -9,12 +9,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > §7 the working method.
 >
 > **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine findings
-> with evidence. **A1 is now CLOSED**: its date passed on 2026-08-14, which
-> turned "a confirmed date is never already in the past" red on `main` for every
-> branch, and the owner's answer on 2026-08-15 was to remove the row (catalog
-> 173 → 172). The audit's do-not-touch instruction did its job — it said raise
-> it with the owner rather than fix it, and that is what happened. **The other
-> eight are still open.**
+> with evidence. **Two are closed and seven are open** (status table at the top
+> of that file, re-verified 2026-08-17). A1 closed because its date passed on
+> 2026-08-14, which turned "a confirmed date is never already in the past" red on
+> `main` for every branch, and the owner's answer on 2026-08-15 was to remove the
+> row (catalog 173 → 172). The audit's do-not-touch instruction did its job — it
+> said raise it with the owner rather than fix it, and that is what happened. A3
+> closed with the one-list release. **Two side effects of removing that row are
+> live rules now: the catalog has ZERO `pinned` entries and ZERO `region`-tagged
+> entries, and a unit test pins each zero.**
 
 ## What this is
 
@@ -29,11 +32,12 @@ npm run dev            # dev server at http://localhost:3000
 npm run build          # production build — also runs ESLint + type-check (use as the main gate)
 npm run lint           # ESLint only
 npx tsc --noEmit       # type-check only
-npm run test:unit      # unit tests for the deterministic engine (node:test, no key/network)
+npm run test:unit      # 281 unit tests for the deterministic engine (node:test, no key/network)
+npm run test:onboarding # 126 tests over the intake schema + server action (db/auth mocked, not in CI)
 npm run test:links     # every catalog URL; non-zero exit if any is DEAD
 npm run test:guide-links # the guide's official sources (ministries, portals)
 npm run test:analyze   # run the §12 sample profile through the LIVE analysis engine
-node --import tsx scripts/test-session-checks.ts   # 60 pure logic checks
+node --import tsx scripts/test-session-checks.ts   # 61 pure logic checks
 ```
 
 The **CI gate** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on every push and PR without secrets: `npm run build`, the session logic checks, then `npm run test:unit`. Locally that trio is the verification path — `test:analyze` is the only one needing a real `ANTHROPIC_API_KEY` in `.env.local` (loaded via `node --env-file`).
@@ -44,17 +48,29 @@ The **CI gate** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on e
 
 ## Environment
 
-Five vars (see [.env.example](.env.example)) in `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SITE_URL`. Without them the app still builds and `/demo` renders the full report from a sample; auth and analysis require them.
+**Six** vars (see [.env.example](.env.example)) in `.env.local`. Five run the app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SITE_URL`. Without them the app still builds and `/demo` renders the full report from a sample; auth and analysis require them.
+
+The sixth is **`CRON_SECRET`**, and it is easy to miss because nothing looks broken without it: both cron endpoints fail CLOSED with a 503, so the date sync and the discovery run simply never happen. It must be set in Vercel or the scheduled runs stop. See "Cost & abuse" below for why that direction is deliberate.
 
 ## Site structure: the student's section vs the report
 
 Two shells, and the distinction is load-bearing:
 
-- **The student's section** — `/opportunities` (what you can enter) and `/guide/*`
-  (where it leads). Frame: [components/student/StudentShell.tsx](components/student/StudentShell.tsx)
-  — one narrow column, two destinations, the report a link away. Both are
-  session-aware and work signed out; `/opportunities` shows the guest
-  eligibility checker, the guide opens on every field instead of the student's.
+- **The student's section** — `/opportunities` (what you can enter), `/guide/*`
+  (where it leads) and `/planner` (what it becomes). Frame:
+  [components/student/StudentShell.tsx](components/student/StudentShell.tsx)
+  — one narrow column, the companion beside it, the report a link away. The
+  first two are session-aware and work signed out; `/opportunities` shows the
+  guest eligibility checker, the guide opens on every field instead of the
+  student's. `/planner` is private.
+  **Every opportunity also has its own address** — `/opportunities/[id]`,
+  server-rendered, public, in the sitemap, and the reason the detail stopped
+  being a modal: a modal has no URL, so the most natural thing a student does
+  with this product (find a contest and send it to a friend) was impossible. Its
+  Open Graph tags carry the four facts every card carries, so a shared link
+  unfurls into who can enter, what it costs and when it closes rather than into
+  the site-wide banner. Sending the organiser's own link sends a page that says
+  none of that.
 - **The report** — `/dashboard/*`, the opt-in admission analysis, in the sidebar
   shell. **Whether Opportunities appears as a tab there depends on one thing:
   does the student have an analysis?**
@@ -297,7 +313,7 @@ is its own route now:
   level with strengths. On mobile the columns stack, so each answer is labelled
   with its country — an unlabelled stack is not a comparison.
 
-- **The four steps are JOINED, and the join is a function**
+- **The five steps are JOINED, and the join is a function**
   ([lib/data/spine.ts](lib/data/spine.ts), rendered by
   [components/guide/Spine.tsx](components/guide/Spine.tsx)). Every layer already
   carried `FacultyValue` — `CAREER_AREAS_BY_FACULTY` is keyed by it,
@@ -325,7 +341,7 @@ is its own route now:
 - **An area of work says how to TRY it, and we never build the try ourselves**
   ([lib/data/try-it.ts](lib/data/try-it.ts) → `TryTheWork`, inside "Test it this
   month"). A student weighing investment banking meets the bank's own simulation
-  on that page rather than in a catalog of 173 rows — the best-evidenced item on
+  on that page rather than in a catalog of 172 rows — the best-evidenced item on
   the backlog, and free. Three rules, test-enforced:
   **no URLs in the file** (the catalog owns links because `test:links` keeps
   them alive, and the individual company pages sit behind bot protection the
@@ -632,8 +648,13 @@ survives signing in.
 ## Being findable is a feature (`sitemap.ts`, `robots.ts`, canonicals)
 
 The guide is public on purpose — a family choosing between Germany and Korea
-should read it without an account — and for a while nothing told a crawler its
-77 evergreen pages existed. Four things now do, and each has a rule:
+should read it without an account — and for a while nothing told a crawler that
+any of it existed. Four things now do, and each has a rule:
+
+The sitemap is **316 URLs** as of 2026-08-17 — 138 guide pages, 172 opportunity
+pages, and the public marketing and partner routes. **Do not write that number
+down anywhere it has to be maintained**; it is stated here only to give a sense
+of scale, and it is derived at build time from the registries.
 
 - **[app/sitemap.ts](app/sitemap.ts) is generated from the registries**
   (`GUIDE_SECTIONS`, `allCareerAreas`, `STUDY_DESTINATIONS`, `HUBS`), never
@@ -727,7 +748,7 @@ sticky and ~57px tall.
 
 ## The landing page: the front door has to be on the front page
 
-[app/(marketing)/page.tsx](app/(marketing)/page.tsx) was built end-to-end for
+[app/(marketing)/page.tsx](app/%28marketing%29/page.tsx) was built end-to-end for
 the admission report — hero, three pains, "how we score you", a scorecard, a
 campus-mascot gallery, an FAQ about the score. Opportunities appeared on it as a
 button. It now runs in the product's own order: **what you can enter → what the
@@ -992,6 +1013,84 @@ fix.
 already; the **scrollbar** (the largest of them — Chrome's default on a
 near-black page is a light grey slab that is the brightest vertical object on
 screen) and the **caret** now are too, both from `--ink`.
+
+## Speed: the constant, not the row count (read [docs/PERFORMANCE_2026-08-19.md](docs/PERFORMANCE_2026-08-19.md))
+
+A whole-tree pass on 2026-08-19 measured every hot path. **Not one bottleneck
+was an algorithm.** All of them were a formatter or a parser rebuilding an
+answer that could not change — and they were invisible precisely because this
+file already reasons hard about bundle size and about `O(n)` shape, so nobody
+looked at constant factors. A 172-row catalog makes any loop look free, which is
+exactly what hid a **90 µs** function.
+
+- **Never call a `toLocale*` method with an options object in a loop or a
+  render.** `toLocaleDateString(locale, options)` is specified as constructing
+  an `Intl.DateTimeFormat` and discarding it, and it measured **90.76 µs a
+  call** against 2.08 for a hoisted one. `formatDate` runs once per opportunity
+  card: 3.47 ms for one screen, paid again on every re-render, so it was charged
+  to every keystroke in the search box. Build the formatter once at module level
+  (`DAY_MONTH_YEAR` in [opportunity-format.ts](lib/data/opportunity-format.ts),
+  `MONTH_YEAR` in [roadmap.ts](lib/data/roadmap.ts)).
+- **Six caches exist, and every one is keyed on an OBJECT, not on a string.**
+  `gateFor` and the search haystack are WeakMaps over the row; `SPINES`,
+  `DESTINATION_BY_HUB` and `UNIVERSITIES_BY_HUB` are Maps over closed
+  vocabularies; `STAMPS` in [summarize.ts](lib/traffic/summarize.ts) is a
+  WeakMap over the view. The rule behind that: **the second input to several of
+  these caches is a database.** Keying `gateFor` on the eligibility sentence
+  would grow a table nothing ever empties, one entry per distinct string any
+  partner has ever posted.
+- **A cache that returns the wrong row does not throw — it shows a student
+  someone else's opportunity.** So each guard in
+  [scripts/test-engine.ts](scripts/test-engine.ts) re-derives the answer the
+  SLOW way, with the code that shipped before, and asserts the two agree over
+  the real catalog. Never write one of these tests as "is it fast".
+- **`parseEligibility` stays pure and uncached.** It is the tested contract, and
+  `lib/discovery/screen.ts` calls it on strings that have no row behind them yet.
+  `gateFor` is the cached wrapper, and it honours an explicit `gate` first.
+- **Typing is deferred, never debounced.** `useDeferredValue` in
+  `OpportunitiesView` and `FilterBar` keeps the input exact and immediate while
+  the list and the facet counts render at low priority; a timer would arrive
+  late even when there is time to do the work. **`activeFilterCount` reads the
+  DEFERRED filters too** — it decides whether the shortlist or the browse list
+  is on screen, so taking the live value flashes an empty list on the first
+  character typed.
+- **Before optimising anything here, benchmark the primitives over the real
+  registries** — `Intl.*`, `Date.parse`, `new Date()`, `toISOString()`, regex
+  parses. Reason about the constant. The §4 list in that doc says what was
+  measured and deliberately left alone, so the next pass does not redo it.
+
+## Two sibling functions, one defended and one not
+
+The three defects that pass found were not performance at all, and two of them
+share a shape worth naming: **a rule was enforced in one place and its neighbour
+never got it.**
+
+- **`subtreeHeight` recursed into cycles while `depthOf`, four lines above it,
+  did not.** `buildTree` exists on the stated assumption that
+  `planner_map_nodes` can hold a cycle, so the renderer survived what the server
+  action did not — a `RangeError` from the indent button, and also from a merely
+  long chain. It was fixed **by moving it**: `branchDepth`/`branchHeight` now
+  live in [mindmap.ts](lib/data/mindmap.ts) beside `canIndent`/`canOutdent`,
+  iterative rather than recursive. That is the root cause, not the symptom — the
+  helper had drifted *because* it lived outside the module that owned the
+  discipline, and a private function in a `"use server"` file can never be unit
+  tested.
+- **The `.ics` file escaped `DESCRIPTION` and wrote `URL:` raw.** And
+  `z.string().trim().url()` **accepts a CR/LF inside a URL** — the WHATWG parser
+  tolerates them — and stores it verbatim, so an approved partner could post a
+  link that ends one VEVENT and begins another and write events into the
+  calendar of every student who downloaded the file. Trust here is granted once
+  per organisation and the safety net is removal, which does not reach a file
+  already in someone's calendar. Fixed at **both** ends. Note `URL:` is a URI
+  value, not TEXT: a backslash escapes nothing there, so the treatment is to
+  REMOVE control characters, not to escape them. Writing the test found a second
+  hole — `icsText` escaped newlines and let tabs through — so both value types
+  now share one rule, and `buildIcs` is exported purely so the escaping can be
+  asserted at all.
+- **Write a control-character class as `\u0000`-style escapes, never as literal
+  bytes.** A raw NUL or CR in a `.ts` file does not survive an editor or a patch,
+  and a mangled character class fails OPEN: it strips the wrong things and still
+  looks like a guard. This happened twice while making the fix above.
 
 ## Tailwind classes are linted against the config
 

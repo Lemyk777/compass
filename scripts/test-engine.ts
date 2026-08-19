@@ -50,8 +50,13 @@ import {
   COMPETITION_CATEGORIES,
   COMPETITION_LEVELS,
   COMPETITION_TIERS,
+  gateFor,
 } from "@/lib/data/key-dates";
-import type { CompetitionLevel, Opportunity } from "@/lib/data/key-dates";
+import type {
+  Competition,
+  CompetitionLevel,
+  Opportunity,
+} from "@/lib/data/key-dates";
 import {
   CATEGORY_ORDER,
   CATEGORY_TABS,
@@ -63,6 +68,7 @@ import {
   matchedOnly,
   activeFilterCount,
   filterOpportunities,
+  matchesQuery,
   opportunityFacets,
   withoutChip,
   type CostBucket,
@@ -127,6 +133,8 @@ import {
   MAP_NODE_KIND_LABEL,
   mapNodeKind,
   MINDMAP_MAX_DEPTH,
+  branchDepth,
+  branchHeight,
   buildTree,
   canIndent,
   canMoveDown,
@@ -135,6 +143,7 @@ import {
   layoutTree,
   type MapNode,
   type MapNodeRow,
+  type TreeRow,
 } from "@/lib/data/mindmap";
 import {
   PLANNER_COLUMNS,
@@ -182,6 +191,9 @@ import {
   destinationsForFaculties,
 } from "@/lib/data/study-destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
+import { buildIcs } from "@/lib/calendar/ics";
+import { daysBetween, formatDate } from "@/lib/data/opportunity-format";
+import { parseEligibility } from "@/lib/data/eligibility";
 import { plannerStarts } from "@/lib/data/planner-start";
 import {
   areasForDestination,
@@ -2018,6 +2030,30 @@ test("the chart has one bucket per calendar slot, including the empty ones", () 
   assert.equal(s.granularity, "day");
   assert.equal(summarize([], T0, 1).buckets.length, 24);
   assert.equal(summarize([], T0, 1).granularity, "hour");
+
+  // The bucket key IS the UTC calendar slot, and it is built from the date's
+  // UTC fields rather than by slicing `toISOString()` — that method formats the
+  // milliseconds and the zone as well, only for the slice to discard them, and
+  // it runs once per row per pass. Same characters, and this is what says so.
+  // A whole day and a whole 24 hours are walked, so a month or hour that pads
+  // differently at either end cannot slip through.
+  const DAY = 24 * 60 * 60 * 1000;
+  for (let i = 0; i < 30; i++) {
+    const t = T0 - i * DAY;
+    assert.equal(
+      summarize([], t, 30).buckets[29].key,
+      new Date(t).toISOString().slice(0, 10),
+      `day key drift at ${new Date(t).toISOString()}`,
+    );
+  }
+  for (let h = 0; h < 24; h++) {
+    const t = Date.parse("2026-12-31T00:00:00.000Z") + h * 60 * 60 * 1000;
+    assert.equal(
+      summarize([], t, 1).buckets[23].key,
+      new Date(t).toISOString().slice(0, 13),
+      `hour key drift at ${new Date(t).toISOString()}`,
+    );
+  }
 });
 
 test("a visit has one source — its first external referrer", () => {
@@ -6598,13 +6634,19 @@ test("the README's counts are the counts", () => {
     `README says ${entries[1]} catalog entries, the catalog holds ${COMPETITIONS.length}`,
   );
 
+  // All FIVE steps, because the guide has five and a guard that covers three
+  // leaves two counts free to rot. Majors became step 2 in release 5, and the
+  // README carried that number for a while with nothing asserting it — the
+  // same gap this whole test exists to close, one layer in.
   const guide = readme.match(
-    /(\d+) areas of work, (\d+) country profiles, (\d+) cities/,
+    /(\d+) areas of work, (\d+) majors, (\d+) country profiles, (\d+) cities,\s+(\d+) routes from\s+home/,
   );
   assert.ok(guide, "the README no longer states the guide's shape");
   assert.equal(Number(guide[1]), allCareerAreas().length, "areas of work");
-  assert.equal(Number(guide[2]), STUDY_DESTINATIONS.length, "country profiles");
-  assert.equal(Number(guide[3]), HUBS.length, "cities");
+  assert.equal(Number(guide[2]), MAJORS.length, "majors");
+  assert.equal(Number(guide[3]), STUDY_DESTINATIONS.length, "country profiles");
+  assert.equal(Number(guide[4]), HUBS.length, "cities");
+  assert.equal(Number(guide[5]), HOME_ROUTES.length, "routes from home");
 });
 
 // ── No dictionary key that nobody asks for ──────────────────────────────────
@@ -6908,4 +6950,516 @@ test("the commitment-chain guard actually bites", () => {
     );
     assert.match(src, must);
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE CACHES AND THE FAST PATHS
+//
+// Six hot paths were rewritten for speed, and every one of them replaced a
+// straightforward computation with either a remembered answer or a cheaper
+// route to the same one. That is the class of change that goes wrong quietly:
+// a cache that returns the wrong row does not throw, it just shows a student
+// something that is not theirs, and a hand-rolled date parse that is off by a
+// day moves a deadline.
+//
+// So each test below re-derives the answer the SLOW way — the exact code that
+// shipped before — and asserts the two agree over the whole real catalog rather
+// than over a fixture. The point is not that the new code is fast; it is that
+// being fast changed nothing a student can see.
+// ─────────────────────────────────────────────────────────────────────────────
+
+test("the date formatter is built once and says exactly what it said before", () => {
+  // `toLocaleDateString(locale, options)` constructs an Intl.DateTimeFormat per
+  // call — measured at 90.76 µs against 2.08 for a hoisted one, and it runs
+  // once per opportunity card, so a forty-card screen spent 3.5 ms formatting
+  // dates and spent it again on every re-render. The output is identical by
+  // specification; this asserts it over every date the product actually
+  // renders, plus the shapes most likely to expose a formatter difference.
+  const before = (iso: string) =>
+    new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  for (const c of COMPETITIONS) {
+    assert.equal(formatDate(c.deadline), before(c.deadline), c.id);
+  }
+  for (const iso of [
+    "2028-02-29", // leap day
+    "2026-01-01", // year start, single-digit day
+    "2026-12-31", // year end
+    "2027-09-09", // single-digit month and day
+  ]) {
+    assert.equal(formatDate(iso), before(iso), iso);
+  }
+});
+
+test("daysBetween reads a date-only string without building a Date", () => {
+  // The fast path only fires on a plain YYYY-MM-DD. Anything else falls through
+  // to the old behaviour EXACTLY, including the NaN a caller has always got for
+  // a string this function cannot read — that is a contract rather than a bug,
+  // and quietly turning it into a number would hide a bad row instead of
+  // letting it render as "Dates TBA".
+  const beforeUTC = (d: Date | string) => {
+    const x = typeof d === "string" ? new Date(d + "T00:00:00Z") : d;
+    return Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate());
+  };
+  const before = (from: Date | string, to: Date | string) =>
+    Math.round((beforeUTC(to) - beforeUTC(from)) / 86_400_000);
+
+  const today = new Date("2026-08-19T00:00:00Z");
+  for (const c of COMPETITIONS) {
+    assert.equal(daysBetween(today, c.deadline), before(today, c.deadline), c.id);
+    assert.equal(daysBetween(c.deadline, today), before(c.deadline, today), c.id);
+  }
+  // Both directions, a leap year and a whole year — the arithmetic, not the parse.
+  assert.equal(daysBetween("2026-01-01", "2026-12-31"), 364);
+  assert.equal(daysBetween("2028-02-28", "2028-03-01"), 2);
+  assert.equal(daysBetween("2027-02-28", "2027-03-01"), 1);
+  assert.equal(daysBetween("2026-12-31", "2026-01-01"), -364);
+  // The unreadable string still reads as unreadable.
+  assert.ok(Number.isNaN(daysBetween("not-a-date", today)));
+});
+
+test("a cached eligibility gate is the gate the parser would have produced", () => {
+  // Keyed on the ROW, which is also why this pins the rule the cache must not
+  // swallow: an explicit `gate` on an entry always beats the parsed sentence.
+  // That rule sits one line above the cache and is the one a later edit is
+  // most likely to fold into it.
+  for (const c of COMPETITIONS) {
+    const expected = c.gate ?? parseEligibility(c.eligibility);
+    assert.deepEqual(gateFor(c), expected, `gate drift on ${c.id}`);
+    // Again, because the second call is the one served from the cache.
+    assert.deepEqual(gateFor(c), expected, `cached gate drift on ${c.id}`);
+  }
+  const pinned = COMPETITIONS.find((c) => c.gate);
+  if (pinned) assert.equal(gateFor(pinned), pinned.gate);
+
+  // A row rebuilt by resolveCompetitions is a NEW object carrying the same
+  // sentence — a fresh key, and it has to be parsed rather than missed.
+  const plain = COMPETITIONS.find((c) => !c.gate && c.eligibility);
+  assert.ok(plain, "expected at least one catalog row with a parsed gate");
+  const rebuilt = { ...plain!, deadline: "2027-01-01" };
+  assert.deepEqual(gateFor(rebuilt), parseEligibility(rebuilt.eligibility));
+});
+
+test("the one-pass matcher returns what the five-pass chain returned", () => {
+  // The chain was five map/filter stages; it is one loop now. Membership is
+  // re-derived here straight from the primitives — no shared helper, so a bug
+  // in the loop cannot hide behind the same bug in the reference.
+  const today = new Date("2026-08-19T00:00:00Z");
+  const profiles: {
+    faculties: string[];
+    factors: { key: string; score: number }[];
+  }[] = [
+    { faculties: [], factors: [] },
+    { faculties: ["computer_science"], factors: [] },
+    {
+      faculties: ["engineering", "arts_design"],
+      factors: [
+        { key: "awards", score: 9 },
+        { key: "extracurricular_depth", score: 8 },
+        { key: "academics", score: 9 },
+      ],
+    },
+  ];
+  let combinations = 0;
+  for (const p of profiles) {
+    for (const homeCountry of [null, "KZ", "US", "UZ"]) {
+      for (const graduationYear of [undefined, 2027, 2028, 2031]) {
+        const grade = gradeFromGraduationYear(graduationYear, today);
+        const ageRange = grade == null ? null : plausibleAgeForGrade(grade);
+        const expected = COMPETITIONS.filter((c) => {
+          if (c.dateConfirmed && daysBetween(today, c.deadline) < 0) return false;
+          if (!reachableFrom(c, homeCountry)) return false;
+          const v = checkEligibility(c.gate ?? parseEligibility(c.eligibility), {
+            country: homeCountry,
+            grade,
+            ageRange,
+          });
+          return v.ok || v.reason === "too_young";
+        }).map((c) => c.id);
+
+        const got = buildExtracurriculars({
+          today,
+          faculties: p.faculties,
+          factors: p.factors,
+          homeCountry,
+          graduationYear,
+        }).items.map((o) => o.id);
+
+        assert.deepEqual(
+          [...got].sort(),
+          [...expected].sort(),
+          `membership drift: fields=${p.faculties} country=${homeCountry} year=${graduationYear}`,
+        );
+        combinations++;
+      }
+    }
+  }
+  assert.ok(combinations >= 36, "the matrix stopped covering what it claims to");
+
+  // Sorting in place must still be a total, repeatable answer.
+  const args = {
+    today,
+    faculties: ["computer_science"],
+    factors: [],
+    homeCountry: "KZ",
+    graduationYear: 2028,
+  };
+  assert.deepEqual(
+    buildExtracurriculars(args).items.map((o) => o.id),
+    buildExtracurriculars(args).items.map((o) => o.id),
+  );
+});
+
+test("the remembered search haystack is the haystack, for every query shape", () => {
+  // The haystack is built once per row and reused across the six faceting
+  // passes. Built from the wrong row, search would return someone else's
+  // opportunity for a term that is not on the card — the exact failure the
+  // whole matching layer is written to prevent.
+  const today = new Date("2026-08-19T00:00:00Z");
+  const items = buildExtracurriculars({
+    today,
+    faculties: [],
+    factors: [],
+    homeCountry: null,
+    graduationYear: 2028,
+  }).items;
+
+  const before = (o: Opportunity, q: string) => {
+    const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return true;
+    const hay = [o.name, o.blurb, o.eligibility, o.city, o.partner?.name]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return terms.every((t) => hay.includes(t));
+  };
+
+  const queries = [
+    "", // empty matches everything
+    "   ", // whitespace is still empty
+    "math",
+    "MATH", // case folds
+    "math olympiad",
+    "olympiad math", // any order
+    "  spaced   out  ", // repeated separators
+    "zzzznope", // matches nothing
+  ];
+  for (const q of queries) {
+    for (const o of items) {
+      assert.equal(matchesQuery(o, q), before(o, q), `query="${q}" row=${o.id}`);
+      // Twice: the first call fills the cache, the second reads it.
+      assert.equal(
+        matchesQuery(o, q),
+        before(o, q),
+        `cached query="${q}" row=${o.id}`,
+      );
+    }
+  }
+  // And through the pass that tokenises once for the list instead of per row.
+  for (const q of queries) {
+    assert.deepEqual(
+      filterOpportunities(items, {
+        ...NO_FILTERS,
+        matched: [],
+        query: q,
+      }).map((o) => o.id),
+      items.filter((o) => before(o, q)).map((o) => o.id),
+      `filterOpportunities disagrees with matchesQuery for "${q}"`,
+    );
+  }
+});
+
+test("the indexed registry lookups answer what the scans answered", () => {
+  // Both were linear scans rebuilt per call. `universitiesForHub` flattened the
+  // entire institution registry to keep a handful of rows, and its ORDER is
+  // load-bearing: the guide names institutions and never ranks them, so "the
+  // registry's own order" is the rule, and a grouping pass that reordered them
+  // would be a ranking introduced by accident.
+  for (const h of HUBS) {
+    assert.equal(
+      destinationForHub(h.id),
+      STUDY_DESTINATIONS.find((d) => d.hubs.includes(h.id)),
+      h.id,
+    );
+    assert.deepEqual(
+      universitiesForHub(h.id),
+      Object.values(PLACE_UNIVERSITIES)
+        .flat()
+        .filter((u) => u.hub === h.id),
+      h.id,
+    );
+  }
+  // An id nothing claims stays unclaimed rather than falling into a bucket.
+  for (const bogus of ["", "nowhere", "BERLIN"]) {
+    assert.equal(destinationForHub(bogus), undefined, bogus);
+    assert.deepEqual(universitiesForHub(bogus), []);
+  }
+  // A null `hub` means "named city, no page" and must never become a key.
+  const unhoused = Object.values(PLACE_UNIVERSITIES)
+    .flat()
+    .filter((u) => !u.hub);
+  for (const u of unhoused) {
+    assert.ok(
+      !HUBS.some((h) => universitiesForHub(h.id).includes(u)),
+      `${u.name} has no hub but was filed under one`,
+    );
+  }
+});
+
+test("the memoised spine is one object per field, and it is the derived one", () => {
+  // The memo hands every caller THE SAME object, which is what makes it cheap
+  // and also what makes it worth writing down: a view that sorted `stops` in
+  // place would reorder the chain for every later request and break the
+  // home-region-leads rule for everyone. Nothing does today.
+  for (const f of FACULTY_VALUES) {
+    const first = spineForFaculty(f);
+    assert.equal(spineForFaculty(f), first, `spine for ${f} is rebuilt per call`);
+    // Still self-consistent, and still derived rather than stored.
+    assert.equal(
+      first.hubCount,
+      first.stops.reduce((n, s) => n + s.hubs.length, 0),
+      f,
+    );
+    assert.equal(
+      first.universityCount,
+      first.stops.reduce((n, s) => n + s.universities.length, 0),
+      f,
+    );
+    // Rule 2 still holds through the memo: every stop can be opened.
+    for (const s of first.stops) {
+      assert.ok(
+        s.destination !== null || s.hubs.length > 0,
+        `${f}: ${s.country} is a stop with nothing behind it`,
+      );
+    }
+  }
+});
+
+test("mind map: the branch walks survive a cycle, in BOTH directions", () => {
+  // `buildTree` was written on the stated assumption that this table can hold a
+  // cycle, and it breaks one rather than recursing into it. The two walks the
+  // MOVE actions run had drifted apart on exactly that point: `branchDepth`
+  // carried a visited set, `branchHeight` — its neighbour, used by the same
+  // indent check — recursed into its children with neither a visited set nor a
+  // ceiling. So a cycle the renderer survived overflowed the stack inside a
+  // server action and turned it into a 500.
+  //
+  // Both are asserted here because the pair is the point: they are used in one
+  // expression (`branchDepth(parent) + 1 + branchHeight(node)`), and either one
+  // spinning takes the whole action down.
+  const cyclic: TreeRow[] = [
+    { id: "root", parentId: null },
+    { id: "a", parentId: "b" },
+    { id: "b", parentId: "a" }, // a → b → a
+  ];
+  // Would not return at all before the fix.
+  assert.ok(branchHeight(cyclic, "a") <= MINDMAP_MAX_DEPTH + 2);
+  assert.ok(branchDepth(cyclic, "a") <= MINDMAP_MAX_DEPTH + 2);
+  // A self-parenting row is the shortest cycle there is.
+  const selfLoop: TreeRow[] = [
+    { id: "root", parentId: null },
+    { id: "x", parentId: "x" },
+  ];
+  assert.ok(branchHeight(selfLoop, "x") <= MINDMAP_MAX_DEPTH + 2);
+  assert.ok(branchDepth(selfLoop, "x") <= MINDMAP_MAX_DEPTH + 2);
+
+  // A cycle somewhere else in the table must not affect a healthy branch.
+  const mixed: TreeRow[] = [
+    { id: "root", parentId: null },
+    { id: "k1", parentId: "root" },
+    { id: "k2", parentId: "k1" },
+    { id: "a", parentId: "b" },
+    { id: "b", parentId: "a" },
+  ];
+  assert.equal(branchHeight(mixed, "root"), 2);
+  assert.equal(branchDepth(mixed, "k2"), 2);
+});
+
+test("mind map: branch height and depth measure what the indent check needs", () => {
+  //        root
+  //        ├── a ── a1 ── a2
+  //        └── b
+  const rows: TreeRow[] = [
+    { id: "root", parentId: null },
+    { id: "a", parentId: "root" },
+    { id: "a1", parentId: "a" },
+    { id: "a2", parentId: "a1" },
+    { id: "b", parentId: "root" },
+  ];
+  assert.equal(branchHeight(rows, "a2"), 0, "a leaf is height 0");
+  assert.equal(branchHeight(rows, "a1"), 1);
+  assert.equal(branchHeight(rows, "a"), 2);
+  assert.equal(branchHeight(rows, "root"), 3, "the longest branch, not a count");
+  assert.equal(branchHeight(rows, "b"), 0);
+  assert.equal(branchDepth(rows, "root"), 0, "a root is depth 0");
+  assert.equal(branchDepth(rows, "a2"), 3);
+  // An id nothing knows about is depth 0 and height 0, not a throw.
+  assert.equal(branchDepth(rows, "ghost"), 0);
+  assert.equal(branchHeight(rows, "ghost"), 0);
+
+  // The check the action actually runs: indenting `b` under `a` would put a
+  // three-deep branch below a node already one deep.
+  assert.equal(branchDepth(rows, "a") + 1 + branchHeight(rows, "b"), 2);
+  assert.ok(branchDepth(rows, "a") + 1 + branchHeight(rows, "a1") > 2);
+});
+
+test("mind map: a very deep chain is bounded, not recursed to the stack limit", () => {
+  // Depth is capped in the database by the actions, but nothing stops a chain
+  // arriving longer than the cap — an edited row, a migration run by hand. The
+  // walk must answer rather than run to the end of a 50,000-long chain.
+  const rows: TreeRow[] = [{ id: "n0", parentId: null }];
+  for (let i = 1; i < 50_000; i++) {
+    rows.push({ id: `n${i}`, parentId: `n${i - 1}` });
+  }
+  assert.equal(branchHeight(rows, "n0"), MINDMAP_MAX_DEPTH + 3);
+  assert.equal(branchDepth(rows, "n49999"), MINDMAP_MAX_DEPTH + 3);
+});
+
+test("a single visit of any size has a length, rather than a RangeError", () => {
+  // `Math.min(...times)` passed one argument per view, and an argument list
+  // past roughly 100,000 throws. It never threw in production — /admin/traffic
+  // caps its query at 50,000 rows, so a visit could not get that big — but the
+  // safety was a constant in another file rather than anything in this one.
+  // 150,000 is above where the spread gives out and below nothing in
+  // particular, which is the point: the answer should not depend on the size.
+  const many: ViewRow[] = Array.from({ length: 150_000 }, (_, i) =>
+    view({
+      session_id: "one-long-visit",
+      created_at: new Date(T0 - (150_000 - i) * 1000).toISOString(),
+      dwell_ms: 1000,
+    }),
+  );
+  const ms = visitDurationMs(many);
+  assert.equal(
+    ms,
+    150_000 * 1000 - 1000 + 1000,
+    "the span is first to last, plus the last page's reading time",
+  );
+
+  // …and the ordinary cases are untouched: the minimum is the EARLIEST view,
+  // whatever order the rows arrive in.
+  const shuffled: ViewRow[] = [
+    view({ created_at: new Date(T0 + 60_000).toISOString(), dwell_ms: 5_000 }),
+    view({ created_at: new Date(T0).toISOString(), dwell_ms: 1_000 }),
+    view({ created_at: new Date(T0 + 30_000).toISOString(), dwell_ms: 2_000 }),
+  ];
+  assert.equal(visitDurationMs(shuffled), 65_000);
+  assert.equal(visitDurationMs([]), null, "no views is unknown, not zero");
+});
+
+// A minimal confirmed row. The calendar only ever builds from confirmed dates.
+const icsRow = (o: Partial<Competition> & { id: string }): Competition => ({
+  name: "A real-looking hackathon",
+  fields: "all",
+  deadline: "2026-11-01",
+  window: "November",
+  level: "national",
+  url: "https://example.org/",
+  blurb: "Nothing wrong with this blurb.",
+  dateConfirmed: true,
+  ...o,
+});
+
+test("a partner-supplied link cannot write extra events into a calendar", () => {
+  // `URL:` is a URI property, not TEXT — a backslash escapes nothing there, so
+  // the only correct treatment is to remove what cannot sit on a content line.
+  //
+  // This was a live hole. The same string went through `icsText` for
+  // DESCRIPTION and raw for URL, and the partner form's
+  // `z.string().trim().url()` ACCEPTS a CR or LF inside a URL — the WHATWG
+  // parser it calls tolerates them — and stored it verbatim. A calendar file
+  // is downloaded into a student's own calendar, where taking the post down
+  // afterwards reaches nothing at all.
+  const evil = [
+    "https://example.com/a\r\nX-EVIL:1",
+    "https://example.com/a\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nSUMMARY:Injected",
+    "https://example.com/a\nSUMMARY:Injected",
+    "https://example.com/a\tb",
+    "https://example.com/a\u0000b",
+  ];
+  for (const url of evil) {
+    const ics = buildIcs([icsRow({ id: "partner-x", url })]);
+    const lines = ics.split("\r\n");
+
+    // LINES, not substrings. `BEGIN:VEVENT` legitimately appears inside the
+    // DESCRIPTION value, where `icsText` escaped the newline to a literal
+    // backslash-n — that is the escaping working, and counting substrings
+    // would call it a failure. Injection means a value became a PROPERTY LINE
+    // of its own, so the lines are the only thing worth counting.
+    assert.equal(
+      lines.filter((l) => l === "BEGIN:VEVENT").length,
+      1,
+      `a link opened a second event: ${JSON.stringify(url)}`,
+    );
+    assert.equal(lines.filter((l) => l === "END:VEVENT").length, 1);
+    assert.ok(
+      !lines.some((l) => l.startsWith("X-EVIL")),
+      "an injected property became a line of its own",
+    );
+    assert.ok(
+      !lines.some((l) => l === "SUMMARY:Injected"),
+      "an injected summary became a line of its own",
+    );
+
+    // Every line is a property or a structural keyword, and none of them
+    // carries a character that cannot be on a content line.
+    for (const line of lines) {
+      assert.match(
+        line,
+        /^[A-Za-z-]+[;:]/,
+        `not a property line: ${JSON.stringify(line)}`,
+      );
+      assert.ok(
+        // eslint-disable-next-line no-control-regex -- looking for them is the point
+        !/[\u0000-\u001F\u007F]/.test(line),
+        `a control character reached a content line: ${JSON.stringify(line)}`,
+      );
+    }
+  }
+});
+
+test("the calendar still says what it is supposed to say", () => {
+  // Stripping is worthless if it also mangles the links students follow, so the
+  // ordinary row is asserted character for character.
+  const ics = buildIcs([
+    icsRow({
+      id: "imo",
+      name: "IMO — International Mathematical Olympiad",
+      url: "https://www.imo-official.org/?a=1&b=2#top",
+      blurb: "The world championship of school mathematics.",
+    }),
+    // An unconfirmed row never gets an event: a reminder set on a guessed date
+    // sends a student to a page that is not open, which is worse than none.
+    icsRow({ id: "guessed", dateConfirmed: false }),
+  ]);
+
+  assert.equal(
+    ics.match(/BEGIN:VEVENT/g)?.length,
+    1,
+    "an unconfirmed date was given a reminder",
+  );
+  assert.ok(ics.includes("URL:https://www.imo-official.org/?a=1&b=2#top"));
+  assert.ok(ics.includes("UID:imo@compass"));
+  assert.ok(ics.includes("DTSTART;VALUE=DATE:20261101"));
+  assert.ok(ics.includes("TRIGGER:-P7D"));
+
+  // The TEXT rule still applies where TEXT is what the property holds — the URI
+  // rule was added beside it, not in place of it.
+  const withPunctuation = buildIcs([
+    icsRow({ id: "x", name: "Maths, physics and informatics", blurb: "One; two, three." }),
+  ]);
+  assert.ok(
+    withPunctuation.includes("SUMMARY:Deadline — Maths\\, physics and informatics"),
+  );
+  assert.ok(withPunctuation.includes("DESCRIPTION:One\\; two\\, three."));
+
+  // Nothing at all to put in a calendar is an empty calendar, not a crash.
+  const none = buildIcs([icsRow({ id: "y", dateConfirmed: false })]);
+  assert.ok(!none.includes("BEGIN:VEVENT"));
+  assert.ok(none.startsWith("BEGIN:VCALENDAR"));
+  assert.ok(none.endsWith("END:VCALENDAR"));
 });
