@@ -152,13 +152,19 @@ this incident, and it is the only note here that cannot go stale.
 Verification, run directly with `node --import tsx`. Two pure suites, both in
 the CI gate and neither needing a key, network or DB:
 
-- `test-engine.ts` (`npm run test:unit`, node:test) — **268 tests** over the
+- `test-engine.ts` (`npm run test:unit`, node:test) — **281 tests** over the
   deterministic core: rubric/overall scoring, benchmarks, eligibility
   arithmetic, the interest quiz, the careers registry, matching invariants, the
   guide's chain, and the whole of the planner. **Add a case here when you touch
   scoring or eligibility** — and when you touch the planner, because that
   section sits behind a session and cannot be opened in a browser by an agent,
   so a pure test is the only verification available to it.
+  The last block of the file guards the **caches and fast paths** added on
+  2026-08-19 ([PERFORMANCE_2026-08-19.md](PERFORMANCE_2026-08-19.md)). Those
+  tests have a shape worth copying: each re-derives the answer the SLOW way,
+  with the code that shipped before, and asserts the two agree over the real
+  catalog. A cache that returns the wrong row does not throw — it shows a
+  student someone else's opportunity — so "is it fast" is never the assertion.
 - `test-session-checks.ts` — 61 checks over geography, eligibility gates,
   registry integrity, the commitment vocabulary and cron rotation maths.
 - `check-schema.ts` (`npm run db:check`) — read-only, needs `.env.local`.

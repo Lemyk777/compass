@@ -1,7 +1,13 @@
 "use client";
 import dynamic from "next/dynamic";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 // Opportunities is the one view whose cards reflow on tab switch, so it uses the
 // framer-backed MotionCard (position animation) instead of the plain Card.
 import { MotionCard as Card } from "@/components/report/MotionCard";
@@ -237,9 +243,24 @@ export function OpportunitiesView({
   // would invalidate every memo below it, including the facet counts the
   // filter panel recomputes.
   const items = useMemo(() => plan?.items ?? [], [plan]);
+  // The list follows the filters one beat behind, and the input never does.
+  //
+  // Every keystroke in the search box used to re-filter the catalog, recompute
+  // the facet counts and reconcile up to 161 cards SYNCHRONOUSLY, between the
+  // key going down and the character appearing — so the box got heavier the
+  // more of the catalog a student had widened it to. `useDeferredValue` keeps
+  // the controlled input on `filters` (it stays exactly as responsive as an
+  // empty one) and lets React render the expensive half at low priority,
+  // showing the previous list until the new one is ready rather than blocking
+  // on it.
+  //
+  // NOT a debounce: a timer would make the list arrive late even when there is
+  // time to do the work, and would need tuning per device. This yields to real
+  // input and to nothing else.
+  const deferredFilters = useDeferredValue(filters);
   const filtered = useMemo(
-    () => filterOpportunities(items, filters),
-    [items, filters],
+    () => filterOpportunities(items, deferredFilters),
+    [items, deferredFilters],
   );
   const inCategory = useMemo(
     () =>
@@ -259,7 +280,13 @@ export function OpportunitiesView({
   // Any active filter is an explicit request to browse, so it opens the full
   // list on its own: a student who searches "robotics" and gets the same five
   // recommendations back would reasonably conclude the search is broken.
-  const filtering = activeFilterCount(filters) > 0;
+  //
+  // Read off the DEFERRED filters, not the live ones, and that is not a detail:
+  // this flag decides whether the shortlist or the full list is on screen, and
+  // `filtered` below it is deferred. Taking the live value would flip the page
+  // to the browse list one frame before the rows for it existed — an empty
+  // "no matches" flash on the first character typed.
+  const filtering = activeFilterCount(deferredFilters) > 0;
 
   // How many sit behind each tab. Showing the number turns the filter from a
   // guess ("is there anything under Courses?") into a decision.
@@ -280,19 +307,32 @@ export function OpportunitiesView({
   );
   // What to act on now: eligible today, in the order buildExtracurriculars
   // already put them (matched to strength first, then datable, then soonest).
-  const openNow = mine.filter((o) => !o.notYetEligible);
-  const nearest = openNow
-    .slice(0, SHOWN)
-    .filter((o) => o.dateConfirmed)
-    .reduce<Opportunity | null>(
-      (best, o) =>
-        best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
-      null,
-    );
+  //
+  // Memoised on `mine` like everything else derived from the catalog. These
+  // three depend on the student's own facts and on nothing the filter panel
+  // touches, yet they were recomputed on every render — so typing a character
+  // walked the matched list twice and rebuilt the shortlist's headline, to
+  // arrive at the same answer each time.
+  const openNow = useMemo(
+    () => mine.filter((o) => !o.notYetEligible),
+    [mine],
+  );
+  const nearest = useMemo(
+    () =>
+      openNow
+        .slice(0, SHOWN)
+        .filter((o) => o.dateConfirmed)
+        .reduce<Opportunity | null>(
+          (best, o) =>
+            best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
+          null,
+        ),
+    [openNow],
+  );
   // How much of the catalog this student is being shown, and out of how much.
   // Computed, never written down — the control that used to sit here said
   // "Show everything we track for you (114)", where "everything" was false.
-  const { shown, total } = matchedCount(items);
+  const { shown, total } = useMemo(() => matchedCount(items), [items]);
 
   return (
     // Three zones, and the rules between them are the whole change.

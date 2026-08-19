@@ -32,7 +32,7 @@ npm run dev            # dev server at http://localhost:3000
 npm run build          # production build — also runs ESLint + type-check (use as the main gate)
 npm run lint           # ESLint only
 npx tsc --noEmit       # type-check only
-npm run test:unit      # 268 unit tests for the deterministic engine (node:test, no key/network)
+npm run test:unit      # 281 unit tests for the deterministic engine (node:test, no key/network)
 npm run test:onboarding # 126 tests over the intake schema + server action (db/auth mocked, not in CI)
 npm run test:links     # every catalog URL; non-zero exit if any is DEAD
 npm run test:guide-links # the guide's official sources (ministries, portals)
@@ -1013,6 +1013,84 @@ fix.
 already; the **scrollbar** (the largest of them — Chrome's default on a
 near-black page is a light grey slab that is the brightest vertical object on
 screen) and the **caret** now are too, both from `--ink`.
+
+## Speed: the constant, not the row count (read [docs/PERFORMANCE_2026-08-19.md](docs/PERFORMANCE_2026-08-19.md))
+
+A whole-tree pass on 2026-08-19 measured every hot path. **Not one bottleneck
+was an algorithm.** All of them were a formatter or a parser rebuilding an
+answer that could not change — and they were invisible precisely because this
+file already reasons hard about bundle size and about `O(n)` shape, so nobody
+looked at constant factors. A 172-row catalog makes any loop look free, which is
+exactly what hid a **90 µs** function.
+
+- **Never call a `toLocale*` method with an options object in a loop or a
+  render.** `toLocaleDateString(locale, options)` is specified as constructing
+  an `Intl.DateTimeFormat` and discarding it, and it measured **90.76 µs a
+  call** against 2.08 for a hoisted one. `formatDate` runs once per opportunity
+  card: 3.47 ms for one screen, paid again on every re-render, so it was charged
+  to every keystroke in the search box. Build the formatter once at module level
+  (`DAY_MONTH_YEAR` in [opportunity-format.ts](lib/data/opportunity-format.ts),
+  `MONTH_YEAR` in [roadmap.ts](lib/data/roadmap.ts)).
+- **Six caches exist, and every one is keyed on an OBJECT, not on a string.**
+  `gateFor` and the search haystack are WeakMaps over the row; `SPINES`,
+  `DESTINATION_BY_HUB` and `UNIVERSITIES_BY_HUB` are Maps over closed
+  vocabularies; `STAMPS` in [summarize.ts](lib/traffic/summarize.ts) is a
+  WeakMap over the view. The rule behind that: **the second input to several of
+  these caches is a database.** Keying `gateFor` on the eligibility sentence
+  would grow a table nothing ever empties, one entry per distinct string any
+  partner has ever posted.
+- **A cache that returns the wrong row does not throw — it shows a student
+  someone else's opportunity.** So each guard in
+  [scripts/test-engine.ts](scripts/test-engine.ts) re-derives the answer the
+  SLOW way, with the code that shipped before, and asserts the two agree over
+  the real catalog. Never write one of these tests as "is it fast".
+- **`parseEligibility` stays pure and uncached.** It is the tested contract, and
+  `lib/discovery/screen.ts` calls it on strings that have no row behind them yet.
+  `gateFor` is the cached wrapper, and it honours an explicit `gate` first.
+- **Typing is deferred, never debounced.** `useDeferredValue` in
+  `OpportunitiesView` and `FilterBar` keeps the input exact and immediate while
+  the list and the facet counts render at low priority; a timer would arrive
+  late even when there is time to do the work. **`activeFilterCount` reads the
+  DEFERRED filters too** — it decides whether the shortlist or the browse list
+  is on screen, so taking the live value flashes an empty list on the first
+  character typed.
+- **Before optimising anything here, benchmark the primitives over the real
+  registries** — `Intl.*`, `Date.parse`, `new Date()`, `toISOString()`, regex
+  parses. Reason about the constant. The §4 list in that doc says what was
+  measured and deliberately left alone, so the next pass does not redo it.
+
+## Two sibling functions, one defended and one not
+
+The three defects that pass found were not performance at all, and two of them
+share a shape worth naming: **a rule was enforced in one place and its neighbour
+never got it.**
+
+- **`subtreeHeight` recursed into cycles while `depthOf`, four lines above it,
+  did not.** `buildTree` exists on the stated assumption that
+  `planner_map_nodes` can hold a cycle, so the renderer survived what the server
+  action did not — a `RangeError` from the indent button, and also from a merely
+  long chain. It was fixed **by moving it**: `branchDepth`/`branchHeight` now
+  live in [mindmap.ts](lib/data/mindmap.ts) beside `canIndent`/`canOutdent`,
+  iterative rather than recursive. That is the root cause, not the symptom — the
+  helper had drifted *because* it lived outside the module that owned the
+  discipline, and a private function in a `"use server"` file can never be unit
+  tested.
+- **The `.ics` file escaped `DESCRIPTION` and wrote `URL:` raw.** And
+  `z.string().trim().url()` **accepts a CR/LF inside a URL** — the WHATWG parser
+  tolerates them — and stores it verbatim, so an approved partner could post a
+  link that ends one VEVENT and begins another and write events into the
+  calendar of every student who downloaded the file. Trust here is granted once
+  per organisation and the safety net is removal, which does not reach a file
+  already in someone's calendar. Fixed at **both** ends. Note `URL:` is a URI
+  value, not TEXT: a backslash escapes nothing there, so the treatment is to
+  REMOVE control characters, not to escape them. Writing the test found a second
+  hole — `icsText` escaped newlines and let tabs through — so both value types
+  now share one rule, and `buildIcs` is exported purely so the escaping can be
+  asserted at all.
+- **Write a control-character class as `\u0000`-style escapes, never as literal
+  bytes.** A raw NUL or CR in a `.ts` file does not survive an editor or a patch,
+  and a mangled character class fails OPEN: it strips the wrong things and still
+  looks like a guard. This happened twice while making the fix above.
 
 ## Tailwind classes are linted against the config
 

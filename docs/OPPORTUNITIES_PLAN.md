@@ -36,7 +36,7 @@ two disagree, this one wins.
 | `region`-tagged rows | **0** — same row. The local-opportunity mechanism applies to nothing curated. This is the highest-value data work available (audit A8) |
 | The guide | **five** steps: 33 areas of work → 44 majors → 17 countries → 38 cities → 6 routes from home |
 | Named institutions | 79, never ranked |
-| Tests | 268 unit · 61 session checks |
+| Tests | 281 unit · 61 session checks |
 
 **The front door is one list now, and that was the last structural change.**
 Matching used to *hide*: `buildExtracurriculars` dropped rows outside the
@@ -459,7 +459,7 @@ competition; the admin page lists broken links first.
 ## Verification (no API key needed)
 
 ```bash
-npm run test:unit       # 268 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner, the bundle guards
+npm run test:unit       # 281 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner, the bundle guards
 npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
 npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog

@@ -21,6 +21,111 @@ record.
 
 ---
 
+## 2026-08-19 — Every bottleneck was a formatter, and three defects nobody had hit
+
+A whole-tree pass over `app/`, `components/`, `lib/` and `scripts/`, measuring
+before changing anything. **Not one bottleneck was an algorithm.** Every single
+one was a formatter or a parser rebuilding an answer that could not change —
+invisible because this codebase already reasons hard about bundle size and about
+`O(n)` shape, and a 172-row catalog makes any loop look free. Full numbers and
+method in [docs/PERFORMANCE_2026-08-19.md](docs/PERFORMANCE_2026-08-19.md).
+
+### What a student notices
+
+- **Typing in the opportunity search stops the page stuttering.** Each keystroke
+  used to re-filter the catalog, recompute the facet counts and reconcile up to
+  161 cards synchronously, between the key going down and the character
+  appearing — so the box got heavier the more of the catalog you had widened it
+  to. The computation is 3.1× cheaper and the list now renders at low priority
+  behind the input, which stays exact.
+- **Every screen that shows a date draws faster.** `formatDate` cost **90.76 µs
+  a call** because it rebuilt an `Intl.DateTimeFormat` every time, and it runs
+  once per card: 3.47 ms for the forty on a screen, paid again on every
+  re-render. It is 2.08 µs now. Nothing about what the dates say has changed —
+  521 outputs were checked character for character against the old code.
+- **The traffic dashboard opens in a quarter of a second instead of seven
+  tenths.** Same class of fault: one timestamp was being parsed seven times per
+  row, and the day and hour labels formatted a full ISO timestamp only to throw
+  most of it away.
+- **The indent button on a mind map cannot 500 any more.** See below — it could,
+  and on data that was not even corrupt.
+
+### Under the hood
+
+- **Six caches, every one keyed on an object rather than a string**, because the
+  second input to several of them is a database: `gateFor` and the search
+  haystack are WeakMaps over the row, `SPINES` / `DESTINATION_BY_HUB` /
+  `UNIVERSITIES_BY_HUB` are Maps over closed vocabularies, and `STAMPS` is a
+  WeakMap over a page view. Keying the eligibility cache on the sentence would
+  have grown a table nothing empties.
+- `buildExtracurriculars` went from five chained `map`/`filter` stages to one
+  loop (0.583 → 0.290 ms), `spineForFaculty` is memoised over the eight
+  faculties (390 → 0.25 µs for a full walk), and `universitiesForHub` stopped
+  flattening the whole institution registry on every call (94.67 → 1.20 µs).
+- `matchesFilters` became genuinely dead once the query tokenising moved out of
+  it. The repo's own dead-export scan caught it; it was deleted rather than
+  propped up by a test written to keep it alive.
+- **Route bundles are unchanged.** `/opportunities` stays at 191 kB;
+  `/dashboard/opportunities` moved 184 → 185 kB for `useDeferredValue` and two
+  memo hooks.
+
+### Three defects, found by looking rather than by a failure
+
+None had ever been reported, and each is now pinned by a test that fails on the
+old code.
+
+- **A mind map's indent button could crash the server.** `subtreeHeight`
+  recursed into its children with no visited set and no ceiling, while
+  `depthOf` — four lines above it, doing the same kind of walk for the same
+  check — was explicitly cycle-safe. Verified against the shipped code: it threw
+  `RangeError: Maximum call stack size exceeded` on a cycle, on a self-loop, and
+  on **a merely long chain**, which is not corruption at all. Fixed by moving
+  it: `branchDepth`/`branchHeight` now live in `lib/data/mindmap.ts` beside
+  `canIndent`/`canOutdent`, iterative rather than recursive. That was the actual
+  cause — the helper had drifted because it lived outside the module that owned
+  the discipline, and a private function in a `"use server"` file can never be
+  unit tested.
+- **A partner's link could write events into a student's calendar.**
+  `lib/calendar/ics.ts` escaped the URL inside `DESCRIPTION` and wrote `URL:`
+  raw, and the partner form's `z.string().trim().url()` **accepts a CR/LF inside
+  a URL** (the WHATWG parser tolerates them) and stored it verbatim. So an
+  approved organisation could post a link containing
+  `\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nSUMMARY:…` and add arbitrary events, with
+  their own summaries and alarms, to the calendar of anyone who downloaded the
+  file. It matters more than a usual injection because trust here is granted
+  once per organisation rather than per post, and the safety net is removal —
+  which does not reach a file already in someone's calendar. Fixed at both ends.
+  Writing the test found a second hole: `icsText` escaped newlines and let every
+  other control character through.
+- **A latent ceiling in `visitDurationMs`.** `Math.min(...times)` passes one
+  argument per view and throws past roughly 100,000. It never threw in
+  production, and the only reason is a constant in a different file —
+  `/admin/traffic` caps its query at 50,000 rows. A loop has no ceiling, so the
+  bound stops having to be remembered.
+
+### For anyone working on the code
+
+- **Never call a `toLocale*` method with an options object in a loop or a
+  render.** It constructs and discards an `Intl` formatter every time. This is
+  now a rule in CLAUDE.md with the measurement attached.
+- **A cache that returns the wrong row does not throw** — it shows a student
+  someone else's opportunity. Every new guard in `scripts/test-engine.ts`
+  re-derives the answer the slow way, with the code that shipped before, and
+  asserts they agree over the real catalog. Never write one as "is it fast".
+- **Write a control-character class as `\u0000`-style escapes, never as literal
+  bytes** — a raw NUL or CR does not survive an editor or a patch, and a mangled
+  class fails open: it strips the wrong things and still looks like a guard.
+  This happened twice while making the ICS fix.
+- 281 unit tests (was 268), 61 session checks, 126 onboarding tests, clean build
+  and lint. No migration, no environment variable, nothing to apply by hand.
+- **Two things left open for the owner**, both in §5 of the performance doc:
+  `lookupAuthMethod` pages through at most 2,000 accounts to answer one failed
+  login, so it stops working silently past that; and 12 of 172 catalog rows have
+  a confirmed date, which means the countdown — the strongest promise the
+  product makes — currently applies to 7% of the list.
+
+---
+
 ## 2026-08-17 — The writing sounds like a person
 
 The complaint was that the text is unreadable and sounds machine-written. It was

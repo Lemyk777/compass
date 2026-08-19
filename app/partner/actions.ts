@@ -44,9 +44,31 @@ const DETAIL_MAX = 300;
 // says its dates are not announced.
 const TIMING = ["deadline", "always_open", "tba"] as const;
 
+/**
+ * A link, with the characters that are not part of any URL refused.
+ *
+ * `.url()` alone is NOT enough, and that is a measured fact rather than
+ * caution: it calls the WHATWG parser, which TOLERATES a tab, a CR or an LF
+ * inside the input — so `https://example.com/a\r\nX-EVIL:1` passes validation
+ * and is stored exactly as typed. That string later goes onto a line of a
+ * generated `.ics` file, where a newline ends one calendar property and starts
+ * another, so a partner could write events straight into the calendar of every
+ * student who downloaded it. `lib/calendar/ics.ts` strips them at the other end
+ * too — this end is where the row stops being wrong in the database.
+ */
+const httpUrl = z
+  .string()
+  .trim()
+  .url()
+  .startsWith("http")
+    // eslint-disable-next-line no-control-regex -- refusing them is the point
+  .refine((v) => !/[\u0000-\u001F\u007F]/.test(v), {
+    message: "That link contains characters a URL cannot have.",
+  });
+
 const opportunitySchema = z.object({
   name: z.string().trim().min(3).max(NAME_MAX),
-  url: z.string().trim().url().startsWith("http"),
+  url: httpUrl,
   blurb: z.string().trim().min(10).max(BLURB_MAX),
   category: z.enum(COMPETITION_CATEGORIES),
   tier: z.enum(["accessible", "selective", "elite"]),

@@ -134,12 +134,18 @@ function shiftISO(iso: string, days: number): string {
   ).padStart(2, "0")}`;
 }
 
+// Built once, for the reason written up on `formatDate` in opportunity-format:
+// passing an options object to `toLocaleDateString` constructs and discards an
+// Intl.DateTimeFormat on every call. This one labels every phase of a roadmap,
+// so it is called a dozen times per build rather than once.
+const MONTH_YEAR = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
 function monthYear(iso: string): string {
-  return new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  return MONTH_YEAR.format(new Date(iso + "T00:00:00Z"));
 }
 
 /** ISO a ≤ b (string compare is safe for YYYY-MM-DD). */

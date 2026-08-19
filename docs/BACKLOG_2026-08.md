@@ -12,10 +12,26 @@ The planner's own design of record is [PLANNER_PLAN.md](PLANNER_PLAN.md).
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**As of 2026-08-17 everything in this repository is in production.** `develop`
-and `origin/main` are the same commit. The habit of this file is to warn that
-the branch is ahead of `main`; right now it is not. Verify anyway — it takes ten
-seconds, and a stale note here has cost a release twice:
+> **⚠️ 2026-08-19: there is UNCOMMITTED work on `docs/accuracy-pass-2026-08-17`
+> that is NOT in production.** A whole-tree performance and correctness pass:
+> eight optimisations, **three defects**, 13 new unit tests (268 → 281), and the
+> documentation for all of it. Nothing needs a migration or an environment
+> variable. Full account in
+> [PERFORMANCE_2026-08-19.md](PERFORMANCE_2026-08-19.md); the short version is
+> in the CHANGELOG entry of the same date.
+>
+> The three defects matter more than the speed, and one of them is a security
+> fix: a partner-supplied link could inject arbitrary events into a student's
+> `.ics` download, a mind map's indent button could overflow the stack, and
+> `visitDurationMs` had a ceiling that only a constant in another file kept it
+> under. **Do not assume any of this is live** until it is merged — that is the
+> exact mistake this section exists to prevent.
+
+**As of 2026-08-17 everything COMMITTED in this repository is in production.**
+`develop` and `origin/main` are the same commit. The habit of this file is to
+warn that the branch is ahead of `main`; on the committed history it is not.
+Verify anyway — it takes ten seconds, and a stale note here has cost a release
+twice:
 
 ```bash
 git fetch origin && git log --oneline origin/main..HEAD
@@ -26,7 +42,7 @@ git fetch origin && git log --oneline origin/main..HEAD
 | On `main` (deployed) | everything through **release 7**. `origin/main` = `origin/develop` = `b745ab7`, merged via [#118](https://github.com/Lemyk777/compass/pull/118) |
 | Open PRs | none |
 | Branch | `develop` |
-| Unit tests | **268** (`npm run test:unit`) |
+| Unit tests | **281** (`npm run test:unit`) |
 | Session checks | **61** (`node --import tsx scripts/test-session-checks.ts`) |
 | Catalog | **172 entries · 0 broken links** (2 unverifiable — bot walls, reported without failing) |
 | Migrations | **All applied through `0031_beat_reactions.sql`** — `npm run db:check` reports 33/33 |
@@ -1615,7 +1631,7 @@ Two things worth carrying:
 
 ```bash
 npm run build            # the gate — never while `npm run dev` is running
-npm run test:unit        # 268 tests
+npm run test:unit        # 281 tests
 npx tsc --noEmit
 npm run lint
 npm run db:check         # read-only: is the DB what the code assumes? 33/33

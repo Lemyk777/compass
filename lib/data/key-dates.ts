@@ -592,6 +592,40 @@ export function reachableFrom(
   return c.region === homeCountry;
 }
 
+/**
+ * The structured gate for one row, parsed at most once per row.
+ *
+ * `parseEligibility` runs eight regexes over an English sentence, and it was
+ * doing that for all 172 rows on every match — 0.201 ms of the 0.583 ms
+ * `buildExtracurriculars` cost, for an answer that cannot change: the sentence
+ * is static catalog text and the parser is pure.
+ *
+ * Keyed on the ROW rather than on the sentence, and a WeakMap rather than a
+ * Map, because the second input to this cache is a database. A curated entry is
+ * a module-level object whose identity survives every request, so it is parsed
+ * once for the life of the process; a row `resolveCompetitions` rebuilt to
+ * overlay a live date is a fresh object that gets parsed once and then
+ * collected with the request. Keying on the string instead would grow a table
+ * that nothing ever empties, one entry per distinct sentence any partner has
+ * ever posted.
+ *
+ * `parseEligibility` itself stays pure and uncached — it is the tested
+ * contract, and `lib/discovery/screen.ts` calls it on strings that have no row
+ * behind them yet.
+ */
+const GATES = new WeakMap<Competition, EligibilityGate>();
+
+export function gateFor(c: Competition): EligibilityGate {
+  // An explicit gate always wins, and there is nothing to parse or cache.
+  if (c.gate) return c.gate;
+  let gate = GATES.get(c);
+  if (!gate) {
+    gate = parseEligibility(c.eligibility);
+    GATES.set(c, gate);
+  }
+  return gate;
+}
+
 export function buildExtracurriculars({
   today,
   faculties,
@@ -620,11 +654,25 @@ export function buildExtracurriculars({
   const fac = new Set(faculties);
   const grade = gradeFromGraduationYear(graduationYear, today);
 
-  const items: Opportunity[] = comps
-    // NEITHER of these removes a row any more. They RECORD why a row would have
-    // been removed, and the filter panel turns that into two ordinary controls
-    // with counts — so a student can see that a third of the catalog is
-    // off-field and switch the narrowing off in one press.
+  // The age band the student's year group plausibly spans. Constant for the
+  // whole call — it depends on `grade` and nothing else — so it is resolved
+  // once here rather than rebuilt for each of the 172 rows.
+  const ageRange = grade == null ? null : plausibleAgeForGrade(grade);
+
+  // ONE pass, where there used to be five chained map/filter stages.
+  //
+  // Each stage allocated its own array and, for the first three, a wrapper
+  // object per row to carry values forward — so a 172-row catalog cost five
+  // arrays and several hundred short-lived objects before a single card was
+  // drawn, and `daysBetween` was computed twice for every surviving row. The
+  // stages are kept below as the comments they always were; the ORDER of the
+  // work is unchanged, which is what keeps the output identical.
+  const items: Opportunity[] = [];
+  for (const c of comps) {
+    // NEITHER of these removes a row. They RECORD why a row would have been
+    // removed, and the filter panel turns that into two ordinary controls with
+    // counts — so a student can see that a third of the catalog is off-field
+    // and switch the narrowing off in one press.
     //
     // As filters they were invisible: they ran before the panel saw anything,
     // so the product quietly showed a smaller catalog than it has and the only
@@ -633,85 +681,82 @@ export function buildExtracurriculars({
     //
     // An empty field selection still means "we don't know yet", not "show almost
     // nothing" — so nothing is off-field when nothing was stated.
-    .map((c) => ({
-      c,
-      offRegion: !reachableFrom(c, homeCountry),
-      offField:
-        fac.size > 0 &&
-        c.fields !== "all" &&
-        !c.fields.some((f) => fac.has(f)),
-    }))
+    const offRegion = !reachableFrom(c, homeCountry);
+    const offField =
+      fac.size > 0 && c.fields !== "all" && !c.fields.some((f) => fac.has(f));
+
     // Drop a CONFIRMED competition once its date has passed, and this one stays
     // a hard filter: a closed date is a fact about the world rather than a
     // narrowing of the catalog, and offering to "show expired" would be
     // offering rubbish. Keep not-yet-announced ones (the catalog shows them as
     // "Dates not yet announced") — their stored date is only an estimate, so we
     // don't filter on it and never present it as a hard deadline.
-    .filter(({ c }) => !c.dateConfirmed || daysBetween(today, c.deadline) >= 0)
+    const daysToDeadline = daysBetween(today, c.deadline);
+    if (c.dateConfirmed && daysToDeadline < 0) continue;
+
     // Eligibility gate. A student in Kazakhstan was being recommended
     // "Grades 9–12 at a US school" competitions, and a 9th grader was being
     // recommended final-year-only programmes. Unknown facts never exclude.
-    .map(({ c, offField, offRegion }) => {
-      const gate = c.gate ?? parseEligibility(c.eligibility);
-      // Age rules were being ignored entirely — we only ever passed the school
-      // year, so every "Ages 13–18" entry counted as open to a 12-year-old and
-      // the count we showed them was wrong. We still never ask for a birth
-      // date, so age comes from the year group as a RANGE and only excludes
-      // when the whole group is outside the rule.
-      const verdict = checkEligibility(gate, {
-        country: homeCountry,
-        grade,
-        ageRange: grade == null ? null : plausibleAgeForGrade(grade),
-      });
-      return { c, gate, verdict, offField, offRegion };
-    })
-    // Can never enter: wrong country, or already past the age/grade ceiling.
-    .filter(({ verdict }) => verdict.ok || verdict.reason === "too_young")
-    .map(({ c, gate, verdict, offField, offRegion }) => {
-      const tierResolved = competitionTier(c);
-      const notYetEligible = verdict.ok ? undefined : verdict.detail;
-      // Not yet eligible is always aspirational, never "do this now".
-      const fit: OpportunityFit = notYetEligible
-        ? "stretch"
-        : targetTiers.includes(tierResolved)
-          ? "recommended"
-          : TIER_RANK[tierResolved] > targetMax
-            ? "stretch"
-            : "foundational";
-      return {
-        ...c,
-        offField,
-        offRegion,
-        daysToDeadline: daysBetween(today, c.deadline),
-        tierResolved,
-        categoryResolved: competitionCategory(c),
-        fit,
-        notYetEligible,
-        viaNationalSelection: gate.viaNationalSelection,
-      };
-    })
-    .sort((a, b) => {
-      // The one editorial override, ahead of fit. Everything below this line is
-      // derived from the student's own profile; this line is us saying "look at
-      // this first". It only reorders what already passed eligibility.
-      const ap = a.pinned ? 0 : 1;
-      const bp = b.pinned ? 0 : 1;
-      if (ap !== bp) return ap - bp;
-      // Rows the student does not match sink below every row they do — above
-      // fit, because fit has no meaning across that line. They are VISIBLE, not
-      // promoted: the list still opens on what fits, and widening stays a thing
-      // the student chooses rather than a thing that happens to them.
-      const am = a.offField || a.offRegion ? 1 : 0;
-      const bm = b.offField || b.offRegion ? 1 : 0;
-      if (am !== bm) return am - bm;
-      if (FIT_ORDER[a.fit] !== FIT_ORDER[b.fit])
-        return FIT_ORDER[a.fit] - FIT_ORDER[b.fit];
-      // Confirmed-date items first (actionable now), then "dates TBA".
-      const ac = a.dateConfirmed ? 0 : 1;
-      const bc = b.dateConfirmed ? 0 : 1;
-      if (ac !== bc) return ac - bc;
-      return a.daysToDeadline - b.daysToDeadline;
+    const gate = gateFor(c);
+    // Age rules were being ignored entirely — we only ever passed the school
+    // year, so every "Ages 13–18" entry counted as open to a 12-year-old and
+    // the count we showed them was wrong. We still never ask for a birth
+    // date, so age comes from the year group as a RANGE and only excludes
+    // when the whole group is outside the rule.
+    const verdict = checkEligibility(gate, {
+      country: homeCountry,
+      grade,
+      ageRange,
     });
+    // Can never enter: wrong country, or already past the age/grade ceiling.
+    if (!verdict.ok && verdict.reason !== "too_young") continue;
+
+    const tierResolved = competitionTier(c);
+    const notYetEligible = verdict.ok ? undefined : verdict.detail;
+    // Not yet eligible is always aspirational, never "do this now".
+    const fit: OpportunityFit = notYetEligible
+      ? "stretch"
+      : targetTiers.includes(tierResolved)
+        ? "recommended"
+        : TIER_RANK[tierResolved] > targetMax
+          ? "stretch"
+          : "foundational";
+
+    items.push({
+      ...c,
+      offField,
+      offRegion,
+      daysToDeadline,
+      tierResolved,
+      categoryResolved: competitionCategory(c),
+      fit,
+      notYetEligible,
+      viaNationalSelection: gate.viaNationalSelection,
+    });
+  }
+
+  items.sort((a, b) => {
+    // The one editorial override, ahead of fit. Everything below this line is
+    // derived from the student's own profile; this line is us saying "look at
+    // this first". It only reorders what already passed eligibility.
+    const ap = a.pinned ? 0 : 1;
+    const bp = b.pinned ? 0 : 1;
+    if (ap !== bp) return ap - bp;
+    // Rows the student does not match sink below every row they do — above
+    // fit, because fit has no meaning across that line. They are VISIBLE, not
+    // promoted: the list still opens on what fits, and widening stays a thing
+    // the student chooses rather than a thing that happens to them.
+    const am = a.offField || a.offRegion ? 1 : 0;
+    const bm = b.offField || b.offRegion ? 1 : 0;
+    if (am !== bm) return am - bm;
+    if (FIT_ORDER[a.fit] !== FIT_ORDER[b.fit])
+      return FIT_ORDER[a.fit] - FIT_ORDER[b.fit];
+    // Confirmed-date items first (actionable now), then "dates TBA".
+    const ac = a.dateConfirmed ? 0 : 1;
+    const bc = b.dateConfirmed ? 0 : 1;
+    if (ac !== bc) return ac - bc;
+    return a.daysToDeadline - b.daysToDeadline;
+  });
 
   return { strength, band, targetTiers, items };
 }

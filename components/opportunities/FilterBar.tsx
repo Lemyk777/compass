@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useDeferredValue, useId, useMemo, useState } from "react";
 import {
   COST_OPTIONS,
   LEVEL_OPTIONS,
@@ -59,7 +59,16 @@ export function FilterBar({
 
   const active = activeFilterCount(value);
   const chips = activeChips(value);
-  const facets = useMemo(() => opportunityFacets(items, value), [items, value]);
+  // The counts are the expensive half of this component — six faceting passes
+  // over the whole annotated catalog — and they are the half nobody is looking
+  // at while they type. Deferring them keeps the search field's own keystrokes
+  // off that work; the controls, the chips and the badge all still read `value`
+  // directly, so everything the student is actually touching stays exact.
+  const deferred = useDeferredValue(value);
+  const facets = useMemo(
+    () => opportunityFacets(items, deferred),
+    [items, deferred],
+  );
 
   return (
     <div className="rounded-2xl border border-line bg-card p-2.5 shadow-sm">

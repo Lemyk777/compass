@@ -113,7 +113,32 @@ function universitiesByDestination(
  * containment the guide spent a release establishing: a city is inside a
  * country, and the country comes first.
  */
+/**
+ * One chain per field, built at most once.
+ *
+ * The walk reaches five registries, groups every hub by region and resolves
+ * every institution — and its only input is a `FacultyValue`, of which there
+ * are eight. The registries are module-level constants, so the answer cannot
+ * change between calls within a process; recomputing it was the module doing
+ * the same work for the same key, up to eight times per planner load and again
+ * on every area page.
+ *
+ * The result is READ-ONLY by convention, and every caller today only reads it.
+ * If a view ever needs to reorder a chain it must copy first — sorting the
+ * shared object would reorder it for every later request, and rule 3 above
+ * (nothing is ranked) is exactly the thing such a mutation would break.
+ */
+const SPINES = new Map<FacultyValue, Spine>();
+
 export function spineForFaculty(faculty: FacultyValue): Spine {
+  const memo = SPINES.get(faculty);
+  if (memo) return memo;
+  const built = buildSpine(faculty);
+  SPINES.set(faculty, built);
+  return built;
+}
+
+function buildSpine(faculty: FacultyValue): Spine {
   const uniByDest = universitiesByDestination(faculty);
   const stops: SpineStop[] = [];
 

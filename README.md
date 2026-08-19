@@ -62,7 +62,7 @@ in [docs/SETUP.md](docs/SETUP.md).
 | `npm run build` | Production build — **also the lint + type-check gate** |
 | `npm run lint` | ESLint only |
 | `npx tsc --noEmit` | Type-check only |
-| `npm run test:unit` | **268 unit tests** over the deterministic core (node:test — no key, no network, no database) |
+| `npm run test:unit` | **281 unit tests** over the deterministic core (node:test — no key, no network, no database) |
 | `npm run test:onboarding` | **126 tests** over the intake schema and its server action, with the database and auth mocked. Not in CI — it needs `--experimental-test-module-mocks` |
 | `npm run db:check` | Read-only: is the database actually what this code assumes? |
 | `npm run test:links` | Every catalog URL; fails on a dead link |
