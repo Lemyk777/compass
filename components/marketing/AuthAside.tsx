@@ -78,7 +78,7 @@ export function AuthAside({ t }: { t: TFunc }) {
               className="aside-rise flex items-start gap-3 text-sm text-white/85"
               style={{ animationDelay: `${0.16 + i * 0.08}s` }}
             >
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] text-white shadow-[0_0_0_4px_rgba(47,111,237,0.18)]">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-[12px] text-white shadow-[0_0_0_4px_rgba(47,111,237,0.18)]">
                 ✓
               </span>
               {b}
@@ -114,7 +114,7 @@ export function AuthAside({ t }: { t: TFunc }) {
               Compass
             </span>
           </div>
-          <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-medium text-accent-ink">
+          <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[12px] font-medium text-accent-ink">
             {t("auth.asideSample")}
           </span>
         </div>
@@ -156,7 +156,7 @@ export function AuthAside({ t }: { t: TFunc }) {
               >
                 82
               </span>
-              <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-accent">
+              <span className="mt-1 text-[12px] font-medium uppercase tracking-wide text-accent">
                 {t("band.exceptional")}
               </span>
             </div>
@@ -164,7 +164,7 @@ export function AuthAside({ t }: { t: TFunc }) {
 
           {/* radar fingerprint */}
           <div className="min-w-0 flex-1">
-            <p className="mb-1 text-[11px] font-medium text-ink-faint">
+            <p className="mb-1 text-[12px] font-medium text-ink-faint">
               {t("auth.asideRadar")}
             </p>
             <svg
@@ -241,7 +241,7 @@ export function AuthAside({ t }: { t: TFunc }) {
           ].map((chip) => (
             <span
               key={chip.label}
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium text-ink"
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium text-ink"
               style={{ backgroundColor: chip.s }}
             >
               <span

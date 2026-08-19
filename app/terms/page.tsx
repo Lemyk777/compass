@@ -133,7 +133,7 @@ export default function TermsPage() {
           To the maximum extent permitted by law, Compass and its operators will
           not be liable for any indirect, incidental, special, consequential, or
           punitive damages, or for any loss of opportunity, admission, data, or
-          profits, arising out of or related to your use of the Service — even
+          profits, arising out of or related to your use of the Service, even
           if advised of the possibility of such damages.
         </p>
       </LegalSection>

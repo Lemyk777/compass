@@ -134,7 +134,7 @@ function DestinationBody({
           <GuideBlock label="What they weigh">{d.admissions}</GuideBlock>
           {/* Timing is the way a strong applicant most often loses a place, and
               unlike merit it is entirely preventable by knowing it early. */}
-          <GuideBlock label="The cycle — when things actually happen">
+          <GuideBlock label="The cycle: when things actually happen">
             {d.applicationCycle}
           </GuideBlock>
           <GuideBlock label="How an application is actually read here">
@@ -155,8 +155,8 @@ function DestinationBody({
       title: "Who is named here",
       body: (
         <>
-          <p className="max-w-[54ch] text-sm leading-relaxed text-ink-soft">
-            Not a ranking, and deliberately not in any order of merit — these
+          <p className="max-w-[54ch] text-base leading-relaxed text-ink-soft">
+            Not a ranking, and deliberately not in any order of merit. These
             are the places a subject is actually studied and taught at here, so
             you have something to search for. A position in a league table is
             stale within a year, differs between the four tables that publish
@@ -191,7 +191,7 @@ function DestinationBody({
                   {u.knownFor.map((f) => (
                     <li
                       key={f}
-                      className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-soft"
+                      className="rounded-full bg-surface px-2 py-0.5 text-[12px] font-medium text-ink-soft"
                     >
                       {FACULTY_LABEL[f]}
                     </li>
@@ -241,7 +241,7 @@ function DestinationBody({
     title: "Check it yourself",
     body: (
       <>
-        <p className="max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+        <p className="max-w-[54ch] text-base leading-relaxed text-ink-soft">
           The rules on this page are set by these bodies, not by us. Immigration
           and fee rules in particular change between the year you read this and
           the year you graduate, so open the one that decides your case and read
@@ -284,7 +284,7 @@ function DestinationBody({
       title: "The cities inside it",
       body: (
         <>
-          <p className="max-w-[54ch] text-sm text-ink-soft">
+          <p className="max-w-[54ch] text-base text-ink-soft">
             Each one opens its own page: what clusters there, the catch, and the
             door in for someone who is not from there.
           </p>
@@ -375,7 +375,7 @@ function DestinationBody({
             </h2>
             <p className="mt-1 text-sm text-ink-soft">
               Nobody chooses a country in isolation. Pick one and the two are
-              laid out side by side — money, admissions, what happens after you
+              laid out side by side: money, admissions, what happens after you
               graduate, and who each one is wrong for.
             </p>
             <ul className="mt-3 flex flex-wrap gap-2">

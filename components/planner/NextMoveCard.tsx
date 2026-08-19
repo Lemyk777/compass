@@ -38,7 +38,7 @@ export function NextMoveCard({ move }: { move: NextMove }) {
       }`}
     >
       <p
-        className={`flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide ${
+        className={`flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide ${
           urgent ? "text-reach-ink" : "text-accent-ink"
         }`}
       >

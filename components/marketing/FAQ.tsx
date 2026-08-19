@@ -12,7 +12,7 @@
 const ITEMS: { q: string; a: string }[] = [
   {
     q: "What is this, exactly?",
-    a: "A checked list of competitions, olympiads, courses and programmes school students can enter — filtered to the ones open to you at your age, from where you live. You give your school year, we give the list.",
+    a: "A checked list of competitions, olympiads, courses and programmes school students can enter. Filtered to the ones open to you at your age, from where you live. You give your school year, we give the list.",
   },
   {
     q: "Do I need an account?",
@@ -20,7 +20,7 @@ const ITEMS: { q: string; a: string }[] = [
   },
   {
     q: "Is it free?",
-    a: "Compass is free — all of it. Some of the opportunities themselves are not, and that is exactly why every entry carries a cost label. 'Free to learn, the certificate costs money' is the case students get caught by, so it gets its own label rather than being filed under free.",
+    a: "Compass is free, all of it. Some of the opportunities themselves are not, and that is exactly why every entry carries a cost label. 'Free to learn, the certificate costs money' is the case students get caught by, so it gets its own label rather than being filed under free.",
   },
   {
     q: "How do I know a deadline is right?",
@@ -28,11 +28,11 @@ const ITEMS: { q: string; a: string }[] = [
   },
   {
     q: "I'm 13. Is there anything for me?",
-    a: "Yes, and you'll see the ones you're too young for as well — labelled with the year you become eligible. Knowing what to aim for is worth something; being quietly shown nothing is not. We never hide an opportunity just because a fact about you is missing.",
+    a: "Yes, and you'll see the ones you're too young for as well. Labelled with the year you become eligible. Knowing what to aim for is worth something; being quietly shown nothing is not. We never hide an opportunity just because a fact about you is missing.",
   },
   {
     q: "What happened to the university assessment?",
-    a: "It's still here, and it's still free — it's now one thing you can opt into rather than the gate you had to pass first. It reads your profile against admitted-student data for the US, Italy, Hong Kong, the UAE and Korea, and gives per-school ranges with the honest number, not a flattering one.",
+    a: "It's still here, and it's still free. It's now one thing you can opt into rather than the gate you had to pass first. It reads your profile against admitted-student data for the US, Italy, Hong Kong, the UAE and Korea, and gives per-school ranges with the honest number, not a flattering one.",
   },
 ];
 
@@ -44,7 +44,7 @@ export function FAQ() {
           <h2 className="text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
             Questions, answered
           </h2>
-          <p className="mt-4 text-lg font-light text-ink/60">
+          <p className="mt-4 text-lg font-light text-ink-soft">
             The honest answers, before you start.
           </p>
         </div>
@@ -68,7 +68,7 @@ export function FAQ() {
                   </svg>
                 </span>
               </summary>
-              <p className="animate-fade-up px-6 pb-5 text-pretty text-base font-light leading-relaxed text-ink/65">
+              <p className="animate-fade-up px-6 pb-5 text-pretty text-base font-light leading-relaxed text-ink-soft">
                 {it.a}
               </p>
             </details>

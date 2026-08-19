@@ -171,7 +171,7 @@ function FocusCallout({
         <span data-num className="font-semibold text-accent-ink">
           {focus.topAvg}/10
         </span>{" "}
-        — closing this gap is the fastest path up the board.
+        Closing this gap is the fastest path up the board.
       </p>
     </div>
   );
@@ -232,7 +232,7 @@ function Board({
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ backgroundColor: factorColor(f.key) }}
               />
-              <span className="text-[11px] font-medium text-ink-soft">
+              <span className="text-[12px] font-medium text-ink-soft">
                 {f.label}
               </span>
             </li>
@@ -289,7 +289,7 @@ function RowItem({
           <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink">
             {r.name}
             {me && (
-              <span className="rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-on-fill">
+              <span className="rounded-full bg-accent px-1.5 py-0.5 text-[12px] font-semibold text-on-fill">
                 You
               </span>
             )}
@@ -307,7 +307,7 @@ function RowItem({
           >
             {r.overall}
           </span>
-          <span className="text-[11px] text-ink-faint">/100</span>
+          <span className="text-[12px] text-ink-faint">/100</span>
         </div>
 
         <Chevron open={isOpen} />
@@ -337,7 +337,7 @@ function StandingBadge({
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-line bg-card px-4 py-2.5 shadow-card">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+        <p className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
           Your standing · {countryLabel(country)}
         </p>
         <p className="leading-tight">
@@ -352,7 +352,7 @@ function StandingBadge({
       </div>
       <div className="h-9 w-px bg-line" />
       <div className="text-right">
-        <span className="inline-block rounded-full bg-likely-soft px-2 py-0.5 text-[11px] font-semibold text-likely-ink">
+        <span className="inline-block rounded-full bg-likely-soft px-2 py-0.5 text-[12px] font-semibold text-likely-ink">
           Top {standing.topPct}%
         </span>
         <p className="mt-1 text-xs text-ink-soft">

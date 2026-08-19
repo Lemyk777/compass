@@ -113,6 +113,30 @@ const config: Config = {
         display: ["var(--font-display)", "ui-sans-serif", "system-ui"],
         body: ["var(--font-body)", "ui-sans-serif", "system-ui"],
       },
+      // The small end of the scale, lifted one step off Tailwind's stock
+      // 12/14/16. Measured before touching it: on `/guide/places/[place]`,
+      // 93.5% of the page's 9,000 characters were set at 14px or below, 81% of
+      // them at exactly 14px; `/opportunities` ran 52%, `/demo` 81%. Repo-wide
+      // the product had 411 `text-sm` and 339 `text-xs` against 100
+      // `text-base`, so 14px was the body size and 12px the second voice.
+      //
+      // **This was never a contrast problem, and that is why it survived two
+      // passes.** Every text token measures 4.55:1 or better on every page in
+      // BOTH themes, and nothing renders under 11px — the tests that exist all
+      // pass, and a reader still calls it unreadable. The complaint is size,
+      // and the audience makes it sharper than a WCAG number can: 16-18 year
+      // olds, mostly on a phone, reading their second or third language.
+      //
+      // Steps of 2px are kept, so every ratio the type tests assert survives —
+      // they are written against Tailwind CLASS names, not pixel values, which
+      // is what makes this one edit safe. Anything above `lg` is display type
+      // and is already large enough; it stays put.
+      fontSize: {
+        xs: ["0.8125rem", { lineHeight: "1.125rem" }], // 13px / 18px
+        sm: ["0.9375rem", { lineHeight: "1.375rem" }], // 15px / 22px
+        base: ["1.0625rem", { lineHeight: "1.625rem" }], // 17px / 26px
+        lg: ["1.1875rem", { lineHeight: "1.75rem" }], // 19px / 28px
+      },
       borderRadius: {
         xl: "0.875rem",
         "2xl": "1.25rem",

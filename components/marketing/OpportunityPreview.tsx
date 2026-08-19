@@ -92,7 +92,7 @@ export function OpportunityPreview({
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
           Open right now
         </p>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-ivy-soft px-2.5 py-1 text-[11px] font-semibold text-ivy-ink">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-ivy-soft px-2.5 py-1 text-[12px] font-semibold text-ivy-ink">
           {/* The only thing on this card that moves on its own, and it earns it:
               the claim beside it is that these rows are live. `animate-pulse` is
               opacity-only, so it composites, and the global reduced-motion guard
@@ -216,7 +216,7 @@ function Row({
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="whitespace-nowrap rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
+    <span className="whitespace-nowrap rounded-full bg-card px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-ink-soft">
       {children}
     </span>
   );
@@ -233,7 +233,7 @@ function CostChip({ tone, label }: { tone: string; label: string }) {
           : "bg-card text-ink-faint";
   return (
     <span
-      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${cls}`}
+      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide ${cls}`}
     >
       {label}
     </span>

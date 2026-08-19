@@ -31,7 +31,7 @@ export const INTEREST_QUIZ: QuizQuestion[] = [
     options: [
       {
         id: "build",
-        label: "Taking something apart to see how it works — or building it",
+        label: "Taking something apart to see how it works, or building it",
         weights: { engineering: 2 },
       },
       {
@@ -88,12 +88,12 @@ export const INTEREST_QUIZ: QuizQuestion[] = [
       },
       {
         id: "planner",
-        label: "The planner — timeline, budget, who does what",
+        label: "The planner, timeline, budget, who does what",
         weights: { business_economics: 2 },
       },
       {
         id: "voice",
-        label: "The voice — writing, presenting, persuading",
+        label: "The voice, writing, presenting, persuading",
         weights: { humanities_social: 1, law: 1 },
       },
       {

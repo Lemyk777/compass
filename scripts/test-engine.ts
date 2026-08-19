@@ -3870,19 +3870,21 @@ test("the landing page's bands ramp with the window, and no band caps at 1152", 
 // defects were a type scale with no steps in it, a 10px floor, and one theme's
 // optical needs being served by the other theme's settings.
 
-test("11px is the floor — no surface ships 10px type", () => {
-  // 10px uppercase with letter-spacing was the smallest type in the product and
-  // it carried real information across 21 files: the report's programme cards,
-  // four country breakdowns, the admin tables, the guide's badges and the
-  // landing's own hero preview. A floor that holds in some components is not a
-  // floor, so it is asserted over the whole tree.
-  const offenders: string[] = [];
+// The floor is a number in one place, so that raising it is one edit and the
+// tests below cannot disagree with each other about what it is.
+const TYPE_FLOOR_PX = 12;
+
+// Every hardcoded size in the tree, in px, with its file and line. `rem` is
+// resolved at the root's 16px: `text-[0.7rem]` is 11.2px, and a px-only guard
+// would wave it through.
+function hardcodedTypeSizes(): { at: string; px: number }[] {
   const walk = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
       const full = path.join(dir, e.name);
       if (e.isDirectory()) return walk(full);
       return /\.tsx?$/.test(e.name) ? [full] : [];
     });
+  const out: { at: string; px: number }[] = [];
   for (const root of ["app", "components"]) {
     for (const file of walk(path.join(process.cwd(), root))) {
       readFileSync(file, "utf8")
@@ -3892,15 +3894,72 @@ test("11px is the floor — no surface ships 10px type", () => {
           // line, and reading only the first is how a 9px monogram sat behind
           // an 11px one for a whole release. Found when prettier happened to
           // split the line.
-          for (const m of line.matchAll(/text-[(d+(?:.d+)?)px]/g)) {
-            if (Number(m[1]) < 11) {
-              offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
-            }
+          for (const m of line.matchAll(/text-\[(\d+(?:\.\d+)?)(px|rem)\]/g)) {
+            out.push({
+              at: `${path.relative(process.cwd(), file)}:${i + 1}`,
+              px: m[2] === "rem" ? Number(m[1]) * 16 : Number(m[1]),
+            });
           }
         });
     }
   }
-  assert.deepEqual(offenders, [], `type below 11px:\n${offenders.join("\n")}`);
+  return out;
+}
+
+test(`${TYPE_FLOOR_PX}px is the floor — no surface ships smaller type`, () => {
+  // 10px uppercase with letter-spacing was the smallest type in the product and
+  // it carried real information across 21 files: the report's programme cards,
+  // four country breakdowns, the admin tables, the guide's badges and the
+  // landing's own hero preview. A floor that holds in some components is not a
+  // floor, so it is asserted over the whole tree.
+  //
+  // The floor rose from 11 to 12 on 2026-08-19 with the scale, because 118
+  // labels were pinned at exactly 11px by the pass that fixed the 10px bug: "at
+  // the floor" is not "readable", it is "not illegal". Raise this literal in
+  // the wave that earns it, the same way the discovery count floors work.
+  const offenders = hardcodedTypeSizes()
+    .filter((s) => s.px < TYPE_FLOOR_PX)
+    .map((s) => `${s.at} (${s.px}px)`);
+  assert.deepEqual(
+    offenders,
+    [],
+    `type below ${TYPE_FLOOR_PX}px:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the type floor guard actually bites", () => {
+  // The version this replaced could never have failed. It was written as
+  // `/text-[(d+(?:.d+)?)px]/` — the backslashes had been eaten, so `[...]` was
+  // a character CLASS, nothing was captured, `Number(undefined)` was NaN, and
+  // `NaN < 11` is false. It matched a real class name and reported nothing, for
+  // every release it existed. Same failure as the bundle guard written as a
+  // template literal, where `\s` became the letter s: a guard that fails OPEN
+  // still looks like a guarantee in a PR description.
+  //
+  // So the pattern is asserted against lines it MUST catch, and lines it must
+  // not, rather than only against the tree, which is clean by construction.
+  const re = /text-\[(\d+(?:\.\d+)?)(px|rem)\]/g;
+  const sizeOf = (line: string) =>
+    [...line.matchAll(re)].map((m) =>
+      m[2] === "rem" ? Number(m[1]) * 16 : Number(m[1]),
+    );
+
+  assert.deepEqual(sizeOf('<span className="text-[10px] uppercase">'), [10]);
+  assert.deepEqual(sizeOf('className="text-[0.7rem]"'), [11.2]);
+  assert.deepEqual(
+    sizeOf('{a ? "text-[9px]" : b ? "text-[12px]" : "text-[13px]"}'),
+    [9, 12, 13],
+    "a ternary carrying three sizes must yield all three",
+  );
+  assert.deepEqual(sizeOf('className="text-sm text-ink-soft"'), []);
+  assert.ok(
+    sizeOf('<span className="text-[10px]">').some((n) => n < TYPE_FLOOR_PX),
+    "the guard must reject 10px",
+  );
+  assert.ok(
+    !sizeOf('<span className="text-[12px]">').some((n) => n < TYPE_FLOOR_PX),
+    "the guard must accept the floor itself",
+  );
 });
 
 test("the accent fill is not used as a foreground on text", () => {

@@ -33,7 +33,7 @@ export function BrandLink({
   return (
     <Link
       href="/"
-      aria-label="Compass — home"
+      aria-label="Compass home"
       // `min-h-11` because this is a touch target before it is a logo, and the
       // mark itself is 24px. The rest of the product's controls clear 44px and
       // the one people aim at most did not.

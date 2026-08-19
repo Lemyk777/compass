@@ -133,7 +133,7 @@ export function FirstWin() {
       {/* The anti-coercion line. It is also simply true: Opportunities works
           without an analysis, so nothing here is being held hostage. */}
       <p className="mt-3 text-xs leading-relaxed text-ink-soft">
-        These are on your dashboard already — you keep them whether or not you
+        These are on your dashboard already, and you keep them whether or not you
         finish the rest. Carry on and we can also tell you how you compare, and
         what to do first.
       </p>

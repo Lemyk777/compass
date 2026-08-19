@@ -1,7 +1,7 @@
 # The backlog — state, findings, and what to do next
 
 The founder gave a 23-item fix/redesign list on 2026-08-10; items #24, #26 and
-#27 were added after. **Last updated 2026-08-17.** This file carries everything
+#27 were added after. **Last updated 2026-08-19.** This file carries everything
 a fresh session needs to continue without re-deriving it.
 
 Read [CLAUDE.md](../CLAUDE.md) first — it holds the product rules. This file
@@ -12,13 +12,16 @@ The planner's own design of record is [PLANNER_PLAN.md](PLANNER_PLAN.md).
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**As of 2026-08-19 everything in this repository is in production**, including
-release 8 — the performance and correctness pass, merged through
+**Everything through release 8 is in production** — the performance and
+correctness pass, merged through
 [#119](https://github.com/Lemyk777/compass/pull/119) into `develop` and released
 via [#120](https://github.com/Lemyk777/compass/pull/120). Vercel is green and
-the live pages were smoke-tested. The habit of this file is to warn that the
-branch is ahead of `main`; right now it is not. Verify anyway — it takes ten
-seconds, and a stale note here has cost a release twice:
+the live pages were smoke-tested.
+
+**But the branch is now ahead of `main` again.** The copy and readability pass
+(release 9, below) is on `copy/humanize-catalog`, is **not merged and not
+deployed**, and touches 138 files. Verify before assuming either way — it takes
+ten seconds, and a stale note here has cost a release twice:
 
 ```bash
 git fetch origin && git log --oneline origin/main..HEAD
@@ -28,8 +31,8 @@ git fetch origin && git log --oneline origin/main..HEAD
 |---|---|
 | On `main` (deployed) | everything through **release 8**. `origin/main` = `4c87cc0`, released via [#120](https://github.com/Lemyk777/compass/pull/120) from `origin/develop` = `0d8f798` |
 | Open PRs | none |
-| Branch | `develop` |
-| Unit tests | **281** (`npm run test:unit`) |
+| Branch | `copy/humanize-catalog` — release 9, **uncommitted**, not yet PR'd into `develop` |
+| Unit tests | **282** (`npm run test:unit`) |
 | Session checks | **61** (`node --import tsx scripts/test-session-checks.ts`) |
 | Catalog | **172 entries · 0 broken links locally** (1 unverifiable — a bot wall, reported without failing). **The weekly job on `main` reads differently and has failed since at least 2026-08-03** — see below |
 | Migrations | **All applied through `0031_beat_reactions.sql`** — `npm run db:check` reports 33/33 |
@@ -45,6 +48,62 @@ outside the CI gate — the checker is being blocked, not finding dead links. It
 still needs a decision, because a check that is permanently red is a check
 nobody reads: either the job tolerates a connection-level failure the way it
 already tolerates a 403/429/412, or it stops running in CI.
+
+### What is ON THE BRANCH — release 9, the copy and readability pass, 2026-08-19
+
+**Not merged, not deployed.** `copy/humanize-catalog`, 138 files. Two jobs, and
+both began by measuring, because both had been "fixed" before.
+
+**The catalog had never had a copy pass.** Release 7 took the five prose
+registries to zero em dashes; the 172-entry catalog — the front door, and the
+text on every card, every `/opportunities/[id]` page and every shared link's
+preview — was not in that sweep. Vocabulary was clean again (3 "not just", 2
+"prestigious", 1 "gateway" in the whole file). The tells were structural:
+
+| | before | after |
+| --- | --- | --- |
+| sentence dashes across the catalog's five text fields | 451 | 33 |
+| blurbs that were one sentence split by a dash | 149 / 172 | 40 / 172 |
+| short sentences (≤6 words) in blurbs | 5.6% | **27.2%** |
+| long sentences (≥15 words) in blurbs | 40.3% | **10.8%** |
+| sentence-length CV in blurbs | 0.30 | **0.42** |
+
+Also out: ~15 superlatives the catalog was never held to ("the most prestigious",
+"pinnacle", "legendary", "premier", "elite") though the guide is test-banned from
+them, and the `[Fully Funded]` bracket on 30+ blurbs, which restated the
+`CostPill` two lines above it. **The voice was not invented** — entries ~110–172
+were already written well, so the file supplied its own target.
+
+**Three traps, all hit and all worth knowing.** `eligibility` is PARSED, so a
+range dash in "Grades 9–12" is load-bearing and a sentence dash is not — the
+change was only safe because `{gate, parsed}` was dumped for all 172 rows before
+and after and diffed to nothing. A dash can be a **join key**
+(`country-views.tsx` builds `${university} — ${program}` and
+`findItalianProgram` matches that exact string), so both sides have to move
+together. And **`prettier --write` must not be run over the changed files**: this
+repo is not uniformly prettier-formatted, and it reformatted
+`lib/data/universities.ts` by 835 lines for a 7-string edit, forcing a full reset
+and re-apply.
+
+**The readability half: contrast was innocent for the third time.** Measured on
+three pages in both themes before touching anything — **zero WCAG failures**
+(worst 4.53:1) and nothing under 11px. Every test that existed passed while the
+complaint stood. The defect was **size**: 93.5% of a country profile's 9,000
+characters sat at ≤14px (81% at exactly 14px), `/opportunities` 52%, `/demo`
+81%. Repo-wide, 411 `text-sm` + 339 `text-xs` against 100 `text-base`, plus 118
+labels pinned at exactly `text-[11px]` — "at the floor" is not "readable", it is
+"not illegal". The scale's small end moved one step (xs 13 / sm 15 / base 17 /
+lg 19) in `tailwind.config.ts`, the 118 hardcoded floors went to 12px, and
+long-form prose took a second step to `text-base`, chosen by `max-w-[54ch]`
+because a measure cap only ever appears on a column of continuous reading.
+Re-measured after: 0 contrast failures, nothing under 12px, no horizontal
+overflow at 375px, and the measure still 70.5 real characters per full line.
+
+Also: 19 `text-ink/60`-style alphas moved to `ink-soft`. CLAUDE.md already named
+4.53:1 as the number and the hero paragraph had been moved off it; nineteen
+others, including six landing-page body paragraphs at `font-light`, had not.
+
+**And the 11px floor guard had never fired** — see the correction in §5.22.
 
 ### What shipped in release 8 — the performance pass, 2026-08-19
 
@@ -83,6 +142,15 @@ that absolute uniformity is itself the tell, because real writing mixes them.
 **Why a regex cannot do this job**, and it is worth not rediscovering: every
 individual sentence was defensible. Only the distribution was wrong, and a
 distribution is invisible one line at a time.
+
+> **This pass covered the five prose registries and NOT the catalog** — the
+> 172 entries behind every card, every `/opportunities/[id]` page and every
+> shared link's preview, which is the most-read prose in the product. That was
+> found and fixed on 2026-08-19; see the release-9 block in §1. The lesson is
+> about scope rather than method: "all the product's text" was measured as "the
+> files I thought of", and `competitions-data.ts` is a data file, so it did not
+> look like prose. Enumerate the surfaces from what a student reads, not from
+> what is shaped like an article.
 
 The pass also corrected a measurement this repo had recorded wrongly for several
 releases: the guide's lead paragraph carried `max-w-[60ch]`, honoured it, and
@@ -304,7 +372,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 | 24 | **The hero background.** Two bugs, neither of them the one reported. See §5.14. |
 | 16 | **The spine.** The parts were all there; nothing was joined. See §5.17. |
 | 27 | **Community, and 157 → 172.** A kind of opportunity the catalog had no shape for. See §5.18. |
-| 25 | **Readability.** The dark theme was not lower-contrast, it was under-engineered: no type step, a 10px floor, and one theme's optics served by the other's settings. See §5.16. |
+| 25 | **Readability.** The dark theme was not lower-contrast, it was under-engineered: no type step, a 10px floor, and one theme's optics served by the other's settings. See §5.16. **Reopened and passed again on 2026-08-19**: the same complaint recurred, contrast was again innocent, and the cause was the body size itself (14px) plus a floor guard that had never fired. See §1's release-9 block and §5.22. |
 | 22 | **CLOSED.** The planner is advertised now that it works; the bands below the hero ramp with the window. See §5.15. |
 | 17 | **The planner, COMPLETE** — one route, `/planner?view=next\|board\|map`, with the guide join and one next move. Delivered over four releases. See §5.12, §5.19, §5.23, §5.24 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
 
@@ -1358,6 +1426,12 @@ of entry — so they are one group now rather than two rows 4px apart.
 real information. Raised to 11px in one pass, because a floor that holds in some
 components is not a floor.
 
+> **Superseded on 2026-08-19 (release 9).** Raising 118 labels *to* the floor and
+> stopping there is what this pass got wrong: "at the floor" is not "readable",
+> it is "not illegal", and the complaint came back. The floor is **12px** now and
+> the scale's small end moved with it. Worse, the test written to hold this line
+> **had never fired** — see §5.22.
+
 **3. One typographic setting for two themes with opposite optical needs.**
 This is the finding worth keeping. Light text on a dark ground **blooms**: the
 glyphs spread into the background, strokes thicken, counters close and the space
@@ -1560,6 +1634,27 @@ floor sweep that the test existed to enforce.
 It was found by accident: prettier happened to split that line, and the second
 class became visible.
 
+> **Correction, 2026-08-19 (release 9). The `matchAll` fix landed on a regex
+> that could never match anything, so this test has never once fired.** It read
+> `/text-[(d+(?:.d+)?)px]/` — the backslashes had been eaten somewhere between
+> being written and being committed, which turns `[…]` into a character CLASS
+> matching one character from `{( d + : ? . ) p x}`. Nothing was captured,
+> `m[1]` was `undefined`, `Number(undefined)` is `NaN`, and `NaN < 11` is
+> **false**. It matched a real class name on every line it scanned and reported
+> zero offenders, for every release it existed.
+>
+> **This is the same failure as the bundle guard** written as a template
+> literal, where `\s` became the letter s (§5 of the release-6 audit). Both were
+> quoted as guarantees in a PR description. The shared shape is that **a broken
+> pattern fails OPEN**: it does not throw, it does not report, it just goes
+> green — which is indistinguishable from working, and is read as proof.
+>
+> So the rule this section states is right but not sufficient. `match` vs
+> `matchAll` only matters if the pattern matches at all. **Every scan-over-source
+> guard needs a second test asserting it BITES on a line it must catch**, and
+> the floor guard now has one: `text-[10px]`, `text-[0.7rem]` (a `rem` value a
+> px-only pattern waves through), and a ternary carrying three sizes.
+
 **The general form, and it is the more useful half:** a scan over source text
 must ask what it does when the pattern occurs more than once in a unit. `match`
 vs `matchAll`, `find` vs `filter`, `indexOf` vs a loop. A gate that reports
@@ -1643,7 +1738,7 @@ Two things worth carrying:
 
 ```bash
 npm run build            # the gate — never while `npm run dev` is running
-npm run test:unit        # 281 tests
+npm run test:unit        # 282 tests
 npx tsc --noEmit
 npm run lint
 npm run db:check         # read-only: is the DB what the code assumes? 33/33
@@ -1655,6 +1750,13 @@ npm run db:check         # after applying a migration, and before believing any 
 **CI runs three of these**: `npm run build`, the session checks, then
 `npm run test:unit`, without secrets. `npm run test:analyze` is the only one
 needing a real `ANTHROPIC_API_KEY`.
+
+**A green test is not the same as an enforcing test.** The 11px floor guard ran
+in CI on every push for several releases and could not have failed: its regex
+had lost its backslashes, so it captured nothing and compared `NaN`. §5.22 has
+the full shape. When a guard scans source text, write the second test that
+asserts it BITES on a line it must catch — otherwise CI is reporting that the
+pattern executed, not that the rule holds.
 
 **The two that CI does not run are the two that rot.** `test:guide-links` and
 `test:links` need the network and would make CI flaky, so they only fail when a
@@ -1785,6 +1887,16 @@ founder is reporting a feeling accurately; the cause is usually one layer down
 and usually worse. Fixing the reported thing without measuring means fixing the
 symptom and shipping the cause.
 
+**"The text is hard to read" came back on 2026-08-19, and measuring found a
+different cause again.** Contrast was clean for the third time — zero WCAG
+failures on three pages in both themes — and the defect was the body size
+itself: 93.5% of a country profile was set at 14px or below. The row above is
+therefore not the answer to that complaint, it is the answer to that complaint
+*in release 3*. **Re-measure every time; do not look up what it was last
+time.** The corollary is uncomfortable and worth stating: a complaint that
+recurs after a measured fix usually means the measurement was of the wrong
+quantity, not that the reader is wrong.
+
 ### One list, or the compiler cannot help you
 
 The kinds of opportunity existed **five times** — the type union, the partner
@@ -1868,12 +1980,16 @@ this, or it will "fix" it back.
 
 ---
 
-## 8. What to do next — the ordered list, 2026-08-17
+## 8. What to do next — the ordered list, 2026-08-19
 
-**Nothing is waiting to be merged.** `develop` and `origin/main` are the same
-commit and every PR is closed, so a session starting here begins from a clean
-production state rather than from someone else's unshipped branch. Confirm it
-anyway with the ten-second check in §1.
+**Something IS waiting to be merged.** Release 9, the copy and readability pass,
+is sitting uncommitted on `copy/humanize-catalog` — 133 files, described in §1.
+Getting it reviewed and merged is the first item on this list, ahead of anything
+below: an unshipped branch that keeps growing is how this repo has lost work
+twice. Confirm the state with the ten-second check in §1.
+
+**#25 (readability) is open again and has been passed a second time** — see §1
+and the correction in §5.22. Treat it as done-pending-merge, not as untouched.
 
 > **There is a second list: [AUDIT_2026-08-14.md](AUDIT_2026-08-14.md).** Nine
 > findings turned up while answering one question from the founder ("why does
@@ -2001,7 +2117,8 @@ were found only because the previous one was done first.
 trusted. Three of those deliberate failures found real bugs rather than
 confirming the test: the spine's region ordering, the 11px floor's
 one-match-per-line hole, and the two assertions that failed on their own
-comments.
+comments. (The floor one is half a success: the hole was real, and the fix for
+it was written into a regex that could not match — see the correction in §5.22.)
 
 **Catalog: 156 → 173, and 0 broken links** — including `ijso`, which had been
 broken before this session started.

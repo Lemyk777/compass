@@ -44,7 +44,7 @@ const en: Dict = {
   "auth.signupSub":
     "One tap with Google, or an email and a password. That is the whole sign-up.",
   "auth.signupNoForm":
-    "No questionnaire. Afterwards we ask one thing — what year you are in — and your list is there. Grades, activities and awards are optional, and only needed for the admission report.",
+    "No questionnaire. Afterwards we ask one thing, what year you are in, and your list is there. Grades, activities and awards are optional, and only needed for the admission report.",
   "auth.haveAccount": "Already have an account?",
   "auth.referredBy": "Referred by",
   "auth.continueGoogle": "Continue with Google",
@@ -67,7 +67,7 @@ const en: Dict = {
     "Too many attempts right now. Please wait a few minutes and try again.",
   "auth.rateLimitTitle": "Email sign-up is busy right now",
   "auth.rateLimitBody":
-    "We couldn't send the confirmation email at the moment. The fastest way in is to continue with Google — or try email again in a few minutes.",
+    "We couldn't send the confirmation email at the moment. The fastest way in is to continue with Google, or try email again in a few minutes.",
   "auth.rateLimitBtn": "Continue with Google",
   "auth.googleOnlyTitle": "This account uses Google",
   "auth.googleOnlyBody":
@@ -79,7 +79,7 @@ const en: Dict = {
   // questionnaire, none of it what a new student sees first.
   "auth.asideTitle": "Everything you can enter, in one place",
   "auth.asideBullet1": "Competitions, olympiads and programmes open to your year",
-  "auth.asideBullet2": "Honest dates and costs — checked, never guessed",
+  "auth.asideBullet2": "Honest dates and costs, checked and never guessed",
   "auth.asideBullet3": "Saved to your account, with the deadlines for your calendar",
   "auth.asideBadge": "Built for international applicants",
   // The card below the bullets is the admission report — worth showing, but it
@@ -141,7 +141,7 @@ const en: Dict = {
   "dash.seeStanding": "See my standing",
   "dash.errTitle": "We couldn't finish your analysis",
   "dash.errTimeout":
-    "The analysis took too long. Your profile may be very large — try trimming your activity details, then run it again.",
+    "The analysis took too long. Your profile may be very large, so try trimming your activity details, then run it again.",
   "dash.errBusy":
     "The analysis service is busy right now. Please try again in a moment.",
   "dash.errGeneric": "Something went wrong running your analysis. Please try again.",
@@ -167,7 +167,7 @@ const en: Dict = {
   "report.overall": "Overall competitiveness",
   "report.outOf": "out of 100",
   "report.estimate":
-    "This is an estimate — top schools are unpredictable for everyone.",
+    "This is an estimate. Top schools are unpredictable for everyone.",
   "report.share": "Share my scorecard",
   "report.copied": "Copied to clipboard ✓",
   "report.schoolsTitle": "Your school list",
@@ -189,7 +189,7 @@ const en: Dict = {
     "State pre-enrollment is free; tuition is billed separately.",
   "report.costTotal": "Total to apply",
   "report.costApprox":
-    "Approximate — verify each institution's current fee before you apply.",
+    "Approximate. Verify each institution's current fee before you apply.",
   "report.costFree": "Free",
   "report.fit": "fit",
   "band.exceptional": "Exceptional",
@@ -203,7 +203,7 @@ const en: Dict = {
   "conf.medium": "Medium confidence",
   "conf.high": "High confidence",
   "bench.inRange": "You're inside the admitted range.",
-  "bench.above": "You're above the admitted mid-range — a strength.",
+  "bench.above": "You're above the admitted mid-range, which is a strength.",
   "bench.below": "You're below the admitted mid-range here.",
   "effort.low": "Low effort",
   "effort.medium": "Medium effort",
@@ -212,7 +212,7 @@ const en: Dict = {
   // ambassador
   "amb.hubTitle": "Your ambassador hub",
   "amb.hubSub":
-    "Share your link — every student who signs up through it counts toward you.",
+    "Share your link. Every student who signs up through it counts toward you.",
   "amb.signedUpOne": "student signed up",
   "amb.signedUpMany": "students signed up",
   "amb.yourCode": "Your code",
@@ -225,7 +225,7 @@ const en: Dict = {
   "amb.pendTitle": "You're not confirmed yet",
   "amb.pendBody":
     "Your ambassador status hasn't been approved yet. Once the Compass team confirms you, your referral link and stats will appear here.",
-  "amb.stillPending": "Still pending — check back a little later.",
+  "amb.stillPending": "Still pending. Check back a little later.",
   "amb.checkApproval": "Check approval",
   "amb.checking": "Checking…",
 
@@ -238,13 +238,13 @@ const en: Dict = {
   "admin.returning": "Returning (≥2)",
   "admin.oneTime": "One-time",
   "admin.neverAnalyzed": "Never analyzed",
-  "admin.signups14": "Signups — last 14 days",
+  "admin.signups14": "Signups, last 14 days",
   "admin.signupsByCountry": "Signups by country",
   "admin.noSignups": "No signups yet.",
   "admin.estCost": "Estimated API cost",
   "admin.estCostPer": "per analysis",
   "admin.estCostBody":
-    "Total across all analyses run. Costed from real token usage per run where recorded (claude-haiku-4-5 pricing), otherwise estimated. Indicative only — set a hard spend limit in the Anthropic console for the real cap.",
+    "Total across all analyses run. Costed from real token usage per run where recorded (claude-haiku-4-5 pricing), otherwise estimated. Indicative only, so set a hard spend limit in the Anthropic console for the real cap.",
 
   // Ambassador leaderboard (admin)
   "admin.ambassadors": "Ambassadors",
@@ -271,11 +271,11 @@ const en: Dict = {
   "admin.oppsPending": "Pending review",
   "admin.oppsApproved": "Approved",
   "admin.oppsRejected": "Rejected",
-  "admin.oppsNoPending": "No candidates waiting — the weekly discovery run will queue new ones here.",
+  "admin.oppsNoPending": "No candidates waiting. The weekly discovery run will queue new ones here.",
   "admin.oppsApprove": "Approve",
   "admin.oppsReject": "Reject",
   "admin.oppsDateConfirmed": "Date confirmed on official page",
-  "admin.oppsDateUnconfirmed": "Date NOT confirmed — will show as “not yet announced”",
+  "admin.oppsDateUnconfirmed": "Date NOT confirmed, will show as “not yet announced”",
   "admin.oppsHealthTitle": "Date health",
   "admin.oppsHealthSub":
     "Every live competition date and whether we can stand behind it. Unconfirmed rows render without a countdown; past-deadline rows need the annual re-verify pass.",
@@ -284,10 +284,10 @@ const en: Dict = {
   "admin.oppsHealthStatus": "Status",
   "admin.oppsHealthConfirmed": "Confirmed",
   "admin.oppsHealthEstimate": "Curated estimate",
-  "admin.oppsHealthPast": "Past — re-verify",
+  "admin.oppsHealthPast": "Past: re-verify",
   "admin.oppsHealthLink": "Link",
   "admin.oppsHealthLinkOk": "OK",
-  "admin.oppsHealthLinkBroken": "BROKEN — fix the URL",
+  "admin.oppsHealthLinkBroken": "BROKEN: fix the URL",
 
   // Admin view switcher (admins only)
   "adminNav.landing": "Landing",
@@ -296,7 +296,7 @@ const en: Dict = {
 
   // Italy module
   "report.italyTitle": "Italian University Breakdown",
-  "report.italyHint": "Two distinct admission systems — read each card to understand the rules for that program.",
+  "report.italyHint": "Two distinct admission systems. Read each card to understand the rules for that program.",
   "report.hkTitle": "Hong Kong University Breakdown",
   "report.hkHint": "Hong Kong university admission is meritocracy-driven but holistic. Check your standings and scorecards below.",
   "report.uaeTitle": "UAE University Breakdown",

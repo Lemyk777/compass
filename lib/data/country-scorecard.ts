@@ -162,7 +162,7 @@ export function hkScorecardFactors(factors: Factor[]): Factor[] {
     ]
       .flatMap((f) => f?.reasoning ?? [])
       .slice(0, 4),
-    note: "Your combined record. In HK this is the tie-breaker once grades and tests are in range — olympiads, competitions and awards weigh most, then research and activities, then leadership.",
+    note: "Your combined record. In HK this is the tie-breaker once grades and tests are in range: olympiads, competitions and awards weigh most, then research and activities, then leadership.",
   };
   return [
     byKey.get("academics"),
@@ -265,7 +265,7 @@ export function krScorecardFactors(
     ]
       .flatMap((f) => f?.reasoning ?? [])
       .slice(0, 4),
-    note: "Awards, your record and how coherently they back your study plan — Korean admission is a whole-file document screen, and this is the half that isn't the transcript.",
+    note: "Awards, your record and how coherently they back your study plan. Korean admission is a whole-file document screen, and this is the half that isn't the transcript.",
   };
   const language: Factor | null =
     languageScore == null
@@ -276,7 +276,7 @@ export function krScorecardFactors(
           score: Math.round(languageScore * 10) / 10,
           rubric_tier: "",
           reasoning: [],
-          note: "TOPIK for Korean-taught programs, IELTS/TOEFL for English-taught ones — an eligibility document, not a nice-to-have. Scored against your own program picks.",
+          note: "TOPIK for Korean-taught programs, IELTS/TOEFL for English-taught ones. An eligibility document, not a nice-to-have. Scored against your own program picks.",
         };
   return [
     byKey.get("academics"),

@@ -62,7 +62,7 @@ export function PlannerAgenda({
         <Frame
           tone="warn"
           title={`${overdue.length} already closed`}
-          note="If you entered one, move it to done — and if you didn't, that is information too, not a verdict."
+          note="If you entered one, move it to done. If you didn't, that is information too, not a verdict."
           items={overdue}
         />
       )}
@@ -136,7 +136,7 @@ export function PlannerAgenda({
         <Frame
           tone="quiet"
           title={`${undated.length} with no date announced`}
-          note="We haven't been able to confirm a date for these against the organiser's own page — so we are not going to put one on a calendar and let you plan around it."
+          note="We haven't been able to confirm a date for these against the organiser's own page, so we are not going to put one on a calendar and let you plan around it."
           items={undated}
         />
       )}

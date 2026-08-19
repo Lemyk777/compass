@@ -84,7 +84,7 @@ export function GeneralSection() {
         }
         placeholder="Select your graduation year"
         options={gradYearOptions}
-        hint="When you'll finish school — we use it to time your SAT and deadlines."
+        hint="When you'll finish school. We use it to time your SAT and deadlines."
       />
 
       <SelectField
@@ -94,7 +94,7 @@ export function GeneralSection() {
         onChange={(v) => updateField("school_years", v ? Number(v) : undefined)}
         placeholder="Select the total number of grades"
         options={schoolYearsOptions}
-        hint="E.g. 11 grades in Kazakhstan, 12 in the US, 13 in Italy — so we read your current grade correctly."
+        hint="E.g. 11 grades in Kazakhstan, 12 in the US, 13 in Italy, so we read your current grade correctly."
       />
       <OptionGrid
         label="Where do you want to study?"
@@ -122,7 +122,7 @@ export function GeneralSection() {
           value: f.value,
           label: t(f.labelKey),
         }))}
-        hint={`Pick up to ${LIMITS.faculties} — or leave it empty. Most people can't answer this yet, and blank means "show me everything" rather than "show me nothing".`}
+        hint={`Pick up to ${LIMITS.faculties}, or leave it empty. Most people can't answer this yet, and blank means "show me everything" rather than "show me nothing".`}
       />
     </div>
   );
@@ -221,7 +221,7 @@ export function AcademicsSection() {
           onChange={(v) => syncGrades({ subjects: v })}
           placeholder="e.g. AP Calculus BC 5, Physics C 5"
           maxLength={LIMITS.subjects}
-          hint="Optional — list any subject / AP / SAT-subject results."
+          hint="Optional. List any subject / AP / SAT-subject results."
         />
       </div>
     </div>
@@ -343,7 +343,7 @@ export function AwardsSection() {
     <div className="space-y-4">
       {honors.length === 0 && (
         <p className="text-sm text-ink-soft">
-          Add any awards, honors, or recognitions — or skip if you have none
+          Add any awards, honors, or recognitions, or skip if you have none
           yet.
         </p>
       )}
@@ -423,8 +423,8 @@ export function BudgetSection() {
   // tuition-reduction / scholarship read — so tell the student what it's for.
   const forItaly = data.destinations.includes("IT");
   const hint = forItaly
-    ? "Optional. We use it for aid and affordability — and to estimate your DSU tuition-reduction fit in Italy (lower budget → stronger DSU). Skip it and we assume a typical budget."
-    : "Optional — a rough yearly figure helps us factor in affordability and aid.";
+    ? "Optional. We use it for aid and affordability, and to estimate your DSU tuition-reduction fit in Italy (lower budget → stronger DSU). Skip it and we assume a typical budget."
+    : "Optional. A rough yearly figure helps us factor in affordability and aid.";
   return (
     <div className="max-w-md space-y-6">
       <NumberField

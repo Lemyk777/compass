@@ -169,7 +169,7 @@ export function OpportunityCard({
               <span>
                 <span className="font-medium text-ink">Eligibility:</span>{" "}
                 {o.eligibility ??
-                  "varies — check the age and grade rules on the official page"}
+                  "varies. Check the age and grade rules on the official page"}
               </span>
             </p>
 
@@ -195,7 +195,7 @@ export function OpportunityCard({
                 // We never show a countdown for a date we cannot stand behind:
                 // a wrong one could make a student miss a real deadline.
                 <>
-                  Dates for the next cycle not announced — typically {o.window}
+                  Dates for the next cycle not announced. Typically {o.window}
                 </>
               )}
             </p>
@@ -277,7 +277,7 @@ function Chip({
       // letter-spacing is the smallest type in the product and it is carrying
       // the two facts people get burned by — what it costs, and whether they
       // can enter.
-      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold uppercase tracking-wide ${
         tone === "accent"
           ? "bg-accent-soft text-accent-ink"
           : "bg-surface text-ink-soft"

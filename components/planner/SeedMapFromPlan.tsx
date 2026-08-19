@@ -35,8 +35,8 @@ export function SeedMapFromPlan({ picks }: { picks: PlanPick[] }) {
       <p className="mt-1 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
         You took {what} out of the guide.{" "}
         {usePlaces
-          ? "We'll lay them out as branches, with the cities you picked nested inside the right country — then you add what each one would actually need."
-          : "We'll lay them out as branches — then you add what each one would actually need from you."}
+          ? "We'll lay them out as branches, with the cities you picked nested inside the right country. Then you add what each one would actually need."
+          : "We'll lay them out as branches. Then you add what each one would actually need from you."}
       </p>
       <button
         type="button"

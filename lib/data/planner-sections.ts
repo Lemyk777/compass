@@ -51,7 +51,7 @@ export const PLANNER_SECTIONS: PlannerSection[] = [
     label: "What's next",
     title: "What's next",
     blurb:
-      "Everything with a date, soonest first — what you said you'd enter, when the SAT closes, and the deadlines you're working towards.",
+      "Everything with a date, soonest first. What you said you'd enter, when the SAT closes, and the deadlines you're working towards.",
   },
   {
     id: "board",
@@ -69,7 +69,7 @@ export const PLANNER_SECTIONS: PlannerSection[] = [
     label: "Maps",
     title: "Your maps",
     blurb:
-      "Think a question through in branches — where could I study, what would each one need — and send any branch to your plan when you decide.",
+      "Think a question through in branches: where could I study, what would each one need. Then send any branch to your plan when you decide.",
   },
 ];
 

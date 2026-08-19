@@ -60,10 +60,37 @@ every run.
    **two** ranges ("AMC 10: grade ≤10 … AMC 12: grade ≤12", "Junior under 15 and
    Senior 15+"), add an explicit `gate` — the parser takes the first match and
    will silently hide the entry from everyone it should reach.
+   **The dash between two numbers is load-bearing** ("Grades 9–12", "Ages
+   13–18"): `parseEligibility` reads the range off it. A dash separating two
+   whole facts is not, and should be a comma or a full stop instead.
 3. Set `dateConfirmed: true` **only** for a sourced date in the current cycle.
    Otherwise the UI says "dates not yet announced" instead of a countdown we
    cannot stand behind.
-4. Run the checks:
+4. **Write the `blurb` like the rest of the file, which means reading a few
+   first.** Four rules, and all four were swept through the whole catalog on
+   2026-08-19 rather than being invented here:
+   - **Two sentences of different lengths, not one split by a dash.** 149 of 172
+     blurbs were a single "claim — qualifier" sentence, which is what makes a
+     list of cards read as machine-written: a reader cannot name the pattern, so
+     they call the result dry. Short sentences are now 27% of the file; keep it
+     that way by varying, not by hitting a target length.
+   - **No superlatives.** Not "the most prestigious", "premier", "elite",
+     "legendary", "world-class". The guide's registries are test-banned from
+     these and the catalog is held to the same rule by hand. If the thing really
+     is the hardest one to get into, say *that* — it is checkable, and a ranking
+     word is not.
+   - **Never restate the cost.** `cost` renders as a pill directly above the
+     blurb, so `[Fully Funded]` and `[Financial aid available]` on the end of a
+     sentence are the same fact twice. Money detail belongs in `costDetail`.
+   - **Say what the student gets, in words a 16-year-old reading English as a
+     third language will not have to stop on.** "Signal", "spike" and
+     "credential" are admissions jargon; the file used them 24 times and now
+     mostly does not.
+5. `costDetail` carries every number and every condition, and it may be long.
+   Its job is to make "free" honest: name the fee, who sets it, who waives it,
+   and what is still on the student (travel, an application fee). Say "we could
+   not confirm" rather than guessing — several entries do.
+6. Run the checks:
 
    ```bash
    node --import tsx scripts/test-session-checks.ts

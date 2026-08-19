@@ -145,7 +145,7 @@ export function AddToPlan({
             </button>
           ) : (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+              <p className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
                 Which map?
               </p>
               <ul className="mt-1.5 space-y-1">

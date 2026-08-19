@@ -129,14 +129,14 @@ export function MapWorkspace({
         {/* THE SUBJECT. Everything under it acts on this branch, and before
             this line existed nothing on screen said so. */}
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-b border-line px-3.5 py-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+          <span className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
             Working on
           </span>
           <span className="min-w-0 truncate text-sm font-semibold text-ink">
             {current?.label ?? "—"}
           </span>
           {kindLabel && (
-            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
+            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-accent-ink">
               {kindLabel}
             </span>
           )}
@@ -316,7 +316,7 @@ export function MapWorkspace({
           {root.children.length === 0 && (
             <p className="mt-3 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
               One question so far. Pick a branch above, then{" "}
-              <span className="font-medium text-ink">Add a branch</span> — an
+              <span className="font-medium text-ink">Add a branch</span>: an
               option, a place, or a thing you would have to do.
             </p>
           )}

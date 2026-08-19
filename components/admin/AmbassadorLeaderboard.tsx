@@ -46,7 +46,7 @@ export function AmbassadorLeaderboard({ rows }: { rows: AmbassadorRow[] }) {
                   <span className="text-ink-faint">·</span>
                   <span>{r.country || "—"}</span>
                   <span
-                    className={`ml-0.5 inline-block rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none ${
+                    className={`ml-0.5 inline-block rounded-full px-1.5 py-0.5 text-[12px] font-medium leading-none ${
                       r.status === "active"
                         ? "bg-likely-soft text-likely-ink"
                         : "bg-line text-ink-faint"

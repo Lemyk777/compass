@@ -15,7 +15,7 @@ export function denyUnlessCronAuthorized(req: NextRequest): NextResponse | null 
   // as one in the logs. Vercel Cron sends the header automatically once it exists.
   if (!secret) {
     return NextResponse.json(
-      { error: "CRON_SECRET is not configured — refusing to run." },
+      { error: "CRON_SECRET is not configured, refusing to run." },
       { status: 503 },
     );
   }

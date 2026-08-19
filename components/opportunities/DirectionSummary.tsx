@@ -64,7 +64,7 @@ export function DirectionSummary({
         transition={{ duration: 0.4, ease: EASE }}
         className="overflow-hidden rounded-2xl border border-ivy/20 bg-gradient-to-br from-ivy-soft/70 via-card to-accent-soft/40 p-4 sm:p-5"
       >
-        <p className="text-[0.7rem] font-medium uppercase tracking-[0.14em] text-ivy-ink/70">
+        <p className="text-[0.75rem] font-medium uppercase tracking-[0.14em] text-ivy-ink/70">
           Your direction, so far
         </p>
         <motion.div

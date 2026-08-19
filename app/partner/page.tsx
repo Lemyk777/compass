@@ -101,7 +101,7 @@ export default async function PartnerPage() {
               </h1>
               <p className="mt-1 text-sm text-ink-soft">
                 {partner.verifiedAt
-                  ? "Verified — every opportunity you post carries your name and the tick."
+                  ? "Verified. Every opportunity you post carries your name and the tick."
                   : "Listed. Your name is on everything you post; the tick appears once we've confirmed the account."}
                 {" · "}
                 <span data-num>{live}</span> live

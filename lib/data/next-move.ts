@@ -132,7 +132,7 @@ export function nextMove(input: NextMoveInput): NextMove {
         input.overdue === 1
           ? "One thing closed while it was still sitting in 'not started'."
           : `${input.overdue} things closed while they were still in 'not started'.`,
-      why: "If you entered, move it to done. If you didn't, that is worth knowing too — it usually means the thing was never really yours, and dropping it clears the way for something that is.",
+      why: "If you entered, move it to done. If you didn't, that is worth knowing too. It usually means the thing was never really yours, and dropping it clears the way for something that is.",
       action: { label: "Sort them out", href: "/planner?view=board" },
       tone: "urgent",
     };
@@ -146,7 +146,7 @@ export function nextMove(input: NextMoveInput): NextMove {
     return {
       id: "cold-start",
       headline: "Your plan is empty, which is the normal way to arrive.",
-      why: "Most people can't say what they want to study, and no screen is going to produce that answer. Start with something real instead: a thing you can actually enter, at your age, this year — the answer assembles out of what you do.",
+      why: "Most people can't say what they want to study, and no screen is going to produce that answer. Start with something real instead: a thing you can actually enter, at your age, this year. The answer assembles out of what you do.",
       action: {
         label:
           input.openToYou > 0
@@ -171,8 +171,8 @@ export function nextMove(input: NextMoveInput): NextMove {
       headline: "You haven't put a kind of work on your plan yet.",
       why:
         input.reachableAreas > 0
-          ? `Your fields open ${count(input.reachableAreas, "area of work", "areas of work")}. Each one states what the day is actually like and who should look elsewhere — which is the half a brochure leaves out.`
-          : "Each area of work states what the day is actually like, what the catch is, and who should look elsewhere — which is the half a brochure leaves out.",
+          ? `Your fields open ${count(input.reachableAreas, "area of work", "areas of work")}. Each one states what the day is actually like and who should look elsewhere, which is the half a brochure leaves out.`
+          : "Each area of work states what the day is actually like, what the catch is, and who should look elsewhere. That is the half a brochure leaves out.",
       action: {
         label: "Look at the kinds of work",
         href: guide("/guide/work", input.fieldsStated),
@@ -194,7 +194,7 @@ export function nextMove(input: NextMoveInput): NextMove {
     return {
       id: "try-it",
       headline: "You have read about it. You haven’t done any of it.",
-      why: "Liking the idea of work and liking the work are different facts, and an afternoon is enough to find out which one you have. Employers build these to recruit, so they are honest about what the job actually is — and they cost nothing.",
+      why: "Liking the idea of work and liking the work are different facts, and an afternoon is enough to find out which one you have. Employers build these to recruit, so they are honest about what the job actually is. They cost nothing, too.",
       action: {
         label: "Try it for an afternoon",
         href: "/opportunities?kind=simulation",
@@ -214,8 +214,8 @@ export function nextMove(input: NextMoveInput): NextMove {
       headline: "You know the work. Next is what you’d actually apply with.",
       why:
         input.reachableMajors > 0
-          ? `${count(input.reachableMajors, "subject leads", "subjects lead")} to it. Each one says what the first year is really made of, what it costs you, and who should study something else — which is the half a prospectus leaves out.`
-          : "A subject page says what the first year is really made of, what it costs you, and who should study something else instead — which is the half a prospectus leaves out.",
+          ? `${count(input.reachableMajors, "subject leads", "subjects lead")} to it. Each one says what the first year is really made of, what it costs you, and who should study something else. That is the half a prospectus leaves out.`
+          : "A subject page says what the first year is really made of, what it costs you, and who should study something else instead. That is the half a prospectus leaves out.",
       action: {
         label: "See what you’d study",
         href: guide("/guide/majors", input.fieldsStated),
@@ -233,8 +233,8 @@ export function nextMove(input: NextMoveInput): NextMove {
       headline: `You've marked ${count(picks.work, "kind of work", "kinds of work")}. Next is where that work actually is.`,
       why:
         input.reachableCountries > 0
-          ? `${count(input.reachableCountries, "country", "countries")} in the guide host it. Each one says what it costs, what admissions weighs, and what happens after you graduate there — including the ones where the answer is 'stay'.`
-          : "A country profile says what it costs, what admissions weighs, and what happens after you graduate there — including the ones where the answer is 'stay'.",
+          ? `${count(input.reachableCountries, "country", "countries")} in the guide host it. Each one says what it costs, what admissions weighs, and what happens after you graduate there, including the ones where the answer is 'stay'.`
+          : "A country profile says what it costs, what admissions weighs, and what happens after you graduate there, including the ones where the answer is 'stay'.",
       action: {
         label: "See what each country costs and demands",
         href: guide("/guide/places", input.fieldsStated),
@@ -250,7 +250,7 @@ export function nextMove(input: NextMoveInput): NextMove {
     return {
       id: "pick-city",
       headline: "A country is not one job market.",
-      why: `The ${count(picks.place, "country", "countries")} on your plan hold ${count(input.citiesInPicked, "city", "cities")} we've written up — and the cost, the language and the way in differ more between two cities than most people expect.`,
+      why: `The ${count(picks.place, "country", "countries")} on your plan hold ${count(input.citiesInPicked, "city", "cities")} we've written up. The cost, the language and the way in differ more between two cities than most people expect.`,
       action: {
         label: "See the cities inside them",
         href: guide("/guide/cities", input.fieldsStated),
@@ -265,7 +265,7 @@ export function nextMove(input: NextMoveInput): NextMove {
     return {
       id: "commit",
       headline: "You know roughly where you're going. Nothing is booked yet.",
-      why: "Reading about it changes nothing on its own — the thing that moves an application is having entered something. Pick one you can actually meet this year and put a date on it.",
+      why: "Reading about it changes nothing on its own. What moves an application is having entered something. Pick one you can actually meet this year and put a date on it.",
       action: {
         label:
           input.openToYou > 0
@@ -324,7 +324,7 @@ export function nextMove(input: NextMoveInput): NextMove {
   return {
     id: "steady",
     headline: "Your plan is moving, and nothing needs rescuing this week.",
-    why: "This is the state worth staying in. The one thing that keeps it true is widening slowly — one more thing entered is worth more than any amount of re-reading what you already decided.",
+    why: "This is the state worth staying in. The one thing that keeps it true is widening slowly. One more thing entered is worth more than any amount of re-reading what you already decided.",
     action: { label: "See what else you can enter", href: "/opportunities" },
     alt: {
       label: "Or think a decision through on a map",

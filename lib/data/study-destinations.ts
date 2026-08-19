@@ -887,7 +887,7 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
     ],
     hubs: ["istanbul", "ankara"],
     strengths: [
-      "The state scholarship is genuinely comprehensive: tuition, accommodation, insurance, a stipend and a language year in one package.",
+      "The state scholarship really does cover everything: tuition, accommodation, insurance, a stipend and a language year in one package.",
       "The strongest technical universities teach in English and are competitive by any international standard.",
       "Turkish is closely related to Kazakh, Kyrgyz, Uzbek and Azerbaijani, so the language year starts from a real head start rather than from zero.",
       "Flights home are short and frequent, and the cultural distance is small for students from the region.",
@@ -998,7 +998,7 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
     strengths: [
       "National university fees are set nationally and are identical for international students. There is no separate international price at all.",
       "The government scholarship covers tuition, flights and a monthly allowance, and it takes undergraduates as well as researchers.",
-      "Research groups in materials, robotics, electronics and the basic sciences are world-class and take students seriously.",
+      "Research groups in materials, robotics, electronics and the basic sciences are strong, and they take students seriously.",
       "It's safe, orderly and superbly connected, and student life is manageable without a car or a large budget.",
       "An ageing population means the country now actively wants skilled foreign graduates, which was not true a decade ago.",
     ],

@@ -65,7 +65,7 @@ function KoreaProgramCard({ program: p }: { program: KoreaProgramAnalysis }) {
     <ProgramCardShell status={p.status} reasoning={p.reasoning} notes={p.notes}>
       {/* University + program */}
       <div className="mb-3">
-        <p className="text-[11px] font-medium uppercase tracking-widest text-ink-faint">
+        <p className="text-[12px] font-medium uppercase tracking-widest text-ink-faint">
           {p.field.replace("_", " ")} · {p.city}
         </p>
         <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">
@@ -78,11 +78,11 @@ function KoreaProgramCard({ program: p }: { program: KoreaProgramAnalysis }) {
       <div className="mb-3 flex items-center justify-between">
         <StatusPill status={p.status} />
         <div className="text-right">
-          <p className="text-[11px] text-ink-faint">GPA Index</p>
+          <p className="text-[12px] text-ink-faint">GPA Index</p>
           <p className="text-base font-bold tabular-nums text-ink">
             {p.user_index}%
             {p.index_source !== "gpa" && (
-              <span className="ml-1 text-[11px] font-medium text-ink-faint">
+              <span className="ml-1 text-[12px] font-medium text-ink-faint">
                 {p.index_source === "ib"
                   ? "est. from IB"
                   : p.index_source === "sat"
@@ -110,7 +110,7 @@ function KoreaProgramCard({ program: p }: { program: KoreaProgramAnalysis }) {
         <div className="flex flex-wrap gap-1.5">
           <LanguageBadge program={p} />
           {p.interview_required && (
-            <span className="rounded bg-target-soft px-1.5 py-0.5 text-[11px] font-medium text-target-ink">
+            <span className="rounded bg-target-soft px-1.5 py-0.5 text-[12px] font-medium text-target-ink">
               Interview Stage
             </span>
           )}
@@ -166,7 +166,7 @@ function LanguageBadge({ program: p }: { program: KoreaProgramAnalysis }) {
   const c = config[p.language];
   return (
     <span
-      className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.className}`}
+      className={`rounded px-1.5 py-0.5 text-[12px] font-medium ${c.className}`}
     >
       {c.label}
     </span>
@@ -175,7 +175,7 @@ function LanguageBadge({ program: p }: { program: KoreaProgramAnalysis }) {
 
 function AutoScholarshipBadge() {
   return (
-    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[11px] font-medium text-likely-ink">
+    <span className="rounded bg-likely-soft px-1.5 py-0.5 text-[12px] font-medium text-likely-ink">
       Full Ride for Every Admit
     </span>
   );
