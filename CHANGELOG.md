@@ -21,6 +21,70 @@ record.
 
 ---
 
+## 2026-08-19 — The catalog reads like a person, and the type is big enough to read
+
+Two jobs in one release, and both started with a measurement because both had
+been "fixed" before and the complaint came back anyway. Released via
+[#124](https://github.com/Lemyk777/compass/pull/124).
+
+### What a student notices
+
+- **Every opportunity card reads like someone wrote it.** 149 of the 172 blurbs
+  were a single sentence split by a dash — claim, dash, qualifier — which is a
+  shape a reader cannot name and therefore calls "dry". They are two sentences
+  of different lengths now, and short sentences went from 5.6% of the file to
+  27.2%.
+- **About fifteen superlatives are gone**: "the most prestigious", "pinnacle",
+  "legendary", "premier", "elite". The guide's registries have been test-banned
+  from those words for releases; the catalog never was, and was quietly the most
+  advert-like prose in the product.
+- **`[Fully Funded]` and `[Financial aid available]` are off the end of 30+
+  blurbs.** The cost pill two lines above the description already said it.
+- **The text is bigger.** On a country profile, **93.5% of the page's 9,000
+  characters were set at 14px or below**; it is 12.1% now. Long-form prose is
+  17px, the rest of the product moved one step up, and the smallest label went
+  from 11px to 12px.
+- Nothing moved that a student had learned the position of: card titles still
+  take one line, no page scrolls sideways at 375px, and the reading measure is
+  still 70.5 characters a line.
+
+### What changed underneath
+
+- **`tailwind.config.ts` now sets `fontSize`** — xs 13 / sm 15 / base 17 /
+  lg 19. One edit moves the whole product, **because every type test is written
+  against Tailwind class names rather than pixel values.**
+- **Long-form prose is `text-base`, and `max-w-[54ch]` is what marks it.** A
+  measure cap only ever appears on a column of continuous reading; a card
+  summary is `line-clamp`ed instead. So the cap chose which columns got the step.
+- **19 `text-ink/60`-style alphas became `ink-soft`.** An alpha on `ink` is a
+  colour nobody has checked — the rule was already written down and the hero
+  paragraph had been moved off it, but nineteen other places had not, including
+  six landing-page body paragraphs also set in a light weight.
+- **451 sentence dashes across the catalog's text fields became 33.** The dash
+  between two numbers in `eligibility` is *parsed* and was left alone; the
+  eligibility gate for all 172 rows was dumped before and after and compared,
+  and nothing moved.
+
+### What anyone working on the code now has to know
+
+- **The 11px floor test had never fired.** Its pattern was
+  `/text-[(d+(?:.d+)?)px]/` — the backslashes had been lost, which turns `[…]`
+  into a character class, so nothing was captured and the comparison was against
+  `NaN`. It went green on every push for several releases while enforcing
+  nothing. **This is the second guard in this repo to fail exactly this way**,
+  after the bundle guard written as a template literal where `\s` became the
+  letter s. Both fail *open*. The test is fixed, now covers `rem` as well as
+  `px`, and there is a second test asserting it actually rejects `text-[10px]`.
+  Do not ship a source-scanning guard without one.
+- **Do not run `prettier --write` over changed files in this repo.** It is not
+  uniformly prettier-formatted, and doing so reformatted
+  `lib/data/universities.ts` by 835 lines for a seven-string edit.
+- **The catalog's prose rules now live in `lib/data/README.md`** under "Adding
+  an opportunity", which is where someone adding an entry actually looks.
+- **No migration, no environment variable, nothing to apply.**
+
+---
+
 ## 2026-08-19 — Every bottleneck was a formatter, and three defects nobody had hit
 
 A whole-tree pass over `app/`, `components/`, `lib/` and `scripts/`, measuring
