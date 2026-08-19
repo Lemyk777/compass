@@ -12,16 +12,18 @@ The planner's own design of record is [PLANNER_PLAN.md](PLANNER_PLAN.md).
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**Everything through release 8 is in production** — the performance and
-correctness pass, merged through
-[#119](https://github.com/Lemyk777/compass/pull/119) into `develop` and released
-via [#120](https://github.com/Lemyk777/compass/pull/120). Vercel is green and
-the live pages were smoke-tested.
+**As of 2026-08-19 everything in this repository is in production**, including
+release 9 — the copy and readability pass, merged through
+[#123](https://github.com/Lemyk777/compass/pull/123) into `develop` and released
+via [#124](https://github.com/Lemyk777/compass/pull/124). Vercel is green, and
+the live pages were verified rather than assumed: `applycompass.app` serves the
+rewritten blurbs, zero contrast failures, nothing under 12px, and 5.4% of
+`/opportunities` at ≤14px against 51.9% before.
 
-**But the branch is now ahead of `main` again.** The copy and readability pass
-(release 9, below) is on `copy/humanize-catalog`, is **not merged and not
-deployed**, and touches 138 files. Verify before assuming either way — it takes
-ten seconds, and a stale note here has cost a release twice:
+The habit of this file is to warn that the branch is ahead of `main`; right now
+it is not. Verify anyway — it takes ten seconds, and a stale note here has cost
+a release twice, most recently this one: the table below said `main` was
+`4c87cc0` when it had been `6be95e8` for two releases:
 
 ```bash
 git fetch origin && git log --oneline origin/main..HEAD
@@ -29,9 +31,9 @@ git fetch origin && git log --oneline origin/main..HEAD
 
 | | |
 |---|---|
-| On `main` (deployed) | everything through **release 8**. `origin/main` = `4c87cc0`, released via [#120](https://github.com/Lemyk777/compass/pull/120) from `origin/develop` = `0d8f798` |
+| On `main` (deployed) | everything through **release 9**. `origin/main` = `478ab24`, released via [#124](https://github.com/Lemyk777/compass/pull/124) from `origin/develop` = `b3ff145`. The two are identical in content |
 | Open PRs | none |
-| Branch | `copy/humanize-catalog` — release 9, **uncommitted**, not yet PR'd into `develop` |
+| Branch | `develop` |
 | Unit tests | **282** (`npm run test:unit`) |
 | Session checks | **61** (`node --import tsx scripts/test-session-checks.ts`) |
 | Catalog | **172 entries · 0 broken links locally** (1 unverifiable — a bot wall, reported without failing). **The weekly job on `main` reads differently and has failed since at least 2026-08-03** — see below |
@@ -49,10 +51,10 @@ still needs a decision, because a check that is permanently red is a check
 nobody reads: either the job tolerates a connection-level failure the way it
 already tolerates a 403/429/412, or it stops running in CI.
 
-### What is ON THE BRANCH — release 9, the copy and readability pass, 2026-08-19
+### What shipped in release 9 — the copy and readability pass, 2026-08-19
 
-**Not merged, not deployed.** `copy/humanize-catalog`, 138 files. Two jobs, and
-both began by measuring, because both had been "fixed" before.
+138 files. Two jobs, and both began by measuring, because both had been "fixed"
+before and the complaint came back anyway.
 
 **The catalog had never had a copy pass.** Release 7 took the five prose
 registries to zero em dashes; the 172-entry catalog — the front door, and the
@@ -1982,14 +1984,13 @@ this, or it will "fix" it back.
 
 ## 8. What to do next — the ordered list, 2026-08-19
 
-**Something IS waiting to be merged.** Release 9, the copy and readability pass,
-is sitting uncommitted on `copy/humanize-catalog` — 133 files, described in §1.
-Getting it reviewed and merged is the first item on this list, ahead of anything
-below: an unshipped branch that keeps growing is how this repo has lost work
-twice. Confirm the state with the ten-second check in §1.
+**Nothing is waiting to be merged.** `develop` and `origin/main` hold the same
+content and every PR is closed, so a session starting here begins from a clean
+production state rather than from someone else's unshipped branch. Confirm it
+anyway with the ten-second check in §1.
 
-**#25 (readability) is open again and has been passed a second time** — see §1
-and the correction in §5.22. Treat it as done-pending-merge, not as untouched.
+**#25 (readability) was reopened and passed a second time in release 9** — see
+§1 and the correction in §5.22. It is shipped, not outstanding.
 
 > **There is a second list: [AUDIT_2026-08-14.md](AUDIT_2026-08-14.md).** Nine
 > findings turned up while answering one question from the founder ("why does
