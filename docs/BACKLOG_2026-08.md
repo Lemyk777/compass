@@ -8,6 +8,17 @@ Read [CLAUDE.md](../CLAUDE.md) first — it holds the product rules. This file
 holds only what is **specific to this backlog** and not already written there.
 The planner's own design of record is [PLANNER_PLAN.md](PLANNER_PLAN.md).
 
+**Where to look, by question:** §1 what is deployed · §4 what is left, in detail
+· §5 findings worth not re-discovering · §6 how to verify · §7 the method · §8
+**the ordered next list**, ending in the **problems that are nobody's work
+item** · §9 **the direction** — what the next build is for · §10 a session log
+kept for the order things happened in.
+
+**Every count in this file is a claim, not a fact.** It said `main` was two
+releases behind reality while being the file that exists to prevent exactly
+that. Re-derive before trusting: `git fetch`, `npm run test:unit`, and the
+scripts in §6 take under a minute between them.
+
 ---
 
 ## 1. Where the repository stands — READ THIS FIRST
@@ -391,13 +402,27 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 ## 4. What is left, in detail
 
-**Two untouched (#11, #14), and #15 is verification.** Everything else on the
-founder's list is closed: #22 and #24 on 2026-08-13, #16 and #25 and #27 on
-2026-08-14, #17 over four releases ending 2026-08-14, and #23's animation half
-with release 4. By item count that is ~91% complete; by effort the remainder is
-larger than it looks, because all three of the survivors are **content and
-verification work** rather than code — the kind that cannot be finished by
-anyone who does not know the answer.
+**One and a half untouched (#14, half of #11), and #15 is verification.**
+Everything else on the founder's list is closed: #22 and #24 on 2026-08-13, #16
+and #27 on 2026-08-14, #17 over four releases ending 2026-08-14, #23's animation
+half with release 4, and #25 (readability) twice — once on 2026-08-14 and again
+in release 9, because the complaint recurred and the second cause was different.
+
+**#11 is now half done, and that was found by reading the file rather than the
+note.** The founder named three areas as wrong: games, consulting and investment
+banking. Games has since been rewritten — its `catch` states plainly that pay is
+below equivalent software work, that studios staff up and lay off around project
+cycles, and that crunch is still common, and its `study` stage warns against
+courses that teach one engine and little computer science. **Consulting has
+not**: `Strategy & consulting` names travel, hours and up-or-out, and says
+nothing about school prestige being the dominant hiring factor or about
+recruiting being geographically concentrated — which for a student in Central
+Asia is the single most decisive fact about that career. There is no investment
+banking area at all.
+
+By item count that is ~93% complete; by effort the remainder is larger than it
+looks, because every survivor is **content and verification work** rather than
+code — the kind that cannot be finished by anyone who does not know the answer.
 
 **The ordered list of what to do next lives in §8, not here**, and it now
 interleaves these with the audit's open findings, which are cheaper. This
@@ -2070,10 +2095,19 @@ needs no code and no migration.
    and `sources` must be official bodies over https that actually answer
    (`npm run test:guide-links`). Each new country needs its cities in `hubs` or
    the containment test fails.
-6. **#11 — careers depth and the interest quiz.** Two separable halves. The
-   content half is the direct tone already agreed in §2. **The quiz half carries
-   a constraint from §7:** it may inform an offer, it may never be the answer,
-   and it must not become a RIASEC clone.
+6. **#11 — careers depth and the interest quiz. Half of this is already done;
+   re-read the file before planning it.** Games was rewritten at some point and
+   now states the bargain plainly (pay below equivalent software work, staffing
+   around project cycles, crunch, and a warning about one-engine courses).
+   **What is left is narrower and sharper than the item's title suggests:**
+   `Strategy & consulting` still does not say that school prestige is the
+   dominant hiring factor or that recruiting is concentrated in particular
+   countries, and there is no investment-banking area at all. For a student in
+   Central Asia that omission is not a nuance — it is the fact that decides
+   whether the path is open to them, and leaving it out is the brochure
+   behaviour this whole layer exists to avoid. **The quiz half carries a
+   constraint from §7:** it may inform an offer, it may never be the answer, and
+   it must not become a RIASEC clone.
 7. **A9 — three copies of `CATEGORY_LABEL`.** Not a bug today and last on
    purpose. All three are `Record<CompetitionCategory, string>`, so the compiler
    keeps them complete; the risk is only that a fourth gets added. If they are
@@ -2098,8 +2132,100 @@ needs no code and no migration.
   `place-universities.ts`, and the employer simulations in `try-it.ts`. They are
   phrased as "current rule, check it" for that reason.
 
+### Problems, as distinct from work items — added 2026-08-19
 
-## 9. Session log — 2026-08-13 / 14
+The list above is things to build. These are things that are **wrong right now**
+and that no item on any list will fix, because nobody has owned them.
+
+1. **THREE guards in this repo have failed OPEN, and the third was found by
+   grepping for the signature.** The bundle guard matched nothing because it was
+   written as a template literal where `\s` became the letter s. The 11px floor
+   guard matched nothing because its backslashes were eaten, so it compared
+   `NaN`. On 2026-08-19 a scan of all **433 regex literals across the 19 test
+   scripts** found one more: `test-engine.ts` split beat text on `/s+/` — runs
+   of the letter s — instead of `/\s+/`. It reported a maximum of **9 words**
+   across the 24 beats when the real maximum is **23**, so the "≤24 words" rule
+   CLAUDE.md calls test-enforced would have passed a sixty-word beat. No bad
+   content had shipped, which is luck rather than coverage. Fixed.
+
+   **The scan is cheap and worth keeping**: flag any regex literal containing a
+   bare `d+`/`s+`/`w+` not preceded by a backslash. It ran clean otherwise — the
+   only other hits were correctly-escaped `\[(\d…` patterns.
+
+   **What the scan cannot tell you is whether a correctly-written guard actually
+   matches anything real**, and that is the larger half. This repo bans
+   superlatives, prices, URLs, alpha inks, `!` escapes, hardcoded focus rings
+   and client imports of heavy registries with tests of exactly this shape.
+   Each needs one assertion that it rejects a line it must reject. Until that
+   exists, "a test covers it" is weaker evidence here than it sounds.
+2. **The product's stated mission and its data disagree.** Compass exists for
+   students outside the first tier, most of them in Central Asia. The catalog is
+   **155 international, 16 national, 1 regional, 0 school-level, 0
+   `region`-tagged**. There is nothing in it a student in Shymkent can turn up
+   to in person. This is A8, and it is written here too because it reads as a
+   data chore on that list and it is actually the gap between what the product
+   says it is and what it contains.
+3. **The countdown is the product's central promise and 93% of rows cannot make
+   it.** 12 of 172 carry a confirmed date. 57 are legitimately `alwaysOpen`,
+   which leaves ~103 rows showing "dates not announced" — honest, and also the
+   thing a student came for. Every date verified moves a card onto the planner's
+   agenda, so this compounds with the section we just spent four releases
+   building.
+4. **`Link health` has been red since at least 2026-08-03** and is waiting on an
+   owner decision that has not been made. A permanently red check is a check
+   nobody reads, which is how `ijso` stayed broken.
+5. **The docs drift, including the file whose job is preventing drift.** §1
+   carried a `main` SHA two releases stale while telling the reader that a stale
+   note here has cost a release twice. It is corrected, but the mechanism that
+   let it happen is unchanged: these numbers are maintained by hand. Anything in
+   this file that is a *count* should be treated as a claim to re-derive, not a
+   fact — `git fetch`, `npm run test:unit`, and the scripts in §6 take under a
+   minute between them.
+6. **We still cannot tell whether any of this works.** `opportunity_intents` is
+   the only behavioural signal the product collects, `/admin/intents` renders
+   the funnel, and no one has reported a number off it in this file. Every
+   release since #17 has been justified by reasoning rather than by evidence
+   that a student did something differently.
+
+## 9. Where this can go next — direction, 2026-08-19
+
+Not a task list. The four items above are what to *build*; this is what the
+build is for, and each one is grounded in something already measured rather than
+in taste.
+
+**1. Finish the data before adding surfaces.** The last four releases added
+structure — the spine, the planner, the companion, one list — and the structure
+is now ahead of what fills it. A8 (local rows) and A7/#15 (confirmed dates) are
+worth more per hour than any new feature, because both make existing screens
+say something they currently cannot. A student who opens Opportunities and sees
+one thing happening in their own city, with a real date, has had the product
+work as advertised; today that student cannot exist.
+
+**2. Make the guards trustworthy, once.** See problem 1. This is the cheapest
+possible insurance against the class of bug this repo keeps shipping, and it is
+the only item here that protects every future release rather than improving one.
+
+**3. Then close the honesty gaps in the guide's prose.** #11's consulting half,
+and whatever the same read finds in the other 32 areas. The rule the layer was
+built on is that an appeal without its catch beside it is an advert; the games
+area now honours that and consulting does not, which means the layer is
+inconsistent rather than wrong — the worse of the two states, because a reader
+cannot tell which pages to trust.
+
+**4. Look at `/admin/intents` and write the number down here.** Problem 6. If
+students are committing, that says which kinds of opportunity to add more of and
+the data work above gets a target. If they are not, that is the most important
+fact in the project and every plan in this file is built on an assumption.
+
+**Deliberately NOT next, and why:** new countries (#14) widen a chain that
+already works; a second analysis country adds a pipeline before we know the
+first one changes behaviour; and any redesign of a screen shipped in the last
+month is answering a complaint nobody has made yet. The pattern this file
+records over and over is that measuring first changed what got built — the
+filter rail was declined that way, and readability was rediagnosed twice.
+
+
+## 10. Session log — 2026-08-13 / 14
 
 Kept because the ORDER things happened in is itself information: three of these
 were found only because the previous one was done first.
