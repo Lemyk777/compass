@@ -141,7 +141,7 @@ function AccountMenu({
       >
         <span
           aria-hidden="true"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent-ink"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-ink"
         >
           {/* A mark, not a photo. We never asked for one, and a generic grey
               avatar is the placeholder that tells a reader nothing. */}

@@ -130,7 +130,7 @@ function UsBuilder() {
         return {
           title: u.name,
           badge: branch ? (
-            <span className="mt-1.5 inline-flex w-fit items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent-ink">
+            <span className="mt-1.5 inline-flex w-fit items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-[12px] font-semibold text-accent-ink">
               <Flag code={branch.host_code} size={10} className="shrink-0" />
               Campus in {branch.host_country.replace(/^the /, "")} · US-system
               admissions
@@ -204,7 +204,7 @@ function ItalyBuilder() {
               Family income (annual, EUR)
             </label>
             <p className="mb-2 text-xs text-ink-soft">
-              Optional — refines your DSU tuition-reduction estimate. Leave
+              Optional. It refines your DSU tuition-reduction estimate. Leave
               blank and we use your profile budget, or a typical default if you
               skipped that.
             </p>
@@ -448,8 +448,8 @@ function KoreaBuilder() {
                 Your TOPIK level
               </span>
               <p className="mb-2 text-xs text-ink-soft">
-                Korean-taught programs require TOPIK as an eligibility document
-                — it directly changes your read.
+                Korean-taught programs require TOPIK as an eligibility document,
+                and it directly changes your read.
               </p>
               <div className="flex flex-wrap gap-2">
                 {TOPIK_LEVELS.map((lv) => {

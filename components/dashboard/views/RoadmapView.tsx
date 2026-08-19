@@ -147,7 +147,7 @@ export function RoadmapView() {
       )}
 
       <p className="text-center text-xs text-ink-faint">
-        Dates are indicative — always confirm on the official site before you
+        Dates are indicative, so always confirm on the official site before you
         rely on them.
       </p>
     </div>
@@ -194,7 +194,7 @@ function RoadmapHeader({
             {roadmap.operativeDeadlineLabel} deadline
             {roadmap.deadlines.length > 1 && (
               <span className="mt-0.5 block text-xs font-normal text-ink-faint">
-                Your soonest of {roadmap.deadlines.length} — the rest are on the
+                Your soonest of {roadmap.deadlines.length}, and the rest are on the
                 plan below
               </span>
             )}
@@ -211,7 +211,7 @@ function RoadmapHeader({
       ) : roadmap.hasGraduationYear ? (
         <p className="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-ink-soft">
           We don&rsquo;t have a to-the-day deadline we can stand behind for your
-          current target schools — they admit on rolling or per-programme
+          current target schools, which admit on rolling or per-programme
           timelines. See{" "}
           <span className="font-medium text-ink">Confirm these dates</span>{" "}
           below and check each official page.
@@ -247,7 +247,7 @@ function RoadmapPhases({ roadmap }: { roadmap: Roadmap }) {
           <p className="mt-1 text-sm text-ink-soft">
             We only show a countdown for deadlines we verified against the
             official page. For these schools the date is rolling, set per
-            programme, or not yet published — open each official page and
+            programme, or not yet published. Open each official page and
             confirm before you rely on it.
           </p>
           <ul className="mt-4 space-y-2.5">
@@ -265,7 +265,7 @@ function RoadmapPhases({ roadmap }: { roadmap: Roadmap }) {
           </h3>
           <p className="mt-1 text-sm text-ink-soft">
             High-value profile moves that need more runway than you have before
-            this deadline — worth it for a next round or a gap year, not this
+            this deadline, worth it for a next round or a gap year, not this
             one.
           </p>
           <ul className="mt-4 space-y-2.5">
@@ -315,7 +315,7 @@ function PhaseCard({ phase }: { phase: RoadmapPhase }) {
         </ul>
       ) : (
         <p className="mt-4 text-sm text-ink-faint">
-          Nothing scheduled here yet — the levers above feed into the phases
+          Nothing scheduled here yet. The levers above feed into the phases
           with dated deadlines.
         </p>
       )}
@@ -351,7 +351,7 @@ function ActionRow({
           <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
             {action.text}
             {action.tag && (
-              <span className="rounded-full bg-target-soft px-2 py-0.5 text-[11px] font-semibold text-target-ink">
+              <span className="rounded-full bg-target-soft px-2 py-0.5 text-[12px] font-semibold text-target-ink">
                 {action.tag}
               </span>
             )}

@@ -55,21 +55,21 @@ const COST_COPY: Record<
     label: "Free",
     short: "Free",
     tone: "free",
-    fallback: "Free to take part — no fee at any stage.",
+    fallback: "Free to take part. No fee at any stage.",
   },
   free_cert_paid: {
     label: "Free to learn · the certificate costs money",
     short: "Free · paid certificate",
     tone: "partial",
     fallback:
-      "Free to learn, but the certificate is a paid extra. You can do the whole course without paying — you just won't get the certificate at the end.",
+      "Free to learn, but the certificate is a paid extra. You can do the whole course without paying. You just won't get the certificate at the end.",
   },
   free_then_paid: {
     label: "Free to enter · you pay only if you get through",
     short: "Free to enter",
     tone: "partial",
     fallback:
-      "The first round costs nothing. A fee appears only if you progress — so you can find out how far you get before any money is involved.",
+      "The first round costs nothing. A fee appears only if you progress, so you can find out how far you get before any money is involved.",
   },
   freemium: {
     label: "Free tier · paid plan optional",
@@ -83,10 +83,10 @@ const COST_COPY: Record<
     short: "Subscription",
     tone: "paid",
     fallback:
-      "This one is a subscription — you pay every month for as long as you use it. Check the current price before you start.",
+      "This one is a subscription: you pay every month for as long as you use it. Check the current price before you start.",
   },
   one_time: {
-    label: "Costs money — a one-off fee",
+    label: "Costs money, a one-off fee",
     short: "Costs money",
     tone: "paid",
     fallback: "There is a single up-front fee to take part.",
@@ -96,10 +96,10 @@ const COST_COPY: Record<
     short: "Paid · aid available",
     tone: "paid",
     fallback:
-      "This costs money, but need-based financial aid is available — ask for it inside the application, not after you are admitted.",
+      "This costs money, but need-based financial aid is available. Ask for it inside the application, not after you are admitted.",
   },
   funded: {
-    label: "Free — and it pays you",
+    label: "Free, and it pays you",
     short: "Free · funded",
     tone: "free",
     fallback:
@@ -110,7 +110,7 @@ const COST_COPY: Record<
     short: "Fee varies",
     tone: "unknown",
     fallback:
-      "The fee is set by your school, team or national organiser rather than centrally, so it varies — ask them what entry actually costs you.",
+      "The fee is set by your school, team or national organiser rather than centrally, so it varies. Ask them what entry actually costs you.",
   },
   unknown: {
     label: "We haven't verified the cost",

@@ -29,7 +29,7 @@ export function LegalPage({
           </Link>
           <Link
             href="/"
-            className="text-sm font-medium text-ink/60 transition hover:text-ink"
+            className="text-sm font-medium text-ink-soft transition hover:text-ink"
           >
             ← Back to site
           </Link>
@@ -46,7 +46,7 @@ export function LegalPage({
         </h1>
         <p className="mt-3 text-sm text-ink-faint">Last updated: {updated}</p>
 
-        <div className="legal-prose mt-10 space-y-8 text-[0.975rem] leading-relaxed text-ink/80">
+        <div className="legal-prose mt-10 space-y-8 text-[0.975rem] leading-relaxed text-ink">
           {children}
         </div>
       </main>

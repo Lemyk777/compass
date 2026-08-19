@@ -133,7 +133,7 @@ export function OutlineMap({ country }: { country: CountryView }) {
       preserveAspectRatio="xMidYMid meet"
       className="h-full w-full"
       role="img"
-      aria-label={`${country.label} — top universities`}
+      aria-label={`${country.label}, top universities`}
     >
       <defs>
         <clipPath id={clipId}>

@@ -199,7 +199,7 @@ export function WorkFromHere({
   return (
     <div className="space-y-4">
       <p className="text-base leading-relaxed text-ink-soft">
-        The kinds of work {where} is a route into — each with what it actually
+        The kinds of work {where} is a route into, each with what it actually
         involves, and what the catch is.
       </p>
       <ul className="space-y-4">

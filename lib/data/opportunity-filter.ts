@@ -169,7 +169,7 @@ export const COST_OPTIONS: {
   {
     id: "free_start",
     label: "Free to start",
-    hint: "Free to enter or learn, but money can appear later — a paid certificate, a later round, a paid tier.",
+    hint: "Free to enter or learn, but money can appear later. A paid certificate, a later round, a paid tier.",
     models: ["free_then_paid", "free_cert_paid", "freemium"],
   },
   {
@@ -194,7 +194,7 @@ export const TIMING_OPTIONS: { id: TimingBucket; label: string; hint: string }[]
   {
     id: "open",
     label: "Start tonight",
-    hint: "No deadline to miss — self-paced or rolling, open right now.",
+    hint: "No deadline to miss, self-paced or rolling, open right now.",
   },
   {
     id: "tba",

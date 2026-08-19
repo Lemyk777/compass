@@ -177,7 +177,7 @@ export async function saveProfile(
     // school_years (migration 0018) may not be applied yet.
     delete safeRow.school_years;
     console.warn(
-      "student_profiles is missing newer columns — saving without them. " +
+      "student_profiles is missing newer columns, saving without them. " +
         "Run migrations 0005_hong_kong.sql, 0009_onboarding_extras.sql, 0010_graduation_year.sql, 0016_uae.sql, 0017_korea.sql, 0018_school_years.sql.",
       writeErr.message,
     );

@@ -58,7 +58,7 @@ const PAINS: { n: string; title: React.ReactNode; body: string }[] = [
   {
     n: "01",
     title: "Written for someone older",
-    body: "Most of what gets listed turns out to be for university students, or for one country's nationals. You find that out after reading the rules — if the rules are even linked.",
+    body: "Most of what gets listed turns out to be for university students, or for one country's nationals. You find that out after reading the rules, if the rules are even linked at all.",
   },
   {
     n: "02",
@@ -156,7 +156,7 @@ export default async function LandingPage() {
           <div className="relative mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 px-6 py-24 md:px-12 lg:grid-cols-[minmax(0,56fr)_minmax(0,44fr)] lg:gap-14 lg:py-28 xl:px-20">
             {/* Left — the message */}
             <div className="relative z-10 max-w-xl lg:max-w-none">
-              <span className="rise-in inline-flex items-center rounded-full border border-ink/10 bg-card px-3.5 py-1.5 text-xs font-medium text-ink/60">
+              <span className="rise-in inline-flex items-center rounded-full border border-ink/10 bg-card px-3.5 py-1.5 text-xs font-medium text-ink-soft">
                 Free · no account needed · for students anywhere
               </span>
               {/* The size is a clamp, not three breakpoint steps, because it has
@@ -190,7 +190,7 @@ export default async function LandingPage() {
                 />
               </h1>
               <p
-                // `text-ink-soft`, not `text-ink/60`. This paragraph is the
+                // `text-ink-soft`, not `text-ink-soft`. This paragraph is the
                 // product's promise, it is 18px `font-light`, and it is the
                 // only normal-sized text in the hero sitting directly on the
                 // field rather than on an opaque card. At /60 it measured
@@ -201,7 +201,7 @@ export default async function LandingPage() {
                 style={{ animationDelay: "0.08s" }}
               >
                 Competitions, olympiads, courses and programmes you can actually
-                enter — at your age, from where you live, with the real deadline
+                enter at your age, from where you live, with the real deadline
                 and the real cost. Tell us your year at school and the list is
                 yours.
               </p>
@@ -230,7 +230,7 @@ export default async function LandingPage() {
 
               {/* The report is the product's second door, and it was the
                 faintest thing in the hero — `text-ink-faint` running into a
-                link at `text-ink/60`, i.e. quieter than the disclaimer it read
+                link at `text-ink-soft`, i.e. quieter than the disclaimer it read
                 like. It is its own affordance now: a strip, not a footnote.
                 Deliberately NOT a third button — one primary CTA per view, and
                 two filled controls competing is how you get neither pressed. A
@@ -240,10 +240,10 @@ export default async function LandingPage() {
                 className="rise-in mt-7 flex w-fit max-w-full flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-line bg-card px-4 py-3"
                 style={{ animationDelay: "0.24s" }}
               >
-                <span className="rounded-full bg-ivy-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ivy-ink">
+                <span className="rounded-full bg-ivy-soft px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-ivy-ink">
                   Also free
                 </span>
-                <span className="text-sm text-ink/70">
+                <span className="text-sm text-ink-soft">
                   Applying to university too?
                 </span>
                 <a
@@ -283,7 +283,7 @@ export default async function LandingPage() {
               <Stat
                 value={COMPETITIONS.length}
                 label="opportunities in the catalog"
-                note="Olympiads, competitions, courses, research and summer programmes — international and national."
+                note="Olympiads, competitions, courses, research and summer programmes, international and national."
               />
               <Stat
                 value={FREE_COUNT}
@@ -293,12 +293,12 @@ export default async function LandingPage() {
               <Stat
                 value={OPEN_NOW_COUNT}
                 label="you can start tonight"
-                note="No deadline to wait for — self-paced courses, rolling submissions, contests that run all year."
+                note="No deadline to wait for: self-paced courses, rolling submissions, contests that run all year."
               />
               <Stat
                 value={5}
                 label="countries in the admission report"
-                note="US, Italy, Hong Kong, the UAE and Korea — if and when you want that part."
+                note="US, Italy, Hong Kong, the UAE and Korea, if and when you want that part."
               />
             </div>
           </Band>
@@ -359,10 +359,10 @@ export default async function LandingPage() {
                 Where it leads
               </p>
               <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
-                &ldquo;And then what?&rdquo; — answered before you enter, not
+                &ldquo;And then what?&rdquo; Answered before you enter, not
                 after.
               </h2>
-              <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink/60">
+              <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
                 The guide runs the whole chain: what you like → the areas of
                 work it opens → the countries and cities that work lives in →
                 and what you can enter from home without moving anywhere. Every
@@ -376,7 +376,7 @@ export default async function LandingPage() {
                 step="1"
                 count={areaCount}
                 title="areas of work"
-                body="Real job titles inside each one — never a single prescribed profession per field."
+                body="Real job titles inside each one, never a single prescribed profession per field."
               />
               <GuideCard
                 href="/guide/places"
@@ -390,14 +390,14 @@ export default async function LandingPage() {
                 step="3"
                 count={HUBS.length}
                 title="cities to work in"
-                body="Including Almaty, Astana and Tbilisi — the map does not stop at the countries we profile."
+                body="Including Almaty, Astana and Tbilisi. The map does not stop at the countries we profile."
               />
               <GuideCard
                 href="/guide/from-home"
                 step="4"
                 count={HOME_ROUTES.length}
                 title="routes from home"
-                body="Ways in that need no visa and no move — for when leaving isn't the plan, or isn't possible yet."
+                body="Ways in that need no visa and no move, for when leaving isn't the plan, or isn't possible yet."
               />
             </div>
           </Band>
@@ -424,8 +424,8 @@ export default async function LandingPage() {
               </h2>
               <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
                 Say you are doing something and it gets a date and a state. The
-                planner keeps both — what you committed to, the cutoffs around
-                it, and the stretch of the year you are in — as one list you can
+                planner keeps both, what you committed to, the cutoffs around it,
+                and the stretch of the year you are in, as one list you can
                 read two ways. Nothing is typed twice, and nothing is invented:
                 a date we have not confirmed is listed without a countdown
                 rather than guessed at.
@@ -464,7 +464,7 @@ export default async function LandingPage() {
             <h2 className="max-w-3xl text-balance text-3xl font-medium tracking-tight text-ink md:text-5xl">
               Honest by design
             </h2>
-            <p className="mt-6 max-w-3xl text-pretty text-lg font-light leading-relaxed text-ink/60 md:text-xl">
+            <p className="mt-6 max-w-3xl text-pretty text-lg font-light leading-relaxed text-ink-soft md:text-xl">
               We would rather tell you something is closed, expensive or out of
               reach than let you find out yourself in three months. Unknown
               facts never remove an opportunity from your list; unverified dates
@@ -487,12 +487,12 @@ export default async function LandingPage() {
                 <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
                   And an honest read on your university applications.
                 </h2>
-                <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink/60">
+                <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
                   Optional, free, and separate from everything above. Fill in a
                   profile and you get a competitiveness score out of 100,
                   per-school admission ranges, your grades and tests against
                   each school&rsquo;s admitted middle 50%, and a prioritised
-                  list of what to fix — across the US, Italy, Hong Kong, the UAE
+                  list of what to fix, across the US, Italy, Hong Kong, the UAE
                   and Korea.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
@@ -526,7 +526,7 @@ export default async function LandingPage() {
                 <h3 className="text-balance text-2xl font-medium tracking-tight text-ink">
                   Benchmarked against real, named schools.
                 </h3>
-                <p className="mt-3 max-w-md text-pretty text-base font-light leading-relaxed text-ink/60">
+                <p className="mt-3 max-w-md text-pretty text-base font-light leading-relaxed text-ink-soft">
                   Not a vibe check against &ldquo;top universities&rdquo;. Every
                   range is tied to a specific school&rsquo;s published
                   admitted-student data, in every country the report covers.
@@ -560,9 +560,9 @@ export default async function LandingPage() {
                 repo’s idiom is `max-w-[54ch]`, measured at 68–72 real
                 characters — a `ch` is the width of a ZERO, not of an average
                 letter, so the count runs ~1.3x the number you write. */}
-              <p className="mt-2 max-w-[54ch] text-pretty text-base font-light leading-relaxed text-ink/60">
+              <p className="mt-2 max-w-[54ch] text-pretty text-base font-light leading-relaxed text-ink-soft">
                 Post it under your own name, logo and verification tick, and it
-                appears on the list students actually read — with your deadline
+                appears on the list students actually read, with your deadline
                 treated as the organiser&rsquo;s own word, not a scrape.
               </p>
             </div>
@@ -705,7 +705,7 @@ function GuideCard({
         </span>
         <span className="text-base font-medium text-ink">{title}</span>
       </p>
-      <p className="mt-2 flex-1 text-pretty text-sm font-light leading-relaxed text-ink/60">
+      <p className="mt-2 flex-1 text-pretty text-sm font-light leading-relaxed text-ink-soft">
         {body}
       </p>
       <span className="mt-4 text-sm font-medium text-ivy-ink transition-transform duration-300 group-hover:translate-x-0.5">

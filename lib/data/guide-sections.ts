@@ -51,7 +51,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     label: "Kinds of work",
     title: "Kinds of work",
     blurb:
-      "Areas of work a field opens — not one prescribed job. Each one lists the actual titles people hold inside it and how you get there.",
+      "Areas of work a field opens. Not one prescribed job. Each one lists the actual titles people hold inside it and how you get there.",
   },
   {
     // Between the work and the country, because the major is what you actually
@@ -63,7 +63,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     label: "What you’d study",
     title: "What you would actually study",
     blurb:
-      "The subject you apply with — what the first year is really made of, what it costs you, and who should study something else instead.",
+      "The subject you apply with. What the first year is really made of, what it costs you, and who should study something else instead.",
   },
   {
     id: "places",
@@ -72,7 +72,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     label: "Countries",
     title: "The countries, in full",
     blurb:
-      "The places students actually argue about: what only each one gives you, what it genuinely costs, what admissions weighs — and who should go somewhere else instead.",
+      "The places students actually argue about: what only each one gives you, what it genuinely costs, what admissions weighs, and who should go somewhere else instead.",
   },
   {
     id: "cities",
@@ -81,7 +81,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     label: "Cities",
     title: "The cities inside them",
     blurb:
-      "A country is not one job market. These are the cities the work actually clusters in — each with its honest catch and the real way in, including the ones at home.",
+      "A country is not one job market. These are the cities the work actually clusters in. Each with its honest catch and the real way in, including the ones at home.",
   },
   {
     id: "from-home",

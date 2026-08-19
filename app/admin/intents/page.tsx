@@ -224,7 +224,7 @@ export default async function AdminIntentsPage() {
           Commitments
         </h1>
         <p className="mb-6 text-sm text-ink-soft">
-          What students said they would do, and whether they did it — the only
+          What students said they would do, and whether they did it. This is the only
           behavioural signal this product collects.
         </p>
 
@@ -258,7 +258,7 @@ export default async function AdminIntentsPage() {
               <p className="mt-3 text-sm text-ink-faint">
                 No commitments recorded yet. The numbers below stay at zero
                 until a student presses &ldquo;I&rsquo;m doing this&rdquo; on
-                the dashboard shortlist — it is hidden in <code>/demo</code>,
+                the dashboard shortlist. It is hidden in <code>/demo</code>,
                 which has no session to save one.
               </p>
             )}
@@ -269,7 +269,7 @@ export default async function AdminIntentsPage() {
                   Behavioural funnel
                 </h2>
                 <p className="mb-3 mt-0.5 text-xs text-ink-soft">
-                  Each step is a state a student actually reached — not a page
+                  Each step is a state a student actually reached, not a page
                   they opened.
                 </p>
                 <Bars rows={funnel} base={funnelBase} />
@@ -282,7 +282,7 @@ export default async function AdminIntentsPage() {
                 <p className="mb-3 mt-0.5 text-xs text-ink-soft">
                   Of {totalUsers} signups. Signup now lands on Opportunities and
                   the full report is opt-in, so &ldquo;Ran the full
-                  report&rdquo; is the conversion to watch — not a step everyone
+                  report&rdquo; is the conversion to watch, not a step everyone
                   is pushed through. Without a graduation year no age or grade
                   rule can fire, so those students see an unfiltered catalog.
                 </p>
@@ -319,11 +319,11 @@ export default async function AdminIntentsPage() {
                           {o.name}
                           {!o.known && (
                             <span className="ml-1.5 text-xs text-ink-faint">
-                              (not in the catalog — retired or discovered id)
+                              (not in the catalog: retired or discovered id)
                             </span>
                           )}
                           {o.cost && (
-                            <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+                            <span className="ml-1.5 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
                               {o.cost.short}
                             </span>
                           )}
@@ -369,7 +369,7 @@ export default async function AdminIntentsPage() {
                 </h2>
                 <p className="mb-3 mt-0.5 text-xs text-ink-soft">
                   The implementation intention. All four options are
-                  deliberately near-term — an intention set for
+                  deliberately near-term, because an intention set for
                   &ldquo;sometime&rdquo; is not one.
                 </p>
                 <Bars
@@ -387,7 +387,7 @@ export default async function AdminIntentsPage() {
                   ) : (
                     <>
                       The &ldquo;why does this matter to you?&rdquo; line is not
-                      stored yet — apply{" "}
+                      stored yet. Apply{" "}
                       <code className="text-xs">
                         0023_intent_why_matters.sql
                       </code>
@@ -410,7 +410,7 @@ export default async function AdminIntentsPage() {
                   </p>
                   <p className="mt-1 text-xs text-ink-soft">
                     Median across {lags.length} entries. Judge the mechanics on
-                    this and on the funnel above — never on session counts.
+                    this and on the funnel above, never on session counts.
                   </p>
                 </Card>
               )}

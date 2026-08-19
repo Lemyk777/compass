@@ -18,9 +18,9 @@ export type OfficialLink = { label: string; url: string; hint?: string };
 // Government-level, applies to every Italian program (shown once, not per card).
 export const ITALY_GOV_SOURCES: OfficialLink[] = [
   {
-    label: "Universitaly — official government portal",
+    label: "Universitaly, official government portal",
     url: "https://www.universitaly.it/",
-    hint: "The MUR (Ministry) portal for Extra-UE pre-enrollment and the study-visa procedure — the official source every Italian university points to.",
+    hint: "The MUR (Ministry) portal for Extra-UE pre-enrollment and the study-visa procedure. The official source every Italian university points to.",
   },
 ];
 

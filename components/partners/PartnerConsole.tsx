@@ -86,7 +86,7 @@ export function PartnerConsole({
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
               Post the next thing you run. It appears on students&rsquo; lists
               straight away with your logo on it, and it reaches the students
-              whose year and subjects actually fit — not a feed everybody
+              whose year and subjects actually fit, not a feed everybody
               scrolls past.
             </p>
           </div>
@@ -148,11 +148,11 @@ function PostRow({
               {post.name}
             </span>
             {post.published ? (
-              <span className="rounded-full bg-likely-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-likely-ink">
+              <span className="rounded-full bg-likely-soft px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-likely-ink">
                 Live
               </span>
             ) : (
-              <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+              <span className="rounded-full bg-surface px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
                 Taken down
               </span>
             )}
@@ -258,7 +258,7 @@ function ProfileForm({ partner }: { partner: Partner }) {
       </Field>
       <Field
         label="Logo URL"
-        hint="An https:// link to your logo — square works best."
+        hint="An https:// link to your logo. Square works best."
       >
         <Input
           value={logoUrl}
@@ -271,7 +271,7 @@ function ProfileForm({ partner }: { partner: Partner }) {
       </Field>
       <Field
         label="Contact email"
-        hint="Only we see this — it is how we reach you."
+        hint="Only we see this. It is how we reach you."
       >
         <Input
           value={contactEmail}
@@ -281,7 +281,7 @@ function ProfileForm({ partner }: { partner: Partner }) {
 
       <p className="text-xs text-ink-faint">
         Your organisation&rsquo;s name and country are fixed once you&rsquo;re
-        verified — the tick says we checked <em>that</em> name. Ask us if either
+        verified, and the tick says we checked <em>that</em> name. Ask us if either
         needs to change.
       </p>
 

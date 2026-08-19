@@ -182,7 +182,7 @@ export async function runDiscoveryNow(
     return {
       ok: false,
       message:
-        "ANTHROPIC_API_KEY is not set in this environment — discovery cannot search.",
+        "ANTHROPIC_API_KEY is not set in this environment. Discovery cannot search.",
       lines: [],
     };
   }
@@ -191,13 +191,13 @@ export async function runDiscoveryNow(
     const run = await runDiscovery([target], angle);
     const lines = run.outcomes.flatMap((o) => {
       const head = o.error
-        ? `${o.tag}: failed — ${o.error}`
+        ? `${o.tag}: failed, ${o.error}`
         : `${o.tag}: found ${o.found}, queued ${o.queued}${o.flagged > 0 ? ` (${o.flagged} flagged)` : ""}`;
       // Every dropped candidate is named with its reason. "Found 6, kept 0" on
       // its own is indistinguishable from a broken pipeline.
       return [
         head,
-        ...o.dropped.map((d) => `  · dropped ${d.name} — ${d.reason}`),
+        ...o.dropped.map((d) => `  · dropped ${d.name}, ${d.reason}`),
       ];
     });
 
@@ -207,7 +207,7 @@ export async function runDiscoveryNow(
       message:
         run.inserted > 0
           ? `Queued ${run.inserted} new candidate${run.inserted === 1 ? "" : "s"} for review.`
-          : "Nothing new survived screening — see below for what was found and why it was dropped.",
+          : "Nothing new survived screening. See below for what was found and why it was dropped.",
       lines,
     };
   } catch (e) {
@@ -292,7 +292,7 @@ export async function quickAddOpportunity(
     return {
       ok: false,
       error:
-        "The blurb is what a student reads first — write a sentence or two.",
+        "The blurb is what a student reads first. Write a sentence or two.",
     };
   if (!input.eligibility.trim())
     return {
@@ -344,7 +344,7 @@ export async function quickAddOpportunity(
     fields: fields.length > 0 ? fields : "all",
     deadline,
     event_window: input.alwaysOpen
-      ? "Runs continuously — start whenever you like"
+      ? "Runs continuously. Start whenever you like"
       : "See the official page",
     level: input.level,
     category: input.category,
@@ -368,7 +368,7 @@ export async function quickAddOpportunity(
     if (/pinned/.test(error.message))
       return {
         ok: false,
-        error: "Run migration 0027 first — the `pinned` column is missing.",
+        error: "Run migration 0027 first: the `pinned` column is missing.",
       };
     return {
       ok: false,

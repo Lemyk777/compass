@@ -217,7 +217,7 @@ export const PARTNER_TIER_OPTIONS: {
   {
     value: "accessible",
     label: "Open to beginners",
-    hint: "No prior record needed — a good first one",
+    hint: "No prior record needed, a good first one",
   },
   {
     value: "selective",
@@ -227,7 +227,7 @@ export const PARTNER_TIER_OPTIONS: {
   {
     value: "elite",
     label: "Flagship",
-    hint: "The hardest thing you run — a result changes an application",
+    hint: "The hardest thing you run, a result changes an application",
   },
 ];
 

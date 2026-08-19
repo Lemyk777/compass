@@ -116,7 +116,7 @@ export const Scorecard = forwardRef<
             {t("report.overall")}
           </p>
           {country && (
-            <p className="mt-0.5 text-center text-[0.7rem] font-medium text-accent-ink">
+            <p className="mt-0.5 text-center text-[0.75rem] font-medium text-accent-ink">
               {t("report.weightedFor")} {countryLabel}
             </p>
           )}

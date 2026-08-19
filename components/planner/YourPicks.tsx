@@ -74,11 +74,11 @@ export function YourPicks({ picks }: { picks: PlanPick[] }) {
       <div className="mt-4 space-y-4">
         {groups.map((g) => (
           <div key={g.kind}>
-            <h3 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+            <h3 className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
               {/* The guide's own step number, not a position in this list. */}
               <span
                 data-num
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface text-[11px] font-semibold tabular-nums text-ink-soft"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface text-[12px] font-semibold tabular-nums text-ink-soft"
               >
                 {g.step}
               </span>

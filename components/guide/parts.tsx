@@ -174,7 +174,7 @@ export function GuideCard({
       )}
       {badge && (
         <span
-          className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+          className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide ${
             emphasis
               ? "bg-accent text-on-fill"
               : "bg-accent-soft text-accent-ink"
@@ -373,7 +373,7 @@ export function PageContents({
       aria-label="On this page"
       className="rounded-2xl border border-line bg-card px-4 py-3 sm:px-5"
     >
-      <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+      <h2 className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
         On this page
       </h2>
       {/* One scrolling row on a phone, wrapping from `sm`.
@@ -431,15 +431,15 @@ export function ForYou({
   return (
     <section className={`grid gap-3 ${avoid ? "sm:grid-cols-2" : ""}`}>
       <div className="rounded-2xl border border-accent/40 bg-accent-soft/25 p-4 sm:p-5">
-        <h2 className="text-sm font-semibold text-ink">{suitsLabel}</h2>
-        <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+        <h2 className="text-base font-semibold text-ink">{suitsLabel}</h2>
+        <p className="mt-1.5 max-w-[54ch] text-base leading-relaxed text-ink-soft">
           {suits}
         </p>
       </div>
       {avoid && (
         <div className="rounded-2xl border border-reach/40 bg-reach-soft/25 p-4 sm:p-5">
-          <h2 className="text-sm font-semibold text-ink">{avoidLabel}</h2>
-          <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+          <h2 className="text-base font-semibold text-ink">{avoidLabel}</h2>
+          <p className="mt-1.5 max-w-[54ch] text-base leading-relaxed text-ink-soft">
             {avoid}
           </p>
         </div>
@@ -464,8 +464,14 @@ export function ForYou({
  * a tint, which is what makes the catch visible at a glance instead of uniform.
  *
  * Hierarchy inside a bare block therefore comes from weight and colour rather
- * than size — 14px/600 on `ink` over 14px/400 on `ink-soft`. Size is spent one
- * level up, where `GuidePart` now has 22px, a number and a rule to itself.
+ * than size — the label and its prose share one size, and only weight and ink
+ * separate them. Size is spent one level up, where `GuidePart` has a number
+ * and a rule to itself.
+ *
+ * Both sit at `text-base`, not `text-sm`: a country profile is ~9,000
+ * characters of continuous reading, and 81% of it was set one step below the
+ * product's body size. `max-w-[54ch]` is what marks a column as reading rather
+ * than a card summary, so it is also what decides which columns get this step.
  */
 export function GuideBlock({
   label,
@@ -476,12 +482,12 @@ export function GuideBlock({
   tone?: "plain" | "warn" | "good";
   children: React.ReactNode;
 }) {
-  const heading = <h3 className="text-sm font-semibold text-ink">{label}</h3>;
+  const heading = <h3 className="text-base font-semibold text-ink">{label}</h3>;
   // Capped independently of the container: widening the shell must buy more
   // columns, never longer lines. Unbounded, these ran to 131 characters on a
   // 1900px screen — nearly double the readable measure.
   const body = (
-    <div className="mt-1.5 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+    <div className="mt-1.5 max-w-[54ch] text-base leading-relaxed text-ink-soft">
       {children}
     </div>
   );

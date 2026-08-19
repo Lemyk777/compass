@@ -80,7 +80,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: false,
     dsu_eligible: true,
     notes:
-      "Strong systems and robotics focus. Same Early Admission rules as CS Eng at Polimi. Lower historical cutoff than CS Eng — more accessible but equally rigorous program.",
+      "Strong systems and robotics focus. Same Early Admission rules as CS Eng at Polimi. Lower historical cutoff than CS Eng, so more accessible but equally rigorous.",
   },
   {
     id: "polimi-eng-systems",
@@ -156,7 +156,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: false,
     dsu_eligible: true,
     notes:
-      "Primarily Italian-language instruction. Strict Graduatoria — 3 Extra-UE seats means extreme sensitivity to individual applicant quality. Low fees thanks to income-based sliding scale. Requires Italian language proficiency (B2 minimum).",
+      "Primarily Italian-language instruction. Strict Graduatoria, and 3 Extra-UE seats means extreme sensitivity to individual applicant quality. Low fees thanks to income-based sliding scale. Requires Italian language proficiency (B2 minimum).",
   },
   {
     id: "sapienza-eng-cs",
@@ -174,7 +174,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: false,
     dsu_eligible: true,
     notes:
-      "English-taught MSc with very competitive Extra-UE quota. One of the lowest-cost CS master's programs in Europe. Strict ranking — 5 seats for all non-EU applicants globally.",
+      "English-taught MSc with very competitive Extra-UE quota. One of the lowest-cost CS master's programs in Europe. Strict ranking, with 5 seats for all non-EU applicants globally.",
   },
 
   // ── University of Bologna ─────────────────────────────────────────────────
@@ -290,7 +290,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: true,
     dsu_eligible: false,
     notes:
-      "Italy's top private business school; holistic merit review (SAT/ACT, GPA, essays, English proficiency). Not DSU-eligible — income-based Bocconi scholarships exist but are separate. Large international class; competes on global stage vs. LSE/HEC.",
+      "Italy's top private business school; holistic merit review (SAT/ACT, GPA, essays, English proficiency). Not DSU-eligible. Income-based Bocconi scholarships exist but are separate. Large international class; competes on global stage vs. LSE/HEC.",
   },
   {
     id: "bocconi-intl-mgmt",
@@ -308,7 +308,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: true,
     dsu_eligible: false,
     notes:
-      "Bocconi's flagship MSc program. Requires relevant BSc and GMAT/GRE preferred (SAT accepted as proxy for recent graduates). Holistic review; no strict Graduatoria — committee-based decision.",
+      "Bocconi's flagship MSc program. Requires relevant BSc and GMAT/GRE preferred (SAT accepted as proxy for recent graduates). Holistic review; no strict Graduatoria, so the decision is committee-based.",
   },
 
   // ── Politecnico di Milano (more programs) ─────────────────────────────────
@@ -464,7 +464,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: false,
     dsu_eligible: true,
     notes:
-      "Historic CS powerhouse (first Italian CS degree). Italian-language BSc — B2 required. Strict Graduatoria; tightly linked to CNR and Scuola Normale ecosystem.",
+      "Historic CS powerhouse (first Italian CS degree). Italian-language BSc, so B2 is required. Strict Graduatoria; tightly linked to CNR and Scuola Normale ecosystem.",
   },
 
   // ── University of Turin ───────────────────────────────────────────────────
@@ -564,7 +564,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: true,
     dsu_eligible: false,
     notes:
-      "Top Italian private after Bocconi; holistic admission (SAT/grades/English). Not DSU-eligible — LUISS runs its own merit/need scholarships. Strong consulting/finance placement.",
+      "Top Italian private after Bocconi; holistic admission (SAT/grades/English). Not DSU-eligible. LUISS runs its own merit and need scholarships. Strong consulting/finance placement.",
   },
   {
     id: "luiss-mgmt-cs",
@@ -606,7 +606,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: false,
     dsu_eligible: true,
     notes:
-      "Respected Tuscan public university, strong in economics, law and medicine. English-taught — no Italian needed — and a Foundation Year is offered for applicants who need a bridge year. A realistic safe target relative to the Milan/Rome flagships; income-based fees plus DSU support.",
+      "Respected Tuscan public university, strong in economics, law and medicine. English-taught, with no Italian needed, and a Foundation Year is offered for applicants who need a bridge year. A realistic safe target relative to the Milan/Rome flagships; income-based fees plus DSU support.",
   },
   {
     id: "unime-business",
@@ -624,7 +624,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: false,
     dsu_eligible: true,
     notes:
-      "Sicilian public university with ~13 English-taught programs. Admission for Extra-UE students is on the high-school diploma plus an English certificate — an accessible, lower-cost safe option. Approximate figures; confirm the current Bando.",
+      "Sicilian public university with ~13 English-taught programs. Admission for Extra-UE students is on the high-school diploma plus an English certificate, which makes it an accessible, lower-cost safe option. Approximate figures; confirm the current Bando.",
   },
   {
     id: "unime-civil-eng",
@@ -642,7 +642,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: false,
     dsu_eligible: true,
     notes:
-      "English-taught civil engineering track at Messina — design, construction and project-management foundations. Lower competition than the northern polytechnics makes it a solid safety choice for engineering applicants. Verify quota and dates on the Bando.",
+      "English-taught civil engineering track at Messina, covering design, construction and project-management foundations. Lower competition than the northern polytechnics makes it a solid safety choice for engineering applicants. Verify quota and dates on the Bando.",
   },
   {
     id: "unicas-econ",
@@ -660,7 +660,7 @@ export const ITALIAN_PROGRAMS: ItalianProgram[] = [
     is_private: false,
     dsu_eligible: true,
     notes:
-      "Small public university in southern Lazio (Cassino & Southern Lazio) with 1,500+ international students and a low cost of living. One of the most accessible English-taught options (IELTS 6.0 / TOEFL 70) — a genuine safety target. Approximate figures; confirm the current Bando.",
+      "Small public university in southern Lazio (Cassino & Southern Lazio) with 1,500+ international students and a low cost of living. One of the most accessible English-taught options (IELTS 6.0 / TOEFL 70), and a genuine safety target. Approximate figures; confirm the current Bando.",
   },
 ];
 
@@ -669,6 +669,6 @@ export function findItalianProgram(idOrName: string): ItalianProgram | undefined
   return ITALIAN_PROGRAMS.find(
     (p) =>
       p.id === q ||
-      `${p.university} — ${p.program_name}`.toLowerCase() === q
+      `${p.university}, ${p.program_name}`.toLowerCase() === q
   );
 }

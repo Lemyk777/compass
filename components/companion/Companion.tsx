@@ -189,7 +189,7 @@ export function Companion({
           open ? "block" : "hidden"
         } xl:block`}
       >
-        <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
+        <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-accent-ink">
           <span className="hidden xl:inline">
             <Needle />
           </span>
@@ -226,7 +226,7 @@ export function Companion({
               <>
                 <p className="max-w-[46ch] text-sm leading-relaxed text-ink-soft">
                   You have things on the go now, so what comes next depends on
-                  your dates — and your plan is where those live.
+                  your dates, and your plan is where those live.
                 </p>
                 <Link
                   href="/planner"

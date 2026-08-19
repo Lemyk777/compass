@@ -184,7 +184,7 @@ export const BEATS: Beat[] = [
     id: "not-sure-the-seventh-time",
     text: "You redo the same corner of it a seventh time, and still nobody can tell you whether it is finished.",
     plainer:
-      "There is no test that tells you when a piece of creative work is done — you redo the same small part six times and still cannot be sure the seventh attempt is right.",
+      "There is no test that tells you when a piece of creative work is done. You redo the same small part six times and still cannot be sure the seventh attempt is right.",
     axes: { inside_fog: 2, alone: 1 },
     fields: { arts_design: 2 },
   },
@@ -416,7 +416,7 @@ const AXIS_OBSERVATION: Record<WorkAxis, string> = {
   with_things:
     "You keep choosing the ones where the thing you are working on is not a person. It makes the day quieter, and it is worth knowing about yourself early.",
   inside_rules:
-    "You lean toward work with a rule you can check yourself against. That is not caution — it is a real and useful preference about how you like to be judged.",
+    "You lean toward work with a rule you can check yourself against. That is not caution. It is a real and useful preference about how you like to be judged.",
   inside_fog:
     "You keep picking the ones where nobody knows the answer yet. Most jobs are not like that, and the ones that are will not feel like a leap to you.",
   making_new:

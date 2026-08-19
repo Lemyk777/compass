@@ -325,7 +325,7 @@ export function buildPlanner(input: PlannerInputs): PlannerView {
         "deadline",
         `${d.university ?? "all"}-${d.round}-${d.iso}`,
         {
-          title: d.university ? `${d.university} — ${d.round}` : d.round,
+          title: d.university ? `${d.university}, ${d.round}` : d.round,
           dueISO: d.iso,
           status: "todo",
           href: null,

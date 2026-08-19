@@ -612,7 +612,7 @@ ok("the intention is reflected back as a first-person plan", () => {
       startWhen: "tonight",
       startDetail: "  at the  library ",
     }),
-    "You're starting tonight — at the library.",
+    "You're starting tonight, at the library.",
   );
   assert.equal(intentSentence(base), "You're doing this.");
   assert.equal(

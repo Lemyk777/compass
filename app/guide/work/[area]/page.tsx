@@ -110,7 +110,7 @@ export default async function GuideAreaPage({
               ))}
             </ul>
             <p className="mt-2 text-xs text-ink-faint">
-              A list, not a recommendation — you narrow it, we don&rsquo;t.
+              A list, not a recommendation. You narrow it, we don&rsquo;t.
             </p>
           </GuideBlock>
 
@@ -148,13 +148,13 @@ export default async function GuideAreaPage({
                   <span
                     data-num
                     aria-hidden
-                    className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-surface"
+                    className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-[12px] font-semibold text-surface"
                   >
                     {i + 1}
                   </span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-ink">{label}</p>
-                    <p className="mt-0.5 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+                    <p className="mt-0.5 max-w-[54ch] text-base leading-relaxed text-ink-soft">
                       {body}
                     </p>
                   </div>

@@ -118,7 +118,7 @@ export function ShareLink({
         {state === "copied"
           ? "Link copied to clipboard"
           : state === "failed"
-            ? "Could not copy the link — it is shown below to copy by hand"
+            ? "Could not copy the link. It is shown below to copy by hand"
             : ""}
       </span>
       {state === "failed" && fallbackUrl && (

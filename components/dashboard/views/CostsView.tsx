@@ -31,7 +31,7 @@ export function CostsView() {
         <LockedSection
           eyebrow={t("nav.costs")}
           headline="Know what it costs before you apply"
-          description="Add your target universities and Compass adds up the one-time application fees per school and per country — so there are no surprises when it's time to hit submit."
+          description="Add your target universities and Compass adds up the one-time application fees per school and per country, so there are no surprises when it's time to hit submit."
           bullets={[
             "Per-school application fees",
             "A clear total to apply, by country",

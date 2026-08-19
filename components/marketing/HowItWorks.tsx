@@ -21,7 +21,7 @@ export function HowItWorks() {
     },
     {
       title: "Say what you're into",
-      body: "Pick your fields — or leave it blank and see everything. If you genuinely don't know yet, a two-minute quiz will suggest a starting point rather than demand an answer.",
+      body: "Pick your fields, or leave it blank and see everything. If you genuinely don't know yet, a two-minute quiz will suggest a starting point rather than demand an answer.",
     },
     {
       title: "Get the list you can actually enter",
@@ -39,7 +39,7 @@ export function HowItWorks() {
           <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
             Two questions, then the list.
           </h2>
-          <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink/60">
+          <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
             No account, no questionnaire, no waiting on a model to think. The
             matching is plain arithmetic against rules we&rsquo;ve read off the
             organisers&rsquo; own pages.
@@ -59,7 +59,7 @@ export function HowItWorks() {
                 {i + 1}
               </span>
               <h3 className="mt-6 text-xl font-medium text-ink">{s.title}</h3>
-              <p className="mt-3 text-base font-light leading-relaxed text-ink/60">
+              <p className="mt-3 text-base font-light leading-relaxed text-ink-soft">
                 {s.body}
               </p>
             </li>
@@ -72,7 +72,7 @@ export function HowItWorks() {
             href="/opportunities"
             className="font-medium text-ink underline underline-offset-2 transition hover:text-ivy-ink"
           >
-            Start here — it takes about ten seconds
+            Start here. It takes about ten seconds
           </Link>
         </p>
       </Band>

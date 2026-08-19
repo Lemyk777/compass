@@ -45,7 +45,7 @@ type CountryView = {
 
 // Program label shared by every deterministic country's cost row.
 const programLabel = (university: string, program: string) =>
-  `${university} — ${program}`;
+  `${university}, ${program}`;
 
 export const COUNTRY_VIEWS: Record<DestinationCode, CountryView | undefined> = {
   US: {

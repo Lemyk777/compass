@@ -105,7 +105,7 @@ export function FieldFilter({
           className="animate-fade-up [animation-duration:220ms]"
         >
           <p className="mt-2 text-sm text-ink-soft">
-            Narrows every step of the guide — nothing here is saved to your
+            Narrows every step of the guide. Nothing here is saved to your
             profile.
           </p>
           {/* The chips themselves do not stagger. A per-chip delay holds each one

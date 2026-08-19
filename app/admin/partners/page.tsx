@@ -57,7 +57,7 @@ export default async function AdminPartnersPage() {
         <p className="mb-6 max-w-xl text-sm leading-relaxed text-ink-soft">
           Organisations that post opportunities under their own name. Approving
           one means everything it posts from then on goes live immediately,
-          without passing through the queue — so the check that matters is
+          without passing through the queue, so the check that matters is
           whether this account really speaks for that organisation.
         </p>
 

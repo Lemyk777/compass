@@ -132,7 +132,7 @@ export function ValuesRefine({
       </p>
       <p className="mt-1 text-xs leading-relaxed text-ink-faint">
         The closest areas are first. This is how people usually describe this
-        kind of work — pay and security vary a lot by country and employer, and
+        kind of work. Pay and security vary a lot by country and employer, and
         nothing here is hidden from you.
       </p>
       <div className="mt-2 flex flex-wrap gap-3">

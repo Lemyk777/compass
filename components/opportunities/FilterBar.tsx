@@ -110,7 +110,7 @@ export function FilterBar({
           {active > 0 && (
             <span
               data-num
-              className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold tabular-nums text-on-fill"
+              className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1 text-[12px] font-semibold tabular-nums text-on-fill"
             >
               {active}
             </span>
@@ -125,7 +125,7 @@ export function FilterBar({
           <span data-num className="font-semibold text-ink">
             {resultCount}
           </span>{" "}
-          {resultCount === 1 ? "matches" : "match"} your filters — of{" "}
+          {resultCount === 1 ? "matches" : "match"} your filters, of{" "}
           {/* `items` is the whole annotated catalog now, not the student's own
               slice, so "matched to you" would be a lie by one word. Matching
               stopped hiding rows; this panel is what narrows them. */}
@@ -181,7 +181,7 @@ export function FilterBar({
           // load-bearing piece of honesty ("free" never covers a cost we have
           // not verified) was legible to a mouse and invisible to everyone else,
           // on the surface most likely to be opened on a phone.
-          note="“Free” means free the whole way through. Anything whose cost we have not verified is in no money bucket at all — so widening this filter is how you see those."
+          note="“Free” means free the whole way through. Anything whose cost we have not verified is in no money bucket at all, so widening this filter is how you see those."
         >
           {COST_OPTIONS.map((o) => (
             <Toggle
@@ -228,7 +228,7 @@ export function FilterBar({
               switch for the other mood: only what I can act on today. */}
         <Group
           label="Entry"
-          note="Off, the list also shows what you are not old enough for yet — on purpose, so you can see what you are aiming at."
+          note="Off: the list also shows what you are not old enough for yet. That is on purpose, so you can see what you are aiming at."
         >
           <Toggle
             on={value.openOnly}
@@ -252,7 +252,7 @@ export function FilterBar({
             by how much. */}
         <Group
           label="Matched to you"
-          note="On, you see your own list. Off, the ones in other subjects or other countries come back — the count says how many."
+          note="On: you see your own list. Off: the ones in other subjects or other countries come back. The count says how many."
         >
           {MATCH_OPTIONS.map((o) => (
             <Toggle
@@ -307,7 +307,7 @@ function Group({
 }) {
   return (
     <div className="flex flex-col gap-1.5 py-2.5 sm:flex-row sm:items-baseline sm:gap-3">
-      <p className="w-16 shrink-0 pt-1 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-ink-faint">
+      <p className="w-16 shrink-0 pt-1 text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-ink-faint">
         {label}
       </p>
       <div className="min-w-0 flex-1">

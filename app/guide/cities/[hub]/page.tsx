@@ -131,8 +131,8 @@ export default async function GuideHubPage({
       title: "Who is named here",
       body: (
         <>
-          <p className="max-w-[54ch] text-sm leading-relaxed text-ink-soft">
-            Not a ranking and not in order of merit — the places a subject is
+          <p className="max-w-[54ch] text-base leading-relaxed text-ink-soft">
+            Not a ranking and not in order of merit. These are the places a subject is
             actually studied and taught at in this city, so you have something
             to search for.
           </p>
@@ -149,7 +149,7 @@ export default async function GuideHubPage({
                   {u.knownFor.map((f) => (
                     <li
                       key={f}
-                      className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-soft"
+                      className="rounded-full bg-surface px-2 py-0.5 text-[12px] font-medium text-ink-soft"
                     >
                       {FACULTY_LABEL[f]}
                     </li>
@@ -162,7 +162,7 @@ export default async function GuideHubPage({
             ))}
           </ul>
           <p className="text-xs text-ink-faint">
-            Language of teaching moves within a cycle — check it on the
+            Language of teaching moves within a cycle, so check it on the
             university&rsquo;s own page for your own entry year.
           </p>
         </>

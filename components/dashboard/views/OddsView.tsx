@@ -56,7 +56,7 @@ export function OddsView() {
         <LockedSection
           eyebrow={t("nav.results")}
           headline="See your real odds at every school"
-          description="Add the universities you're aiming for and Compass scores your admission likelihood at each one — a reach/target/likely read, with a confidence level, built from your profile and real admitted-student data."
+          description="Add the universities you're aiming for and Compass scores your admission likelihood at each one. A reach/target/likely read, with a confidence level, built from your profile and real admitted-student data."
           bullets={[
             "Per-school admission-likelihood ranges",
             "Reach / target / likely tiers, side by side",
@@ -117,7 +117,7 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
             ))}
           </div>
           <p className="mt-3 text-xs text-ink-faint">
-            Deadlines are dated to your graduation year and indicative — always
+            Deadlines are dated to your graduation year and indicative, so always
             confirm the exact date on each school&apos;s official admissions
             site. <span className="font-medium text-ink-soft">Binding</span> =
             Early Decision: if admitted you must enrol and withdraw other

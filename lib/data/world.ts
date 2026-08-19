@@ -559,7 +559,7 @@ export const HUBS: Hub[] = [
     language:
       "Universities teach in English and business runs in English, so study and professional life are accessible without Chinese. Cantonese is the language of daily life; Mandarin is increasingly useful. You can function in English and will feel the limit of it socially.",
     whoThrives:
-      "Suits you if you want a top-ranked English-taught degree inside Asia with scholarship support, aiming at finance, law or technology. Look elsewhere if you need space and low costs, or if you want long-term political predictability. The landscape of which employers base themselves here has changed.",
+      "Suits you if you want a top-ranked English-taught degree inside Asia with scholarship support, aiming at finance, law or technology. Look elsewhere if you need space and low costs, or if you want long-term political predictability. Which employers base themselves here has changed.",
   },
   {
     id: "shenzhen",

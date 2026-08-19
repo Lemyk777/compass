@@ -122,8 +122,8 @@ export default async function OpportunitiesPage({
               So far we only know one thing about you: your year at school.
             </h2>
             <p className="mt-3 max-w-xl text-pretty text-base leading-relaxed text-ink-soft">
-              Tell us a bit more — what you like, what you&rsquo;ve already done
-              — and we can say which of these suit you best, which one to start
+              Tell us a bit more, what you like and what you&rsquo;ve already done,
+              and we can say which of these suit you best, which one to start
               with, and what to do this month. We keep track of all{" "}
               <span data-num className="font-semibold text-ink">
                 {COMPETITIONS.length}

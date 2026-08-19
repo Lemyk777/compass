@@ -69,7 +69,7 @@ export function PartnerBadge({
 
 function badgeTitle(partner: PartnerRef): string {
   return partner.verified
-    ? `Posted by ${partner.name} — a verified partner. We confirmed this account belongs to them, and they posted this themselves.`
+    ? `Posted by ${partner.name}, a verified partner. We confirmed this account belongs to them, and they posted this themselves.`
     : `Posted by ${partner.name}.`;
 }
 
@@ -86,8 +86,8 @@ export function PartnerLogo({
     size === "lg"
       ? "h-14 w-14 text-lg"
       : size === "md"
-        ? "h-7 w-7 text-[11px]"
-        : "h-5 w-5 text-[11px]";
+        ? "h-7 w-7 text-[12px]"
+        : "h-5 w-5 text-[12px]";
 
   if (partner.logoUrl) {
     // Logos are either committed to /public or an organisation's own https URL,
@@ -160,7 +160,7 @@ export function VerifiedExplainer({ className = "" }: { className?: string }) {
       <VerifiedTick />
       <span>
         A verified partner posted this themselves. We confirmed the account
-        belongs to the organisation — it isn&rsquo;t a judgement about how good
+        belongs to the organisation. It isn&rsquo;t a judgement about how good
         the opportunity is.
       </span>
     </p>
