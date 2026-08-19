@@ -1048,8 +1048,20 @@ export function destinationById(id: string): StudyDestination | undefined {
  * as an ordinary case, not an error — a city without a full country write-up is
  * still a real place a student can work in, and Almaty is the proof.
  */
+const DESTINATION_BY_HUB: Map<string, StudyDestination> = new Map(
+  STUDY_DESTINATIONS.flatMap((d) =>
+    d.hubs.map((hubId) => [hubId, d] as const),
+  ),
+);
+
 export function destinationForHub(hubId: string): StudyDestination | undefined {
-  return STUDY_DESTINATIONS.find((d) => d.hubs.includes(hubId));
+  // Indexed rather than scanned. The containment is already asserted to be
+  // one-to-one — "every hub is claimed by exactly one destination, and no
+  // destination claims a hub twice" is a unit test — so a map is the shape the
+  // data already has, and the scan was re-deriving it on every lookup. The
+  // spine walks every hub of every region for each of the eight fields, so this
+  // ran a few thousand times per planner load.
+  return DESTINATION_BY_HUB.get(hubId);
 }
 
 /** Profiles matching any of the chosen fields; empty in ⇒ all of them. */

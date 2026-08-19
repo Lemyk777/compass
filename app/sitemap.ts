@@ -59,7 +59,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // linked from the list and from the partner's own profile.
     ...COMPETITIONS.map((c) => `/opportunities/${c.id}`),
 
-    // The guide: its index, its four steps, then every subject inside them.
+    // The guide: its index, its five steps, then every subject inside them.
     "/guide",
     ...GUIDE_SECTIONS.map((s) => s.href),
     ...allCareerAreas().map(

@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { LIMITS } from "@/lib/limits";
 import type { SaveResult } from "@/app/dashboard/actions";
-import { MINDMAP_MAX_DEPTH, type MapNodeRow } from "@/lib/data/mindmap";
+import {
+  MINDMAP_MAX_DEPTH,
+  branchDepth,
+  branchHeight,
+  type MapNodeRow,
+  type TreeRow,
+} from "@/lib/data/mindmap";
 
 // Writes for the mind maps (migration 0029).
 //
@@ -101,27 +107,18 @@ async function loadMapRows(
   return { ok: true, rows: (data ?? []) as Row[] };
 }
 
-/** Depth of a node by walking up. Cycle-safe, same reason `buildTree` is. */
-function depthOf(rows: Row[], id: string): number {
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  const seen = new Set<string>();
-  let depth = 0;
-  let cur = byId.get(id);
-  while (cur?.parent_id) {
-    if (seen.has(cur.id)) break;
-    seen.add(cur.id);
-    cur = byId.get(cur.parent_id);
-    depth += 1;
-    if (depth > MINDMAP_MAX_DEPTH + 2) break;
-  }
-  return depth;
-}
-
-/** The deepest descendant below `id`, measured from `id` itself (0 = a leaf). */
-function subtreeHeight(rows: Row[], id: string): number {
-  const kids = rows.filter((r) => r.parent_id === id);
-  if (kids.length === 0) return 0;
-  return 1 + Math.max(...kids.map((k) => subtreeHeight(rows, k.id)));
+/**
+ * The DB rows as the pure tree helpers want them.
+ *
+ * `branchDepth`/`branchHeight` live in `lib/data/mindmap.ts` beside
+ * `canIndent`/`canOutdent`, so the check this action runs is the same function
+ * the button is disabled by — and so it can be unit-tested, which is what a
+ * private copy in a `"use server"` file can never be. The mapping is one small
+ * allocation over a single map's rows; the alternative was two more walks
+ * written a second time against a second column naming.
+ */
+function asTreeRows(rows: Row[]): TreeRow[] {
+  return rows.map((r) => ({ id: r.id, parentId: r.parent_id }));
 }
 
 function siblingsOf(rows: Row[], node: Row): Row[] {
@@ -233,7 +230,7 @@ export async function addNode(input: {
   if (!parent)
     return { ok: false, error: "That branch is gone — reload the map." };
 
-  if (depthOf(rows, parent.id) + 1 > MINDMAP_MAX_DEPTH) {
+  if (branchDepth(asTreeRows(rows), parent.id) + 1 > MINDMAP_MAX_DEPTH) {
     return {
       ok: false,
       error: `A map goes ${MINDMAP_MAX_DEPTH} levels deep. Start a new branch instead.`,
@@ -387,7 +384,9 @@ export async function moveNode(input: {
     const newParent = siblings[i - 1];
     // The whole branch moves with it, so the check is on the branch, not the node.
     if (
-      depthOf(rows, newParent.id) + 1 + subtreeHeight(rows, node.id) >
+      branchDepth(asTreeRows(rows), newParent.id) +
+        1 +
+        branchHeight(asTreeRows(rows), node.id) >
       MINDMAP_MAX_DEPTH
     ) {
       return {

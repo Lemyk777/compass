@@ -680,10 +680,29 @@ export function universitiesForPlace(destinationId: string): NamedUniversity[] {
  * a second list, so a city page and its country page can never disagree.
  */
 export function universitiesForHub(hubId: string): NamedUniversity[] {
-  return Object.values(PLACE_UNIVERSITIES)
-    .flat()
-    .filter((u) => u.hub === hubId);
+  // Grouped once at module load instead of flattening the whole registry on
+  // every call — the old form built a fresh array of every institution we name
+  // anywhere, then threw all but a handful away, and it measured 94.67 µs to
+  // answer for the 38 hubs. The registry's own order is preserved, which is
+  // what the "never ranks them" rule depends on.
+  return UNIVERSITIES_BY_HUB.get(hubId) ?? [];
 }
+
+const UNIVERSITIES_BY_HUB: Map<string, NamedUniversity[]> = (() => {
+  const byHub = new Map<string, NamedUniversity[]>();
+  for (const named of Object.values(PLACE_UNIVERSITIES)) {
+    for (const u of named) {
+      // `hub` is a real hub id OR null — a named city we have no page for. A
+      // null must not become a key, or it would collect every such institution
+      // under one bucket nothing can ask for.
+      if (!u.hub) continue;
+      const bucket = byHub.get(u.hub);
+      if (bucket) bucket.push(u);
+      else byHub.set(u.hub, [u]);
+    }
+  }
+  return byHub;
+})();
 
 export const ENGLISH_TAUGHT_LABEL: Record<EnglishTaught, string> = {
   widely: "Degrees taught in English",

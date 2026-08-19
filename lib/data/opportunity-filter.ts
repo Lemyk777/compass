@@ -238,32 +238,82 @@ function matchesTiming(o: Opportunity, bucket: TimingBucket): boolean {
   }
 }
 
-/** Words to search over. Everything a student can see on the card front. */
+/**
+ * Words to search over. Everything a student can see on the card front.
+ *
+ * Built once per row and remembered, because the search box is the one control
+ * here that runs on every keystroke and this string does not depend on the
+ * query. A single keystroke used to rebuild it seven times per row — once for
+ * the visible list and once for each of the six faceting passes below — which
+ * over 161 rows is 1,127 array literals, filters, joins and `toLowerCase`
+ * calls to answer a question whose inputs had not changed.
+ *
+ * A WeakMap rather than a Map for the same reason `gateFor` uses one: an
+ * `Opportunity` is rebuilt by `buildExtracurriculars` whenever the student's
+ * own facts change, so keying on the row lets the entries go with it instead
+ * of accumulating a copy of the catalog's prose per profile.
+ */
+const HAYSTACKS = new WeakMap<Opportunity, string>();
+
 function haystack(o: Opportunity): string {
-  return [o.name, o.blurb, o.eligibility, o.city, o.partner?.name]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+  let hay = HAYSTACKS.get(o);
+  if (hay === undefined) {
+    hay = [o.name, o.blurb, o.eligibility, o.city, o.partner?.name]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    HAYSTACKS.set(o, hay);
+  }
+  return hay;
 }
 
-/** All terms must appear, in any order, anywhere. Empty query matches all. */
-export function matchesQuery(o: Opportunity, query: string): boolean {
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+/**
+ * The query, split into the terms every row is tested against.
+ *
+ * Lifted out of the per-row test so a pass tokenises once instead of once per
+ * row. Same rule as the haystack: the query is a property of the PASS, not of
+ * the row being examined.
+ */
+function queryTerms(query: string): string[] {
+  return query.toLowerCase().split(/\s+/).filter(Boolean);
+}
+
+function matchesTerms(o: Opportunity, terms: string[]): boolean {
   if (terms.length === 0) return true;
   const hay = haystack(o);
   return terms.every((t) => hay.includes(t));
 }
 
-export function matchesFilters(o: Opportunity, f: OpportunityFilters): boolean {
+/** All terms must appear, in any order, anywhere. Empty query matches all. */
+export function matchesQuery(o: Opportunity, query: string): boolean {
+  return matchesTerms(o, queryTerms(query));
+}
+
+/**
+ * The row test, with the query already tokenised for the whole pass.
+ *
+ * There used to be an exported `matchesFilters(o, f)` here that did its own
+ * tokenising, and both callers below went through it. Hoisting the tokens out
+ * left it with nothing to do that this does not, and nothing outside the module
+ * had ever imported it — so it went, rather than staying as a wrapper kept
+ * alive by a test written to keep it alive. The dead-export scan in
+ * `scripts/test-engine.ts` is what noticed.
+ */
+function matchesCompiled(
+  o: Opportunity,
+  f: OpportunityFilters,
+  terms: string[],
+): boolean {
   // Groups are ANDed. A row survives when every narrowing still switched on
   // either does not apply to it, or applies and it passes.
   if (f.matched.includes("field") && o.offField) return false;
   if (f.matched.includes("region") && o.offRegion) return false;
   if (f.openOnly && o.notYetEligible) return false;
   if (f.cost.length > 0 && !f.cost.some((b) => matchesCost(o, b))) return false;
-  if (f.timing.length > 0 && !f.timing.some((b) => matchesTiming(o, b))) return false;
+  if (f.timing.length > 0 && !f.timing.some((b) => matchesTiming(o, b)))
+    return false;
   if (f.levels.length > 0 && !f.levels.includes(o.level)) return false;
-  return matchesQuery(o, f.query);
+  return matchesTerms(o, terms);
 }
 
 export function filterOpportunities(
@@ -279,7 +329,8 @@ export function filterOpportunities(
   //
   // The saving it bought was one pass over ~172 rows on a render that already
   // walks them to draw cards.
-  return items.filter((o) => matchesFilters(o, f));
+  const terms = queryTerms(f.query);
+  return items.filter((o) => matchesCompiled(o, f, terms));
 }
 
 /** How many criteria are on. Drives the badge on the button and `browsing`. */
@@ -322,8 +373,14 @@ export function opportunityFacets(
   items: Opportunity[],
   f: OpportunityFilters,
 ): OpportunityFacets {
-  const without = (patch: Partial<OpportunityFilters>) =>
-    items.filter((o) => matchesFilters(o, { ...f, ...patch }));
+  // Tokenised once for all six passes below. No patch any of them applies
+  // touches the query, so re-splitting it inside each one — and then again for
+  // every row inside each one — was work with no input change behind it.
+  const terms = queryTerms(f.query);
+  const without = (patch: Partial<OpportunityFilters>) => {
+    const lifted = { ...f, ...patch };
+    return items.filter((o) => matchesCompiled(o, lifted, terms));
+  };
 
   const forCost = without({ cost: [] });
   const forTiming = without({ timing: [] });

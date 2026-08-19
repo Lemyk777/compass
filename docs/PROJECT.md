@@ -146,12 +146,12 @@ service-role key (bypasses RLS) in server code only.
 
 ## 6. The AI analysis pipeline (the heart)
 
-`POST /api/analyze` ([app/api/analyze/route.ts](app/api/analyze/route.ts)):
+`POST /api/analyze` ([app/api/analyze/route.ts](../app/api/analyze/route.ts)):
 1. Auth the user (Supabase server client).
 2. Load their `student_profiles` + `profiles.country`.
 3. Rate-limit: **max 5 analyses / hour / user** (counts `analyses` rows via the
    service-role client). `// FOUNDER: set a hard spend limit in the Anthropic console`.
-4. Call `analyzeProfile(profile)` ([lib/ai/analyze.ts](lib/ai/analyze.ts)):
+4. Call `analyzeProfile(profile)` ([lib/ai/analyze.ts](../lib/ai/analyze.ts)):
    - System block = `STATIC_SYSTEM_PROMPT` (rubric + university data), marked
      `cache_control: ephemeral` for prompt caching. Only the size-bounded profile
      varies (sent as the user message).
@@ -160,7 +160,7 @@ service-role key (bypasses RLS) in server code only.
      non-JSON "An error occurred…" failures.
    - The model returns **only qualitative JSON** (`modelAnalysisSchema`): factors,
      schools, recommended_schools, gap_analysis, timeline, summary.
-   - `assembleAnalysis()` ([lib/ai/assemble.ts](lib/ai/assemble.ts)) then computes
+   - `assembleAnalysis()` ([lib/ai/assemble.ts](../lib/ai/assemble.ts)) then computes
      the **overall_score** (rubric-weighted, deterministic) and the **benchmark
      table** (from `lib/data/universities.ts`) in code — the model never does
      arithmetic or repeats dataset numbers.
@@ -169,14 +169,14 @@ service-role key (bypasses RLS) in server code only.
 5. Persist the run to `analyses` + log an `analysis_run` event (service role).
 6. Return `{ analysis, usage }`.
 
-**Input limits** ([lib/limits.ts](lib/limits.ts)) are enforced in 3 places (intake
+**Input limits** ([lib/limits.ts](../lib/limits.ts)) are enforced in 3 places (intake
 Zod schema, onboarding UI, model-input builder) so an oversized profile can never
 blow up the request.
 
 **Honesty constraints** are baked into the prompt: per-school numbers are always
 ranges; sub-15% admit-rate schools forced to `confidence: "low"`.
 
-**Scoring rubric** lives in [lib/rubric.ts](lib/rubric.ts) (7 factors, v1 weights).
+**Scoring rubric** lives in [lib/rubric.ts](../lib/rubric.ts) (7 factors, v1 weights).
 The founder tunes weights there without touching prompt logic.
 
 ---
@@ -185,7 +185,7 @@ The founder tunes weights there without touching prompt logic.
 
 - **Sign-in:** email/password + Google OAuth (`components/auth/AuthForm.tsx`).
   Both land on `/auth/callback`, which provisions the user once
-  ([lib/auth/provision.ts](lib/auth/provision.ts)) and **routes by role**
+  ([lib/auth/provision.ts](../lib/auth/provision.ts)) and **routes by role**
   (`landingPathForRole`): admin → `/admin`, ambassador → `/ambassador`, student →
   `/onboarding`. An explicit `?next=` (from a gated page) is honored over the role
   default.
@@ -193,7 +193,7 @@ The founder tunes weights there without touching prompt logic.
   provision it writes `profiles.referred_by`, logs a `signup` event, and bumps the
   ambassador's count.
 - **Guards:** `requireSession()` / `requireRole()` in
-  [lib/auth/session.ts](lib/auth/session.ts).
+  [lib/auth/session.ts](../lib/auth/session.ts).
 - **Roles are set manually in the DB** (v1; no UI). See SETUP.md §7:
   `update profiles set role='admin' where id='<uuid>';` and insert an
   `ambassadors` row for ambassadors.
@@ -202,11 +202,11 @@ The founder tunes weights there without touching prompt logic.
 
 ## 8. Design system
 
-Tokens in [tailwind.config.ts](tailwind.config.ts) + [app/globals.css](app/globals.css):
+Tokens in [tailwind.config.ts](../tailwind.config.ts) + [app/globals.css](../app/globals.css):
 - **Palette:** deep navy ink `#10192B`, warm surface `#F5F3EF`, white cards,
   **one accent** `#2F6FED` (azure) reserved for the user's own scores.
 - **Tier scale (used everywhere):** Reach `#E0664F`, Target `#D98A2B`, Likely
-  `#3F9B6E` — see [lib/tiers.ts](lib/tiers.ts).
+  `#3F9B6E` — see [lib/tiers.ts](../lib/tiers.ts).
 - **Type:** Space Grotesk (display + tabular figures) + Inter (body). Numbers use
   `tabular-nums` (`data-num` / `.tnum`).
 - **Signature element:** the Scorecard (gauge + radar + factor bars) — the hero,
@@ -219,9 +219,9 @@ Tokens in [tailwind.config.ts](tailwind.config.ts) + [app/globals.css](app/globa
 
 - **English is the default.** Toggle (EN/RU) in headers persists the choice in a
   cookie; switching calls `router.refresh()` so server components re-render.
-- Server components: `getT()` from [lib/i18n/server.ts](lib/i18n/server.ts).
-  Client components: `useT()` from [lib/i18n/client.tsx](lib/i18n/client.tsx).
-- All UI strings live in [lib/i18n/dictionary.ts](lib/i18n/dictionary.ts)
+- Server components: `getT()` from [lib/i18n/server.ts](../lib/i18n/server.ts).
+  Client components: `useT()` from [lib/i18n/client.tsx](../lib/i18n/client.tsx).
+- All UI strings live in [lib/i18n/dictionary.ts](../lib/i18n/dictionary.ts)
   (flat keys, `en` + `ru`). **Add new copy as keys there, never hardcode strings.**
 - **AI-generated prose** (factor notes, school reasons, summary) is **not**
   translated — it comes from the model in English. (Making it RU = a prompt
