@@ -5809,7 +5809,13 @@ test("every beat is concrete, has a plainer version, and names no profession", (
     // of 154 characters and 29 words, and two of those side by side in a narrow
     // rail is twenty lines of text for one question. The spec asked for 15–25
     // words; the test has to be the thing that holds it to that.
-    const words = b.text.trim().split(/s+/).length;
+    // `\s`, not `s`. This read `/s+/` until 2026-08-19, which splits on runs of
+    // the LETTER s: it reported a maximum of 9 "words" across all 24 beats when
+    // the real maximum is 23, so the ≤24 rule CLAUDE.md calls test-enforced was
+    // enforcing nothing and would have passed a sixty-word beat. Third guard in
+    // this repo to lose its backslashes and fail open. The content happened to
+    // comply, which is luck, not coverage.
+    const words = b.text.trim().split(/\s+/).length;
     assert.ok(
       b.text.trim().length > 50 && b.text.trim().length <= 135,
       `${b.id} is ${b.text.trim().length} chars — a beat is one moment, not a paragraph`,
