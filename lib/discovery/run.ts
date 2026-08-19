@@ -243,7 +243,7 @@ export async function runScheduledDiscovery(
       queued: 0,
       flagged: 0,
       dropped: [],
-      note: "skipped — no students from a supported local-target country yet",
+      note: "skipped: no students from a supported local-target country yet",
     });
   }
   return run;

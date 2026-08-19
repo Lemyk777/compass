@@ -23,6 +23,8 @@ almost never a prompt change.
 
 | …this | Open |
 | --- | --- |
+| **How big the text is** | `tailwind.config.ts` → `fontSize`. The small end sits one step above Tailwind's stock (xs 13 / sm 15 / base 17 / lg 19); one edit moves the product, because the type tests name CLASSES, not pixels. Floor is 12px and a test enforces it |
+| **What colour the text is** | `app/globals.css` — every colour once per theme, as channel triplets. Never an alpha on `ink`: reach for `ink-soft`/`ink-faint`, which are contrast-tested |
 | What the model is told | `lib/ai/prompt.ts` |
 | What the model is allowed to return | `lib/ai/schema.ts` |
 | How scores and benchmarks are computed | `lib/ai/assemble.ts`, `lib/rubric.ts` |
@@ -152,7 +154,7 @@ this incident, and it is the only note here that cannot go stale.
 Verification, run directly with `node --import tsx`. Two pure suites, both in
 the CI gate and neither needing a key, network or DB:
 
-- `test-engine.ts` (`npm run test:unit`, node:test) — **281 tests** over the
+- `test-engine.ts` (`npm run test:unit`, node:test) — **282 tests** over the
   deterministic core: rubric/overall scoring, benchmarks, eligibility
   arithmetic, the interest quiz, the careers registry, matching invariants, the
   guide's chain, and the whole of the planner. **Add a case here when you touch

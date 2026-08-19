@@ -101,7 +101,7 @@ export default async function AdminTrafficPage({
           Site traffic
         </h1>
         <p className="mb-6 text-sm text-ink-soft">
-          Everyone who reaches Compass — signed in or not. All times UTC.
+          Everyone who reaches Compass, signed in or not. All times UTC.
         </p>
         {children}
       </div>
@@ -239,7 +239,7 @@ function TrafficReport({
           />
           <p className="mt-3 text-xs leading-relaxed text-ink-soft">
             A visitor is one browser. Someone who clears cookies or switches to
-            their phone counts as a new person — this undercounts returns and
+            their phone counts as a new person, so this undercounts returns and
             never invents them.
           </p>
         </Card>
@@ -282,7 +282,7 @@ function TrafficReport({
         <Card>
           <PanelTitle
             title="Where visits started"
-            hint="One source per visit — the first external referrer it had."
+            hint="One source per visit, the first external referrer it had."
           />
           <Bars
             rows={summary.sources.slice(0, 12).map((s) => ({
@@ -303,7 +303,7 @@ function TrafficReport({
                 value: c.visitors,
               }))}
               total={totals.visitors}
-              empty="Not recorded — the country header only exists in production."
+              empty="Not recorded: the country header only exists in production."
             />
           </Card>
           <Card>
@@ -521,7 +521,7 @@ function NoTrafficYet({ days }: { days: number }) {
       <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-ink-soft">
         <li>
           The table exists and is readable, so this is either genuinely no
-          traffic or the tracker has only just been deployed — rows start
+          traffic or the tracker has only just been deployed. Rows start
           appearing on the next real page load.
         </li>
         <li>

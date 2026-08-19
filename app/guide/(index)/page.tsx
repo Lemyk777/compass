@@ -23,7 +23,7 @@ import { pageMeta } from "@/lib/seo";
 export const metadata: Metadata = pageMeta({
   title: "Where this can take you — Compass",
   description:
-    "What each field of study actually leads to, the kinds of work inside it, and where in the world that work sits — with the honest catch and the real way in for each place.",
+    "What each field of study actually leads to, the kinds of work inside it, and where in the world that work sits, with the honest catch and the real way in for each place.",
   path: "/guide",
 });
 
@@ -61,7 +61,7 @@ export default async function GuidePage({
               A job title is not a life. Four steps: the first three run from
               what kinds of work exist, to the countries that host that work, to
               the cities inside them. The fourth is the one nobody tells you
-              about — what you can enter from home this year, without moving
+              about: what you can enter from home this year, without moving
               anywhere at all.
             </p>
           </header>
@@ -106,7 +106,7 @@ export default async function GuidePage({
 
       <p className="text-sm leading-relaxed text-ink-faint">
         Everything in the guide is curated by hand and checked against the
-        organiser or the government that sets the rule — no prices, no rankings,
+        organiser or the government that sets the rule. No prices, no rankings,
         and no place gets its appeal listed without its catch.
       </p>
     </div>

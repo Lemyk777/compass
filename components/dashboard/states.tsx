@@ -141,7 +141,7 @@ function ReadinessCard() {
       {/* Anti-coercion line — true, and load-bearing: Opportunities works with
           none of this filled in, so nothing here is being held hostage. */}
       <p className="mt-4 text-xs leading-relaxed text-ink-soft">
-        Add these whenever you like — each one sharpens what we show you, and
+        Add these whenever you like. Each one sharpens what we show you, and
         none of it is required to use your opportunities.
       </p>
     </section>

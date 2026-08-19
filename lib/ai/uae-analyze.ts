@@ -214,37 +214,37 @@ function buildReasoning(p: UaeProgram, c: Computed): string {
     c.status === "likely"
       ? `On academics you are a strong, likely candidate for ${p.university} ${p.program_name}.`
       : c.status === "target"
-        ? `${p.university} ${p.program_name} is a realistic target — competitive, but in range.`
+        ? `${p.university} ${p.program_name} is a realistic target: competitive, but in range.`
         : `${p.university} ${p.program_name} is a reach at your current index.`;
 
   // Ultra-selective (NYUAD): say plainly why no score can make this "likely".
   const ultraLine = p.ultra_selective
-    ? ` ${p.university} admits only a single-digit percentage of applicants under a fully holistic review, so a competitive score is necessary but not sufficient — no score makes this "likely", and even an in-band score stays a reach until the whole application carries it.`
+    ? ` ${p.university} admits only a single-digit percentage of applicants under a fully holistic review, so a competitive score is necessary but not sufficient. No score makes this "likely", and even an in-band score stays a reach until the whole application carries it.`
     : "";
 
   const interviewLine = p.interview_required
     ? c.interviewReady && c.status === "likely"
       ? ` This programme interviews shortlisted applicants; your record positions you well, though the interview still finalises the outcome.`
-      : ` This programme interviews shortlisted applicants${p.need_blind ? " (a Candidate Weekend)" : p.field === "medicine" ? " (a Multiple Mini-Interview)" : ""}, so the interview — not scores alone — decides the outcome.`
+      : ` This programme interviews shortlisted applicants${p.need_blind ? " (a Candidate Weekend)" : p.field === "medicine" ? " (a Multiple Mini-Interview)" : ""}, so the interview, not scores alone, decides the outcome.`
     : "";
 
   const achLine = achievementLine(p, c);
 
   const offerLine = c.conditional_offer
-    ? ` Because your grades are predicted, a strong application would lead to a Conditional Offer — confirmed once you actually achieve those grades.`
+    ? ` Because your grades are predicted, a strong application would lead to a Conditional Offer, confirmed once you actually achieve those grades.`
     : "";
 
   const scholarshipLine =
     c.scholarship === "likely_full"
       ? p.need_blind
         ? ` NYU Abu Dhabi is need-blind and meets 100% of demonstrated need; at your level you are also in full-ride merit territory.`
-        : ` At your index you are in full-tuition merit-scholarship territory — a major reason ${p.university} is such strong value.`
+        : ` At your index you are in full-tuition merit-scholarship territory, a major reason ${p.university} is such strong value.`
       : c.scholarship === "likely_partial"
         ? p.need_blind
           ? ` NYU Abu Dhabi is need-blind and meets full demonstrated need if you are admitted.`
           : ` You are within range of a partial merit scholarship, considered automatically from your SAT and GPA; a higher index raises the award.`
         : c.scholarship === "unlikely"
-          ? ` A merit scholarship is unlikely at this index — the larger awards are reserved for the top admits.`
+          ? ` A merit scholarship is unlikely at this index. The larger awards are reserved for the top admits.`
           : "";
 
   const englishLine =
@@ -262,7 +262,7 @@ function buildReasoning(p: UaeProgram, c: Computed): string {
     offerLine +
     scholarshipLine +
     englishLine +
-    ` UAE admission is grades-first but reviewed in full, so treat this as a directional read — not a guarantee.`
+    ` UAE admission is grades-first but reviewed in full, so treat this as a directional read, not a guarantee.`
   );
 }
 
@@ -275,7 +275,7 @@ function achievementLine(p: UaeProgram, c: Computed): string {
 
   if (c.ach.score >= 5) {
     if (c.status !== c.rawStatus) {
-      return ` Your achievements (${what}) lift this from a scores-only "${c.rawStatus}" to "${c.status}" — the UAE's stronger universities review the whole application, especially ${p.interview_required ? "at interview" : "for competitive majors and scholarships"}.`;
+      return ` Your achievements (${what}) lift this from a scores-only "${c.rawStatus}" to "${c.status}". The UAE's stronger universities review the whole application, especially ${p.interview_required ? "at interview" : "for competitive majors and scholarships"}.`;
     }
     if (p.interview_required && c.interviewReady) {
       return ` Your achievements (${what}) position you well for the interview, which ultimately decides this programme.`;
@@ -289,28 +289,28 @@ function achievementLine(p: UaeProgram, c: Computed): string {
 
 function buildRoadmap(p: UaeProgram, conditional: boolean): string[] {
   const steps: string[] = [
-    `Apply directly through ${p.university}'s online international application — there is no single central application system for international applicants in the UAE.`,
+    `Apply directly through ${p.university}'s online international application. There is no single central application system for international applicants in the UAE.`,
     `Submit your high-school transcript with ${conditional ? "predicted" : "achieved"} grades, your SAT score, and an English certificate (IELTS ${p.english_ielts}+ or the TOEFL equivalent).`,
   ];
 
   if (p.interview_required) {
     steps.push(
       p.need_blind
-        ? "Shortlisted applicants are invited to a Candidate Weekend — prepare for interviews and group activities that probe curiosity, fit and motivation."
+        ? "Shortlisted applicants are invited to a Candidate Weekend. Prepare for interviews and group activities that probe curiosity, fit and motivation."
         : p.field === "medicine"
-          ? "Sit the admission test and prepare for the Multiple Mini-Interview (MMI) — expect ethics, motivation and science-reasoning stations."
-          : "Prepare for the admission interview — expect subject-reasoning and motivation questions."
+          ? "Sit the admission test and prepare for the Multiple Mini-Interview (MMI). Expect ethics, motivation and science-reasoning stations."
+          : "Prepare for the admission interview. Expect subject-reasoning and motivation questions."
     );
   }
 
   steps.push(
     p.need_blind
       ? "Merit awards are considered automatically from your application; for need-based aid, submit NYU Abu Dhabi's financial-aid application alongside your admission application."
-      : "Merit scholarships are considered automatically from your SAT and high-school GPA — there is usually no separate form; a stronger index raises the award."
+      : "Merit scholarships are considered automatically from your SAT and high-school GPA. There is usually no separate form, and a stronger index raises the award."
   );
 
   steps.push(
-    "After you receive an offer, the university sponsors your UAE student residence visa — start the paperwork 4–8 weeks before term."
+    "After you receive an offer, the university sponsors your UAE student residence visa. Start the paperwork 4–8 weeks before term."
   );
 
   return steps;

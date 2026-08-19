@@ -68,7 +68,7 @@ function refresh(mapId?: string) {
 /** A missing table or column means 0029 has not been applied by hand yet. */
 function migrationHint(code: string | undefined): string | null {
   if (code === "42P01" || code === "42703") {
-    return "Mind maps aren't set up yet — run migration 0029_planner_maps.sql.";
+    return "Mind maps aren't set up yet. Run migration 0029_planner_maps.sql.";
   }
   return null;
 }
@@ -158,7 +158,7 @@ export async function createMap(label: string): Promise<SaveResult> {
   if ((count ?? 0) >= LIMITS.maps) {
     return {
       ok: false,
-      error: `That's ${LIMITS.maps} maps — delete one before starting another.`,
+      error: `That's ${LIMITS.maps} maps. Delete one before starting another.`,
     };
   }
 
@@ -222,13 +222,13 @@ export async function addNode(input: {
   if (rows.length >= LIMITS.mapNodes) {
     return {
       ok: false,
-      error: `That map has ${LIMITS.mapNodes} nodes — the most one map can hold.`,
+      error: `That map has ${LIMITS.mapNodes} nodes, the most one map can hold.`,
     };
   }
 
   const parent = rows.find((r) => r.id === input.parentId);
   if (!parent)
-    return { ok: false, error: "That branch is gone — reload the map." };
+    return { ok: false, error: "That branch is gone. Reload the map." };
 
   if (branchDepth(asTreeRows(rows), parent.id) + 1 > MINDMAP_MAX_DEPTH) {
     return {
@@ -304,7 +304,7 @@ export async function deleteNode(input: {
   if (node.parent_id === null) {
     return {
       ok: false,
-      error: "That's the map itself — delete the whole map instead.",
+      error: "That's the map itself. Delete the whole map instead.",
     };
   }
 
@@ -343,7 +343,7 @@ export async function moveNode(input: {
   const rows = loaded.rows;
 
   const node = rows.find((r) => r.id === input.id);
-  if (!node) return { ok: false, error: "That node is gone — reload the map." };
+  if (!node) return { ok: false, error: "That node is gone. Reload the map." };
   if (node.parent_id === null)
     return { ok: false, error: "The map itself doesn't move." };
 
@@ -450,7 +450,7 @@ export async function promoteNodeToTask(input: {
     .maybeSingle();
 
   if (readError) return fail(readError.code, "Could not read that node.");
-  if (!data) return { ok: false, error: "That node is gone — reload the map." };
+  if (!data) return { ok: false, error: "That node is gone. Reload the map." };
 
   const row = data as Pick<MapNodeRow, "note"> & {
     label: string;
@@ -467,14 +467,14 @@ export async function promoteNodeToTask(input: {
       ok: false,
       error:
         countError.code === "42P01"
-          ? "The planner's table isn't set up yet — run migration 0028_planner.sql."
+          ? "The planner's table isn't set up yet. Run migration 0028_planner.sql."
           : "Could not add it to your plan. Try again.",
     };
   }
   if ((count ?? 0) >= LIMITS.plannerItems) {
     return {
       ok: false,
-      error: `That's ${LIMITS.plannerItems} tasks — finish or remove one first.`,
+      error: `That's ${LIMITS.plannerItems} tasks. Finish or remove one first.`,
     };
   }
 
@@ -490,7 +490,7 @@ export async function promoteNodeToTask(input: {
       ok: false,
       error:
         error.code === "42P01"
-          ? "The planner's table isn't set up yet — run migration 0028_planner.sql."
+          ? "The planner's table isn't set up yet. Run migration 0028_planner.sql."
           : "Could not add it to your plan. Try again.",
     };
   }
@@ -536,7 +536,7 @@ export async function createMapFromPlan(): Promise<SaveResult> {
   if ((count ?? 0) >= LIMITS.maps) {
     return {
       ok: false,
-      error: `That's ${LIMITS.maps} maps — delete one before starting another.`,
+      error: `That's ${LIMITS.maps} maps. Delete one before starting another.`,
     };
   }
 

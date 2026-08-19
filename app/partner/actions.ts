@@ -195,7 +195,7 @@ function rowFrom(
     event_window:
       input.eventWindow ||
       (timing.alwaysOpen
-        ? "Runs continuously — start whenever you like"
+        ? "Runs continuously. Start whenever you like"
         : "See the official page"),
     level: input.level,
     url: input.url,

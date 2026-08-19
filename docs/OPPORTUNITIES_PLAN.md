@@ -30,13 +30,23 @@ two disagree, this one wins.
 
 | | |
 |---|---|
-| Deployed | everything. `origin/main` = `origin/develop` = `b745ab7` |
+| Deployed | everything through release 8. **The copy and readability pass (release 9) is on `copy/humanize-catalog` and is NOT deployed** — see §1 of [BACKLOG_2026-08.md](BACKLOG_2026-08.md) |
 | Catalog | **172 entries · 0 broken links** · **12 confirmed dates** · **57 always-open** |
 | `pinned` rows | **0** — the NAO Cup row was the only one and was removed 2026-08-15 |
 | `region`-tagged rows | **0** — same row. The local-opportunity mechanism applies to nothing curated. This is the highest-value data work available (audit A8) |
 | The guide | **five** steps: 33 areas of work → 44 majors → 17 countries → 38 cities → 6 routes from home |
 | Named institutions | 79, never ranked |
-| Tests | 281 unit · 61 session checks |
+| Tests | 282 unit · 61 session checks |
+
+**The catalog's prose was rewritten on 2026-08-19, and the rules for writing a
+new entry now live in [lib/data/README.md](../lib/data/README.md)** under
+"Adding an opportunity". The 2026-08-16 copy pass covered the five guide
+registries and missed this file entirely, because a data file does not look like
+prose — and it holds the most-read text in the product. 451 sentence dashes → 33,
+149 of 172 blurbs stopped being one dash-split sentence, and ~15 superlatives
+came out. Two things not to undo: the numeric dash in `eligibility` is parsed,
+and the acronym dash in a `name` ("IMO — International Mathematical Olympiad")
+is a naming convention.
 
 **The front door is one list now, and that was the last structural change.**
 Matching used to *hide*: `buildExtracurriculars` dropped rows outside the
@@ -459,7 +469,7 @@ competition; the admin page lists broken links first.
 ## Verification (no API key needed)
 
 ```bash
-npm run test:unit       # 281 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner, the bundle guards
+npm run test:unit       # 282 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner, the bundle guards
 npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
 npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog

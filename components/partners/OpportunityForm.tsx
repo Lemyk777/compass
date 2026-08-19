@@ -200,7 +200,7 @@ export function OpportunityForm({
               })}
             </div>
             <p className="mt-1.5 text-xs text-ink-faint">
-              Leave all of them off if it suits any subject — that shows it to
+              Leave all of them off if it suits any subject, and that shows it to
               everyone, not to no one.
             </p>
           </fieldset>
@@ -209,7 +209,7 @@ export function OpportunityForm({
         <FormSection title="Who can enter">
           <Field
             label="Age or year rules"
-            hint="Word it the way you word it — ages if your rule is an age, school years if it's a year."
+            hint="Word it the way you word it. Ages if your rule is an age, school years if it's a year."
           >
             <Input
               value={v.eligibility}
@@ -292,14 +292,14 @@ export function OpportunityForm({
               checked={v.timing === "always_open"}
               onChange={() => set("timing", "always_open")}
               title="It runs continuously"
-              hint="Rolling applications, a self-paced course — nothing to miss."
+              hint="Rolling applications, a self-paced course: nothing to miss."
             />
             <Radio
               name="timing"
               checked={v.timing === "tba"}
               onChange={() => set("timing", "tba")}
               title="Dates aren't announced yet"
-              hint="It shows as 'dates TBA'. Come back and set the date — we never invent one."
+              hint="It shows as 'dates TBA'. Come back and set the date, we never invent one."
             />
           </div>
 
@@ -334,7 +334,7 @@ export function OpportunityForm({
             <Input
               value={v.costDetail}
               onChange={(e) => set("costDetail", e.target.value)}
-              placeholder="Free for everyone selected — we cover materials and lunch."
+              placeholder="Free for everyone selected. We cover materials and lunch."
               maxLength={300}
             />
           </Field>
@@ -377,7 +377,7 @@ export function OpportunityForm({
         <OpportunityCard o={preview} />
         <p className="mt-3 text-xs leading-relaxed text-ink-faint">
           This is the real card, rendered the same way it is on a
-          student&rsquo;s list — including the countdown and the cost badge.
+          student&rsquo;s list, including the countdown and the cost badge.
         </p>
       </aside>
     </div>

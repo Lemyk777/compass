@@ -131,7 +131,7 @@ function QuizResults({
     return (
       <div className="rounded-2xl border border-line bg-card p-5 shadow-card">
         <p className="text-sm text-ink-soft">
-          That didn&rsquo;t point anywhere clearly — no problem, pick the fields
+          That didn&rsquo;t point anywhere clearly. No problem: pick the fields
           that appeal to you instead.
         </p>
         <div className="mt-3 flex gap-2.5">
@@ -163,7 +163,7 @@ function QuizResults({
         These fields look like your direction.
       </h3>
       <p className="mt-1 text-sm text-ink-soft">
-        A starting point, not a verdict — drop any that don&rsquo;t fit, then
+        A starting point, not a verdict. Drop any that don&rsquo;t fit, then
         we&rsquo;ll show what you can enter in them.
       </p>
 
@@ -183,7 +183,7 @@ function QuizResults({
               }`}
             >
               {i === 0 && on && (
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
+                <span className="text-[12px] font-semibold uppercase tracking-wide text-accent-ink">
                   Top
                 </span>
               )}
@@ -193,7 +193,7 @@ function QuizResults({
         })}
       </div>
 
-      {/* "oh — that's where this goes": the fields alone are abstract, so each
+      {/* "oh, that's where this goes": the fields alone are abstract, so each
           one shows the AREAS of work it opens. Areas, never a single job title:
           a quiz cannot tell anyone what they should become, and a sphere is a
           claim we can stand behind. The full list of roles lives in the careers

@@ -230,29 +230,29 @@ function buildReasoning(p: HkProgram, c: Computed): string {
     c.status === "likely"
       ? `On academics you are a strong, likely candidate for ${p.university} ${p.program_name}.`
       : c.status === "target"
-        ? `${p.university} ${p.program_name} is a realistic target — competitive, but in range.`
+        ? `${p.university} ${p.program_name} is a realistic target: competitive, but in range.`
         : `${p.university} ${p.program_name} is a reach at your current standing.`;
 
   const interviewLine = p.interview_required
     ? c.interviewReady && c.status === "likely"
       ? ` This programme interviews shortlisted applicants; your record positions you well, though the interview still finalises the outcome.`
-      : ` This programme interviews shortlisted applicants, so the interview — not grades alone — decides the outcome; that is why even strong grades sit no higher than "target" here.`
+      : ` This programme interviews shortlisted applicants, so the interview, not grades alone, decides the outcome; that is why even strong grades sit no higher than "target" here.`
     : "";
 
   // How the student's record (deterministic achievement signal) shaped the read.
   const achLine = achievementLine(p, c);
 
   const offerLine = c.conditional_offer
-    ? ` Because your grades are predicted, a strong application would lead to a Conditional Offer — confirmed once you actually achieve those grades.`
+    ? ` Because your grades are predicted, a strong application would lead to a Conditional Offer, confirmed once you actually achieve those grades.`
     : "";
 
   const scholarshipLine =
     c.scholarship === "likely_full"
-      ? ` At your standing you are in full-tuition entrance-scholarship territory (awarded automatically with the offer — no separate application).`
+      ? ` At your standing you are in full-tuition entrance-scholarship territory (awarded automatically with the offer, with no separate application).`
       : c.scholarship === "likely_partial"
         ? ` You are within range of a partial entrance scholarship, which HK universities consider automatically; a higher score raises the award.`
         : c.scholarship === "unlikely"
-          ? ` A merit scholarship is unlikely at this level — they are reserved for the very top admits.`
+          ? ` A merit scholarship is unlikely at this level. They are reserved for the very top admits.`
           : "";
 
   const englishLine =
@@ -269,7 +269,7 @@ function buildReasoning(p: HkProgram, c: Computed): string {
     offerLine +
     scholarshipLine +
     englishLine +
-    ` HK admission is holistic, so treat this as a directional read — not a guarantee.`
+    ` HK admission is holistic, so treat this as a directional read, not a guarantee.`
   );
 }
 
@@ -282,7 +282,7 @@ function achievementLine(p: HkProgram, c: Computed): string {
 
   if (c.ach.score >= 5) {
     if (c.status !== c.rawStatus) {
-      return ` Your achievements (${what}) lift this from a grades-only "${c.rawStatus}" to "${c.status}" — HK weighs a real record, especially ${p.interview_required ? "at interview" : "for competitive programmes and scholarships"}.`;
+      return ` Your achievements (${what}) lift this from a grades-only "${c.rawStatus}" to "${c.status}". HK weighs a real record, especially ${p.interview_required ? "at interview" : "for competitive programmes and scholarships"}.`;
     }
     if (p.interview_required && c.interviewReady) {
       return ` Your achievements (${what}) position you well for the interview, which ultimately decides this programme.`;
@@ -296,18 +296,18 @@ function achievementLine(p: HkProgram, c: Computed): string {
 
 function buildRoadmap(p: HkProgram, conditional: boolean): string[] {
   const steps: string[] = [
-    `Apply directly through ${p.university}'s international / Non-JUPAS online application — there is no central UCAS-style system for international applicants in Hong Kong.`,
+    `Apply directly through ${p.university}'s international / Non-JUPAS online application. There is no central UCAS-style system for international applicants in Hong Kong.`,
     `Submit your transcript with ${conditional ? "predicted" : "achieved"} grades and an English certificate (IELTS ${p.english_ielts}+ or the TOEFL equivalent).`,
   ];
 
   if (p.interview_required) {
     steps.push(
-      "Prepare for the admission interview — expect subject reasoning and motivation questions; the most competitive programmes run multiple rounds."
+      "Prepare for the admission interview. Expect subject reasoning and motivation questions; the most competitive programmes run multiple rounds."
     );
   }
 
   steps.push(
-    "Entrance scholarships are considered automatically from your application — there is no separate form; a stronger academic record raises the award."
+    "Entrance scholarships are considered automatically from your application. There is no separate form, and a stronger academic record raises the award."
   );
 
   steps.push(

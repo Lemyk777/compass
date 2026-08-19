@@ -87,7 +87,7 @@ export function QuickAddOpportunity() {
           + Add an opportunity
         </Button>
         <span className="text-xs text-ink-faint">
-          Admin — publishes immediately
+          Admin, publishes immediately
         </span>
         {done && (
           <span
@@ -122,7 +122,7 @@ export function QuickAddOpportunity() {
             id="qa-name"
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
-            placeholder="NAO Cup — debate tournament"
+            placeholder="NAO Cup, debate tournament"
           />
         </Field>
         <Field
@@ -149,7 +149,7 @@ export function QuickAddOpportunity() {
             id="qa-elig"
             value={form.eligibility}
             onChange={(e) => set("eligibility", e.target.value)}
-            placeholder="School students — no experience required"
+            placeholder="School students, no experience required"
           />
         </Field>
       </div>
@@ -274,7 +274,7 @@ export function QuickAddOpportunity() {
         <legend className="text-xs font-medium text-ink">
           Fields{" "}
           <span className="font-normal text-ink-faint">
-            — none selected means every field
+            (none selected means every field)
           </span>
         </legend>
         <div className="mt-2 flex flex-wrap gap-1.5">

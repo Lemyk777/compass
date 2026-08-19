@@ -80,7 +80,7 @@ export const INTL_DEADLINES: Record<string, UniversityDeadline> = {
     confirmed: false,
     rolling: true,
     window:
-      "Rolling international admission — offers are made as places fill, so apply early. Confirm the current cutoff on the official page.",
+      "Rolling international admission. Offers are made as places fill, so apply early. Confirm the current cutoff on the official page.",
     source:
       "https://www.polyu.edu.hk/study/ug/admissions/international-other-qualifications",
   },
@@ -101,7 +101,7 @@ export const INTL_DEADLINES: Record<string, UniversityDeadline> = {
     rounds: [],
     confirmed: false,
     window:
-      "International admission runs through Politecnico's Calls for Admission in rounds through the year; dates vary by programme — check the official call.",
+      "International admission runs through Politecnico's Calls for Admission in rounds through the year; dates vary by programme. Check the official call.",
     source:
       "https://www.polimi.it/en/prospective-students/how-to-apply/admission-to-laurea-programmes/students-with-a-foreign-degree",
   },
@@ -109,14 +109,14 @@ export const INTL_DEADLINES: Record<string, UniversityDeadline> = {
     rounds: [],
     confirmed: false,
     window:
-      "Admission runs via the TIL-I test in rolling sessions; language requirements are due around late May — check the official calls.",
+      "Admission runs via the TIL-I test in rolling sessions; language requirements are due around late May. Check the official calls.",
     source: "https://www.polito.it/en/education/applying-studying-graduating/admissions-and-enrolment/bachelor-s-degree-programmes",
   },
   "Sapienza University of Rome": {
     rounds: [],
     confirmed: false,
     window:
-      "Extra-EU applicants apply through Sapienza's own procedure (typically spring) plus Universitaly pre-enrolment — check the official page.",
+      "Extra-EU applicants apply through Sapienza's own procedure (typically spring) plus Universitaly pre-enrolment. Check the official page.",
     source:
       "https://www.uniroma1.it/en/pagina/applying-sapienza-international-student",
   },
@@ -124,7 +124,7 @@ export const INTL_DEADLINES: Record<string, UniversityDeadline> = {
     rounds: [],
     confirmed: false,
     window:
-      "Each programme publishes its own call for international applicants (often spring); the visa pre-enrolment window is separate — check the official page.",
+      "Each programme publishes its own call for international applicants (often spring); the visa pre-enrolment window is separate. Check the official page.",
     source:
       "https://www.unibo.it/en/study/incoming-outgoing-international-mobility/you-are-an-international-student-wishing-to-study-at-Unibo",
   },
@@ -132,14 +132,14 @@ export const INTL_DEADLINES: Record<string, UniversityDeadline> = {
     rounds: [],
     confirmed: false,
     window:
-      "International application windows are set per programme (often winter–spring) — check the official page.",
+      "International application windows are set per programme (often winter–spring). Check the official page.",
     source: "https://www.unipd.it/en/how-apply",
   },
   "University of Milan": {
     rounds: [],
     confirmed: false,
     window:
-      "International enrolment windows are set per programme — check the official page.",
+      "International enrolment windows are set per programme. Check the official page.",
     source:
       "https://www.unimi.it/en/international/coming-abroad/enrol-programme/international-enrolment-degree-programmes",
   },
@@ -147,21 +147,21 @@ export const INTL_DEADLINES: Record<string, UniversityDeadline> = {
     rounds: [],
     confirmed: false,
     window:
-      "International applications run through Siena's own portal (typically spring); decisions in ~1 month — check the official page.",
+      "International applications run through Siena's own portal (typically spring); decisions in ~1 month. Check the official page.",
     source: "https://admission.unisi.it/",
   },
   "University of Messina": {
     rounds: [],
     confirmed: false,
     window:
-      "Extra-UE application windows are set per programme — check the official international-admissions page.",
+      "Extra-UE application windows are set per programme. Check the official international-admissions page.",
     source: "https://international.unime.it/study-us/application-and-admission",
   },
   "University of Cassino": {
     rounds: [],
     confirmed: false,
     window:
-      "International application windows are set per programme — check the official page.",
+      "International application windows are set per programme. Check the official page.",
     source: "https://www.unicas.it/",
   },
 
@@ -184,42 +184,42 @@ export const INTL_DEADLINES: Record<string, UniversityDeadline> = {
     rounds: [],
     confirmed: false,
     window:
-      "UIC admits international students on a rolling basis across ~3 rounds; autumn-entry decisions land by late June — check the official page.",
+      "UIC admits international students on a rolling basis across ~3 rounds; autumn-entry decisions land by late June. Check the official page.",
     source: "https://uic.yonsei.ac.kr/main/admission.php",
   },
   "Yonsei University": {
     rounds: [],
     confirmed: false,
     window:
-      "International admission runs in rounds that vary by track — check the official page.",
+      "International admission runs in rounds that vary by track. Check the official page.",
     source: "https://oia.yonsei.ac.kr/intstd/appPro.asp",
   },
   "Korea University": {
     rounds: [],
     confirmed: false,
     window:
-      "International admission for autumn entry runs in rounds — check the official application guide.",
+      "International admission for autumn entry runs in rounds. Check the official application guide.",
     source: "https://oia.korea.ac.kr/oia/under/admission.do",
   },
   "Sungkyunkwan University": {
     rounds: [],
     confirmed: false,
     window:
-      "International admission runs in rounds that vary by intake — check the official page.",
+      "International admission runs in rounds that vary by intake. Check the official page.",
     source: "https://admission-global.skku.edu/eng/undergraduate.html",
   },
   "Hanyang University": {
     rounds: [],
     confirmed: false,
     window:
-      "International admission runs in rounds that vary by intake — check the official page.",
+      "International admission runs in rounds that vary by intake. Check the official page.",
     source: "https://www.hanyang.ac.kr/web/eng/international-admissions",
   },
   "Kyung Hee University": {
     rounds: [],
     confirmed: false,
     window:
-      "International admission runs in rounds that vary by intake — check the official page.",
+      "International admission runs in rounds that vary by intake. Check the official page.",
     source:
       "https://iadmission.khu.ac.kr/gglobalcenter/user/contents/view.do?menuNo=8000031",
   },
@@ -241,35 +241,35 @@ export const INTL_DEADLINES: Record<string, UniversityDeadline> = {
     rounds: [],
     confirmed: false,
     window:
-      "A single published deadline each cycle (not rolling) — confirm the current date on the official admissions page.",
+      "A single published deadline each cycle (not rolling). Confirm the current date on the official admissions page.",
     source: "https://www.ku.ac.ae/undergraduate-admissions",
   },
   "American University of Sharjah": {
     rounds: [],
     confirmed: false,
     rolling: true,
-    window: "Rolling admission — apply as early as you can; check the official page.",
+    window: "Rolling admission. Apply as early as you can; check the official page.",
     source: "https://www.aus.edu/admissions/undergraduate-admissions",
   },
   "UAE University": {
     rounds: [],
     confirmed: false,
     rolling: true,
-    window: "Rolling admission with intake windows — check the official page.",
+    window: "Rolling admission with intake windows. Check the official page.",
     source: "https://www.uaeu.ac.ae/en/admission/",
   },
   "Zayed University": {
     rounds: [],
     confirmed: false,
     rolling: true,
-    window: "Rolling admission with intake windows — check the official page.",
+    window: "Rolling admission with intake windows. Check the official page.",
     source: "https://www.zu.ac.ae/main/en/admission/index.aspx",
   },
   "Mohammed Bin Rashid University": {
     rounds: [],
     confirmed: false,
     window:
-      "Medicine/health admission runs on its own timeline — check the official page.",
+      "Medicine/health admission runs on its own timeline. Check the official page.",
     source: "https://www.mbru.ac.ae/admission/",
   },
 };

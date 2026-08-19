@@ -77,17 +77,17 @@ const BAND_COPY: Record<
   developing: {
     label: "Gaining traction",
     tone: "bg-target-soft text-target-ink",
-    line: "You have a base — now step up to national-calibre competitions while keeping a couple of accessible wins for breadth.",
+    line: "You have a base. Step up to national-calibre competitions now, and keep a couple of accessible wins for breadth.",
   },
   competitive: {
     label: "Sharpening your spike",
     tone: "bg-likely-soft text-likely-ink",
-    line: "You're competitive. Focus on selective and elite events that produce a standout, verifiable result — depth over volume.",
+    line: "You're competitive. Focus on selective and elite events that produce a standout, verifiable result. Depth over volume.",
   },
   elite: {
     label: "Chasing the headline win",
     tone: "bg-accent-soft text-accent-ink",
-    line: "Your record is already strong. You don't need more entries — you need one elite, international-calibre win. Go all-in on the top tier.",
+    line: "Your record is already strong. You don't need more entries. You need one elite, international-calibre win, so go all-in on the top tier.",
   },
 };
 
@@ -95,17 +95,17 @@ const FIT_GROUPS: { fit: OpportunityFit; title: string; hint: string }[] = [
   {
     fit: "recommended",
     title: "Recommended for you",
-    hint: "Matched to where you are now — prioritize these.",
+    hint: "Matched to where you are now, so prioritize these.",
   },
   {
     fit: "stretch",
     title: "Stretch goals",
-    hint: "A level above — aim here once you've landed the recommended ones.",
+    hint: "A level above. Aim here once you've landed the recommended ones.",
   },
   {
     fit: "foundational",
     title: "Foundational",
-    hint: "Easier entry points — useful for breadth, but likely below your level.",
+    hint: "Easier entry points, useful for breadth but likely below your level.",
   },
 ];
 
@@ -358,7 +358,7 @@ export function OpportunitiesView({
       {isAdmin && <QuickAddOpportunity />}
       <PageHeader
         title="Opportunities"
-        hint="Competitions and olympiads we recommend for you — matched to your field and strength. These are our suggestions to enter next, not your own activities."
+        hint="Competitions and olympiads we recommend for you, matched to your field and strength. These are our suggestions to enter next, not your own activities."
       />
 
       {/* Inside the report, this panel is a summary of a section that is bigger
@@ -490,7 +490,7 @@ export function OpportunitiesView({
                         <span data-num className="font-semibold text-ink-soft">
                           {shown}
                         </span>{" "}
-                        of {total} — the rest are in other subjects or other
+                        of {total}. The rest are in other subjects or other
                         countries. Open the filters to put them back.
                       </p>
                     )}
@@ -513,7 +513,7 @@ export function OpportunitiesView({
                         <>
                           <p className="text-sm text-ink-soft">
                             Nothing matches all of that. The narrowest filter is
-                            usually the money one — try dropping a criterion
+                            usually the money one, so try dropping a criterion
                             rather than starting over.
                           </p>
                           <button
@@ -527,7 +527,7 @@ export function OpportunitiesView({
                       ) : (
                         <p className="text-sm text-ink-soft">
                           Nothing in this category matches your profile yet. Try
-                          another tab — everything we track for you is still in
+                          another tab. Everything we track for you is still in
                           &ldquo;All&rdquo;.
                         </p>
                       )}
@@ -536,7 +536,7 @@ export function OpportunitiesView({
                 </>
 
                 <p className="text-center text-xs text-ink-faint">
-                  Dates are indicative — always confirm on the official site
+                  Dates are indicative, so always confirm on the official site
                   before you rely on them.
                 </p>
               </>
@@ -591,7 +591,7 @@ function SectionDoor() {
             Its own space, built around this instead of around your profile
             score: the short questions that sharpen the match, the interest
             quiz, what each field leads to, and the cities where that work
-            actually is. This panel stays here — nothing moves out of your
+            actually is. This panel stays here, and nothing moves out of your
             report.
           </p>
         </div>
@@ -619,7 +619,7 @@ function GuideLink({ faculties }: { faculties: FacultyValue[] }) {
         </span>
         <span className="mt-0.5 block text-xs text-ink-soft">
           Kinds of work, the jobs inside each, and the cities where that work
-          actually is — with the catch and the way in
+          actually is, with the catch and the way in
         </span>
       </span>
       <span className="shrink-0 text-ink-faint" aria-hidden>
@@ -692,7 +692,7 @@ function StarterBanner({
           {cta} &rarr;
         </a>
         <p className="mt-2 text-xs text-ink-faint">
-          Optional — your Opportunities stay free whether or not you do this.
+          Optional. Your Opportunities stay free whether or not you do this.
         </p>
       </div>
     </Card>
@@ -715,7 +715,7 @@ function StrengthBanner({
           <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
             {copy.label}
             <span
-              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${copy.tone}`}
+              className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${copy.tone}`}
             >
               Extracurricular strength{" "}
               <span data-num className="tabular-nums">
@@ -761,7 +761,7 @@ function YearPrompt({ onPick }: { onPick: (year: number) => void }) {
         What year are you in at school?
       </p>
       <p className="mt-1 text-sm text-ink-soft">
-        Everything below is unfiltered until we know — some of it has age limits
+        Everything below is unfiltered until we know, and some of it has age limits
         you may not have reached yet.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -823,7 +823,7 @@ function FieldPrompt({
       </p>
       <p className="mt-1 text-sm text-ink-soft">
         Pick the fields you care about and we&rsquo;ll match competitions and
-        programs to them — or see everything.
+        programs to them, or see everything.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {FACULTIES.map((f) => {

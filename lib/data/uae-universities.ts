@@ -77,7 +77,7 @@ export const UAE_PROGRAMS: UaeProgram[] = [
     ultra_selective: true,
     annual_fee_usd: 53000,
     merit_scholarship_note:
-      "Need-blind admission — NYUAD meets 100% of demonstrated financial need, and admitted students are automatically considered for merit awards that can cover full tuition, housing and travel.",
+      "Need-blind admission: NYUAD meets 100% of demonstrated financial need, and admitted students are automatically considered for merit awards that can cover full tuition, housing and travel.",
     notes:
       "Single-digit admit rate; holistic, US-style review. Shortlisted applicants are invited to a Candidate Weekend. Strong Maths/Physics and a genuine intellectual spike matter as much as raw scores.",
   },
@@ -123,7 +123,7 @@ export const UAE_PROGRAMS: UaeProgram[] = [
     id: "nyuad-science",
     university: "NYU Abu Dhabi",
     emirate: "Abu Dhabi",
-    program_name: "Science (BS — Biology/Chemistry/Physics)",
+    program_name: "Science (BS, Biology/Chemistry/Physics)",
     field: "science",
     min_sat: 1380,
     typical_sat: 1480,
@@ -193,7 +193,7 @@ export const UAE_PROGRAMS: UaeProgram[] = [
     need_blind: false,
     annual_fee_usd: 22000,
     merit_scholarship_note:
-      "Strong merit aid — top admits receive full tuition plus a stipend. Home to a dedicated AI institute.",
+      "Strong merit aid: top admits receive full tuition plus a stipend. Home to a dedicated AI institute.",
     notes:
       "Runs above the engineering floor; one of the most competitive majors. Maths at a high level expected.",
   },
@@ -287,7 +287,7 @@ export const UAE_PROGRAMS: UaeProgram[] = [
     merit_scholarship_note:
       "Merit scholarships on SAT + GPA; a strong portfolio is decisive for admission.",
     notes:
-      "Regionally leading architecture/design school. A portfolio weighs heavily — often more than raw scores.",
+      "Regionally leading architecture/design school. A portfolio weighs heavily, often more than raw scores.",
   },
   {
     id: "aus-humanities",

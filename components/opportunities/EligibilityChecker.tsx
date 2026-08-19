@@ -148,7 +148,7 @@ export function EligibilityChecker({
           What can you actually enter this year?
         </h1>
         <p className="mt-4 max-w-xl text-pretty text-base leading-relaxed text-ink-soft sm:text-lg">
-          Real competitions with real judges — some of them have been won by
+          Real competitions with real judges, and some of them have been won by
           twelve-year-olds. Tell us one thing and we&rsquo;ll tell you which
           ones are open to you, and when they close.
         </p>
@@ -200,7 +200,7 @@ export function EligibilityChecker({
                 got something; this only sharpens it. */}
             <PageSection
               title="Into something in particular?"
-              hint="Optional — it only sharpens the list above."
+              hint="Optional. It only sharpens the list above."
             >
               <FieldFilter value={fields} onChange={setFields} />
             </PageSection>
@@ -244,7 +244,7 @@ export function EligibilityChecker({
                   <span data-num className="font-semibold text-ink">
                     {later.length}
                   </span>{" "}
-                  more become available as you move up the school — we&rsquo;ll
+                  more become available as you move up the school, and we&rsquo;ll
                   put them on this list the year you can enter them.
                 </p>
               </PageSection>

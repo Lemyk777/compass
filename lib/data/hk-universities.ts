@@ -341,7 +341,7 @@ export const HK_PROGRAMS: HkProgram[] = [
     english_ielts: 6,
     interview_required: true,
     annual_fee_hkd: 145000,
-    notes: "School of Design — portfolio and interview are decisive, often more than raw grades.",
+    notes: "School of Design: portfolio and interview are decisive, often more than raw grades.",
   },
 
   // ── HKU / HKUST / CUHK / CityU (more programmes) ────────────────────────────
@@ -489,7 +489,7 @@ export const HK_PROGRAMS: HkProgram[] = [
     interview_required: true,
     annual_fee_hkd: 145000,
     notes:
-      "HKBU's flagship; one of Asia's best-known communication/journalism schools. Portfolio/interview weigh heavily — more than raw grades.",
+      "HKBU's flagship; one of Asia's best-known communication/journalism schools. Portfolio/interview weigh heavily, more than raw grades.",
   },
 
   // ── Lingnan University ──────────────────────────────────────────────────────

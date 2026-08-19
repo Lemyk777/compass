@@ -82,7 +82,7 @@ export function MapDiagram({
               onClick={() => onPick(n.id)}
               className="cursor-pointer"
             >
-              <title>{kind ? `${n.label} — ${kind}` : n.label}</title>
+              <title>{kind ? `${n.label}, ${kind}` : n.label}</title>
               <rect
                 x={n.x - g.nodeWidth / 2}
                 y={n.y - g.nodeHeight / 2}

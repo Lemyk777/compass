@@ -93,10 +93,10 @@ function refresh() {
  */
 function migrationHint(code: string | undefined): string | null {
   if (code === "42P01" || code === "42703") {
-    return "The planner's table isn't set up yet — run migration 0028_planner.sql.";
+    return "The planner's table isn't set up yet. Run migration 0028_planner.sql.";
   }
   if (code === "23514") {
-    return "That column isn't available yet — run migration 0028_planner.sql.";
+    return "That column isn't available yet. Run migration 0028_planner.sql.";
   }
   return null;
 }
@@ -131,7 +131,7 @@ export async function createPlannerItem(input: {
   if ((count ?? 0) >= LIMITS.plannerItems) {
     return {
       ok: false,
-      error: `That's ${LIMITS.plannerItems} tasks — finish or remove one before adding another.`,
+      error: `That's ${LIMITS.plannerItems} tasks. Finish or remove one before adding another.`,
     };
   }
 
@@ -265,7 +265,7 @@ export async function movePlannerItem(input: {
  */
 function pathMigrationHint(code: string | undefined): string | null {
   if (code === "42P01" || code === "42703") {
-    return "Your plan's picks aren't set up yet — run migration 0030_planner_path.sql.";
+    return "Your plan's picks aren't set up yet. Run migration 0030_planner_path.sql.";
   }
   return null;
 }
@@ -311,7 +311,7 @@ export async function addPick(input: {
   if ((count ?? 0) >= LIMITS.pathPicks) {
     return {
       ok: false,
-      error: `That's ${LIMITS.pathPicks} things on your plan — take one off before adding another.`,
+      error: `That's ${LIMITS.pathPicks} things on your plan. Take one off before adding another.`,
     };
   }
 

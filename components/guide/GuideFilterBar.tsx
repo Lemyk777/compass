@@ -144,7 +144,7 @@ export function GuideFilterBar({
             typed.current = true;
             setDraft(e.target.value);
           }}
-          placeholder={`Search ${noun} — a name, or what you want to do there`}
+          placeholder={`Search ${noun} by name, or by what you want to do there`}
           className="h-11 w-full rounded-xl border border-line bg-surface px-3.5 text-sm text-ink placeholder:text-ink-faint focus-visible:focus-ring"
         />
       </label>

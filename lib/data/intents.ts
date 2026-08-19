@@ -101,7 +101,7 @@ export function intentSentence(intent: OpportunityIntent): string {
   if (!when) return "You're doing this.";
   const detail = cleanIntentText(intent.startDetail);
   return detail
-    ? `You're starting ${when} — ${detail}.`
+    ? `You're starting ${when}, ${detail}.`
     : `You're starting ${when}.`;
 }
 

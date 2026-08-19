@@ -131,7 +131,7 @@ export function MapOutline({
                 shows nothing: badging every node would stop the structure
                 reading as one. */}
             {MAP_NODE_KIND_LABEL[mapNodeKind(n.linkHref)] && (
-              <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
+              <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-ink-soft">
                 {MAP_NODE_KIND_LABEL[mapNodeKind(n.linkHref)]}
               </span>
             )}

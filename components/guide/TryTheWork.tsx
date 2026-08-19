@@ -36,9 +36,9 @@ export function TryTheWork({
       <h3 className="text-base font-semibold text-ink">
         Do the job for an afternoon, before you pick a degree
       </h3>
-      <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+      <p className="mt-1.5 max-w-[54ch] text-base leading-relaxed text-ink-soft">
         Employers build these to recruit, which is why they are honest about
-        what the work is — you do the real tasks, unpaid and ungraded, and find
+        what the work is. You do the real tasks, unpaid and ungraded, and find
         out whether you can stand it. Free, no deadline, nothing to win.
       </p>
 
@@ -59,14 +59,14 @@ export function TryTheWork({
                 {s.hours}
               </span>
             </p>
-            <p className="mt-1 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+            <p className="mt-1 max-w-[54ch] text-base leading-relaxed text-ink-soft">
               {s.what}
             </p>
           </li>
         ))}
       </ul>
 
-      <p className="mt-4 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+      <p className="mt-4 max-w-[54ch] text-base leading-relaxed text-ink-soft">
         {/* The honest caveat, and it doubles as the instruction: the employer is
             the stable half of the claim and it is also the search term. */}
         These are on {TRY_IT_PLATFORM}. Search it by the employer&rsquo;s name —

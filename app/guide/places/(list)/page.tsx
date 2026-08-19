@@ -113,7 +113,7 @@ export default async function GuidePlacesPage({
             Put two of them side by side
           </span>
           <span className="mt-0.5 block text-sm text-ink-soft">
-            The same questions asked of both — money, admissions, after you
+            The same questions asked of both: money, admissions, after you
             graduate, and who each one is wrong for.
           </span>
         </span>

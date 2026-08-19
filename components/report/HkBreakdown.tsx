@@ -90,7 +90,7 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
     <ProgramCardShell status={p.status} reasoning={p.reasoning} notes={p.notes}>
       {/* University + program */}
       <div className="mb-3">
-        <p className="text-[11px] font-medium uppercase tracking-widest text-ink-faint">
+        <p className="text-[12px] font-medium uppercase tracking-widest text-ink-faint">
           {p.field}
         </p>
         <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">
@@ -103,7 +103,7 @@ function HkProgramCard({ program: p }: { program: HkProgramAnalysis }) {
       <div className="mb-3 flex items-center justify-between">
         <StatusPill status={p.status} />
         <div className="text-right">
-          <p className="text-[11px] text-ink-faint">
+          <p className="text-[12px] text-ink-faint">
             {view.kind === "sat"
               ? "Your SAT"
               : view.kind === "ib"
@@ -154,7 +154,7 @@ function HkScoreBar({ program: p }: { program: HkProgramAnalysis }) {
   const view = hkIndexView(p);
   if (view.kind === "stale") {
     return (
-      <div className="mt-3 rounded-lg border border-dashed border-line px-3 py-2 text-[11px] leading-relaxed text-ink-faint">
+      <div className="mt-3 rounded-lg border border-dashed border-line px-3 py-2 text-[12px] leading-relaxed text-ink-faint">
         {view.needsRefresh
           ? "Re-run your analysis to refresh this standing with the latest scoring."
           : "Add your IB total or SAT to see exactly where you stand against this programme's typical admitted range."}
@@ -182,11 +182,11 @@ function HkScoreBar({ program: p }: { program: HkProgramAnalysis }) {
 
 function InterviewBadge({ required }: { required: boolean }) {
   return required ? (
-    <span className="rounded bg-target-soft px-1.5 py-0.5 text-[11px] font-medium text-target-ink">
+    <span className="rounded bg-target-soft px-1.5 py-0.5 text-[12px] font-medium text-target-ink">
       Interview Compulsory
     </span>
   ) : (
-    <span className="rounded bg-line px-1.5 py-0.5 text-[11px] font-medium text-ink-soft">
+    <span className="rounded bg-line px-1.5 py-0.5 text-[12px] font-medium text-ink-soft">
       No Interview
     </span>
   );
@@ -207,7 +207,7 @@ function EnglishBadge({ status }: { status: HkProgramAnalysis["english"] }) {
   const c = config[status];
   return (
     <span
-      className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.className}`}
+      className={`rounded px-1.5 py-0.5 text-[12px] font-medium ${c.className}`}
     >
       {c.label}
     </span>

@@ -20,8 +20,8 @@ export function FinalCTA({ signedIn = false }: { signedIn?: boolean }) {
         <h2 className="text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
           See what you can enter this year.
         </h2>
-        <p className="mx-auto mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink/60">
-          One question — what year are you in — and you get the list.{" "}
+        <p className="mx-auto mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
+          One question, what year are you in, and you get the list.{" "}
           <span data-num className="font-medium text-ink-soft">
             {COMPETITIONS.length}
           </span>{" "}

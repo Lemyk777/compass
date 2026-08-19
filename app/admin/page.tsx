@@ -217,7 +217,7 @@ export default async function AdminPage() {
             <div>
               <h2 className="text-base font-semibold text-ink">Site traffic</h2>
               <p className="mt-0.5 text-xs text-ink-soft">
-                Everyone who arrives — signed in or not. How many, how long they
+                Everyone who arrives, signed in or not. How many, how long they
                 stay, whether they come back.
               </p>
             </div>
@@ -303,7 +303,7 @@ export default async function AdminPage() {
               <Funnel rows={funnel} base={funnelBase} />
             ) : (
               <p className="text-sm text-ink-faint">
-                Collecting data — bars fill once users move through onboarding.
+                Collecting data. Bars fill once users move through onboarding.
               </p>
             )}
           </Card>
@@ -405,7 +405,7 @@ function PartnerQueue({
                 <span data-num className="font-semibold text-ink">
                   {oldestDays === 1 ? "yesterday" : `${oldestDays} days ago`}
                 </span>
-                . They have not heard anything — no email is sent when an
+                . They have not heard anything, because no email is sent when an
                 application arrives or when you approve one.
               </>
             ) : (

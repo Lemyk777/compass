@@ -32,7 +32,7 @@ npm run dev            # dev server at http://localhost:3000
 npm run build          # production build — also runs ESLint + type-check (use as the main gate)
 npm run lint           # ESLint only
 npx tsc --noEmit       # type-check only
-npm run test:unit      # 281 unit tests for the deterministic engine (node:test, no key/network)
+npm run test:unit      # 282 unit tests for the deterministic engine (node:test, no key/network)
 npm run test:onboarding # 126 tests over the intake schema + server action (db/auth mocked, not in CI)
 npm run test:links     # every catalog URL; non-zero exit if any is DEAD
 npm run test:guide-links # the guide's official sources (ministries, portals)
@@ -184,6 +184,15 @@ Everything here is **deterministic** — no model call — and the design rules 
   not reason about this from line counts — grep the built chunk, or read the
   guard.
 - **Never show a countdown for a date we can't stand behind.** A confirmed date renders as a countdown; anything else is "Dates TBA" or "open now". Verify a date against the organiser's own page before setting `dateConfirmed: true`, and read what the page says — `test:links` cannot tell you a contest was discontinued.
+- **The catalog's prose has rules, and they live in
+  [lib/data/README.md](lib/data/README.md)** under "Adding an opportunity" —
+  read them before writing a `blurb`. In short: two sentences of different
+  lengths rather than one split by a dash, **no superlatives** (the guide's
+  registries are test-banned from them and the catalog is held to the same rule
+  by hand), never restate the cost the `CostPill` already shows, and no
+  admissions jargon. A blanket find-and-replace is the wrong tool here: the dash
+  between two numbers in `eligibility` is read by `parseEligibility`, and one
+  between two proper names is a join key.
 - **`pinned` is the ONLY editorial override in the ordering, and it reorders
   only.** Everything else about the order is derived from the student's profile
   (fit → confirmed date → days left). A pinned row still has to pass eligibility:
@@ -798,6 +807,10 @@ guide) → honest by design → the report, opt-in → organisations → FAQ →
     `text-ink/60`, i.e. **4.53:1 on the bare light page**, AA by three
     hundredths before any background existed. **An alpha modifier on `ink` is a
     colour nobody has checked** — reach for `ink-soft`/`ink-faint`, which are.
+    Fixing the hero paragraph left **19 others** on it, including six of this
+    page's own body paragraphs at `font-light`; they moved to `ink-soft` on
+    2026-08-19 and the landing's faintest text went 4.53 → 4.95:1. Only hover
+    states keep an alpha, because an interaction colour is not resting text.
   - **Vertical anchors are `vh`, never `%` of the section.** That section is
     ~900px on a desktop and **1635px at 375×812**, because below `lg` the
     message and the card stack. Percentage offsets put two of the three lights
@@ -931,7 +944,10 @@ names roles and reads `rgb(var(--token) / <alpha-value>)`.
 
 - **Values are CHANNEL TRIPLETS (`16 25 43`), never hex.** That form is what
   keeps Tailwind's opacity modifiers working, and the product has 256 of them
-  (`bg-accent-soft/25`, `text-ink/60`). Hex here breaks every one silently.
+  (`bg-accent-soft/25`, `border-ink/10`). Hex here breaks every one silently.
+  Note which examples those are: an alpha on a **fill or a border** is fine, an
+  alpha on **text** is a colour nobody has checked — see the `text-ink/60` rule
+  in the landing section.
 - **Anything read outside Tailwind must be `rgb(var(--x))`**, not the bare
   variable — a raw triplet is not a colour. That covers Recharts fills,
   `lib/tiers.ts`, and inline `style`.
@@ -972,7 +988,15 @@ names roles and reads `rgb(var(--token) / <alpha-value>)`.
 Colour was already tokenised per theme; type was not, and the gap was the whole
 reason the dark theme read as harder work. **Contrast was never the problem** —
 every text token on `/opportunities` measured 5.48:1 or better while the
-complaint stood. Four rules, all test-enforced:
+complaint stood.
+
+**That has now been true three times.** "The text is small, dark and dim" came
+back on 2026-08-19; measured across three pages in both themes it was again
+**zero WCAG failures** and nothing under 11px, and the real defect was that
+14px was the body size. So: when someone says the text is hard to read, measure
+the SIZE distribution as well as the ratios, and measure it as a share of the
+page's characters rather than a count of elements — a page can be 93% 14px and
+still show a tidy element histogram. Six rules, all test-enforced:
 
 - **`--type-tracking-body` is a theme token** (`app/globals.css`): 0 in light,
   `0.008em` in dark. Light text on a dark ground **blooms** — glyphs spread into
@@ -983,10 +1007,34 @@ complaint stood. Four rules, all test-enforced:
   tracking on body copy, which is what makes that insertion point clean. Bounded
   at 0.02em by a test: past that it stops being optical compensation and starts
   being letter-spacing a reader can see.
-- **11px is the floor, everywhere.** 69 labels sat at 10px and four at 9px,
-  across 21 files — the report's programme cards, four country breakdowns, the
-  admin tables, the guide's badges, the landing's own hero preview. A floor that
-  holds in some components is not a floor, so the test walks the whole tree.
+- **12px is the floor, everywhere** (was 11 until 2026-08-19). 69 labels sat at
+  10px and four at 9px, across 21 files — the report's programme cards, four
+  country breakdowns, the admin tables, the guide's badges, the landing's own
+  hero preview. A floor that holds in some components is not a floor, so the
+  test walks the whole tree.
+  **That test had never fired.** It was written `/text-[(d+(?:.d+)?)px]/`: the
+  backslashes were eaten, so `[…]` was a character CLASS, nothing was captured,
+  and `NaN < 11` is false. Same failure as the bundle guard written as a
+  template literal where `\s` became the letter s — both fail OPEN and both were
+  quoted as guarantees. It now covers `rem` as well as `px`, and a second test
+  asserts it BITES on `text-[10px]` and `text-[0.7rem]`. Never ship one of these
+  without the test that proves it matches.
+- **The scale is set in `tailwind.config.ts`, and its small end sits one step
+  above Tailwind's stock**: xs 13, sm 15, base 17, lg 19. Measured before the
+  change: 93.5% of a country profile's 9,000 characters were at 14px or below,
+  81% at exactly 14px; `/opportunities` 52%, `/demo` 81%. Repo-wide there were
+  411 `text-sm` and 339 `text-xs` against 100 `text-base`, so **14px was the
+  body size and 12px the second voice** — and 118 labels were pinned at exactly
+  the old floor, which is "not illegal" rather than "readable".
+  One config edit moves everything **because every type test is written against
+  Tailwind CLASS names, not pixel values**. Check that still holds before
+  reaching for it again.
+- **Long-form prose is `text-base`, and `max-w-[54ch]` is what marks it.** A
+  measure cap only ever appears on a column of continuous reading; a card
+  summary is `line-clamp`ed instead. So the cap decides which columns get the
+  step, and a paired heading has to move with its body or the body outgrows its
+  own label. Raising the size does **not** change the measure — `ch` scales with
+  the font — and it was re-measured at 70.5 real characters per full line after.
 - **A card needs a step, and size alone should not carry it.** The two cards
   that carry the product both measured flat: the opportunity card ran title 18 /
   body 15.2 (a step of **1.18**), and the guide card — the navigation for 88
@@ -994,6 +1042,9 @@ complaint stood. Four rules, all test-enforced:
   in size *and* 200 in weight now. No contrast test could ever have caught
   either, which is the point: "everything is nearly the same size, nearly the
   same distance apart" is what a reader means by a wall of text.
+  Those pixel figures are what was measured in 2026-08-14 and are one step
+  smaller than what renders today; the **ratio** is the rule, and it survived
+  the scale change because the test names classes rather than pixels.
 - **Group facts that are the same kind of fact.** The opportunity card had five
   text tiers 4–10px apart and therefore no groups. Eligibility and the deadline
   are both *the terms of entry*; they are one block now, set off from the

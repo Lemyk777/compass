@@ -131,7 +131,7 @@ export default async function GuideFromHomePage({
                 ] as const
               ).map(([label, body]) => (
                 <div key={label} className="min-w-0">
-                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+                  <dt className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
                     {label}
                   </dt>
                   <dd className="mt-1 text-sm leading-relaxed text-ink-soft">
@@ -169,7 +169,7 @@ export default async function GuideFromHomePage({
         <h2 className="text-sm font-semibold text-ink">
           &ldquo;But I don&rsquo;t know how to do any of this yet&rdquo;
         </h2>
-        <div className="mt-1.5 max-w-[54ch] space-y-2.5 text-sm leading-relaxed text-ink-soft">
+        <div className="mt-1.5 max-w-[54ch] space-y-2.5 text-base leading-relaxed text-ink-soft">
           <p>
             Neither did anyone who does. The honest answer to &ldquo;how did you
             learn this?&rdquo; is almost always the same one: they entered
@@ -182,12 +182,12 @@ export default async function GuideFromHomePage({
             courses and every finished competition leaves the winners&rsquo; own
             notebooks behind, explaining what they did. Open-source projects
             have their whole review history in public. Nobody is waiting for you
-            to qualify first — you get in, you get stuck, you read, and that is
+            to qualify first. You get in, you get stuck, you read, and that is
             the entire loop.
           </p>
           <p>
             So the useful first move is never a course. It is a bad submission,
-            a small pull request, a rough draft — something real and finished
+            a small pull request, a rough draft: something real and finished
             enough to get feedback on. The people whose profiles look
             intimidating got them by doing that repeatedly, not by preparing
             longer.
@@ -195,9 +195,9 @@ export default async function GuideFromHomePage({
         </div>
       </section>
 
-      <p className="max-w-[54ch] text-pretty text-sm leading-relaxed text-ink-faint">
+      <p className="max-w-[54ch] text-pretty text-base leading-relaxed text-ink-faint">
         Leaving is one route. It is not the only one, and for plenty of students
-        it is not the best one — a strong record built from where you are is
+        it is not the best one. A strong record built from where you are is
         what makes leaving possible later, if you still want to.
       </p>
 

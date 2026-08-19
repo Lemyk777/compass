@@ -168,7 +168,7 @@ function buildReasoning(
       (p.has_guaranteed_threshold && p.guaranteed_threshold != null
         ? ` (with Early Admission at ${p.guaranteed_threshold}+)`
         : ` (last recorded cutoff: ${p.historical_sat_cutoff})`) +
-      `, and you haven't added an SAT yet — so we can't score your real position. ` +
+      `, and you haven't added an SAT yet, so we can't score your real position. ` +
       `This shows as a reach only because no score is on file, not because of a weak one. ` +
       `Add your SAT to your profile (or register for the next sitting) and re-run the analysis for a real read.`
     );
@@ -178,10 +178,10 @@ function buildReasoning(
     return (
       `${p.university} uses an Early Admission system (Early Enrollment). ` +
       `Your SAT ${userSAT} clears their guaranteed-admission threshold (${p.guaranteed_threshold}). ` +
-      `Under this system there is no ranking competition at this stage — applicants ` +
+      `Under this system there is no ranking competition at this stage; applicants ` +
       `who meet the threshold claim seats from the ${p.extra_ue_quota}-seat ` +
       `Extra-UE quota in application order, before the main ranking phase even opens. ` +
-      `Re-sitting the SAT for a higher score has zero mathematical value here — ` +
+      `Re-sitting the SAT for a higher score has zero mathematical value here, ` +
       `you have already hit the ceiling. Two honest caveats: seats last only while ` +
       `the quota does, so apply as early as the portal opens; and thresholds are set ` +
       `per-year in the Bando, so confirm the current year's document before relying on this. ` +
@@ -197,7 +197,7 @@ function buildReasoning(
   // Did they fail a guaranteed threshold?
   const thresholdNote =
     p.has_guaranteed_threshold && p.guaranteed_threshold != null
-      ? ` (Note: Early Admission threshold is ${p.guaranteed_threshold} — your SAT ${userSAT} does not currently clear it, so you enter the standard ranking.)`
+      ? ` (Note: Early Admission threshold is ${p.guaranteed_threshold}, and your SAT ${userSAT} does not currently clear it, so you enter the standard ranking.)`
       : "";
 
   if (status === "likely") {
@@ -208,7 +208,7 @@ function buildReasoning(
       `cutoff (${p.historical_sat_cutoff}), placing you mathematically above that benchmark. ` +
       `You are competing for ${quotaStr}. ` +
       volatilityNote +
-      ` Chances are strong — maintain backup options and watch for the portal.`
+      ` Chances are strong. Maintain backup options and watch for the portal.`
     );
   }
 
@@ -253,18 +253,18 @@ function volatilityExplanation(
   if (volatility === "high") {
     return (
       `Critical caveat: with only ${quota} seat${quota === 1 ? "" : "s"}, ` +
-      `this system is highly volatile — one applicant with a 30-point higher SAT ` +
+      `this system is highly volatile: one applicant with a 30-point higher SAT ` +
       `can shift the cutoff entirely. Historical data here is directional, not predictive.`
     );
   }
   if (volatility === "moderate") {
     return (
-      `With ${quota} seats, year-on-year cutoff variation of ±50 SAT points is normal — ` +
+      `With ${quota} seats, year-on-year cutoff variation of ±50 SAT points is normal, ` +
       `treat the historical benchmark as a guide, not a guarantee.`
     );
   }
   return (
-    `The ${quota}-seat quota gives the statistics reasonable stability — ` +
+    `The ${quota}-seat quota gives the statistics reasonable stability, ` +
     `historical cutoffs are a solid benchmark here.`
   );
 }
@@ -273,7 +273,7 @@ function volatilityExplanation(
 
 function buildRoadmap(p: ItalianProgram, dsuFit: ItalyDSUFit): string[] {
   const steps: string[] = [
-    "Obtain a Declaration of Value (Dichiarazione di Valore) from the Italian embassy in your country — this is the official recognition of your secondary education. Allow 2–3 months.",
+    "Obtain a Declaration of Value (Dichiarazione di Valore) from the Italian embassy in your country. This is the official recognition of your secondary education. Allow 2–3 months.",
     `Register on the universitaly.it portal and complete the pre-enrollment form before the ${p.university} Bando deadline.`,
     "Prepare an official transcript and have it apostilled / legalized.",
     "Obtain an Italian language certificate (B2 minimum) if the program is Italian-taught, or provide English proficiency evidence (IELTS / TOEFL) for English-taught programs.",
@@ -287,13 +287,13 @@ function buildRoadmap(p: ItalianProgram, dsuFit: ItalyDSUFit): string[] {
 
   if (!p.is_private) {
     steps.push(
-      "Apply for a student visa (Type D — study) at the Italian consulate in your country once you receive your conditional offer letter. Begin this process at least 90 days before your program starts."
+      "Apply for a student visa (Type D, study) at the Italian consulate in your country once you receive your conditional offer letter. Begin this process at least 90 days before your program starts."
     );
   }
 
   if (p.is_private) {
     steps.push(
-      "Apply through the university's own portal (not universitaly.it). Bocconi has its own scholarship program — apply separately from your admission application."
+      "Apply through the university's own portal (not universitaly.it). Bocconi has its own scholarship program, so apply separately from your admission application."
     );
   }
 

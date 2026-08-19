@@ -168,7 +168,7 @@ export function BeatPair({ left, right }: { left: Beat; right: Beat }) {
           first thing they ever do here. */}
       {error && (
         <p role="status" className="mt-2 text-xs leading-relaxed text-reach-ink">
-          {error} Nothing was lost — press again.
+          {error} Nothing was lost. Press again.
         </p>
       )}
     </section>

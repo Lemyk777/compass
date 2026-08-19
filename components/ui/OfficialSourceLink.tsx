@@ -14,7 +14,7 @@ export function OfficialSourceLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 rounded text-[11px] font-medium text-accent-ink transition-colors hover:text-ink focus-visible:focus-ring"
+      className="inline-flex items-center gap-1 rounded text-[12px] font-medium text-accent-ink transition-colors hover:text-ink focus-visible:focus-ring"
     >
       {label}
       <ExternalIcon />

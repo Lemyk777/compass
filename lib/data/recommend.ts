@@ -83,7 +83,7 @@ const TIER_RANK: Record<Tier, number> = { reach: 0, target: 1, likely: 2 };
 
 function tierPhrase(tier: Tier): string {
   if (tier === "reach") return "a reach for your profile, but a worthwhile aim";
-  if (tier === "likely") return "comfortably within reach — a strong safety";
+  if (tier === "likely") return "comfortably within reach, a strong safety";
   return "right in your admitted range";
 }
 
@@ -144,7 +144,7 @@ export function recommendUniversities(
     const facLabel = field.faculty ? FACULTY_LABEL[field.faculty] : null;
     const lead =
       facLabel && field.score >= 7
-        ? `Strong in ${facLabel} — one of your fields. `
+        ? `Strong in ${facLabel}, one of your fields. `
         : facLabel
           ? `Covers ${facLabel}, your field. `
           : "";

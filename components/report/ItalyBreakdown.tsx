@@ -35,14 +35,14 @@ export function ItalyBreakdown({ programs }: Props) {
             </p>
             <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
               Italian state universities use two distinct admission systems that
-              operate simultaneously. Your analysis below separates them — read
+              operate simultaneously. Your analysis below separates them. Read
               each card to understand exactly how the rules work for that
               specific program.
             </p>
             {/* Government source — Italy publishes the official Extra-UE rules and
                 pre-enrollment procedure here, updated every cycle. */}
             <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-line pt-2.5">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+              <span className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
                 Official source
               </span>
               {ITALY_GOV_SOURCES.map((s) => (
@@ -60,7 +60,7 @@ export function ItalyBreakdown({ programs }: Props) {
             label="Early Admission Track"
             badge="Guaranteed Threshold"
             badgeColor="likely"
-            description="These programs run an Early Enrollment system: clear the threshold and there is no ranking competition — seats are claimed from the limited Extra-UE quota in application order. Apply as soon as the portal opens, and confirm the threshold in the current year's Bando."
+            description="These programs run an Early Enrollment system: clear the threshold and there is no ranking competition. Seats are claimed from the limited Extra-UE quota in application order. Apply as soon as the portal opens, and confirm the threshold in the current year's Bando."
           />
           <div className="grid gap-4 sm:grid-cols-2">
             {guaranteed.map((p) => (
@@ -113,7 +113,7 @@ function SectionHeader({
           {label}
         </h3>
         <span
-          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-widest ${
+          className={`rounded-full px-2 py-0.5 text-[12px] font-semibold uppercase tracking-widest ${
             badgeColor === "likely"
               ? "bg-likely-soft text-likely-ink"
               : "bg-reach-soft text-reach-ink"
@@ -140,7 +140,7 @@ function GuaranteedCard({ program: p }: { program: ItalyProgramAnalysis }) {
       <div className="p-4 pb-3">
         {/* University + program */}
         <div className="mb-3">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-ink-faint">
+          <p className="text-[12px] font-medium uppercase tracking-widest text-ink-faint">
             {p.city} · {levelLabel(p.level)} · {p.language}
           </p>
           <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">
@@ -153,7 +153,7 @@ function GuaranteedCard({ program: p }: { program: ItalyProgramAnalysis }) {
         <div className="mb-3 flex items-center justify-between">
           <StatusPill status={p.status} />
           <div className="text-right">
-            <p className="text-[11px] text-ink-faint">Your SAT</p>
+            <p className="text-[12px] text-ink-faint">Your SAT</p>
             <p className="text-base font-bold tabular-nums text-ink">
               {p.user_sat}
             </p>
@@ -216,7 +216,7 @@ function GraduatoriaCard({ program: p }: { program: ItalyProgramAnalysis }) {
       <div className="p-4 pb-3">
         {/* University + program */}
         <div className="mb-3">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-ink-faint">
+          <p className="text-[12px] font-medium uppercase tracking-widest text-ink-faint">
             {p.city} · {levelLabel(p.level)} · {p.language}
           </p>
           <p className="mt-0.5 text-sm font-semibold leading-snug text-ink">
@@ -229,7 +229,7 @@ function GraduatoriaCard({ program: p }: { program: ItalyProgramAnalysis }) {
         <div className="mb-3 flex items-center justify-between">
           <StatusPill status={p.status} />
           <div className="text-right">
-            <p className="text-[11px] text-ink-faint">vs. cutoff</p>
+            <p className="text-[12px] text-ink-faint">vs. cutoff</p>
             {noSat ? (
               <p className="text-base font-bold text-ink-faint">—</p>
             ) : (
@@ -247,8 +247,8 @@ function GraduatoriaCard({ program: p }: { program: ItalyProgramAnalysis }) {
 
         {/* Score bar */}
         {noSat ? (
-          <p className="rounded-lg bg-surface px-3 py-2 text-[11px] leading-relaxed text-ink-soft">
-            No SAT on file — this program ranks applicants strictly by SAT, so
+          <p className="rounded-lg bg-surface px-3 py-2 text-[12px] leading-relaxed text-ink-soft">
+            No SAT on file. This program ranks applicants strictly by SAT, so
             add your score to see your real position against the cutoff (
             {p.historical_cutoff}).
           </p>
@@ -314,13 +314,13 @@ function ItalyRoadmap({ programs }: { programs: ItalyProgramAnalysis[] }) {
         Italian Application Roadmap
       </p>
       <p className="mb-4 text-xs text-ink-faint">
-        These steps apply globally to your Italian applications — complete them
+        These steps apply globally to your Italian applications, so complete them
         once, not per university.
       </p>
       <ol className="space-y-3">
         {steps.map((step, i) => (
           <li key={i} className="flex gap-3">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-bold text-surface">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[12px] font-bold text-surface">
               {i + 1}
             </span>
             <p className="text-xs leading-relaxed text-ink-soft">{step}</p>
@@ -361,7 +361,7 @@ function StatusPill({ status }: { status: ItalyProgramAnalysis["status"] }) {
   const c = config[status];
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${c.className}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-semibold ${c.className}`}
     >
       {c.label}
     </span>
@@ -387,7 +387,7 @@ function ThresholdBar({
 
   return (
     <div>
-      <p className="mb-1 text-[11px] text-ink-faint">{label}</p>
+      <p className="mb-1 text-[12px] text-ink-faint">{label}</p>
       <div className="relative h-6">
         <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-line" />
         {/* Threshold marker */}
@@ -398,7 +398,7 @@ function ThresholdBar({
           <div className="h-6 w-px bg-ink-faint" />
         </div>
         <p
-          className="absolute -bottom-4 text-[11px] text-ink-faint"
+          className="absolute -bottom-4 text-[12px] text-ink-faint"
           style={{
             left: `${thresholdPct}%`,
             transform: "translateX(-50%)",
@@ -414,11 +414,11 @@ function ThresholdBar({
           style={{ left: `${Math.max(2, Math.min(98, userPct))}%` }}
         />
       </div>
-      <p className="mt-5 text-[11px] text-ink-faint">
+      <p className="mt-5 text-[12px] text-ink-faint">
         {cleared
-          ? `Your SAT ${userSAT} clears the threshold — a seat is yours while the Extra-UE quota lasts, so apply early.`
+          ? `Your SAT ${userSAT} clears the threshold. A seat is yours while the Extra-UE quota lasts, so apply early.`
           : userSAT <= 0
-            ? `No SAT on file — add your score to see where you stand.`
+            ? `No SAT on file. Add your score to see where you stand.`
             : `${threshold - userSAT} points below the Early Admission threshold.`}
       </p>
     </div>
@@ -435,7 +435,7 @@ function ScoreBar({ userSAT, cutoff }: { userSAT: number; cutoff: number }) {
 
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between text-[11px] text-ink-faint">
+      <div className="mb-1 flex items-center justify-between text-[12px] text-ink-faint">
         <span>SAT position vs. historical cutoff</span>
         <span>
           {above ? "+" : ""}
@@ -450,7 +450,7 @@ function ScoreBar({ userSAT, cutoff }: { userSAT: number; cutoff: number }) {
           style={{ left: `${cutoffPct}%` }}
         />
         <p
-          className="absolute -bottom-4 text-[11px] text-ink-faint"
+          className="absolute -bottom-4 text-[12px] text-ink-faint"
           style={{ left: `${cutoffPct}%`, transform: "translateX(-50%)" }}
         >
           {cutoff}
@@ -470,7 +470,7 @@ function ScoreBar({ userSAT, cutoff }: { userSAT: number; cutoff: number }) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[11px] text-ink-faint">{label}</p>
+      <p className="text-[12px] text-ink-faint">{label}</p>
       <p className="text-xs font-semibold tabular-nums text-ink">{value}</p>
     </div>
   );
@@ -500,8 +500,8 @@ function VolatilityBadge({
   const c = config[volatility];
   return (
     <span
-      className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold ${c.className}`}
-      title={`Only ${quota} Extra-UE seats — year-on-year cutoff swings can be large`}
+      className={`ml-auto rounded-full px-2 py-0.5 text-[12px] font-semibold ${c.className}`}
+      title={`Only ${quota} Extra-UE seats: year-on-year cutoff swings can be large`}
     >
       {c.label}
     </span>
@@ -512,7 +512,7 @@ function DSUBadge({ fit, feeEur }: { fit: ItalyDSUFit; feeEur: number }) {
   if (fit === "not_applicable") {
     return (
       <div>
-        <p className="text-[11px] text-ink-faint">Annual fee</p>
+        <p className="text-[12px] text-ink-faint">Annual fee</p>
         <p className="text-xs font-semibold text-ink">
           €{feeEur.toLocaleString()}
         </p>
@@ -539,9 +539,9 @@ function DSUBadge({ fit, feeEur }: { fit: ItalyDSUFit; feeEur: number }) {
 
   return (
     <div>
-      <p className="text-[11px] text-ink-faint">Scholarship</p>
+      <p className="text-[12px] text-ink-faint">Scholarship</p>
       <span
-        className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${colors[fit]}`}
+        className={`inline-block rounded-full px-2 py-0.5 text-[12px] font-semibold ${colors[fit]}`}
       >
         {labels[fit]}
       </span>

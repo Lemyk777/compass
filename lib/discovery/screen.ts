@@ -203,7 +203,7 @@ export function screenDedup(
     // "Known" covers the catalog, the pending queue AND everything already
     // rejected — a candidate an admin has turned down must never come back
     // round on the next run and be reviewed twice.
-    return [{ code: "duplicate", severity: "drop", detail: `already known — "${candidate.name}"` }];
+    return [{ code: "duplicate", severity: "drop", detail: `already known: "${candidate.name}"` }];
   }
 
   const url = normalizeUrl(candidate.url);
@@ -224,7 +224,7 @@ export function screenDedup(
     warnings.push({
       code: "same_site",
       severity: "flag",
-      detail: `same site as ${onHost.slice(0, 2).join(", ")}${onHost.length > 2 ? ` +${onHost.length - 2}` : ""} — check it is a different programme`,
+      detail: `same site as ${onHost.slice(0, 2).join(", ")}${onHost.length > 2 ? ` +${onHost.length - 2}` : ""}. Check it is a different programme`,
     });
   }
 
@@ -270,14 +270,14 @@ export function screenHost(url: string, region: string | null): ScreenWarning[] 
     return [{
       code: "aggregator",
       severity: "drop",
-      detail: `${agg} is a listing site, not the organiser — the official page is what a student has to be able to check`,
+      detail: `${agg} is a listing site, not the organiser. The official page is what a student has to be able to check`,
     }];
   }
 
   const social = hostMatches(host, SOCIAL_HOSTS);
   if (social) {
     return region
-      ? [{ code: "social_only", severity: "flag", detail: `the only address is ${social} — acceptable for a local event, confirm the organiser runs it` }]
+      ? [{ code: "social_only", severity: "flag", detail: `the only address is ${social}. Acceptable for a local event, but confirm the organiser runs it` }]
       : [{ code: "social_only", severity: "drop", detail: `${social} is not an official site for a programme open worldwide` }];
   }
 
@@ -344,7 +344,7 @@ export function screenPage(
     return [{
       code: "name_absent",
       severity: "flag",
-      detail: "the page returned almost no readable text (JS-rendered or bot-walled) — nothing could be checked on it",
+      detail: "the page returned almost no readable text (JS-rendered or bot-walled), so nothing could be checked on it",
     }];
   }
 
@@ -370,7 +370,7 @@ export function screenPage(
     warnings.push({
       code: "name_absent",
       severity: "flag",
-      detail: `the page never names "${candidate.name}" — it may be the organisation's homepage rather than the programme`,
+      detail: `the page never names "${candidate.name}", so it may be the organisation's homepage rather than the programme`,
     });
   }
 
@@ -380,7 +380,7 @@ export function screenPage(
     warnings.push({
       code: "country_locked",
       severity: "flag",
-      detail: `restricted by country: "${usLock ?? countryLock}" — set an explicit gate or reject`,
+      detail: `restricted by country: "${usLock ?? countryLock}". Set an explicit gate or reject`,
     });
   }
 
@@ -407,7 +407,7 @@ export function screenEligibility(eligibility: string | null | undefined): Scree
     return [{
       code: "gate_unstated",
       severity: "flag",
-      detail: "no eligibility stated — 'can I enter this?' is the first thing a student asks, and an unverified card can't answer it",
+      detail: "no eligibility stated, and 'can I enter this?' is the first thing a student asks, so an unverified card can't answer it",
     }];
   }
 
@@ -420,7 +420,7 @@ export function screenEligibility(eligibility: string | null | undefined): Scree
     return [{
       code: "unreachable_gate",
       severity: "flag",
-      detail: `"${eligibility.slice(0, 120)}" parses to a rule no school student passes — needs an explicit gate, or it isn't for our audience`,
+      detail: `"${eligibility.slice(0, 120)}" parses to a rule no school student passes. Needs an explicit gate, or it isn't for our audience`,
     }];
   }
 

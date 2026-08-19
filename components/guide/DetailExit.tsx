@@ -101,12 +101,12 @@ export function DetailExit({
         ref={inline}
         href={href}
         onClick={onClick}
-        aria-label={`Close — back to ${label}`}
+        aria-label={`Close, back to ${label}`}
         className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-sm font-medium text-ink-faint transition-colors hover:bg-card hover:text-ink focus-visible:focus-ring"
       >
         <CloseIcon />
         Close
-        <kbd className="ml-0.5 hidden rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] font-medium text-ink-faint sm:inline">
+        <kbd className="ml-0.5 hidden rounded border border-line bg-surface px-1.5 py-0.5 text-[12px] font-medium text-ink-faint sm:inline">
           Esc
         </kbd>
       </Link>

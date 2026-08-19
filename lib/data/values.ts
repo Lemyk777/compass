@@ -57,7 +57,7 @@ export const VALUES_QUIZ: ValuesQuestion[] = [
     options: [
       {
         id: "pay",
-        label: "It pays well — I can support myself and the people I care about",
+        label: "It pays well, and I can support myself and the people I care about",
         weights: { money: 2 },
       },
       {
@@ -67,12 +67,12 @@ export const VALUES_QUIZ: ValuesQuestion[] = [
       },
       {
         id: "own",
-        label: "I answer to myself — my own hours, my own projects",
+        label: "I answer to myself, my own hours, my own projects",
         weights: { freedom: 2 },
       },
       {
         id: "steady",
-        label: "It's steady — I'll always be needed, wherever I end up",
+        label: "It's steady, and I'll always be needed, wherever I end up",
         weights: { stability: 2 },
       },
     ],

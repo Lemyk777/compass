@@ -244,7 +244,7 @@ export default async function AdminOpportunitiesPage() {
                         {fieldsLabel(c.fields)} · {c.level} · {c.tier} ·{" "}
                         {c.category}
                         {c.region && (
-                          <span className="ml-1.5 rounded-full bg-accent-soft px-1.5 py-0.5 text-[11px] font-semibold text-accent-ink">
+                          <span className="ml-1.5 rounded-full bg-accent-soft px-1.5 py-0.5 text-[12px] font-semibold text-accent-ink">
                             Local · {c.city ?? regionLabel(c.region)}
                           </span>
                         )}
@@ -275,7 +275,7 @@ export default async function AdminOpportunitiesPage() {
                       {warnings.map((w, i) => (
                         <li key={i} className="text-xs text-ink-soft">
                           <span
-                            className={`mr-1.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
+                            className={`mr-1.5 rounded-full px-1.5 py-0.5 text-[12px] font-semibold ${
                               WARNING_RANK[w.code] <= 2
                                 ? "bg-reach-soft text-ink"
                                 : "bg-surface text-ink-soft"
@@ -297,7 +297,7 @@ export default async function AdminOpportunitiesPage() {
                     >
                       {c.deadline ? `${c.deadline} · ` : ""}
                       {c.event_window}
-                      {" — "}
+                      {" · "}
                       <span
                         className={
                           c.date_confirmed
@@ -331,7 +331,7 @@ export default async function AdminOpportunitiesPage() {
                     action={approveCandidate.bind(null, c.id)}
                     className="mt-3 flex flex-wrap items-end gap-2 border-t border-line pt-3"
                   >
-                    <label className="flex flex-col gap-1 text-[11px] text-ink-faint">
+                    <label className="flex flex-col gap-1 text-[12px] text-ink-faint">
                       What it costs
                       <select
                         name="cost"
@@ -345,7 +345,7 @@ export default async function AdminOpportunitiesPage() {
                         ))}
                       </select>
                     </label>
-                    <label className="flex min-w-[16rem] flex-1 flex-col gap-1 text-[11px] text-ink-faint">
+                    <label className="flex min-w-[16rem] flex-1 flex-col gap-1 text-[12px] text-ink-faint">
                       One sentence about the money (optional)
                       <input
                         type="text"

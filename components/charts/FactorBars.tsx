@@ -68,7 +68,7 @@ export function FactorBars({
               </summary>
               <div className="mt-2.5 pl-4 border-l-2 border-line/50 space-y-2">
                 {f.rubric_tier && (
-                  <p className="text-[11px] font-semibold text-ink-soft uppercase tracking-wide">
+                  <p className="text-[12px] font-semibold text-ink-soft uppercase tracking-wide">
                     Tier: {f.rubric_tier}
                   </p>
                 )}

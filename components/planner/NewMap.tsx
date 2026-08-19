@@ -41,7 +41,7 @@ export function NewMap({ empty = false }: { empty?: boolean }) {
           </h2>
           <p className="mt-1 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
             A map is one question broken into branches. Put your options on it,
-            and what each one would actually need — then send any branch to your
+            and what each one would actually need. Then send any branch to your
             plan when you decide.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">

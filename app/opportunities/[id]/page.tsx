@@ -42,7 +42,7 @@ function previewLine(c: Competition): string {
     ? c.dateConfirmed
       ? `Closes ${formatDate(c.deadline)}`
       : "Dates to be confirmed"
-    : "Open now — no deadline";
+    : "Open now, no deadline";
   const who = c.eligibility ?? "Open to school students";
   return `${who} · ${cost.short} · ${when}. ${c.blurb}`;
 }
@@ -94,9 +94,9 @@ export default async function OpportunityPage({
       label: "When it closes",
       body: o.deadline
         ? o.dateConfirmed
-          ? `${formatDate(o.deadline)}${o.window ? ` — ${o.window}` : ""}`
+          ? `${formatDate(o.deadline)}${o.window ? ` · ${o.window}` : ""}`
           : `We could not confirm this year's date against the organiser's own page, so we are not showing a countdown for it.${o.window ? ` Last published: ${o.window}.` : ""}`
-        : "No deadline — this one is open whenever you are ready to start.",
+        : "No deadline. This one is open whenever you are ready to start.",
       tone: o.deadline && !o.dateConfirmed ? "warn" : undefined,
     },
   ];
@@ -155,7 +155,7 @@ export default async function OpportunityPage({
                     : "border-line bg-card"
                 }`}
               >
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+                <dt className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
                   {f.label}
                 </dt>
                 <dd className="mt-1.5 text-sm leading-relaxed text-ink-soft">
@@ -178,8 +178,8 @@ export default async function OpportunityPage({
           </div>
 
           <p className="max-w-[54ch] text-sm leading-relaxed text-ink-faint">
-            Sending this to someone sends the four facts above, not just a name
-            — they will see who can enter and what it costs before they decide.
+            Sending this to someone sends the four facts above, not just a name.
+            They will see who can enter and what it costs before they decide.
           </p>
         </main>
       </Shell>
