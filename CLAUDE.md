@@ -10,8 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > as opposed to what it is. §8 also ends with a list of **problems** that are
 > nobody's work item, the first of which is that **three** source-scanning
 > guards in this repo have failed OPEN — the third found by grepping 433 regex
-> literals for the signature — and that a correctly-written guard still needs
-> one assertion proving it bites.
+> literals for the signature. The eleven ban patterns now live in one `BAN`
+> table with a typed fixture each, so one cannot be added without a proof that
+> it bites.
 >
 > **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine findings
 > with evidence. **Two are closed and seven are open** (status table at the top
