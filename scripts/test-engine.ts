@@ -1575,6 +1575,180 @@ test("both themes clear AA — every ink on every surface it lands on", () => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// The ban patterns, in ONE place, because three of them have shipped broken.
+//
+// Every guard below is the same shape: walk the tree, collect offenders, assert
+// the list is empty. **That shape fails OPEN.** A regex that matches nothing
+// collects nothing, the list is empty, and CI goes green — which is
+// indistinguishable from the rule holding. It has happened three times here:
+//
+//   • the bundle guard, written as a template literal, where `\s` became the
+//     letter s;
+//   • the type floor, `/text-[(d+(?:.d+)?)px]/`, whose backslashes were eaten,
+//     so `[…]` was a character CLASS and the comparison was against `NaN`;
+//   • the beat word count, `split(/s+/)`, which split on runs of the letter s
+//     and read 9 words where the real maximum was 23.
+//
+// All three were quoted as guarantees while enforcing nothing.
+//
+// So the patterns live here and the guards reference them, and one test at the
+// end of this block proves each one catches a line it must catch and ignores a
+// line it must not. **The indirection is the point**: a bite test written
+// against a COPY of a regex proves only that the copy works, and a copy drifts.
+//
+// `BAN_FIXTURES` is typed as a Record over `keyof typeof BAN`, so adding a
+// pattern without a fixture does not compile. That is the part that survives
+// somebody in a hurry.
+const BAN = {
+  /** A literal hex freezes a colour to one theme. */
+  frozenHex: /#[0-9A-Fa-f]{6}\b/g,
+  /** `reach`/`target`/`likely` DEFAULT is a fill (3:1); text needs `-ink`. */
+  tierAsText: /text-(reach|target|likely)(?![-\w])/,
+  /** `accent` DEFAULT measures 4.28:1 on the page — a fill, not a foreground. */
+  accentAsText: /(?<![-\w:])text-accent(?![-\w])/,
+  /** A `!` escape at a call site is a merge bug being forced, not a style. */
+  bangEscape: /(?<=[\s"'`{])!(?:[a-z-]+:)*[a-z][a-z0-9]*-[a-z0-9./[\]%-]+/g,
+  /** A hardcoded offset paints a white halo on the dark theme. */
+  ringOffset: /ring-offset-(white|black)\b/,
+  /** The directive disables the NEXT line, so a comment under it disables nothing. */
+  eslintDisable: /^\s*(\/\/|\/\*|\{\s*\/\*)\s*eslint-disable-next-line\b/,
+  /** The landing page ships no framer-motion; decoration does not buy hydration. */
+  framerMotion: /framer-motion/,
+  /** An animated blur re-rasterises every frame and cannot be composited. */
+  animatedBlur: /\bblur-(sm|md|lg|xl|2xl|3xl)\b/,
+  /** A band that caps at 6xl does not ramp with the shell. */
+  ungrampedBand: /className="([^"]*\bmax-w-6xl\b[^"]*)"/g,
+  /** Hardcoded type, in px or rem, checked against the floor. */
+  hardcodedType: /text-\[(\d+(?:\.\d+)?)(px|rem)\]/g,
+  /** A client component reading the clock disagrees with the server's `todayISO`. */
+  clockInClient: /new Date\(\s*\)/,
+} as const;
+
+/**
+ * For each ban: lines it MUST catch, and lines it must leave alone.
+ *
+ * **`ignores` is a list, and it is the half that does the work.** The first
+ * version of this test had one `ignores` line per pattern and it did not catch
+ * a deliberate break: `tierAsText` was changed from `(?![-\w])` to `(?![-w])`,
+ * losing a backslash exactly the way the three real failures did, and both
+ * fixtures still behaved — because `text-reach` and `text-reach-ink` do not
+ * distinguish `\w` from the letter w. Only a third word character does.
+ *
+ * So each `ignores` list must contain a **boundary** case, not just an obviously
+ * different line: the near-miss that the pattern is supposed to exclude by a
+ * single character of lookahead or lookbehind. A fixture that is far away from
+ * the boundary proves nothing about where the boundary is.
+ */
+const BAN_FIXTURES: Record<
+  keyof typeof BAN,
+  { catches: string[]; ignores: string[] }
+> = {
+  frozenHex: {
+    catches: ['const c = "#1A2B3C";', 'border: "#fff000"'],
+    // Five digits is not a colour, and the token form is the correct one.
+    ignores: ["rgb(var(--ink))", 'const c = "#1A2B3";'],
+  },
+  tierAsText: {
+    catches: ['<p className="text-reach">', 'className="md:text-target"'],
+    // `-ink` is the correct token; `text-targeted` is the word-character
+    // boundary that a lost backslash in `\w` stops excluding.
+    ignores: [
+      '<p className="text-reach-ink">',
+      'className="text-targeted"',
+      'className="text-likely2"',
+    ],
+  },
+  accentAsText: {
+    catches: ['<span className="text-accent">', 'className="text-accent "'],
+    // `-ink` is correct; `hover:` is the lookbehind; `accented` is the
+    // word-character boundary on the other side.
+    ignores: [
+      '<span className="text-accent-ink">',
+      'className="hover:text-accent"',
+      'className="text-accented"',
+    ],
+  },
+  bangEscape: {
+    // The `!` has to open the class: the lookbehind is a quote, a space, a
+    // backtick or `{`.
+    catches: ['className="!px-7 py-4"', 'className="p-2 !mt-0"'],
+    // `!==` and a bare `!flag` are not Tailwind escapes.
+    //
+    // KNOWN GAP, found by writing this fixture and left deliberately: Tailwind
+    // also accepts the important modifier AFTER a variant (`sm:!mt-0`), and
+    // this pattern cannot see that form, because it expects `!` first and the
+    // variants after it. The tree has zero of them today (grep
+    // `[a-z-]+:![a-z]`), so widening the regex here would be changing what is
+    // enforced on the strength of a fixture rather than a defect. If one ever
+    // appears, the fix is to allow variants on both sides of the `!`.
+    ignores: ['className="px-7 py-4"', "if (a !== b) return;", "const x = !ok;"],
+  },
+  ringOffset: {
+    catches: ["focus:ring-offset-white", 'className="ring-offset-black"'],
+    // The themed token is the fix, and it starts with the same eleven letters.
+    ignores: ["focus-visible:focus-ring", 'className="ring-offset-surface"'],
+  },
+  eslintDisable: {
+    catches: [
+      "  // eslint-disable-next-line no-explicit-any",
+      "  {/* eslint-disable-next-line react/no-x */}",
+    ],
+    // The file-wide form disables a file, not the next line, and is not this rule.
+    ignores: ["  const a = 1;", "  /* eslint-disable no-explicit-any */"],
+  },
+  framerMotion: {
+    catches: ['import { motion } from "framer-motion";'],
+    ignores: ['import Link from "next/link";', "// no framer here"],
+  },
+  animatedBlur: {
+    catches: ['<div className="blur-3xl" />', 'className="md:blur-sm"'],
+    // `backdrop-blur` composites; `blur-none` is the off switch.
+    ignores: ['<div className="backdrop-blur" />', 'className="blur-none"'],
+  },
+  ungrampedBand: {
+    catches: ['<div className="mx-auto max-w-6xl px-6">'],
+    // 7xl ramps; `xl:max-w-6xl` as part of a ramp is caught deliberately, so the
+    // near-miss here is the next size up rather than a prefixed 6xl.
+    ignores: ['<div className="mx-auto max-w-7xl px-6">', 'className="max-w-60"'],
+  },
+  hardcodedType: {
+    catches: ['<span className="text-[10px]">', 'className="text-[0.7rem]"'],
+    // A scale class carries no bracket; `text-[color:…]` is not a size.
+    ignores: ['<span className="text-sm">', 'className="text-[#fff]"'],
+  },
+  clockInClient: {
+    catches: ["const t = new Date();", "const t = new Date(  );"],
+    // Any argument makes it deterministic, which is the whole rule.
+    ignores: ["const t = new Date(todayISO);", "const t = new Date(0);"],
+  },
+};
+
+test("every ban pattern bites, and leaves the near-misses alone", () => {
+  // A fresh regex from the same SOURCE, so a /g pattern's `lastIndex` is never
+  // carried into or out of this test and the guards keep their exact semantics.
+  // It has to be the same source and not a copied literal: a bite test written
+  // against its own copy of a regex proves the copy works, which is nothing.
+  const fresh = (re: RegExp) => new RegExp(re.source, re.flags.replace("g", ""));
+
+  for (const key of Object.keys(BAN) as (keyof typeof BAN)[]) {
+    const { catches, ignores } = BAN_FIXTURES[key];
+    assert.ok(catches.length > 0 && ignores.length > 1, `BAN.${key} needs a boundary fixture`);
+    for (const line of catches) {
+      assert.ok(
+        fresh(BAN[key]).test(line),
+        `BAN.${key} does not match what it bans, so it is enforcing nothing: ${line}`,
+      );
+    }
+    for (const line of ignores) {
+      assert.ok(
+        !fresh(BAN[key]).test(line),
+        `BAN.${key} matches a correct line, so somebody will disable it: ${line}`,
+      );
+    }
+  }
+});
+
 // Nothing may freeze a colour: a literal hex in a component or a data file stays
 // light-mode red on a dark page. The two files that used to hold the palette are
 // the ones most likely to grow one back.
@@ -1582,7 +1756,7 @@ test("the shared colour modules hold no frozen hex", () => {
   for (const f of ["lib/tiers.ts", "tailwind.config.ts"]) {
     const text = readFileSync(path.join(process.cwd(), f), "utf8");
     const code = text.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
-    const frozen = code.match(/#[0-9A-Fa-f]{6}\b/g) ?? [];
+    const frozen = code.match(BAN.frozenHex) ?? [];
     assert.deepEqual(
       frozen,
       [],
@@ -1616,7 +1790,7 @@ test("no component paints text with a tier fill instead of its ink", () => {
       readFileSync(file, "utf8")
         .split("\n")
         .forEach((line, i) => {
-          if (/text-(reach|target|likely)(?![-\w])/.test(line)) {
+          if (BAN.tierAsText.test(line)) {
             offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
           }
         });
@@ -2610,9 +2784,7 @@ test("no `!important` Tailwind escapes — they mark a component that won't let 
       .forEach((line, i) => {
         // `!` directly before a utility-shaped token (needs the dash, so `!isOpen`
         // and `!==` are not matches).
-        const hits = line.match(
-          /(?<=[\s"'`{])!(?:[a-z-]+:)*[a-z][a-z0-9]*-[a-z0-9./[\]%-]+/g,
-        );
+        const hits = line.match(BAN.bangEscape);
         for (const h of hits ?? [])
           offenders.push(`${rel(file)}:${i + 1} ${h}`);
       });
@@ -2634,7 +2806,7 @@ test("focus rings theme — no hardcoded ring offset", () => {
     stripComments(readFileSync(file, "utf8"))
       .split("\n")
       .forEach((line, i) => {
-        if (/ring-offset-(white|black)\b/.test(line))
+        if (BAN.ringOffset.test(line))
           offenders.push(`${rel(file)}:${i + 1}`);
       });
   }
@@ -2685,7 +2857,7 @@ test("every eslint-disable-next-line is adjacent to the code it disables", () =>
     lines.forEach((line, i) => {
       // Only a comment that BEGINS with the directive is one — ESLint ignores a
       // mention inside prose, and so must this, or documenting the rule trips it.
-      if (!/^\s*(\/\/|\/\*|\{\s*\/\*)\s*eslint-disable-next-line\b/.test(line))
+      if (!BAN.eslintDisable.test(line))
         return;
       const next = lines.slice(i + 1).find((l) => l.trim() !== "");
       if (next && /^(\/\/|\/\*|\{\s*\/\*)/.test(next.trim()))
@@ -3806,7 +3978,7 @@ test("the landing hero's background costs no JavaScript and no blur", () => {
     "HeroField became a client component — the landing page's JS budget is the point",
   );
   assert.ok(
-    !/framer-motion/.test(field),
+    !BAN.framerMotion.test(field),
     "HeroField imports framer-motion; this page ships none and must not start",
   );
   // The field is the section's FIRST child and carries no z-index: a `-z-10`
@@ -3828,7 +4000,7 @@ test("the landing hero's background costs no JavaScript and no blur", () => {
   );
   assert.ok(hero.length > 0, "the hero no longer mounts the field");
   assert.ok(
-    !/\bblur-(sm|md|lg|xl|2xl|3xl)\b/.test(hero),
+    !BAN.animatedBlur.test(hero),
     "a blur-* is back in the hero — that is a full re-raster of the box on every paint",
   );
 });
@@ -3853,7 +4025,7 @@ test("the landing page's bands ramp with the window, and no band caps at 1152", 
     "components/marketing/HowItWorks.tsx",
   ]) {
     const src = readFileSync(path.join(process.cwd(), rel), "utf8");
-    for (const m of src.matchAll(/className="([^"]*\bmax-w-6xl\b[^"]*)"/g)) {
+    for (const m of src.matchAll(BAN.ungrampedBand)) {
       assert.ok(
         m[1].includes("2xl:max-w-[90rem]"),
         `${rel}: a container caps at max-w-6xl without ramping — "${m[1]}"`,
@@ -3894,7 +4066,7 @@ function hardcodedTypeSizes(): { at: string; px: number }[] {
           // line, and reading only the first is how a 9px monogram sat behind
           // an 11px one for a whole release. Found when prettier happened to
           // split the line.
-          for (const m of line.matchAll(/text-\[(\d+(?:\.\d+)?)(px|rem)\]/g)) {
+          for (const m of line.matchAll(BAN.hardcodedType)) {
             out.push({
               at: `${path.relative(process.cwd(), file)}:${i + 1}`,
               px: m[2] === "rem" ? Number(m[1]) * 16 : Number(m[1]),
@@ -3938,7 +4110,11 @@ test("the type floor guard actually bites", () => {
   //
   // So the pattern is asserted against lines it MUST catch, and lines it must
   // not, rather than only against the tree, which is clean by construction.
-  const re = /text-\[(\d+(?:\.\d+)?)(px|rem)\]/g;
+  //
+  // It reads `BAN.hardcodedType` rather than a copy of it, and that is
+  // load-bearing: a bite test written against its own copy of a regex proves
+  // that the copy works, which is exactly nothing once the two drift apart.
+  const re = BAN.hardcodedType;
   const sizeOf = (line: string) =>
     [...line.matchAll(re)].map((m) =>
       m[2] === "rem" ? Number(m[1]) * 16 : Number(m[1]),
@@ -3989,7 +4165,7 @@ test("the accent fill is not used as a foreground on text", () => {
       if (ALLOW.has(rel)) continue;
       const lines = readFileSync(file, "utf8").split("\n");
       lines.forEach((line, i) => {
-        if (!/(?<![-\w:])text-accent(?![-\w])/.test(line)) return;
+        if (!BAN.accentAsText.test(line)) return;
         // An icon's evidence is rarely on the same line as its colour: the size
         // can come from a `${px}` variable, and a wrapper span sits above the
         // `ICONS[...]` it colours. Two lines either way catches both, and is
@@ -4483,7 +4659,7 @@ test("no client component in the planner reads the clock", () => {
     const src = readFileSync(path.join(dir, f), "utf8");
     if (!/^\s*["']use client["']/m.test(src)) continue;
     assert.ok(
-      !/new Date\(\s*\)/.test(stripComments(src)),
+      !BAN.clockInClient.test(stripComments(src)),
       `components/planner/${f} calls new Date() — todayISO comes from the loader`,
     );
   }
