@@ -2152,12 +2152,37 @@ and that no item on any list will fix, because nobody has owned them.
    bare `d+`/`s+`/`w+` not preceded by a backslash. It ran clean otherwise — the
    only other hits were correctly-escaped `\[(\d…` patterns.
 
-   **What the scan cannot tell you is whether a correctly-written guard actually
-   matches anything real**, and that is the larger half. This repo bans
-   superlatives, prices, URLs, alpha inks, `!` escapes, hardcoded focus rings
-   and client imports of heavy registries with tests of exactly this shape.
-   Each needs one assertion that it rejects a line it must reject. Until that
-   exists, "a test covers it" is weaker evidence here than it sounds.
+   **CLOSED 2026-08-19 for the eleven ban patterns.** They now live in one
+   `BAN` table in `test-engine.ts`, the guards reference it instead of holding
+   their own literal, and one test asserts every entry catches lines it must
+   catch and ignores the near-misses. `BAN_FIXTURES` is typed as a
+   `Record<keyof typeof BAN, …>`, so **a new ban pattern without its fixture
+   does not compile** — which is the part that survives somebody in a hurry.
+   All eleven were already correct; the value is that they cannot silently stop
+   being correct.
+
+   **Two things that came out of doing it, and both generalise:**
+
+   - **A bite test written against a COPY of a regex proves only that the copy
+     works.** The indirection through `BAN` is the whole guarantee; without it
+     the test and the guard drift apart and the test keeps passing.
+   - **The first version of the bite test did not work, and a deliberate break
+     proved it.** `tierAsText` was changed from `(?![-\w])` to `(?![-w])` — one
+     backslash, exactly the real failure — and both fixtures still behaved,
+     because `text-reach` and `text-reach-ink` cannot tell `\w` from the letter
+     w. Only a third word character can. **Every `ignores` list therefore has to
+     contain the boundary case**, the near-miss the pattern excludes by a single
+     character of lookahead, not merely a line that is obviously different. Both
+     failure directions were then verified by breaking a pattern on purpose and
+     watching the suite go red: the loosened boundary, and the one that matches
+     nothing at all.
+
+   **Still open, and smaller than it was:** the guards that are not simple bans —
+   the ones that parse structure (`walk` + `matchAll` over JSX, the import-graph
+   reachability walk) — are not in the table because they are extractors rather
+   than patterns. The reachability one already has its own bite test. The rest
+   are read-and-assert shapes that fail CLOSED, so a broken regex there makes
+   the test fail rather than pass.
 2. **The product's stated mission and its data disagree.** Compass exists for
    students outside the first tier, most of them in Central Asia. The catalog is
    **155 international, 16 national, 1 regional, 0 school-level, 0
