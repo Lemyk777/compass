@@ -68,12 +68,18 @@ export function FieldFilter({
       className="rounded-2xl border border-line bg-card px-4 py-3 sm:px-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <h2 id="guide-fields-heading" className="min-w-0 text-sm text-ink-soft">
+        {/* A `p`, not an `h2`. This labels a control, not a section of the
+            page, and as an h2 it rendered at 15px among page headings at 22 —
+            the same inversion `PageContents` and the rail panels had. The
+            `aria-labelledby` above still points at it, so the region keeps its
+            accessible name; it simply stops claiming a rank in the outline it
+            never held. */}
+        <p id="guide-fields-heading" className="min-w-0 text-sm text-ink-soft">
           <span className="font-semibold text-ink">
             {signedIn && stated === null ? "Your fields" : "Showing"}:
           </span>{" "}
           {summary}
-        </h2>
+        </p>
         <div className="flex shrink-0 items-center gap-3">
           {!showingAll && (
             <button
