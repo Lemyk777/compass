@@ -135,7 +135,7 @@ export default async function GuideAreaPage({
               hides every decision that actually matters — when to specialise,
               what the degree is like, and what the first job is really doing. */}
           <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-            <h3 className="text-sm font-semibold text-ink">Stage by stage</h3>
+            <h3 className="text-lg font-semibold text-ink">Stage by stage</h3>
             <ol className="mt-3 space-y-3">
               {(
                 [
@@ -226,10 +226,13 @@ export default async function GuideAreaPage({
               guide's rule is that we widen rather than guess, and this is that
               rule made clickable. */}
           {neighbours.length > 0 && (
-            <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-              <h2 className="text-sm font-semibold text-ink">
+            <section
+              aria-label="Areas of work close to this one"
+              className="rounded-2xl border border-line bg-card p-4 sm:p-5"
+            >
+              <p className="text-sm font-semibold text-ink">
                 Close to this, if it is not quite right
-              </h2>
+              </p>
               <ul className="mt-3 space-y-2">
                 {neighbours.map((n) => (
                   <li key={n.slug}>
