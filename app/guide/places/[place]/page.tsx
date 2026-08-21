@@ -103,7 +103,7 @@ function DestinationBody({
       body: (
         <>
           <section className="rounded-2xl border border-ivy/25 bg-ivy-soft/40 p-5 sm:p-6">
-            <h3 className="text-sm font-semibold text-ivy-ink">
+            <h3 className="text-lg font-semibold text-ivy-ink">
               What only this place gives you
             </h3>
             <p className="mt-2 max-w-[54ch] text-base leading-relaxed text-ink">
@@ -348,10 +348,20 @@ function DestinationBody({
             maps={pick.maps}
             returnTo={`/guide/places/${d.id}`}
           />
-          <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-ink">
+          {/* A `p` under an `aria-label`, not an `h2` — the same call as
+              `PageContents`. A rail panel is a labelled widget, not a section of
+              the page, and as an h2 it rendered at 15px against the reading
+              column's 22px: below `lg` the rail follows the content in flow, so
+              a phone reader met that inverted h2 immediately after a run of
+              real ones. The `aria-label` keeps the panel announced as a named
+              region, so nothing is lost from the outline that was worth having. */}
+          <section
+            aria-label="Strongest fields here"
+            className="rounded-2xl border border-line bg-card p-4 sm:p-5"
+          >
+            <p className="text-sm font-semibold text-ink">
               Strongest fields here
-            </h2>
+            </p>
             <ul className="mt-2 flex flex-wrap gap-1.5">
               {d.fields.map((f) => (
                 <li
@@ -369,10 +379,13 @@ function DestinationBody({
               reading. It promised the guide's whole premise — nobody chooses a
               country in isolation — and then threw away one of the two sides. Each
               chip now opens both countries next to each other on the same axes. */}
-          <section className="rounded-2xl border border-line bg-card p-5 sm:p-6">
-            <h2 className="text-sm font-semibold text-ink">
+          <section
+            aria-label={`Compare ${d.name} with another country`}
+            className="rounded-2xl border border-line bg-card p-5 sm:p-6"
+          >
+            <p className="text-sm font-semibold text-ink">
               Compare {d.name} with&hellip;
-            </h2>
+            </p>
             <p className="mt-1 text-sm text-ink-soft">
               Nobody chooses a country in isolation. Pick one and the two are
               laid out side by side: money, admissions, what happens after you
@@ -450,7 +463,7 @@ function Column({
           : "border-reach/30 bg-reach-soft/30"
       }`}
     >
-      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      <h3 className="text-lg font-semibold text-ink">{title}</h3>
       <ul className="mt-3 max-w-[54ch] space-y-2.5">
         {items.map((item) => (
           <li
