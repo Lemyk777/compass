@@ -1,7 +1,7 @@
 # The backlog — state, findings, and what to do next
 
 The founder gave a 23-item fix/redesign list on 2026-08-10; items #24, #26 and
-#27 were added after. **Last updated 2026-08-19.** This file carries everything
+#27 were added after. **Last updated 2026-08-22.** This file carries everything
 a fresh session needs to continue without re-deriving it.
 
 Read [CLAUDE.md](../CLAUDE.md) first — it holds the product rules. This file
@@ -23,13 +23,33 @@ scripts in §6 take under a minute between them.
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**As of 2026-08-19 everything in this repository is in production**, including
-release 9 — the copy and readability pass, merged through
-[#123](https://github.com/Lemyk777/compass/pull/123) into `develop` and released
-via [#124](https://github.com/Lemyk777/compass/pull/124). Vercel is green, and
-the live pages were verified rather than assumed: `applycompass.app` serves the
-rewritten blurbs, zero contrast failures, nothing under 12px, and 5.4% of
-`/opportunities` at ≤14px against 51.9% before.
+**As of 2026-08-22 everything in this repository is in production**, including
+the audit release — three P0 fixes, link-preview cards, and one type step per
+heading level — merged through
+[#131](https://github.com/Lemyk777/compass/pull/131) and
+[#133](https://github.com/Lemyk777/compass/pull/133) into `develop`, released
+via [#132](https://github.com/Lemyk777/compass/pull/132) and
+[#134](https://github.com/Lemyk777/compass/pull/134). Vercel is green, and the
+live pages were verified rather than assumed: `applycompass.app` serves
+`og:image` on every route, the Germany profile measures h1 36 → h2 24 → h3 19
+with zero contrast failures and nothing under 12px, and `/guide` says five steps
+with a count on all five cards.
+
+**One thing here is new in kind and worth reading before touching it: this
+repository now has EDGE functions**, the two Open Graph routes. They exist
+because `@vercel/og`'s node build crashes on Windows (`path.join` on a `file://`
+URL at module load), and they carry a constraint nothing else here does — a
+Vercel Edge Function is capped at **1 MB compressed**. The first attempt
+measured 1.06 MB gzip and the deploy failed while `next build` passed locally
+AND in CI, because neither enforces that limit. Before pushing anything that
+enlarges those routes, gzip the non-`.map` files in `.next/server/edge-chunks`
+and compare against 1 MB. The fonts they carry are subset for this reason
+(`scripts/subset-og-fonts.mjs`), and a unit test fails the build if the catalog
+grows a character the subset cannot draw.
+
+Release 9 — the copy and readability pass, [#123](https://github.com/Lemyk777/compass/pull/123)
+and [#124](https://github.com/Lemyk777/compass/pull/124) — shipped 2026-08-19
+and is the release before this one.
 
 The habit of this file is to warn that the branch is ahead of `main`; right now
 it is not. Verify anyway — it takes ten seconds, and a stale note here has cost
@@ -42,10 +62,10 @@ git fetch origin && git log --oneline origin/main..HEAD
 
 | | |
 |---|---|
-| On `main` (deployed) | everything through **release 9**. `origin/main` = `478ab24`, released via [#124](https://github.com/Lemyk777/compass/pull/124) from `origin/develop` = `b3ff145`. The two are identical in content |
+| On `main` (deployed) | everything through **the audit release**. `origin/main` = `9694dde`, released via [#132](https://github.com/Lemyk777/compass/pull/132) and [#134](https://github.com/Lemyk777/compass/pull/134). `origin/main` and `origin/develop` are identical |
 | Open PRs | none |
 | Branch | `develop` |
-| Unit tests | **282** (`npm run test:unit`) |
+| Unit tests | **289** (`npm run test:unit`) — 282 before this release; the four added are the two countdown guards and the two heading/glyph guards, each watched failing before being kept |
 | Session checks | **61** (`node --import tsx scripts/test-session-checks.ts`) |
 | Catalog | **172 entries · 0 broken links locally** (1 unverifiable — a bot wall, reported without failing). **The weekly job on `main` reads differently and has failed since at least 2026-08-03** — see below |
 | Migrations | **All applied through `0031_beat_reactions.sql`** — `npm run db:check` reports 33/33 |
