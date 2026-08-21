@@ -198,6 +198,7 @@ import {
   daysLeftLabel,
   formatDate,
 } from "@/lib/data/opportunity-format";
+import { OG_GLYPHS } from "@/lib/data/og-glyphs";
 import { parseEligibility } from "@/lib/data/eligibility";
 import { plannerStarts } from "@/lib/data/planner-start";
 import {
@@ -4326,6 +4327,63 @@ function headingSizes(src: string): { level: number; size: string }[] {
   }
   return out;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Every character a link-preview card can print, it can draw.
+//
+// The two Open Graph cards carry a SUBSET of Inter, because the edge function
+// they run in is capped at 1 MB compressed and full Latin Inter put the bundle
+// at 1.06 MB gzip — `next build` passed locally and in CI, neither of which
+// enforces that limit, and only the deploy failed.
+//
+// The hazard subsetting creates is silent: a glyph outside the set does not
+// throw, it renders as a blank box, on a public card, inside someone else's
+// chat. Writing the set by hand found this the hard way — the first pass
+// covered Latin punctuation and missed both `²` and the Cyrillic in "Турнир
+// городов", a real catalog row.
+//
+// So the set is declared as RANGES rather than as today's characters, and this
+// asserts the catalog stays inside it. Widen `OG_GLYPHS` and re-run
+// `scripts/subset-og-fonts.ts` when it fires.
+const OG_CARD_FIELDS = [
+  "name",
+  "blurb",
+  "eligibility",
+  "window",
+  "costDetail",
+] as const;
+
+test("the link-preview font covers every character the catalog can print", () => {
+  const covered = new Set([...OG_GLYPHS]);
+  const missing = new Map<string, string>();
+  for (const c of COMPETITIONS) {
+    for (const field of OG_CARD_FIELDS) {
+      const value = (c as Record<string, unknown>)[field];
+      if (typeof value !== "string") continue;
+      for (const ch of value) {
+        if (!covered.has(ch)) missing.set(ch, `${c.id}.${field}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    [...missing].map(([ch, where]) => `U+${ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")} ${ch} in ${where}`),
+    [],
+    "widen OG_GLYPHS and re-run scripts/subset-og-fonts.ts",
+  );
+});
+
+test("the glyph-coverage guard actually bites", () => {
+  const covered = new Set([...OG_GLYPHS]);
+  // The two that were genuinely missing on the first pass, plus one nobody has
+  // any reason to use — if these ever land inside the set, it has been widened
+  // to something that is no longer a subset and the size win is gone.
+  assert.ok(covered.has("²"), "superscript two is used by an eligibility line");
+  assert.ok(covered.has("Т") && covered.has("у"), "Cyrillic is in the catalog");
+  assert.ok(!covered.has("漢"), "the subset is not silently the whole font");
+  // And the check itself finds a character outside the set.
+  const outside = [..."漢字"].filter((ch) => !covered.has(ch));
+  assert.deepEqual(outside, ["漢", "字"]);
+});
 
 test("the guide's reading surface uses one type step per heading level", () => {
   // h1 is not pinned: a list page's `SectionIntro` is deliberately smaller than
