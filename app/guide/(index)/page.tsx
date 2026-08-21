@@ -89,7 +89,11 @@ export default async function GuidePage({
         aside={<FieldFilter defaultFields={defaults} signedIn={signedIn} />}
       />
 
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Was `xl:grid-cols-4` for the four steps this page used to have, which
+          left the fifth alone on a row of its own. Same ramp the landing's
+          guide band uses: three across from `lg`, all five only where they are
+          still wide enough to read. */}
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
         {GUIDE_SECTIONS.map((s) => (
           <li key={s.id}>
             <Link
