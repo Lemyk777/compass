@@ -112,12 +112,11 @@ export function GuideFilterBar({
       className="rounded-2xl border border-line bg-card px-4 py-3.5 sm:px-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h2
-          id="guide-filter-heading"
-          className="text-sm font-semibold text-ink"
-        >
+        {/* Same call as `FieldFilter`: a control's label, not a page section.
+            `aria-labelledby` above keeps the region named. */}
+        <p id="guide-filter-heading" className="text-sm font-semibold text-ink">
           Narrow the list
-        </h2>
+        </p>
         {active > 0 && (
           <button
             type="button"

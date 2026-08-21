@@ -57,9 +57,9 @@ export function SpineChain({
           rule this module was written to enforce. */}
       {spine.majors.length > 0 && (
         <section className="rounded-2xl border border-line bg-card p-5">
-          <h4 className="text-base font-semibold leading-snug text-ink">
+          <h3 className="text-lg font-semibold leading-snug text-ink">
             What you would study for it
-          </h4>
+          </h3>
           <ul className="mt-3 flex flex-wrap gap-1.5">
             {spine.majors.map((m) => (
               <li key={m.id}>
@@ -97,7 +97,7 @@ export function SpineChain({
             key={`${stop.country}-${stop.region}`}
             className="rounded-2xl border border-line bg-card p-5"
           >
-            <h4 className="text-base font-semibold leading-snug text-ink">
+            <h3 className="text-lg font-semibold leading-snug text-ink">
               {/* A country we profile opens; one we only name does NOT become a
                   link. Naming a place as though it were a page and dead-ending
                   there was a real bug on the city pages, and this layer would
@@ -115,7 +115,7 @@ export function SpineChain({
               ) : (
                 stop.country
               )}
-            </h4>
+            </h3>
 
             {stop.hubs.length > 0 && (
               <ul className="mt-3 flex flex-wrap gap-2">
@@ -145,9 +145,9 @@ export function SpineChain({
 
       {spine.homeRoutes.length > 0 && (
         <div className="rounded-2xl border border-line bg-card p-5">
-          <h4 className="text-base font-semibold leading-snug text-ink">
+          <h3 className="text-lg font-semibold leading-snug text-ink">
             Without leaving home
-          </h4>
+          </h3>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
             {/* Step 4 is in the chain on purpose, and last on purpose. A student
                 reading a list of cities abroad should not have to discover
@@ -208,9 +208,16 @@ export function WorkFromHere({
             key={faculty}
             className="rounded-2xl border border-line bg-card p-5"
           >
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+            {/* h3, not h4. The nearest heading above this is the GuidePart's
+                h2, so an h4 here skipped a level — and a skipped level is not a
+                cosmetic complaint: it is what a screen reader's heading list
+                uses to say what contains what. It also took the size with it
+                (15px against every other sub-head's 17px), so the same field
+                name looked like two different ranks depending on which page you
+                met it on. */}
+            <h3 className="text-lg font-semibold uppercase tracking-wide text-ink-soft">
               {FACULTY_LABEL[faculty]}
-            </h4>
+            </h3>
             <ul className="mt-3 flex flex-wrap gap-2">
               {list.map((a) => (
                 <li key={areaSlug(a.title)}>

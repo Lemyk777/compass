@@ -33,6 +33,16 @@ export const metadata: Metadata = {
     description:
       "Competitions, olympiads and programmes you can actually enter, with the deadlines — free, no account needed. Plus honest guidance on your university applications.",
   },
+  // See the note in lib/seo.ts: the picture comes from `app/opengraph-image.tsx`,
+  // this declares the shape of the card it sits in. Routes that build their
+  // metadata through `pageMeta` set the same thing; this covers the ones that
+  // inherit the root's metadata instead.
+  twitter: {
+    card: "summary_large_image",
+    title: "Compass — See what you can enter this year",
+    description:
+      "Competitions, olympiads and programmes you can actually enter, with the deadlines — free, no account needed.",
+  },
 };
 
 export const viewport: Viewport = {

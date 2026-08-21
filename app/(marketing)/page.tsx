@@ -24,6 +24,11 @@ import { HUBS } from "@/lib/data/world";
 import { STUDY_DESTINATIONS } from "@/lib/data/study-destinations";
 import { HOME_ROUTES } from "@/lib/data/from-home";
 import { PLANNER_SECTIONS } from "@/lib/data/planner-sections";
+import {
+  GUIDE_SECTIONS,
+  type GuideSectionId,
+} from "@/lib/data/guide-sections";
+import { MAJORS } from "@/lib/data/majors";
 
 // The landing page tells the product's story in the product's own order.
 //
@@ -72,13 +77,59 @@ const PAINS: { n: string; title: React.ReactNode; body: string }[] = [
   },
 ];
 
+/**
+ * What each guide step is SOLD as, keyed by the registry's own id.
+ *
+ * The registry owns the chain — order, step number, href, and the blurb the
+ * guide itself uses. This holds only the two things that are a marketing
+ * decision: the count worth quoting and the one line that earns the click. A
+ * `Record<GuideSectionId, …>` rather than a loose object, so adding a step to
+ * the registry fails the type-check here instead of silently rendering a card
+ * with no copy — the failure mode that let `majors` be missing from this page
+ * for two releases.
+ */
+const GUIDE_CARD_COPY: Record<
+  GuideSectionId,
+  { count: number; title: string; body: string }
+> = {
+  work: {
+    count: allCareerAreas().length,
+    title: "areas of work",
+    body: "Real job titles inside each one, never a single prescribed profession per field.",
+  },
+  majors: {
+    count: MAJORS.length,
+    title: "subjects to apply with",
+    body: "What the first year is really made of, what makes people leave it, and what to read now.",
+  },
+  places: {
+    count: STUDY_DESTINATIONS.length,
+    title: "countries in full",
+    body: "Money, admissions, after-study rules, cities. Trade-offs outnumber strengths, on purpose.",
+  },
+  cities: {
+    // Was "The map does not stop at the countries we profile", which stopped
+    // being true on 2026-08-11: every hub is now claimed by exactly one
+    // destination, and a unit test asserts it. It was also the only line on
+    // this page naming the home region, so the one sentence addressed to the
+    // people we built this for was the one sentence that was wrong.
+    count: HUBS.length,
+    title: "cities to work in",
+    body: "Almaty, Astana and Tbilisi among them, each inside a country profiled here in full.",
+  },
+  "from-home": {
+    count: HOME_ROUTES.length,
+    title: "routes from home",
+    body: "Ways in that need no visa and no move, for when leaving isn't the plan, or isn't possible yet.",
+  },
+};
+
 export default async function LandingPage() {
   const t = getT();
   const universityLogos = getUniversityLogos();
   const session = await getSession();
   const isAdmin = session?.role === "admin";
   const preview = previewOpportunities();
-  const areaCount = allCareerAreas().length;
 
   return (
     // A `div`, not a `main`. The banner and the footer used to live inside the
@@ -364,41 +415,40 @@ export default async function LandingPage() {
               </h2>
               <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
                 The guide runs the whole chain: what you like → the areas of
-                work it opens → the countries and cities that work lives in →
-                and what you can enter from home without moving anywhere. Every
-                one of them states its catch, not just its brochure.
+                work it opens → the subject you would apply with → the countries
+                and cities that work lives in → and what you can enter from home
+                without moving anywhere. Every one of them states its catch, not
+                just its brochure.
               </p>
             </div>
 
-            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <GuideCard
-                href="/guide/work"
-                step="1"
-                count={areaCount}
-                title="areas of work"
-                body="Real job titles inside each one, never a single prescribed profession per field."
-              />
-              <GuideCard
-                href="/guide/places"
-                step="2"
-                count={STUDY_DESTINATIONS.length}
-                title="countries in full"
-                body="Money, admissions, after-study rules, cities. Trade-offs outnumber strengths, on purpose."
-              />
-              <GuideCard
-                href="/guide/cities"
-                step="3"
-                count={HUBS.length}
-                title="cities to work in"
-                body="Including Almaty, Astana and Tbilisi. The map does not stop at the countries we profile."
-              />
-              <GuideCard
-                href="/guide/from-home"
-                step="4"
-                count={HOME_ROUTES.length}
-                title="routes from home"
-                body="Ways in that need no visa and no move, for when leaving isn't the plan, or isn't possible yet."
-              />
+            {/* Read from GUIDE_SECTIONS, exactly as the planner band below
+              reads PLANNER_SECTIONS, and for the reason that band already
+              states: a step would otherwise exist in the product and not on the
+              page that sells it. That is precisely what had happened here. The
+              four cards were hardcoded when the guide had four steps; `majors`
+              was inserted as step 2 in the registry and never here, so this
+              page was advertising 44 subjects as nonexistent and numbering
+              three of the four remaining steps wrongly — a visitor clicking
+              "Step 2 · countries" arrived on a page whose own tab strip calls
+              it step 3.
+
+              Only `count` and `body` stay local, keyed by id: the registry
+              owns the chain, this page owns how it is sold. */}
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+              {GUIDE_SECTIONS.map((s) => {
+                const card = GUIDE_CARD_COPY[s.id];
+                return (
+                  <GuideCard
+                    key={s.id}
+                    href={s.href}
+                    step={String(s.step)}
+                    count={card.count}
+                    title={card.title}
+                    body={card.body}
+                  />
+                );
+              })}
             </div>
           </Band>
         </section>

@@ -345,7 +345,7 @@ function Row({
         : "border-line bg-card";
   return (
     <section className={`rounded-2xl border p-4 sm:p-5 ${cls}`}>
-      <h2 className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
         {label}
       </h2>
       <div className="mt-2 grid gap-3 sm:grid-cols-2">
@@ -425,7 +425,7 @@ function ListRow({
 
   return (
     <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-      <h2 className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
         {label}
       </h2>
       <div className="mt-2 grid gap-3 sm:grid-cols-2">

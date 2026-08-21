@@ -33,7 +33,7 @@ export function TryTheWork({
 
   return (
     <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-      <h3 className="text-base font-semibold text-ink">
+      <h3 className="text-lg font-semibold text-ink">
         Do the job for an afternoon, before you pick a degree
       </h3>
       <p className="mt-1.5 max-w-[54ch] text-base leading-relaxed text-ink-soft">

@@ -14,6 +14,7 @@ import {
   FACULTY_LABEL,
   type FacultyValue,
 } from "@/lib/data/faculties";
+import { closesInPhrase } from "@/lib/data/opportunity-format";
 import { downloadIcs } from "@/lib/calendar/ics";
 
 // The public eligibility checker.
@@ -261,11 +262,29 @@ export function EligibilityChecker({
 /**
  * The one line that is the whole product: you, specifically, can enter these.
  *
- * The headline counts what is ON SCREEN, not everything that matched. An
- * earlier draft said "you can enter 79 of these" — technically the size of the
- * eligible set, but it is the choice-overload number, and it puts the work back
- * on a twelve-year-old. The full figure stays visible underneath, quietly, so
- * nothing is hidden.
+ * TWO numbers, and which one leads is the whole design of this line.
+ *
+ * The headline used to be `shown` alone — "5 you can enter right now." — for a
+ * stated reason that is still right: an earlier draft led with the size of the
+ * eligible set, and 156 is the choice-overload number, which puts the work back
+ * on a twelve-year-old. What that draft missed is that `shown` is the PAGE
+ * SIZE. It is 5 for a year-5 student with 113 open to them and 5 for a year-12
+ * student with 162, so the largest, greenest, most personal-sounding thing on
+ * the front door was a constant, and it read as "we checked you and found five"
+ * — a claim about the reader that was not true. The real figure was underneath
+ * at 15px in the faintest ink the palette has.
+ *
+ * So: the small number still leads, because the anti-overload argument holds —
+ * but it now says what it is ("to start with"), and the personal figure arrives
+ * in the same breath rather than three tiers down. Nothing is being hidden and
+ * nothing is being claimed.
+ *
+ * Three shapes, because one sentence cannot carry all three honestly:
+ *   eligible === 0            nothing is open — say so plainly, in plain ink
+ *   shown === 0 < eligible    the SUBJECT filter emptied it, not the world
+ *   otherwise                 "5 to start with, out of 156 open to you."
+ * The middle one matters most: a student who has narrowed themselves to nothing
+ * must be told which of the two happened, or they conclude it was them.
  */
 function Verdict({
   shown,
@@ -278,32 +297,46 @@ function Verdict({
   grade: number;
   nearestDays?: number;
 }) {
+  // The green rail and the green numeral are the product's success colour.
+  // A zero painted in it is worse than no answer, so they come off together.
+  const positive = eligible > 0;
+  const num = (n: number) => (
+    <span data-num className={positive ? "text-ivy-ink" : "text-ink"}>
+      {n}
+    </span>
+  );
+
   return (
-    <div className="border-l-2 border-ivy pl-5">
+    <div
+      className={`border-l-2 pl-5 ${positive ? "border-ivy" : "border-line"}`}
+    >
       <h2 className="text-balance text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-3xl">
-        <span data-num className="text-ivy-ink">
-          {shown}
-        </span>{" "}
-        you can enter right now.
+        {eligible === 0 ? (
+          <>Nothing is open to year {num(grade)} in those subjects yet.</>
+        ) : shown === 0 ? (
+          <>
+            {num(eligible)} are open to you, but none in those subjects.
+          </>
+        ) : eligible <= shown ? (
+          <>{num(eligible)} you can enter right now.</>
+        ) : (
+          <>
+            {num(shown)} to start with, out of {num(eligible)} open to you.
+          </>
+        )}
       </h2>
       <p className="mt-2 text-base text-ink-soft">
         Open to year <span data-num>{grade}</span>, worldwide
         {nearestDays != null && (
           <>
-            {" · "}the nearest closes in{" "}
+            {" · "}the nearest{" "}
             <span data-num className="font-semibold text-ink">
-              {nearestDays} days
+              {closesInPhrase(nearestDays)}
             </span>
           </>
         )}
         .
       </p>
-      {eligible > shown && (
-        <p className="mt-1.5 text-sm text-ink-faint">
-          There are <span data-num>{eligible}</span> you can enter in total.
-          These are the ones to start with.
-        </p>
-      )}
     </div>
   );
 }

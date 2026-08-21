@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatDate } from "@/lib/data/opportunity-format";
+import { daysLeftLabel, formatDate } from "@/lib/data/opportunity-format";
 import type {
   CompetitionCategory,
   CompetitionTier,
@@ -302,12 +302,7 @@ export function Countdown({
       : days <= 30
         ? "bg-target-soft text-target-ink"
         : "bg-likely-soft text-likely-ink";
-  const text =
-    days <= 0
-      ? "closes today"
-      : days === 1
-        ? "1 day left"
-        : `${days} days left`;
+  const text = daysLeftLabel(days);
   return (
     <span
       data-num
