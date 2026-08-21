@@ -131,7 +131,7 @@ export default async function GuideFromHomePage({
                 ] as const
               ).map(([label, body]) => (
                 <div key={label} className="min-w-0">
-                  <dt className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
                     {label}
                   </dt>
                   <dd className="mt-1 text-sm leading-relaxed text-ink-soft">
@@ -166,7 +166,10 @@ export default async function GuideFromHomePage({
           putting it above them pushed the first route back off a phone screen —
           the fold this page was just fixed for. */}
       <section className="rounded-2xl border border-accent/35 bg-accent-soft/25 p-4 sm:p-5">
-        <h2 className="text-sm font-semibold text-ink">
+        {/* This one is not a rail label — it is a real section in the reading
+            column, several paragraphs long, so it takes the h2 step rather than
+            being demoted. It was 15px against the page's other headings. */}
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">
           &ldquo;But I don&rsquo;t know how to do any of this yet&rdquo;
         </h2>
         <div className="mt-1.5 max-w-[54ch] space-y-2.5 text-base leading-relaxed text-ink-soft">
