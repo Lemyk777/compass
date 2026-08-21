@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { formatDate, opportunityCost } from "@/lib/data/opportunity-format";
+import {
+  CATEGORY_LABEL,
+  daysLeftLabel,
+  formatDate,
+  opportunityCost,
+} from "@/lib/data/opportunity-format";
 import type {
   CompetitionCategory,
   CompetitionTier,
@@ -54,15 +59,9 @@ const TONE: Record<CostTone, { panel: string; pill: string; icon: string }> = {
   },
 };
 
-const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
-  olympiad: "Olympiad",
-  competition: "Competition",
-  course: "Course",
-  research_program: "Research program",
-  summer_program: "Summer program",
-  community: "Community",
-  simulation: "Try the work",
-};
+// The full names live in opportunity-format beside the other formatters, so the
+// link-preview card and this panel cannot drift the way this map and the card's
+// had already drifted ("Research" against "Research program").
 
 /**
  * Why this kind of thing is worth doing — derived from category and tier rather
@@ -291,10 +290,7 @@ export function OpportunityDetail({
                   {formatDate(o.deadline)}
                 </span>{" "}
                 ·{" "}
-                {o.daysToDeadline <= 0
-                  ? "closes today"
-                  : `${o.daysToDeadline} days left`}
-                . {o.window}.
+                {daysLeftLabel(o.daysToDeadline)}. {o.window}.
                 {o.partner && (
                   // Why this countdown is trustworthy: it is not a date we
                   // extracted from a page, it is the organiser stating it.
