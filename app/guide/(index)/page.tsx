@@ -3,22 +3,35 @@ import Link from "@/components/ui/Link";
 import { FieldFilter } from "@/components/guide/FieldFilter";
 import { ListHead } from "@/components/guide/parts";
 import { withFields } from "@/lib/data/guide-fields";
-import { GUIDE_SECTIONS } from "@/lib/data/guide-sections";
+import {
+  GUIDE_SECTIONS,
+  type GuideSectionId,
+} from "@/lib/data/guide-sections";
 import { careerAreasForFaculties } from "@/lib/data/careers";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { hubsForFaculties } from "@/lib/data/world";
 import { destinationsForFaculties } from "@/lib/data/study-destinations";
 import { homeRoutesForFaculties } from "@/lib/data/from-home";
+import { majorsForFaculties } from "@/lib/data/majors";
 import { guideView } from "@/lib/guide/student-fields";
 import { pageMeta } from "@/lib/seo";
 
 // The guide's front page: a map of the section, not the section itself.
 //
-// This used to be all four steps stacked on one scroll, which meant finding
+// This used to be every step stacked on one scroll, which meant finding
 // anything required reading everything — 33 spheres of work, 22 cities and 11
 // country profiles in a single column. Each step is its own route now, and this
-// page's whole job is to say what the four are and how much is inside each, so
-// a student chooses where to go instead of falling through it.
+// page's whole job is to say what they are and how much is inside each, so a
+// student chooses where to go instead of falling through it.
+//
+// Nothing here writes the step COUNT down, and that is a fix rather than a
+// style. This page said "Four steps" and described a chain that ran work →
+// countries → cities while the registry had held five since `majors` was
+// inserted as step 2 — so the index of the section named one of its own steps
+// out of existence and misnumbered the rest. The number is read from
+// GUIDE_SECTIONS now, and the count line under each card is keyed by section
+// id, so a sixth step cannot be added without either appearing here or failing
+// the type-check.
 
 export const metadata: Metadata = pageMeta({
   title: "Where this can take you — Compass",
@@ -39,11 +52,17 @@ export default async function GuidePage({
   // the call site, rather than by changing a contract the report also relies on.
   const shownFields = fields.length ? fields : FACULTY_VALUES;
 
-  const counts: Record<string, string> = {
+  // Keyed by GuideSectionId rather than by a loose string, so a step added to
+  // the registry fails to compile here instead of rendering a card whose count
+  // line is the word `undefined` followed by an arrow. That is what step 2 did
+  // for two releases: `majors` had no entry, so the one step the guide argues
+  // hardest for was the only card with no number on it.
+  const counts: Record<GuideSectionId, string> = {
     work: `${careerAreasForFaculties(shownFields).reduce(
       (n, g) => n + g.areas.length,
       0,
     )} areas of work`,
+    majors: `${majorsForFaculties(fields).length} subjects`,
     cities: `${hubsForFaculties(fields).length} cities`,
     places: `${destinationsForFaculties(fields).length} countries in full`,
     "from-home": `${homeRoutesForFaculties(fields).length} routes`,
@@ -58,11 +77,12 @@ export default async function GuidePage({
               Where this can take you
             </h1>
             <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft">
-              A job title is not a life. Four steps: the first three run from
-              what kinds of work exist, to the countries that host that work, to
-              the cities inside them. The fourth is the one nobody tells you
-              about: what you can enter from home this year, without moving
-              anywhere at all.
+              A job title is not a life.{" "}
+              <span data-num>{GUIDE_SECTIONS.length}</span> steps, and they zoom
+              in: from the kinds of work that exist, to the subject you would
+              apply with, to the countries that host that work and the cities
+              inside them. The last one is what nobody tells you about — what
+              you can enter from home this year, without moving anywhere at all.
             </p>
           </header>
         }
