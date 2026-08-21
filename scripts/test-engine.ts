@@ -192,7 +192,12 @@ import {
 } from "@/lib/data/study-destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { buildIcs } from "@/lib/calendar/ics";
-import { daysBetween, formatDate } from "@/lib/data/opportunity-format";
+import {
+  closesInPhrase,
+  daysBetween,
+  daysLeftLabel,
+  formatDate,
+} from "@/lib/data/opportunity-format";
 import { parseEligibility } from "@/lib/data/eligibility";
 import { plannerStarts } from "@/lib/data/planner-start";
 import {
@@ -4276,6 +4281,106 @@ test("the two cards that carry the product have a real type step", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// One visual step per heading level, on the guide's reading surface.
+//
+// This is the mechanism behind "it's a wall of text", and it is not contrast:
+// contrast has been measured innocent four times. A reader chunks a long page
+// by SIZE, and on a country profile the same level could be four different
+// sizes — h2 at 12, 15, 17 and 22px — while an h3 at 17px outranked three of
+// them. There was also a real h2 → h4 skip. Size stopped tracking structure, so
+// there was nothing to chunk by, and 10,000 pixels of careful prose read as one
+// undifferentiated block.
+//
+// Two rules are enforced here, and the second is what keeps the first honest:
+//   • one size class per level, so a level means one thing everywhere;
+//   • nothing that merely LABELS a widget is a heading. `PageContents`, the two
+//     filter bars and the rail panels were all h2s rendering below body size;
+//     they carry `aria-label`/`aria-labelledby` instead, so their regions keep
+//     an accessible name without claiming a rank in the outline.
+//
+// Scope is the subject pages and the parts they are built from. `/guide/compare`
+// is deliberately excluded: its axis labels are a consistent uppercase overline
+// system, which is a legitimate pattern rather than this defect. The list pages
+// are excluded too — a grid of cards is not a document hierarchy.
+const GUIDE_READING_SURFACE = [
+  "app/guide/places/[place]/page.tsx",
+  "app/guide/cities/[hub]/page.tsx",
+  "app/guide/work/[area]/page.tsx",
+  "app/guide/majors/[major]/page.tsx",
+  "app/guide/from-home/page.tsx",
+  "components/guide/parts.tsx",
+  "components/guide/Spine.tsx",
+  "components/guide/TryTheWork.tsx",
+];
+
+/** `text-…` size class on every `<hN>` in a source file, by level. */
+function headingSizes(src: string): { level: number; size: string }[] {
+  const out: { level: number; size: string }[] = [];
+  const tag = /<h([1-6])\b([^>]*)>/g;
+  let m: RegExpExecArray | null;
+  while ((m = tag.exec(src))) {
+    const size = m[2].match(
+      /\btext-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|\[[^\]\s]+\])/,
+    );
+    out.push({ level: +m[1], size: size ? size[0] : "(none)" });
+  }
+  return out;
+}
+
+test("the guide's reading surface uses one type step per heading level", () => {
+  // h1 is not pinned: a list page's `SectionIntro` is deliberately smaller than
+  // a subject page's `DetailShell`, and they are different surfaces.
+  const ALLOWED: Record<number, string[]> = {
+    2: ["text-2xl"],
+    3: ["text-lg"],
+  };
+  const offenders: string[] = [];
+  for (const rel of GUIDE_READING_SURFACE) {
+    const src = readFileSync(path.join(process.cwd(), rel), "utf8");
+    for (const { level, size } of headingSizes(src)) {
+      if (level >= 4) {
+        offenders.push(`${rel}: h${level} — the guide stops at h3`);
+        continue;
+      }
+      const allowed = ALLOWED[level];
+      if (allowed && !allowed.includes(size)) {
+        offenders.push(`${rel}: h${level} is ${size}, expected ${allowed[0]}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `heading level and type step disagree:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the heading-step guard actually bites", () => {
+  // Never ship one of these without watching it fail. Three shapes, and every
+  // one of them shipped in this repo: a sub-head promoted past its parent, a
+  // level rendering at two sizes, and a skipped level.
+  const overpowering = '<h3 className="text-xl font-semibold text-ink">x</h3>';
+  const undersized = '<h2 className="text-sm font-semibold text-ink">x</h2>';
+  const skipped = '<h4 className="text-base font-semibold text-ink">x</h4>';
+  const ok = '<h2 className="text-xl font-semibold text-ink">x</h2>';
+
+  assert.deepEqual(headingSizes(overpowering), [{ level: 3, size: "text-xl" }]);
+  assert.deepEqual(headingSizes(undersized), [{ level: 2, size: "text-sm" }]);
+  assert.deepEqual(headingSizes(skipped), [{ level: 4, size: "text-base" }]);
+  assert.deepEqual(headingSizes(ok), [{ level: 2, size: "text-xl" }]);
+
+  // The multi-line form the codebase actually writes, which a naive
+  // single-line regex misses entirely.
+  const wrapped = '<h2\n  id="x"\n  className="text-sm font-semibold text-ink"\n>';
+  assert.deepEqual(headingSizes(wrapped), [{ level: 2, size: "text-sm" }]);
+
+  // And a heading with no size class at all is reported rather than skipped.
+  assert.deepEqual(headingSizes("<h3>bare</h3>"), [
+    { level: 3, size: "(none)" },
+  ]);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // The spine (#16) — the guide's four steps, joined.
 //
 // The chain is DERIVED, so what has to be asserted is not "the data is right"
@@ -7233,6 +7338,63 @@ test("the date formatter is built once and says exactly what it said before", ()
     "2027-09-09", // single-digit month and day
   ]) {
     assert.equal(formatDate(iso), before(iso), iso);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// How long is left, said once.
+//
+// Four places rendered this sentence and three of them disagreed. The card and
+// the landing preview were right; `OpportunityDetail` printed "1 days left",
+// and the public checker's verdict printed "the nearest closes in 0 days" on
+// the day something closed — the two shapes a reader cannot tell from a bug.
+// The grammar now lives here, so a fifth caller cannot invent a fourth
+// spelling.
+test("the days-left phrasings handle today, tomorrow and the plural", () => {
+  assert.equal(daysLeftLabel(0), "closes today");
+  assert.equal(daysLeftLabel(1), "1 day left");
+  assert.equal(daysLeftLabel(2), "2 days left");
+  assert.equal(daysLeftLabel(37), "37 days left");
+  // A confirmed date in the past is filtered before it reaches a card, but a
+  // clock that ticks over between render and read must not print "-1 days".
+  assert.equal(daysLeftLabel(-3), "closes today");
+
+  assert.equal(closesInPhrase(0), "closes today");
+  assert.equal(closesInPhrase(1), "closes tomorrow");
+  assert.equal(closesInPhrase(2), "closes in 2 days");
+  assert.equal(closesInPhrase(37), "closes in 37 days");
+  assert.equal(closesInPhrase(-3), "closes today");
+
+  // Neither one may ever emit the shapes that made this a bug.
+  for (const n of [-3, -1, 0, 1, 2, 5, 37]) {
+    for (const s of [daysLeftLabel(n), closesInPhrase(n)]) {
+      assert.ok(!/\b1 days\b/.test(s), `"${s}" says "1 days"`);
+      assert.ok(!/\b0 days\b/.test(s), `"${s}" says "0 days"`);
+      assert.ok(!/-\d/.test(s), `"${s}" carries a negative count`);
+    }
+  }
+});
+
+test("no component spells the days-left sentence for itself", () => {
+  // The guard that stops this drifting back apart. It reads the four files
+  // that render a countdown and fails on a literal " days left" / "days left`"
+  // built inline — the exact construction all three copies used.
+  const callers = [
+    "components/opportunities/OpportunityCard.tsx",
+    "components/opportunities/OpportunityDetail.tsx",
+    "components/opportunities/EligibilityChecker.tsx",
+    "components/marketing/OpportunityPreview.tsx",
+  ];
+  for (const rel of callers) {
+    const src = readFileSync(path.join(process.cwd(), rel), "utf8");
+    assert.ok(
+      !/days left/.test(src),
+      `${rel} still spells the countdown itself — import daysLeftLabel instead`,
+    );
+    assert.ok(
+      !/closes today/.test(src),
+      `${rel} still spells "closes today" itself`,
+    );
   }
 });
 
