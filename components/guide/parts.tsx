@@ -174,7 +174,7 @@ export function GuideCard({
       )}
       {badge && (
         <span
-          className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide ${
+          className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${
             emphasis
               ? "bg-accent text-on-fill"
               : "bg-accent-soft text-accent-ink"
@@ -335,7 +335,7 @@ export function GuidePart({
     // here". Now: a hairline the full width of the column, 32px before the
     // heading, the number the contents list promised, and 22px of type.
     <section id={id} className="scroll-mt-24 border-t border-line pt-8">
-      <h2 className="flex items-center gap-2.5 text-xl font-semibold tracking-tight text-ink sm:text-[1.375rem]">
+      <h2 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-ink">
         {step != null && (
           <span
             data-num
@@ -373,9 +373,19 @@ export function PageContents({
       aria-label="On this page"
       className="rounded-2xl border border-line bg-card px-4 py-3 sm:px-5"
     >
-      <h2 className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
+      {/* A `p`, not an `h2`. This is the label on a navigation widget, and the
+          `nav` around it is already named "On this page" for assistive tech —
+          so the heading added nothing to the outline except a defect: an h2
+          rendering at 12px, five pixels SMALLER than the body text it sat
+          above, and eight below the h3s further down. A reader chunks a long
+          page by size, and a level that can be the largest heading on the page
+          in one place and the smallest in another gives them nothing to chunk
+          by. Heading level and visual step now move together in this section:
+          h1 → h2 → h3, strictly descending, and labels like this one are not
+          headings at all. */}
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
         On this page
-      </h2>
+      </p>
       {/* One scrolling row on a phone, wrapping from `sm`.
           Wrapping, these chips carry long titles ("Research and writing that
           publishes you"), so each one took a row of its own: six parts made a
@@ -430,16 +440,26 @@ export function ForYou({
 }) {
   return (
     <section className={`grid gap-3 ${avoid ? "sm:grid-cols-2" : ""}`}>
+      {/* Sized like a `GuidePart` heading, because that is what these are: the
+          page's first section, and deliberately its answer. They used to render
+          at 17px against the numbered sections' 22px — so the one part of the
+          page written directly TO the reader was quieter than every part
+          written about the subject, and a reader scanning for structure met an
+          h2 that looked like an h3. Same level, same step. */}
       <div className="rounded-2xl border border-accent/40 bg-accent-soft/25 p-4 sm:p-5">
-        <h2 className="text-base font-semibold text-ink">{suitsLabel}</h2>
-        <p className="mt-1.5 max-w-[54ch] text-base leading-relaxed text-ink-soft">
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">
+          {suitsLabel}
+        </h2>
+        <p className="mt-2 max-w-[54ch] text-base leading-relaxed text-ink-soft">
           {suits}
         </p>
       </div>
       {avoid && (
         <div className="rounded-2xl border border-reach/40 bg-reach-soft/25 p-4 sm:p-5">
-          <h2 className="text-base font-semibold text-ink">{avoidLabel}</h2>
-          <p className="mt-1.5 max-w-[54ch] text-base leading-relaxed text-ink-soft">
+          <h2 className="text-2xl font-semibold tracking-tight text-ink">
+            {avoidLabel}
+          </h2>
+          <p className="mt-2 max-w-[54ch] text-base leading-relaxed text-ink-soft">
             {avoid}
           </p>
         </div>
@@ -482,7 +502,7 @@ export function GuideBlock({
   tone?: "plain" | "warn" | "good";
   children: React.ReactNode;
 }) {
-  const heading = <h3 className="text-base font-semibold text-ink">{label}</h3>;
+  const heading = <h3 className="text-lg font-semibold text-ink">{label}</h3>;
   // Capped independently of the container: widening the shell must buy more
   // columns, never longer lines. Unbounded, these ran to 131 characters on a
   // 1900px screen — nearly double the readable measure.
