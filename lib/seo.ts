@@ -52,5 +52,17 @@ export function pageMeta({
       title,
       description,
     },
+    // The image itself is a FILE convention — `app/opengraph-image.tsx`, and
+    // `app/opportunities/[id]/opengraph-image.tsx` for a single row — because
+    // file-based metadata overrides anything set here, and putting the plumbing
+    // there keeps this helper the one place that reasons about titles and
+    // canonicals. What has to be said here is the card SHAPE: without it X
+    // renders `summary`, the narrow thumbnail strip, and the card is the whole
+    // reason the image exists.
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }

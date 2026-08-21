@@ -13,6 +13,13 @@
 *.pdf binary
 *.woff binary
 *.woff2 binary
+# .ttf/.otf were missing from this list while .woff and .woff2 were on it, so
+# the first raw font committed here landed under `* text=auto eol=lf`. Git's
+# heuristic spots the NUL bytes and leaves it alone, so the blob is intact —
+# but "intact because a heuristic guessed right" is not a guarantee, and a
+# mangled font fails on the surface with the fewest eyes on it.
+*.ttf binary
+*.otf binary
 
 # Generated or vendored — keep them out of diff noise and language stats.
 package-lock.json -diff linguist-generated

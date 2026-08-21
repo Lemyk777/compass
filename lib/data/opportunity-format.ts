@@ -6,7 +6,13 @@
 // here keeps those routes' initial JS free of the catalog, which now loads only
 // via the dynamic import in the matching views.
 
-import type { Competition, CostInfo, CostModel, CostTone } from "./key-dates";
+import type {
+  Competition,
+  CompetitionCategory,
+  CostInfo,
+  CostModel,
+  CostTone,
+} from "./key-dates";
 
 // ── Date helpers (UTC, date-only — no timezone drift) ─────────────────────────
 //
@@ -46,6 +52,59 @@ function toUTC(d: Date | string): number {
 export function daysBetween(from: Date | string, to: Date | string): number {
   return Math.round((toUTC(to) - toUTC(from)) / 86_400_000);
 }
+
+// ── How long is left ─────────────────────────────────────────────────────────
+//
+// Four surfaces render this and three of them disagreed: the card and the
+// landing preview were right, `OpportunityDetail` printed "1 days left", and
+// the public checker's verdict printed "the nearest closes in 0 days" on the
+// day something closed. Both wrong spellings read as a bug rather than as a
+// deadline, which is expensive on the one screen whose whole job is to be
+// believed.
+//
+// It lives beside `daysBetween` rather than in a component because it is the
+// same class of thing: a pure formatter over a number, needed by clients, and
+// carrying no catalog data. Two shapes, because English needs two — a badge is
+// a noun phrase and the verdict line is a clause — and a caller that had to
+// bend one into the other would start spelling it itself again.
+//
+// Zero and below collapse to "today" on purpose. A past confirmed date never
+// reaches a card, but the clock can tick over between render and read, and
+// "-1 days left" is the worst possible way to learn that.
+
+/** Badge form: `closes today` · `1 day left` · `12 days left`. */
+export function daysLeftLabel(days: number): string {
+  if (days <= 0) return "closes today";
+  if (days === 1) return "1 day left";
+  return `${days} days left`;
+}
+
+/** Clause form, for a sentence: `closes today` · `closes tomorrow` · `closes in 12 days`. */
+export function closesInPhrase(days: number): string {
+  if (days <= 0) return "closes today";
+  if (days === 1) return "closes tomorrow";
+  return `closes in ${days} days`;
+}
+
+/**
+ * What a student calls each kind of thing.
+ *
+ * The union's own values are database spellings — `research_program` — and any
+ * surface that prints one raw shows a reader an enum. This lived twice, in
+ * `OpportunityCard` and `OpportunityDetail`, and the two had already drifted
+ * ("Research" against "Research program"). The card's copy is deliberately the
+ * short one because it sits in a chip on a dense card; it stays where it is and
+ * says why. Everything that wants the full name reads this.
+ */
+export const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
+  olympiad: "Olympiad",
+  competition: "Competition",
+  course: "Course",
+  research_program: "Research program",
+  summer_program: "Summer program",
+  community: "Community",
+  simulation: "Try the work",
+};
 
 const COST_COPY: Record<
   CostModel,

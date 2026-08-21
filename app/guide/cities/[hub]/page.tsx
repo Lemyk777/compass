@@ -221,10 +221,13 @@ export default async function GuideHubPage({
           )}
 
           {nearby.length > 0 && (
-            <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-              <h2 className="text-sm font-semibold text-ink">
+            <section
+              aria-label={`Other cities in ${REGION_LABEL[hub.region]}`}
+              className="rounded-2xl border border-line bg-card p-4 sm:p-5"
+            >
+              <p className="text-sm font-semibold text-ink">
                 Others in {REGION_LABEL[hub.region]}
-              </h2>
+              </p>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {nearby.map((h) => (
                   <li key={h.id}>
