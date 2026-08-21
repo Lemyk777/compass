@@ -6,7 +6,7 @@ import {
   type Competition,
   type CompetitionCategory,
 } from "@/lib/data/key-dates";
-import { formatDate } from "@/lib/data/opportunity-format";
+import { daysLeftLabel, formatDate } from "@/lib/data/opportunity-format";
 
 // The hero's visual: four REAL rows out of the catalog, rendered on the server.
 //
@@ -183,11 +183,7 @@ function Row({
                       : "bg-likely-soft text-ivy-ink"
                 }`}
               >
-                {days === 0
-                  ? "closes today"
-                  : days === 1
-                    ? "1 day left"
-                    : `${days} days left`}
+                {daysLeftLabel(days)}
               </span>
             )}
           </div>
