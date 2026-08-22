@@ -687,6 +687,9 @@ export default async function LandingPage() {
             <a href="/partners" className="transition hover:text-ink/70">
               For organisations
             </a>
+            <a href="/about" className="transition hover:text-ink/70">
+              About
+            </a>
             <a href="/privacy" className="transition hover:text-ink/70">
               Privacy Policy
             </a>

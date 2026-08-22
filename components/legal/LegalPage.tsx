@@ -55,6 +55,9 @@ export function LegalPage({
         <div className="mx-auto flex max-w-3xl flex-col items-start justify-between gap-3 px-6 py-8 text-sm font-light text-ink-faint sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} Compass. Guidance, not guarantees.</p>
           <nav className="flex items-center gap-5">
+            <Link href="/about" className="transition hover:text-ink/70">
+              About
+            </Link>
             <Link href="/privacy" className="transition hover:text-ink/70">
               Privacy Policy
             </Link>
