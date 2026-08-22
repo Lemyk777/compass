@@ -1586,7 +1586,9 @@ export const COMPETITIONS: Competition[] = [
     tier: "accessible",
     eligibility: "Students aged 12–20 worldwide",
     alwaysOpen: true,
-    url: "https://www.youngscientistjournal.org/",
+    // Moved to its host institution; the old domain now redirects here. Checked
+    // by hand 2026-08-22: same publication, same editor, May 2026 issue live.
+    url: "https://www.vanderbilt.edu/youngscientistjournal/",
     blurb:
       "A student-run science journal. You can publish articles or reviews without access to a lab.",
     cost: "free",
