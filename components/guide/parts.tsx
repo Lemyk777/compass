@@ -1,5 +1,7 @@
 import Link from "@/components/ui/Link";
 import { DetailExit } from "@/components/guide/DetailExit";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbSchema } from "@/lib/schema";
 import type { FacultyValue } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
 import {
@@ -220,6 +222,15 @@ export function DetailShell({
    * and about 57px tall — a rail pinned higher slides underneath it.
    */
   aside,
+  /**
+   * This page's own address, for the `BreadcrumbList` below — required rather
+   * than optional so a subject page added later cannot quietly ship without
+   * one. It is the CANONICAL path: `breadcrumbSchema` strips a query string,
+   * because `crumbHref` beside it routinely carries the guide's `?f=` filter
+   * and a trail naming a filtered URL contradicts the canonical on this very
+   * page.
+   */
+  path,
   children,
 }: {
   crumb: string;
@@ -229,10 +240,23 @@ export function DetailShell({
   lead?: string;
   transitionName?: string;
   aside?: React.ReactNode;
+  path: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-6">
+      {/* Read from the same three props the visible trail below is built from.
+          The guide is three levels deep across 138 pages that people reach from
+          a search or from a link somebody sent them, and without this a result
+          shows a bare URL where it could show `Compass › Countries › Germany`.
+          Stated once, so the markup cannot drift from the navigation. */}
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "The guide", path: "/guide" },
+          { name: crumb, path: crumbHref },
+          { name: title, path },
+        ])}
+      />
       <div>
         {/* Where you are on the left, the way out on the right. Both, because
             they answer different questions: at three levels deep a student

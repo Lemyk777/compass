@@ -161,6 +161,7 @@ export default async function GuideMajorPage({
       crumb="What you’d study"
       crumbHref={withFields("/guide/majors", stated)}
       title={major.name}
+      path={`/guide/majors/${params.major}`}
       transitionName={guideMorph("major", params.major)}
       sub={major.fields.map((f) => FACULTY_LABEL[f]).join(" · ")}
       lead={major.whatItActuallyIs}

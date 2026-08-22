@@ -27,6 +27,20 @@ import {
   universitiesForPlace,
 } from "@/lib/data/place-universities";
 
+import {
+  foldEdge,
+  stickyCtaVisible,
+  NO_EDGES,
+  type CtaEdges,
+} from "@/lib/data/sticky-cta";
+import {
+  serializeJsonLd,
+  canonicalPath,
+  breadcrumbSchema,
+  faqSchema,
+  webSiteSchema,
+  organizationSchema,
+} from "@/lib/schema";
 import { RUBRIC, computeOverall, type FactorKey } from "@/lib/rubric";
 import {
   computeOverallFromFactors,
@@ -7923,4 +7937,213 @@ test("the calendar still says what it is supposed to say", () => {
   assert.ok(!none.includes("BEGIN:VEVENT"));
   assert.ok(none.startsWith("BEGIN:VCALENDAR"));
   assert.ok(none.endsWith("END:VCALENDAR"));
+});
+
+// ── Structured data ─────────────────────────────────────────────────────────
+//
+// Same shape of risk as the calendar above, and the same answer. A partner
+// names their own organisation and every post they publish, and those names
+// travel into an opportunity page's breadcrumb — this time into a `<script>`
+// element, whose body is raw text until the parser sees `</script`. So the
+// escape is asserted against a name that tries to close the block, not merely
+// asserted to exist.
+
+test("a partner-supplied name cannot end the JSON-LD block", () => {
+  // The separators are built from their code points rather than typed. A raw
+  // U+2028 in a source file is invisible and does not survive an editor or a
+  // patch — writing this file the first time proved it twice.
+  const LS = String.fromCharCode(0x2028);
+  const PS = String.fromCharCode(0x2029);
+
+  const hostile = {
+    name: `</script><img src=x onerror=alert(1)>`,
+    amp: "Tom & Jerry",
+    seps: `a${LS}b${PS}c`,
+  };
+  const out = serializeJsonLd(hostile);
+
+  assert.ok(
+    !/<\/script/i.test(out),
+    "the payload can close the script element it sits in",
+  );
+  assert.ok(!out.includes("<"), "a raw < survived into the script body");
+  assert.ok(!out.includes(">"), "a raw > survived into the script body");
+  assert.ok(!out.includes("&"), "a raw & survived into the script body");
+  assert.ok(!out.includes(LS), "a raw U+2028 survived — that is a parse error");
+  assert.ok(!out.includes(PS), "a raw U+2029 survived — that is a parse error");
+
+  // Escaping that changed the data would be its own bug: the crawler must read
+  // exactly the name the partner typed.
+  const back = JSON.parse(out) as typeof hostile;
+  assert.deepEqual(back, hostile, "escaping altered the payload");
+
+  // And it bites through the builders, not only when called directly — that is
+  // the path a real partner name actually takes.
+  const crumbs = serializeJsonLd(
+    breadcrumbSchema([
+      { name: "Everything you can enter", path: "/opportunities" },
+      { name: hostile.name, path: "/opportunities/x" },
+    ]),
+  );
+  assert.ok(!/<\/script/i.test(crumbs));
+});
+
+test("the trail a crawler is given is the canonical path", () => {
+  // `?f=` is a filter, not a document, and `pageMeta` already drops it from the
+  // canonical. A breadcrumb naming the filtered URL would contradict the
+  // canonical on the very page it sits on — and `crumbHref` in the guide is
+  // routinely filtered, because every in-section link goes through
+  // `withFields`.
+  assert.equal(canonicalPath("/guide/places?f=law"), "/guide/places");
+  assert.equal(canonicalPath("/guide/places#money"), "/guide/places");
+  assert.equal(canonicalPath("/guide/places?f=law#money"), "/guide/places");
+  assert.equal(canonicalPath("/guide/places"), "/guide/places");
+
+  const trail = breadcrumbSchema([
+    { name: "The guide", path: "/guide" },
+    { name: "Countries", path: "/guide/places?f=law" },
+    { name: "Germany", path: "/guide/places/germany" },
+  ]);
+  const items = trail.itemListElement as {
+    position: number;
+    name: string;
+    item: string;
+  }[];
+
+  assert.deepEqual(
+    items.map((i) => i.position),
+    [1, 2, 3],
+    "positions must be 1-based and in order or the trail is ignored",
+  );
+  assert.ok(
+    items.every((i) => i.item.startsWith("https://")),
+    "a breadcrumb item has to be an absolute URL",
+  );
+  assert.ok(
+    !items.some((i) => i.item.includes("?")),
+    "a query string reached the structured data",
+  );
+  assert.equal(items[2].name, "Germany");
+});
+
+test("the FAQ markup carries the answers, and the site claims no search it lacks", () => {
+  const items = [
+    { q: "Is it free?", a: "Yes, all of it." },
+    { q: "Do I need an account?", a: "No." },
+  ];
+  const faq = faqSchema(items);
+  const questions = faq.mainEntity as {
+    name: string;
+    acceptedAnswer: { text: string };
+  }[];
+  assert.equal(questions.length, items.length);
+  assert.deepEqual(
+    questions.map((q) => q.acceptedAnswer.text),
+    items.map((i) => i.a),
+    "an answer went missing between the page and the markup",
+  );
+
+  // Pinned deliberately, so removing it is a decision rather than an accident.
+  // A `SearchAction` needs a URL TEMPLATE that runs a search, and the search on
+  // /opportunities is client state inside FilterBar — nothing here answers
+  // `?q=`. Declaring it would hand Google a URL that loads the unfiltered list.
+  assert.ok(
+    !("potentialAction" in webSiteSchema()),
+    "a sitelinks search box was declared for a search that is not in the URL",
+  );
+
+  // The one claim in the Organization block that could quietly become false.
+  assert.ok(
+    !("sameAs" in organizationSchema()),
+    "sameAs names profiles we do not control",
+  );
+});
+
+test("the country list leads with what we actually model, and says nothing else", () => {
+  // The order of this list is the only editorial claim it makes, so both halves
+  // are pinned. It used to lead with the home region on the argument that a
+  // guide listing eighteen ways to leave and none to stay is recommending; the
+  // founders' counter-argument was that leading with Kazakhstan steers just as
+  // hard in the other direction. The lead is derived from `modelled` now, which
+  // is a fact about the product rather than a view about a country.
+  const flags = STUDY_DESTINATIONS.map((d) => d.modelled);
+  const lastModelled = flags.lastIndexOf(true);
+  const firstUnmodelled = flags.indexOf(false);
+  assert.ok(
+    lastModelled < firstUnmodelled,
+    "a modelled destination fell behind an unmodelled one, so the lead is no longer the stated rule",
+  );
+
+  // Derived, not hand-listed: the front of the list must BE the modelled set,
+  // so a country that gains or loses an odds engine moves on its own.
+  const lead = STUDY_DESTINATIONS.slice(0, lastModelled + 1).map((d) => d.id);
+  assert.deepEqual(
+    [...lead].sort(),
+    STUDY_DESTINATIONS.filter((d) => d.modelled)
+      .map((d) => d.id)
+      .sort(),
+  );
+
+  // And those are the five the report actually computes. If this ever fails it
+  // means either a country gained an engine and nobody told the report, or the
+  // flag is being used for something it does not mean.
+  assert.deepEqual([...lead].sort(), [
+    "hong-kong",
+    "italy",
+    "south-korea",
+    "uae",
+    "united-states",
+  ]);
+
+  // The regional grouping is a different thing and is deliberately untouched:
+  // it groups the world map geographically and asserts nothing about merit.
+  assert.equal(REGION_ORDER[0], "central_asia");
+});
+
+test("the phone call-to-action appears only where the page has none", () => {
+  // The numbers are measured, not invented: the landing page at 375x812, with
+  // the hero button row and the closing call as the two edges. An
+  // IntersectionObserver does not fire at all in a throttled pane, so this is
+  // the only place the rule can actually be checked.
+  const VIEW = 812;
+  const at = (heroTop: number, finalTop: number): CtaEdges => {
+    let e = NO_EDGES;
+    e = foldEdge(e, "hero", heroTop < VIEW && heroTop > -60, heroTop);
+    e = foldEdge(e, "final", finalTop < VIEW && finalTop > -1200, finalTop);
+    return e;
+  };
+
+  // Top of the page: the hero's own buttons are right there.
+  assert.equal(
+    stickyCtaVisible(at(607, 13800)),
+    false,
+    "two filled controls on one screen — the rule this bar exists under",
+  );
+
+  // The long middle, where every measured scroll position has nothing to press.
+  assert.equal(stickyCtaVisible(at(-5731, 6712)), true);
+  assert.equal(stickyCtaVisible(at(-2000, 9000)), true);
+
+  // The closing call is on screen and is the real thing. The bar gets out of
+  // its way rather than floating over it.
+  assert.equal(stickyCtaVisible(at(-12000, 300)), false);
+
+  // Past it, at the footer, whose links are small and close together. This is
+  // the latch: "reached" has to mean at-or-past, never "currently visible", or
+  // the bar comes back on top of Privacy and Terms.
+  assert.equal(
+    stickyCtaVisible(at(-13000, -900)),
+    false,
+    "the bar returned over the footer",
+  );
+
+  // First paint, before anything has scrolled: the closing call is below the
+  // fold and so is also "not intersecting". Keying on that alone is the bug
+  // `top < 0` rules out — it would show the bar at scroll position zero.
+  const firstPaint = foldEdge(NO_EDGES, "hero", false, 13800);
+  assert.equal(
+    stickyCtaVisible(firstPaint),
+    false,
+    "an element below the fold was read as one scrolled past",
+  );
 });

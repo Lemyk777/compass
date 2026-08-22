@@ -73,6 +73,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/partners",
     "/partners/apply",
 
+    // Who runs this and what it refuses to do. Public on purpose: a family
+    // deciding whether to trust a site that advises their child should be able
+    // to read it before making an account, and a crawler should be able to find
+    // it without following a footer link.
+    "/about",
     "/privacy",
     "/terms",
   ];

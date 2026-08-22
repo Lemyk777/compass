@@ -206,6 +206,7 @@ export default async function GuideAreaPage({
       crumb="Kinds of work"
       crumbHref={withFields("/guide/work", stated)}
       title={area.title}
+      path={`/guide/work/${params.area}`}
       transitionName={guideMorph("area", params.area)}
       sub={FACULTY_LABEL[faculty]}
       lead={area.what}

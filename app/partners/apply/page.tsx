@@ -8,6 +8,7 @@ import { getSession } from "@/lib/auth/session";
 import { getPartnerForUser } from "@/lib/partners/queries";
 import { ApplyForm } from "@/components/partners/ApplyForm";
 import { pageMeta } from "@/lib/seo";
+import { REPLY_WINDOW } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,8 @@ export default async function PartnerApplyPage() {
             </Point>
             <Point>
               Once we&rsquo;ve confirmed the account belongs to your
-              organisation, everything you post carries a verification mark.
+              organisation, everything you post carries a verification mark. We
+              reply within {REPLY_WINDOW}.
             </Point>
             <Point>
               You get a public page listing everything you have open, a link
