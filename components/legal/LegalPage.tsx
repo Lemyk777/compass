@@ -24,9 +24,10 @@ export function LegalPage({
       <SkipLink />
       <header className="border-b border-black/10">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-6">
-          <Link href="/" aria-label="Compass home">
-            <BrandLink transition={false} />
-          </Link>
+          {/* `BrandLink` is already a link home, with its own aria-label.
+              Wrapping it nested an anchor inside an anchor, which is invalid
+              HTML and failed hydration on both legal pages. */}
+          <BrandLink transition={false} />
           <Link
             href="/"
             className="text-sm font-medium text-ink-soft transition hover:text-ink"

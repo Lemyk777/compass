@@ -369,9 +369,10 @@ export default function AboutPage() {
 
       <header className="border-b border-line/70">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-6 py-5">
-          <Link href="/" aria-label="Compass home" className="shrink-0">
-            <BrandLink transition={false} />
-          </Link>
+          {/* Not wrapped in a Link. `BrandLink` IS one, with its own href and
+              its own aria-label, so wrapping it nests an anchor inside an
+              anchor: invalid HTML, and React fails hydration over it. */}
+          <BrandLink transition={false} className="shrink-0" />
           <ButtonLink href="/opportunities" variant="subtle" size="sm">
             See what you can enter
           </ButtonLink>
