@@ -64,7 +64,16 @@ export function HeroField() {
         sheen's element is wider than the section so its own soft ends never
         travel into view. */}
       <div className="field-beam absolute inset-x-0 top-0 h-[42vh]" />
-      <div className="field-sweep absolute -inset-x-1/3 top-0 h-[30vh]" />
+      {/* The sheen gets a static masked parent, like the lattice below and for
+        the same reason: the band translates underneath the fade instead of
+        dragging it along. Without it the band met the bottom of its own box at
+        full strength and simply stopped, which is a cut rather than an edge and
+        was the sharpest thing in the field. The child stays a third wider on
+        each side so a 15% travel never brings its own ends into view, and the
+        parent clips so nothing paints past the fade. */}
+      <div className="field-sweep-mask absolute inset-x-0 top-0 h-[30vh] overflow-hidden">
+        <div className="field-sweep absolute -inset-x-1/3 inset-y-0" />
+      </div>
 
       {/* 2 — the lattice. The mask is on the static parent; the grid inside it
         is oversized so a full cell of drift never uncovers an edge. */}
