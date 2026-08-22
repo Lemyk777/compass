@@ -6911,6 +6911,53 @@ test("a beat opens with the ACTION, not with scenery", () => {
   }
 });
 
+/** Sentences in a beat. Beats carry no abbreviations, so a period ends one. */
+const sentencesIn = (t: string) =>
+  t
+    .trim()
+    .split(/[.!?]+(?:\s|$)/)
+    .filter((s) => s.trim().length > 0).length;
+
+test("a beat is TWO sentences: the situation, then what you do about it", () => {
+  // The rule the other two guards could not see. Word count, opener and the
+  // profession ban were all passing while a reader called the questions
+  // "philosophical" — because every beat was ONE sentence of about twenty words
+  // carrying its situation in a subordinate clause, so nothing resolved until
+  // the last word. 23 of 24 were built that way.
+  //
+  // The proof that plain was always possible is in the file itself: `plainer`,
+  // the text behind "I don't get it", says what is happening in ordinary words.
+  // The clarity existed and was hidden behind a button most readers never press.
+  //
+  // Two sentences forces the order that fixes it: state the situation, then the
+  // action. It is mechanical, which is the point — the previous rules measured
+  // length and first word, and a riddle can satisfy both.
+  for (const b of BEATS) {
+    const n = sentencesIn(b.text);
+    assert.ok(
+      n >= 2,
+      `${b.id} is ${n} sentence(s): "${b.text}" — say the situation, then what you do`,
+    );
+    // Not four either. Two short ones is a moment; four is a paragraph in a
+    // narrow rail, and two of those sit side by side.
+    assert.ok(n <= 3, `${b.id} is ${n} sentences — a beat is one moment`);
+  }
+});
+
+test("that two-sentence rule bites on the shape it was written for", () => {
+  // A guard that has never been shown to fail is a guard nobody has checked.
+  // This is the exact beat that shipped, and it must be rejected.
+  const asShipped =
+    "You work out which beam gave way, after the model bridge you built snapped under half the weight it should hold.";
+  assert.equal(sentencesIn(asShipped), 1, "the fixture stopped being one sentence");
+
+  // And the replacement must pass, or the rule is unmeetable rather than strict.
+  const rewritten =
+    "You built a model bridge and it snapped at half the weight it should hold. You work out which beam went first.";
+  assert.equal(sentencesIn(rewritten), 2);
+  assert.ok(rewritten.split(/\s+/).length <= 24, "the replacement broke the word cap");
+});
+
 // ── The gates, made visible ──────────────────────────────────────────────────
 test("by default the student still gets their own list", () => {
   assert.deepEqual([...NO_FILTERS.matched].sort(), ["field", "region"]);
