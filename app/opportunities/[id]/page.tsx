@@ -11,6 +11,8 @@ import { FACULTY_LABEL } from "@/lib/data/faculties";
 import { fetchLivePool } from "@/lib/partners/queries";
 import { getSession } from "@/lib/auth/session";
 import { pageMeta } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbSchema } from "@/lib/schema";
 
 // One opportunity, at its own address.
 //
@@ -105,6 +107,18 @@ export default async function OpportunityPage({
     <StudentShell isAdmin={session?.role === "admin"}>
       <Shell>
         <main id={SKIP_TARGET} className="space-y-6 py-6">
+          {/* The same two steps the visible trail below shows, in the form a
+              search result can render. These are the pages students send each
+              other, so they are also the pages most likely to be someone's
+              first arrival from a search — and `o.name` here can be a partner's
+              own wording, which is why `serializeJsonLd` escapes rather than
+              trusts it. */}
+          <JsonLd
+            data={breadcrumbSchema([
+              { name: "Everything you can enter", path: "/opportunities" },
+              { name: o.name, path: `/opportunities/${o.id}` },
+            ])}
+          />
           <nav aria-label="Breadcrumb" className="text-sm">
             <Link
               href="/opportunities"

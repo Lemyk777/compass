@@ -1,3 +1,6 @@
+import { JsonLd } from "@/components/seo/JsonLd";
+import { faqSchema } from "@/lib/schema";
+
 // Objection handling, rewritten for the front door: the questions a student (or
 // their parent) actually has before clicking, which are about cost, age, and
 // whether the dates can be trusted — not about how a score is computed.
@@ -9,7 +12,12 @@
 // Every answer is now in the HTML on first paint, keyboard-operable for free,
 // and open/close costs the browser one repaint.
 
-const ITEMS: { q: string; a: string }[] = [
+// Exported so the page's `FAQPage` markup below is built from the questions
+// actually rendered, rather than from a second list written out for crawlers.
+// Google's rule for this markup is that every answer is already visible on the
+// page; a copy would satisfy the validator and stop being true the first time
+// one of these was reworded.
+export const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: "What is this, exactly?",
     a: "A checked list of competitions, olympiads, courses and programmes school students can enter. Filtered to the ones open to you at your age, from where you live. You give your school year, we give the list.",
@@ -39,6 +47,9 @@ const ITEMS: { q: string; a: string }[] = [
 export function FAQ() {
   return (
     <section className="w-full bg-surface px-5 py-24 md:px-12 lg:px-20">
+      {/* The markup rides with the component that renders the questions, not
+          with the page that places it, so the two cannot be moved apart. */}
+      <JsonLd data={faqSchema(FAQ_ITEMS)} />
       <div className="mx-auto max-w-3xl">
         <div className="mb-12 text-center">
           <h2 className="text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
@@ -50,7 +61,7 @@ export function FAQ() {
         </div>
 
         <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-card shadow-card">
-          {ITEMS.map((it, i) => (
+          {FAQ_ITEMS.map((it, i) => (
             <details key={it.q} className="group" open={i === 0}>
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-left transition-colors hover:bg-ink/[0.015]">
                 <span className="text-base font-medium text-ink">{it.q}</span>

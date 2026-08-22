@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { applyAsPartner } from "@/app/partners/apply/actions";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
+import { REPLY_WINDOW } from "@/lib/site";
 
 // The application itself. Six fields, because an organisation that has to
 // assemble a submission pack will simply not bother — and the one thing we
@@ -52,7 +53,8 @@ export function ApplyForm({ defaultEmail }: { defaultEmail: string }) {
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
           We check one thing before listing an organisation: that this account
           really belongs to it. We&rsquo;ll write to{" "}
-          <span className="font-medium text-ink">{contactEmail}</span>. Once
+          <span className="font-medium text-ink">{contactEmail}</span> within{" "}
+          <span className="font-medium text-ink">{REPLY_WINDOW}</span>. Once
           that&rsquo;s done you can post straight away, with no queue.
         </p>
       </div>

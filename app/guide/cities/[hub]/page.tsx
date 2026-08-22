@@ -183,6 +183,7 @@ export default async function GuideHubPage({
         stated,
       )}
       title={hub.city}
+      path={`/guide/cities/${hub.id}`}
       transitionName={guideMorph("hub", hub.id)}
       sub={`${hub.country} · ${REGION_LABEL[hub.region]}`}
       lead={hub.what}
