@@ -8059,6 +8059,47 @@ test("the FAQ markup carries the answers, and the site claims no search it lacks
   );
 });
 
+test("the country list leads with what we actually model, and says nothing else", () => {
+  // The order of this list is the only editorial claim it makes, so both halves
+  // are pinned. It used to lead with the home region on the argument that a
+  // guide listing eighteen ways to leave and none to stay is recommending; the
+  // founders' counter-argument was that leading with Kazakhstan steers just as
+  // hard in the other direction. The lead is derived from `modelled` now, which
+  // is a fact about the product rather than a view about a country.
+  const flags = STUDY_DESTINATIONS.map((d) => d.modelled);
+  const lastModelled = flags.lastIndexOf(true);
+  const firstUnmodelled = flags.indexOf(false);
+  assert.ok(
+    lastModelled < firstUnmodelled,
+    "a modelled destination fell behind an unmodelled one, so the lead is no longer the stated rule",
+  );
+
+  // Derived, not hand-listed: the front of the list must BE the modelled set,
+  // so a country that gains or loses an odds engine moves on its own.
+  const lead = STUDY_DESTINATIONS.slice(0, lastModelled + 1).map((d) => d.id);
+  assert.deepEqual(
+    [...lead].sort(),
+    STUDY_DESTINATIONS.filter((d) => d.modelled)
+      .map((d) => d.id)
+      .sort(),
+  );
+
+  // And those are the five the report actually computes. If this ever fails it
+  // means either a country gained an engine and nobody told the report, or the
+  // flag is being used for something it does not mean.
+  assert.deepEqual([...lead].sort(), [
+    "hong-kong",
+    "italy",
+    "south-korea",
+    "uae",
+    "united-states",
+  ]);
+
+  // The regional grouping is a different thing and is deliberately untouched:
+  // it groups the world map geographically and asserts nothing about merit.
+  assert.equal(REGION_ORDER[0], "central_asia");
+});
+
 test("the phone call-to-action appears only where the page has none", () => {
   // The numbers are measured, not invented: the landing page at 375x812, with
   // the hero button row and the closing call as the two edges. An

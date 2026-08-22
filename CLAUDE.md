@@ -153,11 +153,21 @@ Everything here is **deterministic** — no model call — and the design rules 
   news listed is an advert, and a test enforces it. The deep layer is
   [lib/data/study-destinations.ts](lib/data/study-destinations.ts) → `/guide/places/[place]`:
   17 full country profiles (money, admissions, after-study, cities, sources).
-  **The home region leads the list on purpose** — Kazakhstan and Georgia first —
-  for the same reason the world map does: for many of our
-  readers a strong degree at home plus a funded master's abroad is the honest
-  answer, and a guide listing sixteen ways to leave and none to stay is not
-  neutral, it is recommending. **Rules,
+  **The list leads with the five destinations we actually MODEL, and the order
+  is derived from `modelled` rather than written down** (changed 2026-08-22).
+  It used to lead with the home region, Kazakhstan and Georgia first, on the
+  argument that a guide listing eighteen ways to leave and none to stay is
+  recommending rather than reporting. That argument lost to its mirror image,
+  raised by the students who built this: leading with Kazakhstan reads as
+  steering a reader home, which is the same bias pointing the other way, and it
+  is not the question they arrive with. Both versions were a claim dressed as a
+  list. `modelled` means Compass already computes admission odds there, which is
+  a fact about the product and not a view about a country — past those five the
+  order asserts nothing, and `/about` says so in as many words. A unit test pins
+  that the lead IS the modelled set, so a country that gains an engine moves on
+  its own. **`REGION_ORDER` is untouched and still puts Central Asia first**: it
+  groups the world map and the guide's chain geographically, which is not a
+  ranking. **Rules,
   test-enforced: trade-offs must outnumber strengths, `notForYou` is mandatory,
   and no prices or rankings** — those rot within a year, structural facts don't.
   Post-study work rules DO drift; they're written as "current rule, check it"

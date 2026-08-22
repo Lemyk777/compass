@@ -194,19 +194,40 @@ export default function AboutPage() {
             </P>
           </Section>
 
-          <Section heading="Staying is an answer too">
+          <Section heading="What the order of the list means">
             <P>
-              The guide lists countries and cities to study and work in, and
-              Kazakhstan and Georgia come first. That is on purpose. For a lot
-              of the students reading this, a strong degree at home and a funded
-              master&rsquo;s abroad later is the honest answer, and a guide that
-              lists sixteen ways to leave and none to stay is not neutral. It is
-              recommending.
+              The countries in the guide lead with the United States, Hong
+              Kong, Italy, Korea and the UAE. That is not a ranking and it is
+              not a recommendation. Those five are where Compass already works
+              out your admission odds rather than only describing the place, so
+              they are the ones with an engine behind them instead of prose
+              alone.
             </P>
             <P>
-              Every country profile has to list more trade-offs than strengths,
-              and every one has to say who should look somewhere else. A test
-              fails the build if it does not.
+              Past those five the order means nothing. Do not read anything into
+              a country sitting seventh rather than ninth. Every profile is held
+              to the same rules whatever position it is in: more trade-offs than
+              strengths, a section naming who should look somewhere else, and no
+              prices or rankings anywhere. A test fails the build if a profile
+              breaks one of them.
+            </P>
+          </Section>
+
+          <Section heading="Staying is one of the answers">
+            <P>
+              Leaving is not the default here. There are{" "}
+              <Num>{HOME_ROUTES.length}</Num> routes that need no visa and no
+              move at all, and Kazakhstan and Georgia carry full profiles like
+              everywhere else.
+            </P>
+            <P>
+              The Kazakhstan page says the mistake plainly: treating staying as
+              failure. The students who do well from here choose the local
+              degree deliberately, spend on tests and certificates what they did
+              not spend on tuition, and leave later for a funded
+              master&rsquo;s with a real record behind them. The ones who
+              struggle enrol at home as a fallback, disengage for four years,
+              and arrive at the same decision at twenty-two with nothing added.
             </P>
           </Section>
 
@@ -254,26 +275,31 @@ export default function AboutPage() {
             </P>
           </Section>
 
-          {/* ─────────────────────────────────────────────────────────────
-              AWAITING THE OWNER'S OWN WORDS.
-
-              Deliberately left as a short, true placeholder rather than a
-              plausible-sounding founder story. Nothing about who runs this is
-              known to the code, and inventing a person on the one page whose
-              entire purpose is trust would be the exact failure this page was
-              added to fix.
-
-              To fill it in: replace the paragraph below with who you are, where
-              you are writing from, and why you started. It does not need to be
-              long. A name, a place and one honest reason outperform a
-              paragraph of mission language.
-              ───────────────────────────────────────────────────────────── */}
+          {/* The founders' own account, in their own words. Nothing here is
+              inferred or filled in: the questions in the second paragraph are
+              the ones they listed, in the order they listed them. If a detail
+              is ever added to this section it has to come from them. */}
           <Section heading="Who makes this">
             <P>
-              Compass is made by a small team, and this section is where we
-              introduce ourselves properly. It is not written yet. Until it is,
-              the honest version is that you can reach a real person at the
-              address below and they will answer.
+              We are Alibek Ussipbayev and Kirill Kim. We are in our final year
+              at the Nazarbayev Intellectual School of Physics and Mathematics
+              in Shymkent, Kazakhstan.
+            </P>
+            <P>
+              We built this because we ran into every problem it solves. At the
+              start we did not know what to enter, or how, or what we wanted out
+              of any of it. Later the questions got bigger and no easier. Where
+              do you apply? Which country, and why that one? Which faculty, and
+              why? Which university? Where is the teaching better, where are the
+              grants more generous, where is there work at the end of it, where
+              are you allowed to stay? What is open to someone your age at all,
+              and what is the catch in each case?
+            </P>
+            <P>
+              Everything on this site is an answer we needed ourselves and had
+              to find the slow way. We are still at school, which is not a
+              credential, but it does mean we were the people this is for before
+              we were the people making it.
             </P>
           </Section>
 
