@@ -72,7 +72,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "holds-by-morning",
-    text: "You have until morning to work out why the thing you built breaks when too many people use it at once.",
+    text: "You built something that breaks whenever too many people open it at once. You have until morning to find out why.",
     plainer:
       "Something you built keeps breaking under heavy use, and you have until morning to work out the cause.",
     axes: { result_today: 2, with_things: 2, inside_fog: 1, alone: 1 },
@@ -80,7 +80,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "same-question-fortieth",
-    text: "You explain the same frightening thing for the fortieth time this week, to someone nobody has told plainly.",
+    text: "Someone has had frightening news that nobody explained properly. You explain it to them, for the fortieth time this week.",
     plainer:
       "Explaining something worrying and complicated to one anxious person after another, all day.",
     axes: { with_people: 2, result_today: 1, keeping_alive: 1 },
@@ -88,7 +88,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "one-sentence-fought",
-    text: "You argue for three days over one sentence, because how it is written decides what thousands of people may do.",
+    text: "You argue over the wording of a single sentence for three days. How it is written decides what thousands of people may do.",
     plainer:
       "Spending days on the exact wording of a rule, because small changes to it change what people are allowed to do.",
     axes: { inside_rules: 2, with_people: 1, result_years: 1 },
@@ -102,7 +102,7 @@ export const BEATS: Beat[] = [
   // alone/in_a_group) appear more than once. ──────────────────────────────────
   {
     id: "model-that-snapped",
-    text: "You work out which beam gave way, after the model bridge you built snapped under half the weight it should hold.",
+    text: "You built a model bridge and it snapped at half the weight it should hold. You work out which beam went first.",
     plainer:
       "A model you built to test a bridge design breaks under weight, and you spend the day working out which part failed.",
     axes: { with_things: 2, result_today: 1, alone: 1, making_new: 1 },
@@ -110,7 +110,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "forty-seconds-in",
-    text: "You and the others fix the timing together, fast, because the piece fell apart forty seconds in and the room is filling.",
+    text: "You are playing live and the group loses the timing forty seconds in. You pull it back together without stopping.",
     plainer:
       "A group performance goes wrong early because two people disagree about the timing, and you have to fix it together before the audience arrives.",
     axes: { in_a_group: 2, result_today: 1, inside_fog: 1 },
@@ -118,7 +118,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "redrawn-nine-times",
-    text: "You fit the part you redrew nine times over two years, it slides in first try, and nobody outside will know.",
+    text: "You redrew one small part nine times over two years. It slides into place first try, and nobody outside will know.",
     plainer:
       "A physical part you have redesigned many times over a long project finally fits correctly the first time you test it, though nobody else will know how many tries it took.",
     axes: { result_years: 2, with_things: 1, inside_rules: 1, alone: 1 },
@@ -126,7 +126,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "pattern-or-accident",
-    text: "You spend six more months finding out whether the pattern in this morning's numbers is real or an accident.",
+    text: "You spot a pattern in this morning's numbers that might be nothing. You spend six more months finding out which.",
     plainer:
       "A pattern shows up in your data, but nobody can yet tell if it means something real or is just chance, and it will take another six months of testing to find out.",
     axes: { inside_fog: 2, result_years: 1, alone: 1 },
@@ -134,7 +134,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "six-guesses-one-machine",
-    text: "You stand with five others round the machine that stopped the whole line, each guessing a different cause.",
+    text: "You stand round a machine that has stopped the whole production line. Five people are guessing the cause, and all five differ.",
     plainer:
       "A machine breaks down and stops an entire production line, and a group of you each guess at the cause until one guess turns out to be correct.",
     axes: { in_a_group: 2, with_things: 1, result_today: 1 },
@@ -142,7 +142,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "still-fine-by-sunrise",
-    text: "You are the last check before the night shift, and whether everyone is still fine by sunrise is on you.",
+    text: "You are the last person to check on everyone before the night shift. Whether they are all fine by sunrise is on you.",
     plainer:
       "You are the last person to check on a group of patients before night, and the whole night's work is judged by whether they are all still okay by morning.",
     axes: { keeping_alive: 2, with_people: 1, result_today: 1 },
@@ -150,7 +150,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "eleventh-measurement",
-    text: "You run the same measurement an eleventh time, alone, because the number still refuses to come out right.",
+    text: "You run the same measurement an eleventh time, alone in the room. The number still refuses to come out right.",
     plainer:
       "You repeat the same scientific measurement over and over, alone after everyone else has left, because the result keeps not matching what the theory predicts.",
     axes: { inside_fog: 2, alone: 1, result_years: 1 },
@@ -158,7 +158,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "what-they-heard-in-common",
-    text: "You listen to forty people argue about why their town is emptying, then stand up and say what they agreed on.",
+    text: "You listen to forty people argue about why their town is emptying. Then you stand up and say what they agreed on.",
     plainer:
       "Forty people in a town meeting all give different reasons for the same problem, and by the end of the night you have to summarise what they actually agreed on.",
     axes: { with_people: 2, in_a_group: 1, result_today: 1 },
@@ -166,7 +166,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "blank-at-nine",
-    text: "You start on a blank canvas in the morning and finish something real by evening, not knowing beforehand what.",
+    text: "You start the morning with a blank canvas and no idea what goes on it. By evening something real is finished.",
     plainer:
       "You start with a completely blank canvas in the morning and have made something real on it by the afternoon, without knowing in advance what it would turn out to be.",
     axes: { making_new: 2, alone: 1 },
@@ -174,7 +174,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "before-it-is-gone",
-    text: "You write down how the old festival was run, from the only two people left who remember, before they are gone.",
+    text: "Two people are the last who remember how a village festival was run. You write it all down before they are gone.",
     plainer:
       "Only two very old people still remember how a local tradition used to work, and it is your job this year to record it properly before that knowledge disappears.",
     axes: { keeping_alive: 2, result_years: 1, with_people: 1 },
@@ -182,7 +182,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "not-sure-the-seventh-time",
-    text: "You redo the same corner of it a seventh time, and still nobody can tell you whether it is finished.",
+    text: "You redo the same corner of your drawing for a seventh time. Nobody can tell you whether it is finished, including you.",
     plainer:
       "There is no test that tells you when a piece of creative work is done. You redo the same small part six times and still cannot be sure the seventh attempt is right.",
     axes: { inside_fog: 2, alone: 1 },
@@ -190,7 +190,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "no-version-of-almost",
-    text: "You spend the night finding why the thing you built still will not run, when there is no version of almost.",
+    text: "You spend the night hunting for why your code will not run. It either works or it does not, with nothing between.",
     plainer:
       "Code you wrote either works correctly or it does not, with nothing in between, and at midnight it still is not working, for a reason you have not found yet.",
     axes: { inside_rules: 2, with_things: 1, result_today: 1, alone: 1 },
@@ -198,7 +198,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "four-minutes-to-know",
-    text: "You wait four minutes for a reading that will either confirm your idea or wipe it out completely.",
+    text: "You wait four minutes for a single reading. It will either confirm the idea you have worked on for months, or end it.",
     plainer:
       "A lab measurement will either confirm or completely disprove an idea you had, and the equipment finishes producing that result in the next four minutes.",
     axes: { result_today: 2, alone: 1 },
@@ -206,7 +206,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "one-shared-answer-by-five",
-    text: "You get twelve strangers who disagree about what happened to leave with one shared answer by five o'clock.",
+    text: "You sit down twelve strangers who all disagree about what happened. By five o'clock they leave with one shared answer.",
     plainer:
       "A group of twelve people who disagree about the facts of a case must agree on one shared conclusion by five o'clock, and guiding them to it is your job.",
     axes: { with_people: 2, in_a_group: 1, result_today: 1 },
@@ -214,7 +214,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "losing-money-every-month",
-    text: "You decide this week whether the family shop, losing money for months, survives another season.",
+    text: "You decide this week whether a family shop survives another season. It has been losing money every month.",
     plainer:
       "A small family business has been losing money every month, and this week you have to decide whether to keep it running for another season or close it.",
     axes: { keeping_alive: 2, result_years: 1, alone: 1 },
@@ -222,7 +222,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "one-fixed-amount",
-    text: "You get everyone wanting a different share of the same fixed money to agree on one split before the meeting ends.",
+    text: "You have one fixed pot of money and a table of people who each want more. They leave agreeing on one split.",
     plainer:
       "A group of people each want a different share of the same limited amount of money, and the meeting continues until everyone agrees on how to divide it.",
     axes: { in_a_group: 2, with_people: 1, result_today: 1 },
@@ -230,7 +230,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "started-as-nothing",
-    text: "You open a blank file in the morning, and by tonight thousands of people tap something that did not exist.",
+    text: "You open an empty file in the morning. By tonight thousands of people are tapping something that did not exist.",
     plainer:
       "You start building something from a completely empty file in the morning, and by the end of the day thousands of people will be using the finished version.",
     axes: { making_new: 2, result_today: 1, alone: 1 },
@@ -238,7 +238,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "numbers-that-wont-show-it",
-    text: "You work out what is wrong when the tests keep coming back normal and something clearly still is.",
+    text: "You keep getting results that say normal, and something is clearly still wrong. You work out what the tests are missing.",
     plainer:
       "Medical test results keep coming back within the normal range, even though something is clearly still wrong, and you have to work out what the numbers are missing.",
     axes: { inside_fog: 2, with_people: 1 },
@@ -246,7 +246,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "written-for-a-world-without-this",
-    text: "You work out what a rule means now, when it was written for a world that did not have this technology in it.",
+    text: "You read a rule that was written before this technology existed. You work out what it is supposed to mean now.",
     plainer:
       "An old rule that people still depend on was written before a new technology existed, and you have to work out how that rule should be understood now.",
     axes: { inside_rules: 2, inside_fog: 1, result_years: 1 },
@@ -254,7 +254,7 @@ export const BEATS: Beat[] = [
   },
   {
     id: "a-dozen-different-versions",
-    text: "You decide tonight which parts you believe, from a dozen people telling different versions of the same event.",
+    text: "You hear a dozen people give different versions of the same event. Tonight you decide which parts you believe.",
     plainer:
       "Twelve different people in the same town each give you a different account of the same event, and by the end of the day you must decide what you think really happened.",
     axes: { with_people: 2, inside_fog: 1, result_today: 1 },
