@@ -555,6 +555,31 @@ export default async function LandingPage() {
               facts never remove an opportunity from your list; unverified dates
               never get a countdown; and nothing is called free unless it is.
             </p>
+            {/* The way to /about, and it belongs HERE rather than in the header.
+                This band is where a reader forms the question the About page
+                answers: a site has just told them it is honest, and nothing on
+                the page says who is making the claim. The header was the other
+                candidate and was rejected on measurement, not taste — it
+                already carries three controls beside the logo at 375px, and a
+                fourth would crowd the one primary call this page has. The
+                footer keeps its link for anyone who goes looking. */}
+            {/* A plain anchor, like the other six internal links on this page.
+                `components/ui/Link` is a client component, and this page ships
+                deliberately little JS. */}
+            <p className="mt-8">
+              <a
+                href="/about"
+                className="group inline-flex min-h-11 items-center gap-1.5 text-base font-semibold text-ivy-ink underline-offset-4 transition-colors hover:underline focus-visible:focus-ring"
+              >
+                Who is behind this, and what we refuse to do
+                <span
+                  aria-hidden="true"
+                  className="transition-transform duration-300 group-hover:translate-x-0.5"
+                >
+                  &rarr;
+                </span>
+              </a>
+            </p>
           </Band>
         </section>
 
