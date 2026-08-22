@@ -11,9 +11,16 @@ import { HowItWorks } from "@/components/marketing/HowItWorks";
 import { FAQ } from "@/components/marketing/FAQ";
 import { FinalCTA } from "@/components/marketing/FinalCTA";
 import {
+  StickyCTA,
+  HERO_CTA_ID,
+  FINAL_CTA_ID,
+} from "@/components/marketing/StickyCTA";
+import {
   OpportunityPreview,
   previewOpportunities,
 } from "@/components/marketing/OpportunityPreview";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { organizationSchema, webSiteSchema } from "@/lib/schema";
 import { getUniversityLogos } from "@/lib/data/logos";
 import { getT } from "@/lib/i18n/server";
 import { getSession } from "@/lib/auth/session";
@@ -137,6 +144,12 @@ export default async function LandingPage() {
     // one shortcut for skipping chrome delivering you into it. Both are siblings
     // now, and the skip link ahead of them is the first thing in the tab order.
     <div className="min-h-screen overflow-x-hidden bg-surface text-ink selection:bg-ink selection:text-surface">
+      {/* Who runs this and what the site is, stated once. On the home page and
+          nowhere else, which is both Google's own instruction and the cheap
+          answer: every HTML response here carries `Set-Cookie` and so is
+          uncacheable, and repeating this on the other 315 URLs would pay for it
+          every single time without adding a claim. */}
+      <JsonLd data={[organizationSchema(), webSiteSchema()]} />
       <SkipLink />
       <header className="absolute inset-x-0 top-0 z-50">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-6 py-6 md:px-12 md:py-8 xl:px-20">
@@ -212,26 +225,45 @@ export default async function LandingPage() {
               </span>
               {/* The size is a clamp, not three breakpoint steps, because it has
                 to agree with the column beside it at every width — and a
-                breakpoint agrees at three. The rule: the longest rotating phrase
-                measures ~10.3× the font-size, so the type must stay under
-                columnWidth / 10.3 or the slot reserves a line it doesn't use.
-                This ramp is 45px at 1024 and reaches the original 60px at 1440,
-                which clears that bound at every width in between (worst case
-                1280, where the wider gutters kick in: 58px allowed, 54px used).
-                Shortening or lengthening a phrase changes that 10.3 — measure
-                before editing the copy below. */}
-              <h1 className="rise-in mt-6 text-balance text-[2.75rem] font-medium leading-[1.04] tracking-tight text-ink sm:text-[3.25rem] lg:text-[clamp(2.8125rem,3.606vw_+_0.5052rem,3.75rem)]">
+                breakpoint agrees at three. The type must stay under
+                columnWidth / (the widest line's ratio) or a line wraps and the
+                whole hero shifts.
+
+                RE-SOLVED for Source Serif, and the interesting part is that the
+                BINDING LINE MOVED. Under the old grotesque the constraint was
+                the longest rotating phrase at ~10.3×; a serif is wider, and the
+                fixed sentence above them now measures **10.62×** against the
+                rotating three at 8.66 / 8.70 / 8.95. So the phrase ceiling
+                below is no longer what decides this — the first line is.
+
+                Measured column widths: 482px at 1024, 554 at 1152, 590 at 1280,
+                680 at 1440. The pinch is 1024 and 1280 (the xl gutters widen
+                there while the column does not keep up), and the old ramp
+                cleared 1024 by **4px**, which is a coincidence rather than a
+                design. This ramp holds ≥5% headroom at every width: 42.3px at
+                1024 against a 43.2 ceiling, 51.8 at 1280 against 52.9, 57.7 at
+                1440, 60 above ~1560.
+
+                Changing the font OR any of these four lines invalidates all of
+                it. Measure the rendered width of every line over the font-size
+                before editing either. */}
+              <h1 className="rise-in mt-6 text-balance text-[2.75rem] font-medium leading-[1.04] tracking-tight text-ink sm:text-[3.25rem] lg:text-[clamp(2.625rem,3.7vw_+_0.275rem,3.75rem)]">
                 See what you can enter.
-                {/* These three are near-identical in RENDERED width — 8.69,
-                  9.04 and 9.05 times the font-size — and that is the whole
-                  point, not a coincidence. The slot reserves the longest
-                  phrase's line count; any phrase shorter than that reserve
-                  leaves a hole. "Then make your move." used to sit here at
-                  10.27, which is why one phrase in three wrapped to two lines
-                  on a 430–500px phone while the other two stayed on one.
+                {/* These three are near-identical in RENDERED width — 8.66,
+                  8.95 and 8.70 times the font-size in Source Serif — and that
+                  is the whole point, not a coincidence. The slot reserves the
+                  longest phrase's line count; any phrase shorter than that
+                  reserve leaves a hole. "Then make your move." used to sit here
+                  at 10.27, which is why one phrase in three wrapped to two
+                  lines on a 430–500px phone while the other two stayed on one.
                   Keep any replacement at or under 9.1× — and measure it,
                   don't count characters: this phrase and the one it replaced
-                  are both 19–20 characters and differ by 95px. */}
+                  are both 19–20 characters and differ by 95px.
+
+                  Note these three are no longer what sizes the heading. The
+                  fixed line above measures 10.62× in this face, so it is the
+                  binding one — but the 9.1 ceiling stays, because a phrase
+                  above it would start reserving a second line again. */}
                 <RotatingHeadline
                   phrases={[
                     "Then go and win it.",
@@ -258,6 +290,9 @@ export default async function LandingPage() {
               </p>
 
               <div
+                // Named so the phone-only bar at the bottom of this file can
+                // wait for it to leave rather than for a scroll offset.
+                id={HERO_CTA_ID}
                 className="rise-in mt-8 flex flex-wrap items-center gap-3"
                 style={{ animationDelay: "0.16s" }}
               >
@@ -630,7 +665,11 @@ export default async function LandingPage() {
 
         <FAQ />
 
-        <FinalCTA signedIn={!!session} />
+        {/* Wrapped rather than given the id inside `FinalCTA`, so the close
+            stays a component about closing and knows nothing about the bar. */}
+        <div id={FINAL_CTA_ID}>
+          <FinalCTA signedIn={!!session} />
+        </div>
       </main>
 
       <footer className="mx-auto max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem] px-6 py-10 text-sm font-light text-ink-faint">
@@ -658,6 +697,23 @@ export default async function LandingPage() {
           <p>© {new Date().getFullYear()} Compass. Guidance, not guarantees.</p>
         </div>
       </footer>
+
+      {/* The button is rendered HERE, on the server, and handed down as a node.
+          `ButtonLink` pulls in `cn` — clsx plus tailwind-merge, about 9 kB in
+          any client bundle that imports it — and this page ships 107 kB after
+          deliberately removing framer-motion from it. The bar itself is a few
+          hundred bytes of observer. Same arrangement as the planner's window,
+          for the same reason. */}
+      <StickyCTA>
+        <ButtonLink
+          href="/opportunities"
+          size="lg"
+          shape="pill"
+          className="w-full"
+        >
+          See what you can enter
+        </ButtonLink>
+      </StickyCTA>
     </div>
   );
 }
