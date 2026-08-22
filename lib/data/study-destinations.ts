@@ -90,11 +90,10 @@ export type StudyDestination = {
   sources: { label: string; url: string }[];
 };
 
-// The home region leads, and that is the same decision the world map made: for
-// a large share of our readers the honest answer is a strong degree at home and
-// a funded master's abroad afterwards, and a guide that lists eighteen ways to
-// leave and none to stay is not being neutral — it is recommending.
-export const STUDY_DESTINATIONS: StudyDestination[] = [
+// The profiles themselves, in the order they were written. Nothing reads this
+// array directly: the exported list below is derived from it, and the ORDER is
+// the thing being derived. See the note there.
+const DESTINATIONS: StudyDestination[] = [
   {
     id: "kazakhstan",
     name: "Kazakhstan",
@@ -1033,6 +1032,36 @@ export const STUDY_DESTINATIONS: StudyDestination[] = [
     ],
     modelled: false,
   },
+];
+
+/**
+ * Every destination, with the ones we model in depth at the front.
+ *
+ * The order used to put the home region first, on the argument that a guide
+ * listing eighteen ways to leave and none to stay is recommending rather than
+ * reporting. The counter-argument won, and it came from the students who built
+ * this: leading with Kazakhstan reads as steering someone home, which is the
+ * same bias pointing the other way, and it is not what a reader arrives asking
+ * about. Both versions were a claim dressed as a list.
+ *
+ * So the lead is now DERIVED from something we can state out loud. `modelled`
+ * means Compass already computes admission odds for that destination, and those
+ * five profiles are the ones with a working engine behind them rather than
+ * prose alone. That is a fact about the product, not a view about the country,
+ * and it is the only thing this order asserts. Past those five it carries no
+ * meaning at all, and the page says so in as many words.
+ *
+ * It is derived rather than hand-listed so it cannot go stale: a country that
+ * gains an odds engine joins the front by flipping one boolean, and one that
+ * loses it leaves. A unit test pins both halves.
+ *
+ * Note this is only the COUNTRY list. `REGION_ORDER` still groups the world map
+ * and the guide's chain by region with Central Asia first, which is a
+ * geographic grouping and not a ranking, and is unaffected by any of this.
+ */
+export const STUDY_DESTINATIONS: StudyDestination[] = [
+  ...DESTINATIONS.filter((d) => d.modelled),
+  ...DESTINATIONS.filter((d) => !d.modelled),
 ];
 
 /** One destination profile by id. */

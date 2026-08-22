@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage, LegalSection } from "@/components/legal/LegalPage";
+import { CONTACT_EMAIL } from "@/lib/site";
 
-const CONTACT_EMAIL = "alibek196u@gmail.com";
 const UPDATED = "June 25, 2026";
 
 export const metadata: Metadata = {

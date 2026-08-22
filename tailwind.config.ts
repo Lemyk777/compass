@@ -110,8 +110,13 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["var(--font-display)", "ui-sans-serif", "system-ui"],
-        body: ["var(--font-body)", "ui-sans-serif", "system-ui"],
+        // The fallback has to be the same CLASS of face as the webfont, or the
+        // swap is a visible jump rather than a substitution: `display` is a
+        // serif now, and leaving `ui-sans-serif` under it meant every heading
+        // rendered as a grotesque until the font arrived and then changed
+        // shape. `display: "swap"` guarantees that window happens.
+        display: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
+        body: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       // The small end of the scale, lifted one step off Tailwind's stock
       // 12/14/16. Measured before touching it: on `/guide/places/[place]`,

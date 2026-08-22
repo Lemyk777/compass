@@ -153,11 +153,21 @@ Everything here is **deterministic** — no model call — and the design rules 
   news listed is an advert, and a test enforces it. The deep layer is
   [lib/data/study-destinations.ts](lib/data/study-destinations.ts) → `/guide/places/[place]`:
   17 full country profiles (money, admissions, after-study, cities, sources).
-  **The home region leads the list on purpose** — Kazakhstan and Georgia first —
-  for the same reason the world map does: for many of our
-  readers a strong degree at home plus a funded master's abroad is the honest
-  answer, and a guide listing sixteen ways to leave and none to stay is not
-  neutral, it is recommending. **Rules,
+  **The list leads with the five destinations we actually MODEL, and the order
+  is derived from `modelled` rather than written down** (changed 2026-08-22).
+  It used to lead with the home region, Kazakhstan and Georgia first, on the
+  argument that a guide listing eighteen ways to leave and none to stay is
+  recommending rather than reporting. That argument lost to its mirror image,
+  raised by the students who built this: leading with Kazakhstan reads as
+  steering a reader home, which is the same bias pointing the other way, and it
+  is not the question they arrive with. Both versions were a claim dressed as a
+  list. `modelled` means Compass already computes admission odds there, which is
+  a fact about the product and not a view about a country — past those five the
+  order asserts nothing, and `/about` says so in as many words. A unit test pins
+  that the lead IS the modelled set, so a country that gains an engine moves on
+  its own. **`REGION_ORDER` is untouched and still puts Central Asia first**: it
+  groups the world map and the guide's chain geographically, which is not a
+  ranking. **Rules,
   test-enforced: trade-offs must outnumber strengths, `notForYou` is mandatory,
   and no prices or rankings** — those rot within a year, structural facts don't.
   Post-study work rules DO drift; they're written as "current rule, check it"
@@ -712,6 +722,14 @@ of scale, and it is derived at build time from the registries.
   renders as a blank box rather than throwing — a unit test fails the build when
   the catalog grows one, and it is how the Cyrillic in "Турнир городов" was
   caught.
+  **KNOWN DIVERGENCE, 2026-08-22: those cards are still set in Inter while the
+  site moved to Source Serif / Source Sans.** The subset TTFs are committed at
+  `lib/og-fonts/` and are not what `next/font` serves, so changing the site's
+  faces does not reach them — a shared link therefore unfurls in a face the page
+  it opens does not use. Closing it means committing subset Source Sans TTFs and
+  re-running `scripts/subset-og-fonts.mjs`, and it must be re-measured against
+  the 1 MB edge cap above, which has already been hit once. Left open
+  deliberately rather than half-done.
 - **An unknown id must be a real 404.** See the loading-boundary note in the
   guide section above: this was a 200 for months and it is the one status a
   crawler must not see for an address that doesn't exist.
@@ -743,11 +761,17 @@ readable measure of 60–75. Long-form prose therefore carries its own cap
 
 Two things learned by measuring, worth not rediscovering:
 
-- **`ch` is the width of a zero, not of an average letter**, and in this font
-  the real count runs about **1.3×** the number you write. So `54ch` measures
-  68–72 characters and `60ch` measures **79–80** — outside the band, which is
-  why the cap is 54 and not 60. Set it by measuring, not by reading the number
-  as characters.
+- **`ch` is the width of a zero, not of an average letter**, and the multiplier
+  **belongs to the typeface, not to the codebase** — which is the part that was
+  learned the expensive way. Under Inter the real count ran about **1.3×** the
+  number you write, so `54ch` measured 68–72 characters and `60ch` measured
+  **79–80**, outside the band; that is why the cap is 54 and not 60. Under
+  **Source Sans 3 the same ratio is 1.14×**, measured 2026-08-22 over 54 full
+  lines on `/guide/places/germany`: `54ch` now renders **61.5** characters
+  (range 52–69). Still inside the 60–75 band, so the cap did not move — but the
+  same number bought nine fewer characters the day the font changed. **Re-measure
+  this ratio whenever the body face changes; never carry it across one.** Set it
+  by measuring, not by reading the number as characters.
   **Measure the way a reader reads: exclude the ragged last line.** The
   earlier note here claimed `60ch` landed at ~72 and the cap stood at 60 for
   several releases on the strength of it. Averaging the final part-line in
@@ -1015,6 +1039,31 @@ names roles and reads `rgb(var(--token) / <alpha-value>)`.
 
 ## Type is a system, and one of its axes is the theme
 
+**The faces are `Source_Serif_4` (display) and `Source_Sans_3` (body)**, wired
+once in [app/layout.tsx](app/layout.tsx) and reachable only as `font-display` /
+`font-body`. They are one superfamily on purpose — same designer, shared
+skeletons and vertical metrics — so headings and body agree at the joints. They
+replaced **Space Grotesk + Inter** on 2026-08-22, which is a named tell of a
+site assembled in an afternoon and was on every page.
+
+Three things that swap taught, and they generalise to any future change of face:
+
+- **Both subsets must include `cyrillic`.** The catalog holds "Tournament of
+  Towns (Турнир городов)", an opportunity's name is the `<h1>` of its own page,
+  and `h1..h4` are `font-display` globally. The old pair declared `latin` alone,
+  so that heading had been silently falling back to a system face. Next emits one
+  `@font-face` per subset behind a `unicode-range`, so pages without Cyrillic
+  never fetch the file — there is no reason to leave it out.
+- **The fallback must be the same CLASS of face.** `display` is a serif now, and
+  `ui-sans-serif` under it meant every heading rendered as a grotesque and then
+  changed shape when the webfont landed. `display: "swap"` guarantees that window
+  exists.
+- **Every measured typographic constant belongs to the old face and has to be
+  re-solved.** Two were, both documented where they live: the hero clamp (the
+  binding line moved from the rotating phrase to the fixed one — see the comment
+  in the landing page) and the `ch` multiplier below. Assume any number in this
+  section that came from a measurement is invalid until re-measured.
+
 Colour was already tokenised per theme; type was not, and the gap was the whole
 reason the dark theme read as harder work. **Contrast was never the problem** —
 every text token on `/opportunities` measured 5.48:1 or better while the
@@ -1030,8 +1079,11 @@ still show a tidy element histogram. Six rules, all test-enforced:
 
 - **`--type-tracking-body` is a theme token** (`app/globals.css`): 0 in light,
   `0.008em` in dark. Light text on a dark ground **blooms** — glyphs spread into
-  the background, counters close, and the space between letters is eaten — and
-  Inter feels it more than most because its default fit is tight. It is applied
+  the background, counters close, and the space between letters is eaten. The
+  value was solved for Inter, whose default fit is tight; the body face is
+  **Source Sans 3** now, which is set more openly, so 0.008em is if anything
+  generous and was left alone rather than re-solved by eye. Anyone with a dark
+  screen in front of them should check it. It is applied
   on `body` so it **inherits**, and so the 73 `tracking-tight` headings and the
   38 tracked labels keep the value they chose. Nothing in the product sets
   tracking on body copy, which is what makes that insertion point clean. Bounded

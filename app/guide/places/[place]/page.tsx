@@ -332,6 +332,7 @@ function DestinationBody({
       crumb="Countries"
       crumbHref={withFields("/guide/places", stated)}
       title={d.name}
+      path={`/guide/places/${d.id}`}
       transitionName={guideMorph("place", d.id)}
       sub={d.where}
       lead={d.oneLine}
