@@ -26,8 +26,22 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPartnerForUser } from "@/lib/partners/queries";
-import { slugify, type Partner } from "@/lib/data/partners";
-import { COMPETITION_CATEGORIES } from "@/lib/data/key-dates";
+import {
+  PARTNER_COST_VALUES,
+  slugify,
+  type Partner,
+} from "@/lib/data/partners";
+// The vocabularies, from the module that owns them. Four consecutive fields of
+// the schema below used to read: one derived from a canonical array, three
+// hand-written. The author knew the pattern — they used it a line above. What
+// they did not have was an array they were allowed to point at, because the
+// canonical ones lived inside key-dates and this file is one import away from a
+// client bundle.
+import {
+  COMPETITION_CATEGORIES,
+  COMPETITION_LEVELS,
+  COMPETITION_TIERS,
+} from "@/lib/data/opportunity-vocab";
 import { FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
 import { currentCycle, cycleEndPlaceholder } from "@/lib/data/cycle";
 
@@ -71,8 +85,8 @@ const opportunitySchema = z.object({
   url: httpUrl,
   blurb: z.string().trim().min(10).max(BLURB_MAX),
   category: z.enum(COMPETITION_CATEGORIES),
-  tier: z.enum(["accessible", "selective", "elite"]),
-  level: z.enum(["international", "national", "regional"]),
+  tier: z.enum(COMPETITION_TIERS),
+  level: z.enum(COMPETITION_LEVELS),
   // Empty = relevant to any field. Same meaning as "all" in the catalog:
   // unknown facts never exclude.
   fields: z
@@ -82,17 +96,10 @@ const opportunitySchema = z.object({
   timing: z.enum(TIMING),
   deadline: z.string().trim(),
   eventWindow: z.string().trim().max(160),
-  cost: z.enum([
-    "free",
-    "funded",
-    "free_then_paid",
-    "free_cert_paid",
-    "freemium",
-    "one_time",
-    "subscription",
-    "paid_aid",
-    "varies",
-  ]),
+  // Exactly what the form offers, derived from it rather than restated beside
+  // it: the two used to be independent nine-member lists that happened to
+  // agree, and nothing would have said so had they stopped.
+  cost: z.enum(PARTNER_COST_VALUES),
   costDetail: z.string().trim().max(DETAIL_MAX),
   // local → shown only to students in the partner's own country. That is the
   // whole point of a city hub's post, and it is also what keeps a Shymkent

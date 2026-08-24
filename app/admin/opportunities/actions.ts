@@ -12,12 +12,21 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { COMPETITION_CATEGORIES } from "@/lib/data/key-dates";
 import { FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
 import { LOCAL_TARGETS } from "@/lib/data/geo";
 import { angleByKey, SEARCH_ANGLES } from "@/lib/discovery/discover";
 import { runDiscovery, type DiscoveryTarget } from "@/lib/discovery/run";
-import type { CostModel } from "@/lib/data/key-dates";
+// The vocabularies, from the module that owns them. This file used to keep its
+// own ten-member copy of the cost list and its own four-member level list, and
+// the level one disagreed with the read side for the whole life of the feature.
+import {
+  COMPETITION_CATEGORIES,
+  COMPETITION_LEVELS,
+  COST_MODELS,
+  type CompetitionCategory,
+  type CompetitionLevel,
+  type CostModel,
+} from "@/lib/data/opportunity-vocab";
 
 // competition_deadlines.deadline is NOT NULL (migration 0011). For a candidate
 // with no verifiable date we store the end of the current cycle as a sorting
@@ -35,18 +44,14 @@ function currentCycle(): string {
   return `${year}-${String(year + 1).slice(2)}`;
 }
 
-const COST_MODELS: CostModel[] = [
-  "unknown",
-  "free",
-  "free_cert_paid",
-  "free_then_paid",
-  "freemium",
-  "subscription",
-  "one_time",
-  "paid_aid",
-  "funded",
-  "varies",
-];
+/** Narrow an untrusted string to a member of a vocabulary, or fall back. */
+function oneOf<T extends string>(
+  vocabulary: readonly T[],
+  raw: string,
+  fallback: T,
+): T {
+  return (vocabulary as readonly string[]).includes(raw) ? (raw as T) : fallback;
+}
 
 export async function approveCandidate(
   id: string,
@@ -70,10 +75,11 @@ export async function approveCandidate(
   // human reading one sentence beats anything we can automate — and until now
   // every approved row was permanently "cost unverified" because there was
   // nowhere to put the answer.
-  const rawCost = String(formData.get("cost") ?? "unknown");
-  const cost = (COST_MODELS as string[]).includes(rawCost)
-    ? (rawCost as CostModel)
-    : "unknown";
+  const cost = oneOf(
+    COST_MODELS,
+    String(formData.get("cost") ?? "unknown"),
+    "unknown",
+  );
   const costDetail = String(formData.get("cost_detail") ?? "")
     .trim()
     .slice(0, 200);
@@ -232,12 +238,18 @@ export async function runDiscoveryNow(
 // renderer, and no "admin opportunities" concept for the rest of the code to
 // learn.
 
-const ADMIN_LEVELS = [
-  "school",
-  "regional",
-  "national",
-  "international",
-] as const;
+// The form's own vocabularies ARE the product's vocabularies. They were two
+// hand-written arrays; the level one carried a fourth value (`school`) the read
+// side had never heard of, so an admin could publish a row that no filter could
+// reach and no facet counted. Pointing both at the canonical arrays is what
+// makes the two sides incapable of disagreeing — and it is why adding `school`
+// to the read side was a one-line change rather than a hunt.
+//
+// A `"use server"` file may only export async functions, so the form imports
+// the arrays from `opportunity-vocab` itself rather than from here. These two
+// aliases exist for the types below and to keep the assertion the test greps
+// for: the admin's vocabulary IS the product's vocabulary, not a copy of it.
+const ADMIN_LEVELS = COMPETITION_LEVELS;
 const ADMIN_CATEGORIES = COMPETITION_CATEGORIES;
 
 export type QuickAddInput = {
@@ -331,6 +343,24 @@ export async function quickAddOpportunity(
   const fields = input.fields.filter((f) => FACULTY_VALUES.includes(f));
   const region = input.region.trim().toUpperCase() || null;
 
+  // The three vocabulary fields, narrowed against the canonical arrays.
+  //
+  // This function's own docstring says the form is a convenience and THIS is
+  // the boundary — and then let `level`, `category` and `cost` through
+  // untouched, on the strength of a TypeScript type that describes a shape a
+  // caller is under no obligation to send. `lib/partners/live.ts` then casts
+  // whatever came back out of the database straight to `Competition["level"]`,
+  // so an unrecognised string would travel to every student's list wearing a
+  // type it does not have, land in no facet and be reachable by no filter —
+  // which is precisely the `school` defect, arrived at from the other end.
+  //
+  // The check reads as trivial now, and it is: it is trivial BECAUSE the
+  // vocabularies became arrays something can point at. It could not be written
+  // while they were bare unions.
+  const level = oneOf(ADMIN_LEVELS, input.level, "international");
+  const category = oneOf(ADMIN_CATEGORIES, input.category, "competition");
+  const cost = oneOf(COST_MODELS, input.cost, "unknown");
+
   const id = slugId(name);
   const admin = createAdminClient();
   const { error } = await admin.from("competition_deadlines").insert({
@@ -346,14 +376,14 @@ export async function quickAddOpportunity(
     event_window: input.alwaysOpen
       ? "Runs continuously. Start whenever you like"
       : "See the official page",
-    level: input.level,
-    category: input.category,
+    level,
+    category,
     url,
     blurb,
     eligibility: input.eligibility.trim(),
     date_confirmed: dateConfirmed,
     always_open: input.alwaysOpen,
-    cost: input.cost,
+    cost,
     cost_detail: input.costDetail.trim() || null,
     region,
     city: input.city.trim() || null,

@@ -82,6 +82,11 @@ import {
   CATEGORY_ORDER,
   CATEGORY_TABS,
   CATEGORY_TAB_LABEL,
+  COST_OPTIONS,
+  COST_MODELS_WITHOUT_A_BUCKET,
+  LEVEL_OPTIONS,
+  MATCH_OPTIONS,
+  TIMING_OPTIONS,
   NO_FILTERS,
   activeChips,
   categoryFromParam,
@@ -96,6 +101,22 @@ import {
   type OpportunityFilters,
   type TimingBucket,
 } from "@/lib/data/opportunity-filter";
+import {
+  CATEGORY_LABEL,
+  CATEGORY_LABEL_SHORT,
+  COST_LABEL,
+  COST_MODELS,
+  LEVEL_HINT,
+  LEVEL_LABEL,
+  TIER_LABEL,
+} from "@/lib/data/opportunity-vocab";
+import {
+  PARTNER_CATEGORY_OPTIONS,
+  PARTNER_COST_OPTIONS,
+  PARTNER_COST_VALUES,
+  PARTNER_LEVEL_OPTIONS,
+  PARTNER_TIER_OPTIONS,
+} from "@/lib/data/partners";
 import { emptyProfile } from "@/lib/types";
 import {
   CAREER_AREAS_BY_FACULTY,
@@ -5894,6 +5915,364 @@ test("the category list is not hand-copied into a view", () => {
     action,
     /ADMIN_CATEGORIES = COMPETITION_CATEGORIES/,
     "the admin endpoint no longer accepts exactly the catalog's kinds",
+  );
+});
+
+// ── The vocabularies, and the shape that keeps breaking ──────────────────────
+//
+// An opportunity has four closed vocabularies — kind, level, tier, cost — and
+// only ONE of them had ever been protected. The guard above is that protection:
+// it exists because a hand-kept array of kinds fell two behind, so `community`
+// and `simulation` were accepted by the server and unchoosable in the form.
+//
+// The two vocabularies sitting beside it in the same files never got it, and by
+// 2026-08-24 `level` was declared by hand in FIVE places and `cost` in SIX.
+// Two of those copies were already wrong:
+//
+//   • the admin form offered a fourth level, `school`, that nothing on the read
+//     side had heard of — so such a row sat in no facet, no level filter could
+//     reach it, and the facet numbers stopped summing to the list total;
+//   • the admin form offered NINE of the ten cost models, and the missing one
+//     was `funded` — *they pay you* — which the server action had accepted the
+//     whole time.
+//
+// Both are structurally impossible now: the arrays live in `opportunity-vocab`,
+// every option list is derived from them, and every label map is a
+// `Record<Union, …>` the compiler refuses to leave incomplete. **These tests do
+// not duplicate that.** They cover the three things a type cannot:
+//
+//   1. that nobody has quietly written a private copy back into a component;
+//   2. that the DERIVED lists really do cover their vocabulary (a later `as`
+//      cast or a `.filter` would silently reintroduce the gap);
+//   3. that every deliberate exclusion is NAMED, because a deliberate omission
+//      and a forgotten one look identical in a list.
+//
+// One table, one bite test — the same discipline as `BAN`, and for the same
+// reason: a guard written against its own copy of a pattern proves only that
+// the copy works.
+
+/**
+ * The vocabularies, and the literal members a private copy would contain.
+ *
+ * Typed as a Record over the vocabulary names so adding a vocabulary without
+ * its members does not compile — the same trick `BAN_FIXTURES` uses.
+ */
+const VOCAB_MEMBERS = {
+  level: COMPETITION_LEVELS,
+  tier: COMPETITION_TIERS,
+  cost: COST_MODELS,
+  category: COMPETITION_CATEGORIES,
+} as const;
+
+/**
+ * Files allowed to hold three or more literals of a vocabulary, and why.
+ *
+ * `opportunity-vocab` IS the list. The two test files are these tests. Anything
+ * else with three members of one vocabulary in it is a fourth copy in the
+ * making, which is exactly how every defect above shipped.
+ */
+const VOCAB_HOMES = [
+  // The list itself.
+  "lib/data/opportunity-vocab.ts",
+  // The catalog is 172 rows of data, each naming its own level and kind. It is
+  // the thing the vocabulary describes, not a copy of it.
+  "lib/data/competitions-data.ts",
+  // The discovery screener sends the vocabulary to the model as prompt text and
+  // validates the reply against it. Those literals are an interface with
+  // something outside this codebase, not an option list a person reads.
+  "lib/discovery/screen.ts",
+  "lib/discovery/discover.ts",
+  // The bucket → models mapping ("free to start" is these three). That IS a
+  // partition of the cost vocabulary rather than a copy of it, and it has a
+  // STRONGER guard than this one a few tests below: every model must appear in
+  // a bucket or be named unbucketed, asserted in both directions. A guard that
+  // fires where a better guard already holds teaches people to add exemptions.
+  "lib/data/opportunity-filter.ts",
+];
+
+/** Every .ts/.tsx under app/, lib/ and components/. */
+function projectSources(): string[] {
+  const out: string[] = [];
+  const visit = (dir: string) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        if (e.name === "node_modules" || e.name === ".next") continue;
+        visit(full);
+      } else if (/\.tsx?$/.test(e.name)) {
+        out.push(full);
+      }
+    }
+  };
+  for (const d of ["app", "lib", "components"]) visit(path.join(process.cwd(), d));
+  return out;
+}
+
+/**
+ * The largest number of DISTINCT members of one vocabulary that appear inside a
+ * single array literal.
+ *
+ * Three decisions here, and the first version of this guard got all three
+ * wrong. Each is a different way to measure the wrong thing, so each is worth
+ * keeping written down:
+ *
+ *  • **Distinct, not total.** `oneOf(COST_MODELS, raw, "unknown")` appearing
+ *    three times in one file is three uses of one fallback, not a list.
+ *  • **Inside an array literal.** Every real instance of this defect has been
+ *    an array — the admin form's `[…].map()`, the approval form's
+ *    `[{ value, label }, …]`, `z.enum([…])`, `ADMIN_LEVELS`. Counting the whole
+ *    FILE instead flagged nine files and eight were unrelated unions that merely
+ *    share a word: `scholarship: "unknown"`, `english: "unknown"`,
+ *    `StrengthBand` containing "elite". A vocabulary's generic members belong to
+ *    other vocabularies too; its SHAPE does not.
+ *  • **Comments stripped.** Several of the files that explain this rule name the
+ *    members while doing so, and a guard unusable in the files documenting it is
+ *    a guard somebody deletes.
+ */
+function vocabLiterals(src: string, members: readonly string[]): number {
+  const body = stripComments(src);
+  const member = new RegExp(`"(${members.join("|")})"`, "g");
+  let worst = 0;
+  for (let i = 0; i < body.length; i++) {
+    if (body[i] !== "[") continue;
+    // Walk to the matching bracket. Bounded: an array literal running past
+    // ~4000 characters is not an option list, and refusing to scan further
+    // stops one stray bracket swallowing the rest of the file.
+    let depth = 0;
+    let end = -1;
+    for (let j = i; j < Math.min(body.length, i + 4000); j++) {
+      if (body[j] === "[") depth++;
+      else if (body[j] === "]") {
+        depth--;
+        if (depth === 0) {
+          end = j;
+          break;
+        }
+      }
+    }
+    if (end < 0) continue;
+    const found = new Set(body.slice(i, end + 1).match(member) ?? []);
+    if (found.size > worst) worst = found.size;
+    i = end;
+  }
+  return worst;
+}
+
+test("no file keeps a private copy of a vocabulary", () => {
+  const offenders: string[] = [];
+  for (const file of projectSources()) {
+    const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+    if (VOCAB_HOMES.includes(rel)) continue;
+    const src = readFileSync(file, "utf8");
+    for (const [name, members] of Object.entries(VOCAB_MEMBERS)) {
+      const n = vocabLiterals(src, members);
+      // Three is the threshold the category guard already used: one or two
+      // literals is a default or a special case, three is the union being
+      // restated.
+      if (n >= 3) offenders.push(`${rel} writes out ${n} ${name} names`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `a vocabulary is being copied instead of imported from opportunity-vocab:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the private-copy guard actually bites", () => {
+  // The guard above walks the tree, collects offenders and asserts the list is
+  // empty — the shape that fails OPEN. It has to be shown catching something.
+  //
+  // It reads VOCAB_MEMBERS rather than its own copy of the member list, which
+  // is the load-bearing part: a bite test written against a copy of a pattern
+  // proves that the copy works, which is exactly nothing once the two drift.
+  // The three real defects, verbatim. Each must be caught.
+  const adminLevelSelect =
+    '{["school", "regional", "national", "international"].map((l) => (';
+  assert.equal(vocabLiterals(adminLevelSelect, VOCAB_MEMBERS.level), 4);
+
+  const adminCostSelect =
+    '{["unknown","free","free_cert_paid","free_then_paid","freemium",' +
+    '"subscription","one_time","paid_aid","varies"].map((c) => (';
+  assert.equal(vocabLiterals(adminCostSelect, VOCAB_MEMBERS.cost), 9);
+
+  const partnerZodEnum = 'level: z.enum(["international", "national", "regional"]),';
+  assert.equal(vocabLiterals(partnerZodEnum, VOCAB_MEMBERS.level), 3);
+
+  // And the near-misses it must NOT fire on. Every one of these is a real
+  // line from this repository that the first version of the guard flagged.
+  assert.ok(
+    vocabLiterals('const cost = oneOf(COST_MODELS, raw, "unknown");', VOCAB_MEMBERS.cost) < 3,
+    "a fallback is not a list",
+  );
+  assert.ok(
+    vocabLiterals(
+      'scholarship: z.enum(["likely_full", "likely_partial", "unlikely", "unknown"]),',
+      VOCAB_MEMBERS.cost,
+    ) < 3,
+    "another union that happens to contain the word unknown is not a copy of the cost list",
+  );
+  assert.ok(
+    vocabLiterals(
+      'const TARGET_TIERS = { emerging: ["accessible"], developing: ["accessible", "selective"],' +
+        ' competitive: ["selective", "elite"], elite: ["elite"] };',
+      VOCAB_MEMBERS.tier,
+    ) < 3,
+    "a band-to-tier mapping is a mapping, not a restatement of the tier list",
+  );
+  assert.equal(
+    vocabLiterals(
+      '// "international", "national" and "regional" are the three levels\nconst a = 1;',
+      VOCAB_MEMBERS.level,
+    ),
+    0,
+    "prose explaining the rule is not a copy of it",
+  );
+});
+
+test("every derived option list covers its whole vocabulary", () => {
+  // The lists are derived, so this holds by construction TODAY. It is asserted
+  // because the failure mode is silent and the repair is not: a later `.filter`
+  // or `as` cast puts the gap straight back, and the symptom is a facet that
+  // counts nothing rather than an error anybody sees.
+  assert.deepEqual(
+    LEVEL_OPTIONS.map((o) => o.id),
+    [...COMPETITION_LEVELS],
+    "the level filter no longer offers every level",
+  );
+  assert.deepEqual(
+    [...PARTNER_LEVEL_OPTIONS.map((o) => o.value)].reverse(),
+    [...COMPETITION_LEVELS],
+    "a partner can no longer post at every level the catalog stores",
+  );
+  assert.deepEqual(
+    PARTNER_TIER_OPTIONS.map((o) => o.value),
+    [...COMPETITION_TIERS],
+    "a partner can no longer post at every tier",
+  );
+
+  // Every option carries the words for it. An empty label is a facet a student
+  // cannot read, and it renders as a blank chip rather than as an error.
+  for (const o of [...LEVEL_OPTIONS, ...COST_OPTIONS, ...TIMING_OPTIONS]) {
+    assert.ok(o.label.trim().length > 0, `option "${o.id}" has no label`);
+    assert.ok(o.hint.trim().length > 0, `option "${o.id}" has no hint`);
+  }
+  for (const o of MATCH_OPTIONS) {
+    assert.ok(o.label.trim().length > 0, `option "${o.id}" has no label`);
+  }
+});
+
+test("every cost model reaches the money filter, or is named as unbucketed", () => {
+  // Rule 2 of opportunity-filter: "Free" never includes a cost we have not
+  // verified, so `unknown` and `varies` belong to NO bucket. That is correct
+  // and it is also indistinguishable from having forgotten one — the money
+  // filter simply stops being able to find those rows, silently.
+  //
+  // So the exclusion is written down and this asserts BOTH directions: every
+  // model is in a bucket or on the list, and nothing on the list is also in a
+  // bucket. A new cost model that lands in neither fails here.
+  const bucketed = new Set(COST_OPTIONS.flatMap((o) => o.models));
+  const unreachable = COST_MODELS.filter(
+    (m) => !bucketed.has(m) && !COST_MODELS_WITHOUT_A_BUCKET.includes(m),
+  );
+  assert.deepEqual(
+    unreachable,
+    [],
+    `these cost models are in no money bucket and not declared unbucketed, so the filter can never find them: ${unreachable.join(", ")}`,
+  );
+
+  const contradictory = COST_MODELS_WITHOUT_A_BUCKET.filter((m) =>
+    bucketed.has(m),
+  );
+  assert.deepEqual(
+    contradictory,
+    [],
+    "a model cannot be both bucketed and declared unbucketed",
+  );
+
+  // The two that are excluded are excluded for one stated reason: we have not
+  // verified the money. Anything else appearing here is a product decision
+  // somebody should have to make on purpose.
+  assert.deepEqual(COST_MODELS_WITHOUT_A_BUCKET, ["varies", "unknown"]);
+});
+
+test("every deliberate exclusion from a partner's choices is named", () => {
+  // A partner cannot post a simulation (we link out to those, never host them)
+  // and cannot say the cost is unknown (an organiser knows what their own event
+  // costs). Both are right. Neither was written down, so each read as a list
+  // that had fallen a member behind — which is what the category list actually
+  // HAD done, one file away.
+  assert.deepEqual(
+    COMPETITION_CATEGORIES.filter(
+      (c) => !PARTNER_CATEGORY_OPTIONS.some((o) => o.value === c),
+    ),
+    ["simulation"],
+  );
+  assert.deepEqual(
+    COST_MODELS.filter(
+      (m) => !PARTNER_COST_OPTIONS.some((o) => o.value === m),
+    ),
+    ["unknown"],
+  );
+  // The form's options and the server's validator are one list, not two that
+  // agree. They used to be two, and the day they stopped agreeing a partner
+  // would have been offered a cost the action then rejected.
+  assert.deepEqual(
+    PARTNER_COST_VALUES,
+    PARTNER_COST_OPTIONS.map((o) => o.value),
+  );
+});
+
+test("the label maps stay keyed by their own vocabulary", () => {
+  // Completeness is the compiler's job — every map here is a Record over its
+  // union. What a Record cannot stop is somebody later writing `as Record<…>`
+  // over an object literal, which is how the facet counts were built before
+  // this pass and how a missing key becomes `undefined` on screen instead of a
+  // type error in an editor.
+  const sameKeys = (
+    map: Record<string, unknown>,
+    members: readonly string[],
+    what: string,
+  ) =>
+    assert.deepEqual(
+      Object.keys(map).sort(),
+      [...members].sort(),
+      `${what} no longer has exactly one entry per member`,
+    );
+
+  sameKeys(LEVEL_LABEL, COMPETITION_LEVELS, "LEVEL_LABEL");
+  sameKeys(LEVEL_HINT, COMPETITION_LEVELS, "LEVEL_HINT");
+  sameKeys(TIER_LABEL, COMPETITION_TIERS, "TIER_LABEL");
+  sameKeys(CATEGORY_LABEL, COMPETITION_CATEGORIES, "CATEGORY_LABEL");
+  sameKeys(CATEGORY_LABEL_SHORT, COMPETITION_CATEGORIES, "CATEGORY_LABEL_SHORT");
+  sameKeys(CATEGORY_TAB_LABEL, COMPETITION_CATEGORIES, "CATEGORY_TAB_LABEL");
+  sameKeys(COST_LABEL, COST_MODELS, "COST_LABEL");
+
+  // The short form differs from the long one in exactly one place, and that is
+  // the whole reason two maps exist rather than one. If they ever become
+  // identical, one of them is dead weight; if they diverge further, the second
+  // difference wants the same deliberate argument the first one has.
+  const differ = COMPETITION_CATEGORIES.filter(
+    (c) => CATEGORY_LABEL[c] !== CATEGORY_LABEL_SHORT[c],
+  );
+  assert.deepEqual(differ, ["research_program"]);
+});
+
+test("opportunity-vocab imports nothing, so it can never become heavy", () => {
+  // The module's whole value is that a client bundle, a server action and an
+  // edge function can all reach the SAME array. One `import` of a registry here
+  // would put that registry into every one of them — including the two Open
+  // Graph routes, which are edge functions capped at 1 MB compressed and have
+  // already blown that cap once.
+  const src = readFileSync(
+    path.join(process.cwd(), "lib/data/opportunity-vocab.ts"),
+    "utf8",
+  );
+  const imports = stripComments(src).match(/^\s*import\b[^;]*;/gm) ?? [];
+  assert.deepEqual(
+    imports,
+    [],
+    `opportunity-vocab must import nothing; it now imports:\n${imports.join("\n")}`,
   );
 });
 // ── Majors ───────────────────────────────────────────────────────────────────

@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import { daysLeftLabel, formatDate } from "@/lib/data/opportunity-format";
-import type {
-  CompetitionCategory,
-  CompetitionTier,
-  Opportunity,
-} from "@/lib/data/key-dates";
+// The chip's SHORT names and the tier words, from the module that owns them.
+// This file held private copies of both. The short form is a real distinction —
+// "Research" fits a chip on a dense card and "Research program" does not — but
+// it had been expressed by duplicating the whole map rather than by naming the
+// two forms, so the landing page's hero ended up holding a third copy and the
+// front page said "Research" while the page it opened said "Research program".
+import {
+  CATEGORY_LABEL_SHORT,
+  TIER_LABEL,
+} from "@/lib/data/opportunity-vocab";
+import type { Opportunity } from "@/lib/data/key-dates";
 import { regionLabel } from "@/lib/data/geo";
 import { downloadIcs } from "@/lib/calendar/ics";
 import { PartnerBadge } from "@/components/partners/PartnerBadge";
@@ -28,21 +34,6 @@ import { CostPill, OpportunityDetail } from "./OpportunityDetail";
 
 export type CardDensity = "comfortable" | "compact";
 
-const TIER_LABEL: Record<CompetitionTier, string> = {
-  accessible: "Good first one",
-  selective: "Step up",
-  elite: "The big one",
-};
-
-const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
-  olympiad: "Olympiad",
-  competition: "Competition",
-  course: "Course",
-  research_program: "Research",
-  summer_program: "Summer program",
-  community: "Community",
-  simulation: "Try the work",
-};
 
 export function OpportunityCard({
   o,
@@ -131,7 +122,7 @@ export function OpportunityCard({
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <CostPill o={o} />
             <Chip>{TIER_LABEL[o.tierResolved]}</Chip>
-            <Chip>{CATEGORY_LABEL[o.categoryResolved]}</Chip>
+            <Chip>{CATEGORY_LABEL_SHORT[o.categoryResolved]}</Chip>
             {o.region && (
               // Local opportunity — only ever shown to students from that
               // country, so this reads as "near you", not as a restriction.

@@ -9,6 +9,7 @@ import { LOCAL_TARGETS, regionLabel } from "@/lib/data/geo";
 import { resolveCompetitions, type Competition } from "@/lib/data/key-dates";
 import { SEARCH_ANGLES } from "@/lib/discovery/discover";
 import type { ScreenWarning } from "@/lib/discovery/screen";
+import { COST_LABEL, COST_MODELS } from "@/lib/data/opportunity-vocab";
 import { approveCandidate, rejectCandidate } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -82,18 +83,18 @@ const WARNING_RANK: Record<ScreenWarning["code"], number> = {
   cost_signal: 8,
 };
 
-const COST_OPTIONS: { value: string; label: string }[] = [
-  { value: "unknown", label: "Cost: not verified" },
-  { value: "free", label: "Free, end to end" },
-  { value: "free_cert_paid", label: "Free; certificate costs" },
-  { value: "free_then_paid", label: "Free to enter; pay later round" },
-  { value: "freemium", label: "Free tier + paid plan" },
-  { value: "subscription", label: "Subscription" },
-  { value: "one_time", label: "One-time fee" },
-  { value: "paid_aid", label: "Paid, aid/waivers exist" },
-  { value: "funded", label: "Funded (they pay you)" },
-  { value: "varies", label: "Varies by school/country" },
-];
+// The seventh copy of the cost vocabulary, and the weakest: its members were
+// typed as a bare string, so the compiler could not check they were even VALID cost
+// models, let alone that all ten were present. A typo here would have compiled
+// and written a value nothing renders straight into a live row.
+//
+// Derived now. The labels come with it, so the reviewer approving a discovered
+// row reads the same words the partner filling in the form reads.
+const COST_CHOICES = COST_MODELS.map((value) => ({
+  value,
+  label: COST_LABEL[value].label,
+  hint: COST_LABEL[value].hint,
+}));
 
 export default async function AdminOpportunitiesPage() {
   await requireRole("admin", "/admin/opportunities");
@@ -338,7 +339,7 @@ export default async function AdminOpportunitiesPage() {
                         defaultValue="unknown"
                         className="rounded-xl border border-line bg-surface px-2 py-1.5 text-xs text-ink"
                       >
-                        {COST_OPTIONS.map((o) => (
+                        {COST_CHOICES.map((o) => (
                           <option key={o.value} value={o.value}>
                             {o.label}
                           </option>
