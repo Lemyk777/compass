@@ -65,7 +65,7 @@ npm run dev            # dev server at http://localhost:3000
 npm run build          # production build — also runs ESLint + type-check (use as the main gate)
 npm run lint           # ESLint only
 npx tsc --noEmit       # type-check only
-npm run test:unit      # 313 unit tests for the deterministic engine (node:test, no key/network)
+npm run test:unit      # 316 unit tests for the deterministic engine (node:test, no key/network)
 npm run test:onboarding # 126 tests over the intake schema + server action (db/auth mocked, not in CI)
 npm run test:links     # every catalog URL; fails ONLY on a 4xx that is not a bot wall
 npm run test:guide-links # the guide's official sources (ministries, portals)

@@ -23,10 +23,12 @@ scripts in §6 take under a minute between them.
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**As of 2026-08-24 there is ONE release on `develop` that is not yet in
-production: the root-cause pass below.** Everything before it is live.
+**As of 2026-08-24 everything in this repository is in production**, including
+the root-cause pass below. Released via [#152](https://github.com/Lemyk777/compass/pull/152);
+`origin/main` = `d541c7b`, `origin/develop` = `1cefa19`, and both point at the
+same tree `e792ae4`.
 
-### The root-cause pass, 2026-08-24 (on `develop`, unreleased)
+### The root-cause pass, released 2026-08-24 ([#152](https://github.com/Lemyk777/compass/pull/152))
 
 Four defects that turned out to be **one cause plus three neighbours of it**,
 found by asking why the same mistake appeared in many places written by people
@@ -52,17 +54,20 @@ who plainly knew better.
    branch of the colour in both themes (5.48:1), guard added.
 4. **401 is no longer read as a bot wall** — A2, item 4 of §8.
 
-Verification: `npm run build` clean, **313** unit tests (from 301), **61**
+Verification: `npm run build` clean, **316** unit tests (from 301), **61**
 session checks, `npm run test:links` **168/172 healthy · 0 broken**, and the
-browser measurements above taken against `next start` rather than assumed.
+browser measurements above taken against `next start` rather than assumed. Every
+one of the ten commits was type-checked and full-suite green BEFORE it landed,
+so the history bisects rather than only the tip. Re-verified on the live site
+after the release: the `School` facet renders at 5.48:1 against the 3.27:1 it
+measured before, and the catalog chunk loads with no interaction at all.
 
-**Everything else in this repository is in production.** Re-derived 2026-08-24:
-`origin/main` = `f8a0913`, `origin/develop` = `d897244`, and **both point at the
-same tree, `2c8ed60`** — so the two branches are byte-identical despite the
-different commit hashes. The values this line held before (`a29a828` and
-`87e6354`) were both stale, which is problem 5 of §8 happening again in the file
-that warns about it. Re-derive rather than read. **Compare TREE
-hashes, never commit counts** — `git rev-list --count origin/develop..origin/main`
+The values this line held before the release (`a29a828` and `87e6354`) were both
+stale, which is problem 5 of §8 happening again in the file that warns about it.
+**Re-derive rather than read**, and compare TREE hashes: after #152 the two
+branches are byte-identical at `e792ae4` despite different commit hashes.
+
+**Compare TREE hashes, never commit counts** — `git rev-list --count origin/develop..origin/main`
 reads 10+ while the two are byte-identical, because every release leaves a merge
 commit on `main` that `develop` never gets back. That count nearly sent a session
 branching off the wrong place; see CONTRIBUTING.
@@ -130,7 +135,7 @@ git fetch origin && git log --oneline origin/main..HEAD
 | On `main` (deployed) | everything through **the audit release**. `origin/main` = `9694dde`, released via [#132](https://github.com/Lemyk777/compass/pull/132) and [#134](https://github.com/Lemyk777/compass/pull/134). `origin/main` and `origin/develop` are identical |
 | Open PRs | none |
 | Branch | `develop` |
-| Unit tests | **313** (`npm run test:unit`), re-derived 2026-08-24. This line has read 289 since release 9 and the real number was 301 before this pass, so treat it as a claim: run the command. The twelve added here are the vocabulary, catalog-load and dimmed-control guards plus their bite tests, each watched failing before being kept |
+| Unit tests | **316** (`npm run test:unit`), re-derived 2026-08-24 after the release. This line has read 289 since release 9 and the real number was 301 before this pass, so treat it as a claim: run the command. The fifteen added here are the vocabulary, validator, catalog-load and dimmed-control guards plus their bite tests, and six were watched failing on a deliberate break before being kept |
 | Session checks | **61** (`node --import tsx scripts/test-session-checks.ts`) |
 | Catalog | **172 entries · 0 broken links locally** (1 unverifiable — a bot wall, reported without failing). **The weekly job on `main` reads differently and has failed since at least 2026-08-03** — see below |
 | Migrations | **All applied through `0031_beat_reactions.sql`** — `npm run db:check` reports 33/33 |
