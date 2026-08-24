@@ -14,11 +14,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > kinds of work may be handed to a subagent and what each one has to come back
 > with. The rule is one sentence — *a piece of work may be split off only when
 > it ends in a fact the main session can check without redoing the work* — and
-> the four agents that satisfy it live in [.claude/agents/](.claude/agents).
-> There is deliberately no reviewer agent: three whole-branch reviews of the
-> companion found six real bugs by reading and missed the three that mattered,
-> because all three were properties of height, position and adjacency. A fourth
-> reader would have missed them too.
+> the five agents that satisfy it live in [.claude/agents/](.claude/agents).
+> **The `reviewer` is never the last gate**, and every review it returns has to
+> close by naming what its channel could not reach: three whole-branch reviews
+> of the companion found six real bugs by reading and missed the three that
+> mattered, because all three were properties of height, position and adjacency.
+> Reading is insufficient there, which is not the same as worthless — the
+> measurement half is the `measurer`, and it is not optional.
 >
 > **The recurring one is that a guard here can be useless in FIVE distinct ways,
 > and only the first is visible in a diff.** (1) The regex loses its

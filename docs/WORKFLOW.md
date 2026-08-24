@@ -57,7 +57,7 @@ bottleneck here — deciding what is true has.
 
 ---
 
-## The four agents
+## The five agents
 
 Definitions live in [`.claude/agents/`](../.claude/agents). They exist so a
 split-off piece does not pay for a cold start: each one carries the rules it can
@@ -69,14 +69,34 @@ avoid writing `bg-ink text-white` on a button.
 | [`sweeper`](../.claude/agents/sweeper.md) | read-only fan-out: inventories, "find every place where", walking the module graph | returns evidence, never a fix and never a verdict; states the search it ran, so the negative space is visible |
 | [`guard-writer`](../.claude/agents/guard-writer.md) | one invariant into `scripts/test-engine.ts` | must seed a violation, show the failure, then revert. The bite test reads the shipped pattern, never a copy of it |
 | [`measurer`](../.claude/agents/measurer.md) | the running system: `getBoundingClientRect`, computed styles, contrast arithmetic, built chunk sizes | the only agent allowed the dev server, and only one may run. Reports numbers with viewport and theme attached |
-| [`catalog-verifier`](../.claude/agents/catalog-verifier.md) | catalog rows: dates, links, cost claims, blurb rules | four verdict bands, never three. Drops rather than softens |
+| [`catalog-verifier`](../.claude/agents/catalog-verifier.md) | catalog rows: dates, links, cost claims, blurb rules | five verdict bands, two of which fail the gate. Drops rather than softens |
+| [`reviewer`](../.claude/agents/reviewer.md) | fresh eyes on a diff, before the author's own last read | never the last gate. Must close by naming what its channel could not reach |
 
-**Why these four and not more.** Each maps onto work that has already happened
-here repeatedly and has a checkable output. There is no `reviewer` agent, and
-that absence is the finding at the top of this file: reviewing by reading is
-already what the main session does, and adding a second reader does not reach
-the class of defect that keeps getting through. Review is a read **and** a
-measurement, and the measurement half is the `measurer`.
+**On the reviewer, because this file first shipped without one.** The argument
+for leaving it out was that the three whole-branch reviews of the companion
+missed the three defects that mattered, so a second reader does not reach the
+class of bug that keeps getting through. The first half of that is true and the
+conclusion does not follow from it. **The same three reviews found six genuine
+criticals**, and the author re-reading their own diff is not the same act as
+fresh eyes on it — reading is insufficient, which is not the same as worthless.
+
+So the reviewer exists, and the fix for the misses is a stated boundary rather
+than an absence: it is **never the last gate**, and every review it returns
+closes with a `Not covered:` section naming what only the `measurer` can check.
+A review without that section gets read as clearance, which is exactly how three
+of them shipped a panel that was never sticky.
+
+**Why these five and not more.** Each maps onto work that has already happened
+here repeatedly and has a checkable output. The test to apply before adding a
+sixth is the rule at the top of this file, not whether the role sounds useful.
+
+**A definition added mid-session is not available in that session.** The agent
+registry is read at startup, so a freshly written `.claude/agents/*.md` fails
+with "agent type not found" until Claude Code is restarted — which is confusing
+precisely because the file is right there on disk. To exercise one before
+restarting, dispatch a general-purpose agent and have it **read the definition
+file as its first instruction**. That is a real test of whether the definition
+is self-sufficient, which is the part worth testing anyway.
 
 ---
 
