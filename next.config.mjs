@@ -52,13 +52,52 @@ const nextConfig = {
   reactStrictMode: true,
   // Tree-shake barrel imports of heavy libs so only the pieces we actually use
   // ship. Build-time only — zero runtime/visual change.
+  // Only packages this repo actually imports. `lucide-react` and `d3-geo` were
+  // listed here after both stopped being dependencies — Next ignores an entry
+  // for a package it cannot resolve, so the staleness was silent.
   experimental: {
-    optimizePackageImports: [
-      "recharts",
-      "framer-motion",
-      "lucide-react",
-      "d3-geo",
-    ],
+    optimizePackageImports: ["recharts", "framer-motion"],
+  },
+
+  /**
+   * Response headers. There were none, which is not a neutral default.
+   *
+   * The one that matters most here is framing: without it any site can put our
+   * sign-in page in an invisible iframe and collect what a student types into
+   * it. SAMEORIGIN rather than DENY on purpose — DENY would also break Vercel's
+   * own preview overlay, and we do frame our own pages in previews.
+   *
+   * A Content-Security-Policy is deliberately NOT here. It is the right next
+   * step and it is not a one-line one: this app inlines styles and runs Next's
+   * own bootstrap script, so a useful policy needs nonces threaded through the
+   * document. Shipping a permissive CSP to look protected would be worse than
+   * shipping none.
+   */
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          // Stop a browser from guessing a type we did not declare, which is
+          // what turns an uploaded file into a script.
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          // Send the full URL to ourselves, only the origin to anyone else. Our
+          // URLs carry `?ref=` codes and auth `?next=` paths, and the traffic
+          // module already refuses to store those for the same reason.
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          // Nothing in this product uses any of these, so nothing embedded in a
+          // page should be able to ask for them.
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=()",
+          },
+        ],
+      },
+    ];
   },
   async redirects() {
     return [

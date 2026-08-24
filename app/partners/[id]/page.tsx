@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { fitDescription, fitTitle } from "@/lib/seo";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { notFound } from "next/navigation";
 import Link from "@/components/ui/Link";
@@ -29,10 +30,15 @@ export async function generateMetadata({
   const partner = await getActivePartner(params.id);
   if (!partner) return { title: "Partner — Compass" };
   return {
-    title: `${partner.name} — opportunities on Compass`,
-    description:
+    title: fitTitle(partner.name, "what they have open"),
+    // This route does not go through `pageMeta` (it is a database row, not a
+    // registry page, and is deliberately absent from the sitemap), so it has to
+    // apply the budget itself. `partner.about` is written by the partner and
+    // has no length the form enforces.
+    description: fitDescription(
       partner.about ||
-      `Competitions and programmes posted by ${partner.name} on Compass.`,
+        `Competitions and programmes posted by ${partner.name} on Compass.`,
+    ),
   };
 }
 

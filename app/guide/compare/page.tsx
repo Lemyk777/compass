@@ -9,7 +9,7 @@ import {
   type StudyDestination,
 } from "@/lib/data/study-destinations";
 import { statedGuideFields } from "@/lib/guide/student-fields";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
 
 // Two countries, side by side, on the same axes.
 //
@@ -57,7 +57,7 @@ export async function generateMetadata({
 
   const [first, second] = [a.id, b.id].sort();
   return pageMeta({
-    title: `${a.name} or ${b.name}? — the honest comparison | Compass`,
+    title: fitTitle(`${a.name} or ${b.name}?`, "on the same axes"),
     description: `${a.name} and ${b.name} side by side on the same axes: money, admissions, what happens after you graduate, and who each one is wrong for.`,
     path: `/guide/compare?a=${first}&b=${second}`,
     type: "article",

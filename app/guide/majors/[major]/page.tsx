@@ -16,7 +16,7 @@ import { guideMorph } from "@/lib/data/guide-sections";
 import { majorById } from "@/lib/data/majors";
 import { guidePickState } from "@/lib/guide/plan-state";
 import { statedGuideFields } from "@/lib/guide/student-fields";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
 
 // One subject, in full — the page that did not exist, which is why the chain
 // stopped at "what kind of work" and resumed at "which country" with nothing in
@@ -34,7 +34,7 @@ export async function generateMetadata({
   const major = majorById(params.major);
   if (!major) return { title: "Not found — Compass" };
   return pageMeta({
-    title: `${major.name} — what it actually is, and who should study something else | Compass`,
+    title: fitTitle(major.name, "what it is, and who should not"),
     description: major.whatItActuallyIs,
     path: `/guide/majors/${params.major}`,
     type: "article",
