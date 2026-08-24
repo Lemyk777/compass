@@ -4,7 +4,9 @@
 //
 // Needs no API key.  npm run test:links
 //
-// Exit code 1 when anything is broken, so this can gate a release.
+// Exit code 1 only when a link is WRONG — a 4xx that is not a bot wall. A 5xx,
+// a timeout or a reset means we could not get an answer, which proves nothing
+// about the link and is reported without failing.
 
 import { COMPETITIONS } from "../lib/data/key-dates";
 
@@ -14,7 +16,7 @@ const UA =
 type Verdict = {
   id: string;
   url: string;
-  status: "ok" | "redirected" | "blocked" | "broken";
+  status: "ok" | "redirected" | "blocked" | "unreachable" | "broken";
   detail: string;
 };
 
@@ -24,6 +26,26 @@ type Verdict = {
 // Treating those as dead links makes this gate cry wolf on every run — and a
 // gate that is always red stops being read.
 const BOT_WALL = new Set([401, 403, 406, 409, 429]);
+
+/**
+ * What one HTTP status means for a link we ship. Exported so the rule can be
+ * asserted without the network — a gate whose verdict nothing checks is how
+ * this one ended up failing four weeks running on links that were all alive.
+ *
+ *   blocked      the server answered and refused this caller. Go look.
+ *   unreachable  the server said the fault is its own, or never answered.
+ *                Proves nothing about our URL.
+ *   broken       the server says this address is wrong. The only failing case.
+ */
+export function classifyStatus(status: number): Verdict["status"] {
+  if (BOT_WALL.has(status)) return "blocked";
+  if (status >= 500) return "unreachable";
+  if (status >= 400) return "broken";
+  return "ok";
+}
+
+/** Only this verdict may fail the run. */
+export const FAILS_THE_GATE: Verdict["status"] = "broken";
 
 /**
  * A single attempt. Only 4xx (other than the bot wall) proves the URL itself is
@@ -38,10 +60,18 @@ async function attempt(url: string): Promise<{ status: Verdict["status"]; detail
       redirect: "follow",
       signal: AbortSignal.timeout(20_000),
     });
-    if (BOT_WALL.has(res.status)) {
-      return { status: "blocked", detail: `HTTP ${res.status} — bot protection, verify by hand` };
+    // The distinction this file's own comment above has always described, and
+    // did not make until now: a 5xx is the far end telling us the fault is its
+    // own. Editing our link cannot fix it, so it is not a defect in the
+    // catalog. Only a 4xx says the address we ship is wrong.
+    const verdict = classifyStatus(res.status);
+    if (verdict === "blocked") {
+      return { status: verdict, detail: `HTTP ${res.status} — bot protection, verify by hand` };
     }
-    if (!res.ok) return { status: "broken", detail: `HTTP ${res.status}` };
+    if (verdict === "unreachable") {
+      return { status: verdict, detail: `HTTP ${res.status} — their server, not our URL` };
+    }
+    if (verdict === "broken") return { status: verdict, detail: `HTTP ${res.status}` };
 
     // A redirect to a different host usually means the URL we ship is stale.
     const finalUrl = res.url || url;
@@ -51,9 +81,14 @@ async function attempt(url: string): Promise<{ status: Verdict["status"]; detail
     return { status: "ok", detail: `HTTP ${res.status}` };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    // TLS failures, DNS failures and timeouts all land here — exactly what the
-    // student sees as "this site can't provide a secure connection".
-    return { status: "broken", detail: msg.slice(0, 120) };
+    // TLS failures, DNS failures, resets and timeouts land here, and from a
+    // datacenter IP they mostly mean the host refused THIS caller. Verified by
+    // hand 2026-08-24: the three links this run called broken in CI —
+    // ijsoweb.org, shanghai.nyu.edu and icaci.org — all answer 200 to a
+    // residential request, and icaci.org renders in full in a browser while
+    // resetting the connection to curl. Calling that a dead link is a false
+    // accusation about somebody else's website.
+    return { status: "unreachable", detail: msg.slice(0, 120) };
   }
 }
 
@@ -74,12 +109,15 @@ function looksTransient(detail: string): boolean {
  */
 async function check(url: string): Promise<{ status: Verdict["status"]; detail: string }> {
   const first = await attempt(url);
-  if (first.status !== "broken" || !looksTransient(first.detail)) return first;
+  const retryable =
+    (first.status === "broken" || first.status === "unreachable") &&
+    looksTransient(first.detail);
+  if (!retryable) return first;
 
   await new Promise((r) => setTimeout(r, 4000));
   const second = await attempt(url);
-  if (second.status === "broken") {
-    return { status: "broken", detail: `${second.detail} (twice, 4s apart)` };
+  if (second.status === "broken" || second.status === "unreachable") {
+    return { status: second.status, detail: `${second.detail} (twice, 4s apart)` };
   }
   return second;
 }
@@ -102,6 +140,7 @@ async function main() {
   const broken = results.filter((r) => r.status === "broken");
   const redirected = results.filter((r) => r.status === "redirected");
   const blocked = results.filter((r) => r.status === "blocked");
+  const unreachable = results.filter((r) => r.status === "unreachable");
 
   if (broken.length) {
     console.log("BROKEN — student sees a browser error:");
@@ -115,17 +154,37 @@ async function main() {
     console.log("\nBLOCKED — we can't check these from a script, open them yourself:");
     for (const r of blocked) console.log(`  ? ${r.id.padEnd(24)} ${r.url}\n      ${r.detail}`);
   }
+  if (unreachable.length) {
+    console.log("\nUNREACHABLE — we could not get an answer. Proves nothing; open them yourself:");
+    for (const r of unreachable) console.log(`  ~ ${r.id.padEnd(24)} ${r.url}\n      ${r.detail}`);
+  }
 
-  const ok = results.length - broken.length - redirected.length - blocked.length;
+  const ok =
+    results.length -
+    broken.length -
+    redirected.length -
+    blocked.length -
+    unreachable.length;
   console.log(
-    `\n${ok}/${results.length} links healthy · ${redirected.length} stale · ${blocked.length} unverifiable · ${broken.length} broken`,
+    `\n${ok}/${results.length} links healthy · ${redirected.length} stale · ${blocked.length} unverifiable · ${unreachable.length} unreachable · ${broken.length} broken`,
   );
-  // Only a genuinely dead link fails the gate. A bot wall is a "go look",
-  // not a defect — but it is printed every run so it can't be forgotten.
+  // Only a URL the far end says is WRONG fails the gate: a 4xx that is not a
+  // bot wall. Everything else is printed every run so it cannot be forgotten,
+  // and fails nothing.
+  //
+  // The weekly workflow had failed on all four of its runs, every time on links
+  // that were alive — GitHub's runners get refused by a dozen of these hosts —
+  // and a gate that has never once passed is a red light people learn to
+  // scroll past. That is worse than no gate, because it also hides the day
+  // something is really wrong.
   if (broken.length) process.exit(1);
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+// Guarded so the rule above can be imported and asserted without firing 172
+// requests. Same shape as build-map-outlines.ts next door.
+if (process.argv[1] && process.argv[1].includes("test-links")) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

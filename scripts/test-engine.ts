@@ -33,6 +33,7 @@ import {
   NO_EDGES,
   type CtaEdges,
 } from "@/lib/data/sticky-cta";
+import { classifyStatus, FAILS_THE_GATE } from "./test-links";
 import {
   fitTitle,
   fitDescription,
@@ -8193,6 +8194,43 @@ test("every real subject we publish produces a title inside the budget", () => {
     guideTitles.length,
     "two guide pages now produce the same title",
   );
+});
+
+test("only a WRONG url fails the link gate, and a wrong one still does", () => {
+  // The weekly Link health workflow failed on all four runs of its life, every
+  // time naming links that were alive: GitHub's runners get refused by a dozen
+  // of these hosts. Verified by hand on 2026-08-24 — ijsoweb.org,
+  // shanghai.nyu.edu and icaci.org all answer 200 from a residential request,
+  // and icaci.org renders fully in a browser while resetting curl.
+  //
+  // A gate that has never once passed is a red light people scroll past, which
+  // is worse than no gate: it also hides the day something is really wrong. The
+  // file's own comment always described the right rule and the code did not
+  // implement it, so this asserts the rule rather than the comment.
+
+  // The far end says our address is wrong. This is the only failing case.
+  for (const s of [400, 404, 405, 410, 451]) {
+    assert.equal(classifyStatus(s), "broken", `HTTP ${s} should fail the gate`);
+  }
+  assert.equal(FAILS_THE_GATE, "broken");
+
+  // The far end says the fault is its own. Editing our link cannot fix it.
+  for (const s of [500, 502, 503, 504, 522]) {
+    assert.equal(
+      classifyStatus(s),
+      "unreachable",
+      `HTTP ${s} is their server, not our URL`,
+    );
+  }
+
+  // The far end answered and refused this caller. Already the old behaviour.
+  for (const s of [401, 403, 406, 409, 429]) {
+    assert.equal(classifyStatus(s), "blocked");
+  }
+
+  for (const s of [200, 204, 301, 302]) {
+    assert.equal(classifyStatus(s), "ok");
+  }
 });
 
 test("the pages that bypass pageMeta are inside the budget too", () => {
