@@ -361,11 +361,29 @@ function Toggle({
       aria-pressed={on}
       title={title}
       onClick={onClick}
+      // "Nothing here" is a BRANCH of the colour, not an alpha laid over it,
+      // and both halves of that matter.
+      //
+      // Measured on the built page: at `opacity-50` this chip's label ran
+      // **3.27:1** and its count **2.41:1**, against 8.78 and 5.48 for the same
+      // chip with results in it. 13px text needs 4.5. Every token in here had
+      // been checked; the opacity over the top had not — the exact trap
+      // CLAUDE.md names as "an alpha modifier on text is a colour nobody has
+      // checked", arriving from a direction no class-name scan could see.
+      // Everywhere else in this codebase a dimmed control is a genuinely
+      // `disabled` one, which WCAG exempts. This one stays clickable.
+      //
+      // And a branch rather than an appended class, because two utilities of
+      // the same type at the same specificity are resolved by whichever
+      // Tailwind emitted last — appending `text-ink-faint` after `text-ink-soft`
+      // is the merge bug the button system exists to prevent.
       className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:focus-ring ${
         on
           ? "border-accent bg-accent-soft text-accent-ink"
-          : "border-line bg-card text-ink-soft hover:border-ink/30 hover:text-ink"
-      } ${count === 0 && !on ? "opacity-50" : ""}`}
+          : count === 0
+            ? "border-line/60 bg-card text-ink-faint"
+            : "border-line bg-card text-ink-soft hover:border-ink/30 hover:text-ink"
+      }`}
     >
       {children}
       <span

@@ -6288,6 +6288,87 @@ const HAND_ROLLED_TODAY = /setToday\s*\(\s*new Date\(\)\s*\)/;
 // tests keep it that way, because the old shape reads as perfectly ordinary
 // and would be written again by anybody adding a fifth surface.
 
+/**
+ * A `<button …>` opening tag, up to the `>` that closes it.
+ *
+ * Bounded at 1200 characters: these className strings are long, and a
+ * runaway match would swallow the element after it and report the wrong file.
+ */
+const BUTTON_TAG = /<button\b[\s\S]{0,1200}?>/g;
+
+/** An opacity utility with no state prefix — it applies always, not on a state. */
+const BARE_OPACITY = /(?<![\w:-])opacity-(?:[0-6]?[0-9])(?![\w-])/;
+
+test("a dimmed control is a disabled control", () => {
+  // Measured on the built page, 2026-08-24: an opportunity filter chip with
+  // no results rendered its label at **3.27:1** and its count at **2.41:1**,
+  // against 8.78 and 5.48 for the same chip with results in it. 13px text
+  // needs 4.5. The cause was `opacity-50` laid over the chip to mean "nothing
+  // here" while it stayed enabled and clickable.
+  //
+  // Every colour token inside was checked. The alpha over the top was not —
+  // and it arrives from a direction the existing contrast guards cannot see,
+  // because those scan for `text-ink/60`-style class names and this is an
+  // `opacity` on the element itself. Three chips had it: the opportunity
+  // filter and both of the guide filter's.
+  //
+  // Everywhere else in this codebase a dimmed control carries `disabled:` on
+  // the opacity, so it only applies to a control that really is disabled —
+  // and WCAG 1.4.3 exempts those. That convention is the rule; this asserts
+  // it rather than trusting it, and "nothing here" is expressed as a BRANCH
+  // of the colour instead.
+  const offenders: string[] = [];
+  for (const file of projectSources()) {
+    const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+    const body = stripComments(readFileSync(file, "utf8"));
+    for (const tag of body.match(BUTTON_TAG) ?? []) {
+      if (!BARE_OPACITY.test(tag)) continue;
+      // `disabled` anywhere in the same opening tag means the dimming is
+      // conditional on a state WCAG exempts. `aria-disabled` counts too.
+      if (/\bdisabled\b/.test(tag)) continue;
+      offenders.push(`${rel} — ${tag.replace(/\s+/g, " ").slice(0, 90)}…`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `these dim an ENABLED control, which takes checked text colours below AA:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the dimmed-control guard actually bites", () => {
+  // Collect-and-assert-empty again, so it has to be shown catching the real
+  // line. This is the opportunity filter chip exactly as it shipped.
+  const asItShipped =
+    '<button type="button" aria-pressed={on} onClick={onClick} className={`inline-flex h-8 ' +
+    'items-center rounded-full border px-3 text-xs ${on ? "border-accent" : "border-line ' +
+    'text-ink-soft"} ${count === 0 && !on ? "opacity-50" : ""}`}>';
+  const shipped = asItShipped.match(BUTTON_TAG) ?? [];
+  assert.equal(shipped.length, 1, "the real chip must be recognised as a button");
+  assert.ok(BARE_OPACITY.test(shipped[0]), "and its bare opacity must be found");
+  assert.ok(!/\bdisabled\b/.test(shipped[0]), "and it must not look disabled");
+
+  // The near-misses, all real shapes from this tree, each excluded by exactly
+  // one character of the pattern — which is the case a bite test has to carry.
+  assert.ok(
+    !BARE_OPACITY.test('className="… focus-visible:focus-ring disabled:opacity-50"'),
+    "disabled:opacity is the correct convention and must not fire",
+  );
+  assert.ok(
+    !BARE_OPACITY.test('className="… transition-opacity hover:opacity-90"'),
+    "a hover state is not a resting colour",
+  );
+  assert.ok(
+    !BARE_OPACITY.test('className="… group-hover:opacity-100"'),
+    "a group variant is a state too",
+  );
+  // The boundary case: `opacity-100` is not a dimming, and it differs from
+  // `opacity-10` by one trailing character. A pattern that cannot tell them
+  // apart would fire on every full-opacity override in the tree.
+  assert.ok(!BARE_OPACITY.test('className="opacity-100"'), "full opacity is not dimming");
+  assert.ok(BARE_OPACITY.test('className="opacity-10"'), "and 10 still is");
+});
+
 // ── Validators point at a vocabulary; they never restate one ────────────────
 //
 // The same root cause as `opportunity-vocab`, one layer out. A `z.enum` taking
