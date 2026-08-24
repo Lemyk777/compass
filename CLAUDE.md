@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > as opposed to what it is. §8 also ends with a list of **problems** that are
 > nobody's work item.
 >
-> **The recurring one is that a guard here can be useless in FOUR distinct ways,
+> **The recurring one is that a guard here can be useless in FIVE distinct ways,
 > and only the first is visible in a diff.** (1) The regex loses its
 > backslashes, so it matches nothing and reports nothing — three guards, found
 > by grepping 433 regex literals for the signature; the eleven ban patterns now
@@ -21,12 +21,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > bites, reads the right string, and measures the wrong PROPERTY** — the
 > companion's beats passed a word cap, an opening-word rule and a banned-noun
 > list while reading as riddles, because all three measure form and the defect
-> was structure. Ask what a passing guard actually proves, and whether a
-> reader's complaint could survive it untouched.
+> was structure. (5) **The defect arrives through a channel the guard cannot
+> see at all** — the contrast guards read class names for alpha colour
+> utilities, and a filter chip failed at **3.27:1** because of an `opacity-50`
+> on the element, which composites AFTER the class is written and over colours
+> that individually pass. No class-name scan could ever have caught it. Ask
+> what a passing guard actually proves, and whether a reader's complaint could
+> survive it untouched.
+>
+> **A sixth thing, not a fail-open but a guard that gets exempted to death:**
+> one aimed at a vocabulary's WORDS rather than its SHAPE. Counting how often
+> a cost model's name appeared anywhere in a file flagged nine files and eight
+> were unrelated unions sharing a generic word (`"unknown"`, `"free"`).
+> Rewriting it to the shape every real instance had — an array literal holding
+> 3+ DISTINCT members — went from 9 findings (1 real) to 1 finding (1 real).
+> Words are shared across unrelated concepts; shape is not.
 >
 > **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine findings
-> with evidence. **Two are closed and seven are open** (status table at the top
-> of that file, re-verified 2026-08-17). A1 closed because its date passed on
+> with evidence. **Seven are closed and two are open** (status table at the top
+> of that file, re-verified 2026-08-24). The two left, A7 and A8, are both DATA
+> rather than code. Four closed together on 2026-08-24 because they were four
+> symptoms of one cause — see the vocabulary rule in the Opportunities section.
+>
+> A1 closed because its date passed on
 > 2026-08-14, which turned "a confirmed date is never already in the past" red on
 > `main` for every branch, and the owner's answer on 2026-08-15 was to remove the
 > row (catalog 173 → 172). The audit's do-not-touch instruction did its job — it
@@ -48,7 +65,7 @@ npm run dev            # dev server at http://localhost:3000
 npm run build          # production build — also runs ESLint + type-check (use as the main gate)
 npm run lint           # ESLint only
 npx tsc --noEmit       # type-check only
-npm run test:unit      # 301 unit tests for the deterministic engine (node:test, no key/network)
+npm run test:unit      # 313 unit tests for the deterministic engine (node:test, no key/network)
 npm run test:onboarding # 126 tests over the intake schema + server action (db/auth mocked, not in CI)
 npm run test:links     # every catalog URL; fails ONLY on a 4xx that is not a bot wall
 npm run test:guide-links # the guide's official sources (ministries, portals)
@@ -155,6 +172,32 @@ Everything here is **deterministic** — no model call — and the design rules 
   counts on each control are computed with that control's own selection lifted.
   The module type-imports key-dates only (see the bundle rule below), and the
   rules are unit-tested in [scripts/test-engine.ts](scripts/test-engine.ts).
+- **An opportunity's four vocabularies — kind, level, tier, cost — live in
+  [lib/data/opportunity-vocab.ts](lib/data/opportunity-vocab.ts), and that
+  module exists to settle a fight between two of the rules on this page.** The
+  one-list rule says a vocabulary is declared once and every validator, filter,
+  facet and form derives from it. The bundle rule below says nothing
+  client-reachable may import a runtime value from `key-dates`. The canonical
+  arrays lived in `key-dates`, so the one-list rule was **unfollowable**
+  everywhere the bundle rule applied, and it lost silently every time: `level`
+  ended up hand-written in five places and `cost` in seven. The tell was four
+  consecutive fields of one Zod object in `app/partner/actions.ts` — the first
+  derived from the canonical array, the next three written out by hand. Two of
+  those copies were already wrong, both silently: `school` was accepted by the
+  admin write path and unknown to everything that reads it, and the admin form
+  offered nine of the ten cost models with **`funded`** — *they pay you* — as
+  the missing one.
+  **`opportunity-vocab` imports nothing at all**, so a client bundle, a server
+  action, an edge function and a test can all reach the same array. Every label
+  map in it is a `Record<Union, …>`, so **a member added without its label does
+  not compile** — the guarantee belongs to the compiler, not to a test somebody
+  has to remember. `key-dates` re-exports every name, so old imports still
+  resolve. Four tests cover what a type cannot: that nobody keeps a private
+  copy, that the derived lists still cover their vocabulary, that every cost
+  model reaches a money bucket or is *named* as unbucketed, and that this module
+  never gains an import. **When you find the same mistake in many places written
+  by people who plainly knew better, look for the second rule that made the
+  first one impossible to obey.**
 - **The catalog is split by concern**: entries live in [lib/data/competitions-data.ts](lib/data/competitions-data.ts), matching logic in [lib/data/key-dates.ts](lib/data/key-dates.ts) (which re-exports the data, so existing imports still work), and the careers layer in [lib/data/careers.ts](lib/data/careers.ts). The careers
   layer moved to **the guide** — a section of routes, not a page (see below),
   which runs interest → field → sphere of work → the cities that work lives in
@@ -196,8 +239,27 @@ Everything here is **deterministic** — no model call — and the design rules 
   `formatDate`/`opportunityCost`/`daysBetween` from
   [lib/data/opportunity-format.ts](lib/data/opportunity-format.ts), and anything
   needing catalog-derived data — the three matching views (`OpportunitiesView`,
-  `EligibilityChecker`, `FirstWin`) and `RoadmapView` — **dynamic-imports** it.
+  `EligibilityChecker`, `FirstWin`) and `RoadmapView` — reaches it through
+  [lib/data/use-opportunity-plan.ts](lib/data/use-opportunity-plan.ts), which
+  owns the only two dynamic imports of `key-dates`/`roadmap` on the client.
   Type-only imports are free.
+  **The load starts on MOUNT, and the date is a separate hook.** All four views
+  used to write the same pair by hand: a `useState<Date|null>` set in one effect,
+  and a second effect that imported the catalog only once that date existed. The
+  second effect cannot run in the first commit, so the largest chunk on the route
+  — 120 kB raw, **31.6 kB gzipped** — began downloading a full render cycle after
+  it could have, and it depends on `today` in no way at all. The public checker
+  was worse: its import was gated on the visitor's ANSWER too, so it started at
+  the moment of highest intent. `useToday()` is the date, `useWarmModule()` is a
+  mount-only effect that starts the fetch, and `ready` gates the PLAN and never
+  the load. Two tests keep it that way, because the old shape reads as perfectly
+  ordinary and would be written again by anyone adding a fifth surface.
+  **Do not put the load on `requestIdleCallback`.** That was tried and measured:
+  the callback did not fire early, it fired at its own 2000 ms ceiling — 2.2s
+  after the initial bundle, slower than the waterfall it was meant to fix. The
+  `MapView` precedent it was copied from warms a country nobody has clicked yet;
+  this chunk *is* the page. A prefetch belongs on idle, the current page's own
+  content does not.
   **Reachability, not adjacency.** The rule is about what ends up in a bundle,
   which is transitive, and the guard used to scan for a DIRECT import edge from
   a client component. Two chains slipped through one hop of indirection and cost
@@ -1119,6 +1181,22 @@ names roles and reads `rgb(var(--token) / <alpha-value>)`.
   Note which examples those are: an alpha on a **fill or a border** is fine, an
   alpha on **text** is a colour nobody has checked — see the `text-ink/60` rule
   in the landing section.
+- **`opacity-NN` on a control is the same rule arriving from a direction no
+  class-name scan can see, and it had shipped in three places.** Every colour in
+  the filter chips was a checked token; an `opacity-50` laid over the button to
+  mean "no results here" took the label from **8.78:1 to 3.27:1** and the count
+  from **5.48 to 2.41**, measured on the built page at 13px. The existing guards
+  look for `text-ink/60`-style names in a class string, and an element opacity is
+  not one — it composites afterwards, onto colours that individually pass.
+  Everywhere else in this codebase a dimmed control carries **`disabled:`** on
+  the opacity, so it only applies where WCAG 1.4.3 exempts it; those three chips
+  used the look without the semantic and stayed clickable. **Express "nothing
+  here" as a BRANCH of the colour** (`border-line/60 … text-ink-faint`), never as
+  an alpha over it — and never as an appended class either, because two utilities
+  of the same type at the same specificity are resolved by whichever Tailwind
+  emitted last. A test now fails any `<button>` carrying a bare `opacity-` with
+  no `disabled` in the same tag. **Audit contrast at the rendered node, not from
+  the class names**: verified tokens do not compose into a verified pixel.
 - **Anything read outside Tailwind must be `rgb(var(--x))`**, not the bare
   variable — a raw triplet is not a colour. That covers Recharts fills,
   `lib/tiers.ts`, and inline `style`.
