@@ -20,7 +20,7 @@ import { guidePickState } from "@/lib/guide/plan-state";
 import { AddToPlan } from "@/components/guide/AddToPlan";
 import { TryTheWork } from "@/components/guide/TryTheWork";
 import { simulationsForArea } from "@/lib/data/try-it";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
 
 // One area of work, in full. This was a modal sheet, which meant it had no URL:
 // a student could not send it to a parent, could not bookmark it, and pressing
@@ -34,7 +34,7 @@ export async function generateMetadata({
   const found = areaBySlug(params.area);
   if (!found) return { title: "Not found — Compass" };
   return pageMeta({
-    title: `${found.area.title} — what the work is, and how you get in | Compass`,
+    title: fitTitle(found.area.title, "what it is and how you get in"),
     description: found.area.what,
     path: `/guide/work/${params.area}`,
     type: "article",

@@ -10,7 +10,7 @@ import { formatDate, opportunityCost } from "@/lib/data/opportunity-format";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
 import { fetchLivePool } from "@/lib/partners/queries";
 import { getSession } from "@/lib/auth/session";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { breadcrumbSchema } from "@/lib/schema";
 
@@ -62,7 +62,10 @@ export async function generateMetadata({
       path: `/opportunities/${params.id}`,
     });
   return pageMeta({
-    title: `${o.name} — who can enter, what it costs, when it closes | Compass`,
+    // The old tail was 56 characters before the name was considered, so a long
+    // opportunity produced a 128-character title whose visible half was all
+    // name and no product. The name is what someone searched for; it leads.
+    title: fitTitle(o.name, "cost, dates and who can enter"),
     description: previewLine(o),
     path: `/opportunities/${o.id}`,
     type: "article",
