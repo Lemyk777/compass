@@ -8,11 +8,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > fastest way to do work twice. §8 has the ordered next list, §5 the findings,
 > §7 the working method, and **§9 the direction** — what the next build is for,
 > as opposed to what it is. §8 also ends with a list of **problems** that are
-> nobody's work item, the first of which is that **three** source-scanning
-> guards in this repo have failed OPEN — the third found by grepping 433 regex
-> literals for the signature. The eleven ban patterns now live in one `BAN`
-> table with a typed fixture each, so one cannot be added without a proof that
-> it bites.
+> nobody's work item.
+>
+> **The recurring one is that a guard here can be useless in FOUR distinct ways,
+> and only the first is visible in a diff.** (1) The regex loses its
+> backslashes, so it matches nothing and reports nothing — three guards, found
+> by grepping 433 regex literals for the signature; the eleven ban patterns now
+> live in one `BAN` table with a typed fixture each. (2) The regex is correct
+> but aimed at a string the defect never appears in. (3) The guard is correct
+> and its INPUT SURFACE is narrower than the rule — a class-string scanner
+> cannot see `fontSize: 10` passed as a JSX prop. (4) **The guard is correct,
+> bites, reads the right string, and measures the wrong PROPERTY** — the
+> companion's beats passed a word cap, an opening-word rule and a banned-noun
+> list while reading as riddles, because all three measure form and the defect
+> was structure. Ask what a passing guard actually proves, and whether a
+> reader's complaint could survive it untouched.
 >
 > **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine findings
 > with evidence. **Two are closed and seven are open** (status table at the top
@@ -38,9 +48,9 @@ npm run dev            # dev server at http://localhost:3000
 npm run build          # production build — also runs ESLint + type-check (use as the main gate)
 npm run lint           # ESLint only
 npx tsc --noEmit       # type-check only
-npm run test:unit      # 289 unit tests for the deterministic engine (node:test, no key/network)
+npm run test:unit      # 301 unit tests for the deterministic engine (node:test, no key/network)
 npm run test:onboarding # 126 tests over the intake schema + server action (db/auth mocked, not in CI)
-npm run test:links     # every catalog URL; non-zero exit if any is DEAD
+npm run test:links     # every catalog URL; fails ONLY on a 4xx that is not a bot wall
 npm run test:guide-links # the guide's official sources (ministries, portals)
 npm run test:analyze   # run the §12 sample profile through the LIVE analysis engine
 node --import tsx scripts/test-session-checks.ts   # 61 pure logic checks
@@ -484,6 +494,18 @@ unable to answer. Two concrete working days, and which is more like you.
   **Neither did the word count, until 2026-08-19**: it split on `/s+/`, the
   letter s, so it read a maximum of 9 words where the real maximum is 23 and
   would have passed a sixty-word beat. Third guard here to lose its backslashes.
+- **A beat is TWO SENTENCES: the situation, then what you do about it** — and
+  that rule exists because the three above all passed on copy a reader called
+  "unclear and philosophical". Measured over all 24: **23 were one sentence
+  averaging 19.2 words**, carrying the situation in a subordinate clause, so
+  nothing resolved until the last word. Add 1.25 undefined definite articles per
+  beat ("the piece", "the room", "the thing you built") and the reader is asked
+  to supply context nobody gave them. The other guards measure length, first
+  word and banned nouns; **a riddle satisfies all three**, which is the lesson
+  worth keeping. The proof that plain was always possible sat in the same file:
+  `plainer` said it in ordinary words, hidden behind a button most readers never
+  press. Words per sentence are 10.5 now, and the guard ships with a bite test
+  built from the exact beat that shipped.
 - **"I don't get it" is a first-class answer.** It swaps that card for
   `plainer` in place, records `unclear`, contributes **no signal**, and **keeps
   the pair open** so the student can still answer once they understand.
@@ -679,10 +701,11 @@ The guide is public on purpose — a family choosing between Germany and Korea
 should read it without an account — and for a while nothing told a crawler that
 any of it existed. Four things now do, and each has a rule:
 
-The sitemap is **316 URLs** as of 2026-08-17 — 138 guide pages, 172 opportunity
-pages, and the public marketing and partner routes. **Do not write that number
-down anywhere it has to be maintained**; it is stated here only to give a sense
-of scale, and it is derived at build time from the registries.
+The sitemap is **317 URLs** as of 2026-08-24 — 138 guide pages, 172 opportunity
+pages, and the public marketing and partner routes, `/about` among them. **Do
+not write that number down anywhere it has to be maintained**; it is stated here
+only to give a sense of scale, and it is derived at build time from the
+registries. Every one of them was fetched on 2026-08-24 and all 317 resolved.
 
 - **[app/sitemap.ts](app/sitemap.ts) is generated from the registries**
   (`GUIDE_SECTIONS`, `allCareerAreas`, `STUDY_DESTINATIONS`, `HUBS`), never
@@ -733,6 +756,55 @@ of scale, and it is derived at build time from the registries.
 - **An unknown id must be a real 404.** See the loading-boundary note in the
   guide section above: this was a 200 for months and it is the one status a
   crawler must not see for an address that doesn't exist.
+- **Structured data is built by [lib/schema.ts](lib/schema.ts) and written into
+  the page by exactly one component** ([components/seo/JsonLd.tsx](components/seo/JsonLd.tsx)).
+  `Organization` + `WebSite` on the home page only, `FAQPage` on the landing
+  read from the FAQ component's own array, `BreadcrumbList` on the four guide
+  subject kinds via `DetailShell` and on every opportunity page. Four rules:
+  **`serializeJsonLd` escapes rather than trusts** — a script body is raw text
+  until `</script`, and a partner writes their own organisation name and post
+  titles, both of which reach a breadcrumb, so this is the `.ics` injection in a
+  different costume and is tested with a hostile name; **`breadcrumbSchema`
+  strips the query string**, because `crumbHref` routinely carries `?f=` and a
+  trail naming a filtered URL contradicts the canonical on its own page;
+  `DetailShell` therefore takes a required `path`; and **two types are
+  deliberately absent** — no `SearchAction` (the opportunity search is client
+  state, so nothing answers `?q=`) and no `Course`/`EducationEvent` (`Event`
+  needs a `startDate` and the catalog stores an entry *deadline*, so every row
+  would claim a contest begins on the day entry closes). Adding either means
+  adding the fields to the catalog first, not adding a builder.
+- **A title is a budget, and boilerplate never pushes the subject out of it.**
+  `fitTitle` / `fitDescription` in [lib/seo.ts](lib/seo.ts), with
+  `fitDescription` applied inside `pageMeta` so all 17 call sites get it without
+  remembering. Measured before: 250 of 317 titles ran past 60 characters and 205
+  of 317 descriptions past 160, because a fixed explanatory tail was prepended
+  to every page — `who can enter, what it costs, when it closes | Compass` is 56
+  characters before the name is even considered, so a long opportunity produced
+  a 128-character title. `fitTitle` drops the qualifier, then the brand, and
+  **never truncates the subject**: a name cut mid-word reads worse in a result
+  than a long one, and its opening is what someone searched for. The
+  80-character floor in `fitDescription` is measured, not picked — see the note
+  in the file. **The home page does not go through `pageMeta`** (the root layout
+  sets metadata directly), which is exactly why it was the one page left over;
+  a test now pins its length in both directions.
+- **Response headers live in [next.config.mjs](next.config.mjs) `headers()`.**
+  There were none at all, which is not the neutral state it sounds like: without
+  a framing header any site can put the sign-in page in an invisible iframe.
+  `nosniff`, `SAMEORIGIN` (not `DENY` — that also breaks Vercel's preview
+  overlay), a referrer policy that keeps `?ref=` and `?next=` off other origins,
+  and a permissions policy for four APIs nothing here uses. **A CSP is
+  deliberately absent** until it can be done with nonces; a permissive one
+  shipped to look protected is worse than none.
+- **`npm run test:links` fails on one thing only: a 4xx that is not a bot
+  wall** — the far end saying the address we ship is wrong. A 5xx, timeout,
+  reset or DNS failure becomes `unreachable`, printed in full and failing
+  nothing, because from a datacenter IP it mostly means the host refused *this
+  caller*. The weekly workflow had failed on all four runs of its life while
+  naming links that were alive; `classifyStatus` is exported and unit-tested
+  across all four bands so the rule is asserted rather than described. **Before
+  deleting a catalog URL, reproduce from an ordinary connection** — three links
+  it called dead answer 200 from one, and `globe.gov` really was down for days
+  and came back on its own.
 
 **What is NOT fixed, deliberately: the guide is still `force-dynamic` and
 uncacheable.** Two independent causes, both measured: the layout reads the
@@ -890,6 +962,51 @@ guide) → honest by design → the report, opt-in → organisations → FAQ →
   for two releases: this page does not describe a feature until it works, and
   until `0028`/`0029` were applied two of the three views returned an error
   naming a migration.
+- **The phone-only call to action** ([StickyCTA](components/marketing/StickyCTA.tsx))
+  covers the stretch of page that has none: it appears once the hero's buttons
+  have scrolled away and is gone again from the closing call downwards, so the
+  product's "one primary call per view" rule still holds. **The decision is a
+  pure function** in [lib/data/sticky-cta.ts](lib/data/sticky-cta.ts) and is
+  unit-tested, because an `IntersectionObserver` does not fire at all in a
+  throttled or backgrounded pane — a rule written inside the effect would be a
+  rule nothing could check. The button is server-rendered and handed down as a
+  node, keeping `cn`'s ~9 kB out of a bundle this page worked hard to shrink.
+
+## `/about` — the page that names the people
+
+[app/about/page.tsx](app/about/page.tsx). A product that advises sixteen-year-olds
+on where to apply had no page naming a human being, and its only contact was an
+address at the bottom of the terms. Compass is built by **Alibek Ussipbayev and
+Kirill Kim**, final-year students at NIS Physics and Mathematics in Shymkent, and
+the section that says so is in their own words — the questions in it are the ones
+they listed, in the order they listed them. **Nothing in that section may be
+inferred or filled in; if a detail is added it comes from them.**
+
+- **Every figure is read from the registries at render**, like the landing page,
+  so the page cannot quote a number the reader will not then see. One of them was
+  rewritten after seeing it render: "12 of 172 entries clear that bar" about
+  confirmed dates reads as a 7% verification rate, when most of the remainder
+  never had a date to verify. It states the true and more useful fact instead —
+  57 of 172 are open whenever you are ready.
+- **The eleven parts are ONE array read twice**, by the contents nav and by the
+  sections, same rule as a guide subject page: a part cannot exist in the map and
+  be missing from the page.
+- **Groups are expressed by PROXIMITY, not by labels or cards.** A group opens
+  with 112px and a rule; a section inside one follows at 40px with none. All
+  eleven used to take the identical 48/40, which is proximity switched off. No
+  group headings, because a label above a heading is a kicker; no cards, because
+  same-size boxes would restore the uniformity this removed.
+- **"Who makes this" is second, not tenth.** It sat 4,800px down a 5,988px page,
+  which is the question most people open an About page to answer.
+- Prose is `text-base` and `text-ink` — the strongest ink token, not the softer
+  one the guide uses for secondary copy, because "dim" was the complaint this
+  page answers. Measured on the built page: 99.5% of visible characters at 17px
+  or larger, body prose at 17.14 contrast, 62 real characters per full line.
+- **It is reached from the landing's "Honest by design" band**, 3,366px earlier
+  than the footer. That band is where the question forms: the site has just said
+  it is honest and nothing on the page says who is making the claim. The header
+  was the other candidate and lost on measurement — it already carries three
+  controls beside the logo at 375px.
 
 Four traps that cost real seconds, all of them found by measuring:
 
