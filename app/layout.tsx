@@ -40,8 +40,14 @@ const body = Source_Sans_3({
 export const metadata: Metadata = {
   metadataBase: new URL(CANONICAL_URL),
   title: "Compass — See what you can enter this year",
+  // 154 characters, and the count is the point: this was 228, which a result
+  // cuts at about 160. The home page does not go through `pageMeta`, so the
+  // budget `fitDescription` applies to every other page never reached it —
+  // and this is the page that matters most in a result. Rewritten by hand
+  // rather than machine-trimmed, because an ellipsis on the front door is a
+  // worse answer than a shorter sentence. A test pins the length.
   description:
-    "Competitions, olympiads and programmes school students can actually enter at their age, with the deadlines — every link and date checked. Free, no account needed. Plus an honest, data-driven read on your university applications.",
+    "Competitions, olympiads and programmes school students can actually enter at their age, with the real deadline and the real cost. Free, no account needed.",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
