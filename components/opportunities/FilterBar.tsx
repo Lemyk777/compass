@@ -210,12 +210,25 @@ export function FilterBar({
           ))}
         </Group>
 
-        <Group label="Level">
+        <Group
+          label="Level"
+          // Money and When each explained themselves and this group did not, so
+          // a reader met four adjectives and had to infer the boundaries. It
+          // needed saying most once "School" arrived: on its own that word
+          // reads as a kind of institution rather than as the narrowest rung.
+          //
+          // The second sentence is the one worth having. This product exists
+          // for students outside the first tier, and "fewer entrants" is the
+          // fact that makes the bottom of this list the useful end of it — not
+          // a consolation prize.
+          note="How wide the field is. The narrower ones have far fewer entrants, and that is usually where a first real result comes from."
+        >
           {LEVEL_OPTIONS.map((o) => (
             <Toggle
               key={o.id}
               on={value.levels.includes(o.id)}
               count={facets.levels[o.id]}
+              title={o.hint}
               onClick={() => onChange(toggleFilter(value, "levels", o.id))}
             >
               {o.label}
