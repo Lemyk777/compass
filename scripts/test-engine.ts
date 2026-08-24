@@ -8195,6 +8195,26 @@ test("every real subject we publish produces a title inside the budget", () => {
   );
 });
 
+test("the pages that bypass pageMeta are inside the budget too", () => {
+  // `fitDescription` runs inside `pageMeta`, which is exactly why the routes
+  // that do NOT use it were the ones left over. The home page is the important
+  // one: its metadata lives in the root layout, it inherits down to /demo, and
+  // it is the page most likely to be seen in a result. It was 228 characters
+  // while every page that went through the helper was inside 160.
+  const src = readFileSync(
+    path.join(process.cwd(), "app/layout.tsx"),
+    "utf8",
+  );
+  const m = src.match(/description:\s*\n?\s*"([^"]+)"/);
+  assert.ok(m, "the root layout no longer declares a description");
+  assert.ok(
+    m![1].length <= SERP_DESCRIPTION_MAX,
+    `the root description is ${m![1].length} characters; a result shows about ${SERP_DESCRIPTION_MAX}`,
+  );
+  // And it should still be a real description, not a stub.
+  assert.ok(m![1].length >= 90, "the root description is too short to be useful");
+});
+
 test("no description we publish is longer than a result will show", () => {
   const sources = [
     ...HUBS.map((h) => h.what),
