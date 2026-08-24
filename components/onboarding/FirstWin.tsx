@@ -1,5 +1,6 @@
 "use client";
 
+import { daysLeftLabel } from "@/lib/data/opportunity-format";
 import { matchedOnly } from "@/lib/data/opportunity-filter";
 import { NO_FACTORS, useOpportunityPlan, useToday } from "@/lib/data/use-opportunity-plan";
 import { useMemo } from "react";
@@ -107,7 +108,7 @@ export function FirstWin() {
             <span className="font-medium text-ink">{o.name}</span>
             <span className="text-xs text-ink-faint">
               {o.dateConfirmed ? (
-                <span data-num>{o.daysToDeadline} days left</span>
+                <span data-num>{daysLeftLabel(o.daysToDeadline)}</span>
               ) : (
                 "dates not announced yet"
               )}

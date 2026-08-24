@@ -52,7 +52,7 @@ export function EligibilityChecker({
 } = {}) {
   // `today` resolves on the client — the countdown depends on the visitor's
   // clock, and a server-rendered one would hydrate wrong. The hook also warms
-  // the catalog on an idle callback from mount, which matters most here: the
+  // the catalog from mount, which matters most here: the
   // load used to be gated on the grade answer as well as on the date, so the
   // fetch began at the moment of highest intent instead of before it.
   const today = useToday();
