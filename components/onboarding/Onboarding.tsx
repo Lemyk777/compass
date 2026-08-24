@@ -184,7 +184,7 @@ function Wizard({
                   key={s.key}
                   type="button"
                   onClick={() => go(i)}
-                  className={`flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors focus-visible:focus-ring ${
                     active
                       ? "border-accent bg-accent-soft text-accent-ink"
                       : "border-line bg-card text-ink-soft hover:border-ink/20"

@@ -10,7 +10,7 @@ import { Card } from "@/components/report/Section";
 import { GapAnalysis } from "@/components/report/GapAnalysis";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
 import { PageHeader } from "@/components/dashboard/states";
-import { formatDate } from "@/lib/data/opportunity-format";
+import { daysLeftLabel, formatDate } from "@/lib/data/opportunity-format";
 import { COUNTRY_CONTENT } from "@/lib/data/country-content";
 // TYPE-ONLY, and that is load-bearing. `roadmap.ts` reaches `key-dates.ts` for
 // `buildStudyPlan`, and key-dates builds a lookup map over the whole ~2,700-row
@@ -37,7 +37,7 @@ export function RoadmapView() {
   // "today" depends on the visitor's clock, so resolve it on the client to avoid
   // a hydration mismatch. Until then, render nothing date-dependent. The hook
   // also starts fetching `roadmap` (which reaches the catalog, and is why this
-  // import is dynamic at all) on an idle callback in the same tick — it used to
+  // import is dynamic at all) from mount, in the same tick — it used to
   // wait for this state to land and force a second render first.
   const today = useToday();
   // Start fetching `roadmap` (which reaches the catalog, and is why this import
@@ -401,8 +401,7 @@ function Countdown({ days }: { days: number }) {
       : days <= 30
         ? "bg-target-soft text-target-ink"
         : "bg-likely-soft text-likely-ink";
-  const text =
-    days <= 0 ? "due today" : days === 1 ? "1 day left" : `${days} days left`;
+  const text = daysLeftLabel(days);
   return (
     <span
       data-num

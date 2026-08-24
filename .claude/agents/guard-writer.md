@@ -27,8 +27,13 @@ guarantee while it was green. Two of those citations were in PR descriptions.
 4. **Seed a violation** in the real source — the actual defect, restored.
 5. **Run it and paste the failure output into your report.** If it passes, your
    guard is wrong. Fix the guard, not the fixture.
-6. **Revert the seed.** `git checkout -- <file>`, then confirm with
-   `git status --porcelain` that only your test file is dirty.
+6. **Revert the seed — by editing it back, not with `git checkout`.**
+   `git checkout -- <file>` reverts to HEAD, so if the same file also carries an
+   uncommitted FIX it throws that away too, silently and with a clean-looking
+   tree. That happened on 2026-08-25: the seed and the repair were the same
+   line of `LockedSection.tsx`, and the revert undid both. Either commit the fix
+   before seeding, or put the seed back by hand. Then confirm with
+   `git diff --stat` that the file shows only the change you meant to keep.
 7. **Run the suite:** `npm run test:unit`.
 
 Your report is not complete without the output from step 5 and the output from
