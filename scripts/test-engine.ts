@@ -8893,11 +8893,10 @@ test("only a WRONG url fails the link gate, and a wrong one still does", () => {
   // file's own comment always described the right rule and the code did not
   // implement it, so this asserts the rule rather than the comment.
 
-  // The far end says our address is wrong. This is the only failing case.
+  // The far end says our address is wrong.
   for (const s of [400, 404, 405, 410, 451]) {
     assert.equal(classifyStatus(s), "broken", `HTTP ${s} should fail the gate`);
   }
-  assert.equal(FAILS_THE_GATE, "broken");
 
   // The far end says the fault is its own. Editing our link cannot fix it.
   for (const s of [500, 502, 503, 504, 522]) {
@@ -8908,10 +8907,23 @@ test("only a WRONG url fails the link gate, and a wrong one still does", () => {
     );
   }
 
-  // The far end answered and refused this caller. Already the old behaviour.
-  for (const s of [401, 403, 406, 409, 429]) {
+  // The far end answered and refused this caller because it thinks we are a
+  // script. A human browser sails past, so this proves nothing and fails
+  // nothing.
+  for (const s of [403, 406, 409, 429]) {
     assert.equal(classifyStatus(s), "blocked");
   }
+
+  // 401 is NOT a bot wall, and it sat inside that set until 2026-08-24.
+  //
+  // "We think you are a robot" and "this needs credentials you do not have"
+  // are different sentences, and only the first one describes a link a student
+  // can still open. The catalog's NAO Cup row was a Google Forms /edit address
+  // carrying a response token — an owner-only URL answering 401 to everyone
+  // else — and this gate reported that run as "170/173 healthy · 0 broken".
+  // The one row it was built to catch was the one it waved through.
+  assert.equal(classifyStatus(401), "private");
+  assert.deepEqual([...FAILS_THE_GATE].sort(), ["broken", "private"]);
 
   for (const s of [200, 204, 301, 302]) {
     assert.equal(classifyStatus(s), "ok");
