@@ -34,6 +34,12 @@ import {
   type CtaEdges,
 } from "@/lib/data/sticky-cta";
 import {
+  fitTitle,
+  fitDescription,
+  SERP_TITLE_MAX,
+  SERP_DESCRIPTION_MAX,
+} from "@/lib/seo";
+import {
   serializeJsonLd,
   canonicalPath,
   breadcrumbSchema,
@@ -8104,6 +8110,125 @@ test("the FAQ markup carries the answers, and the site claims no search it lacks
     !("sameAs" in organizationSchema()),
     "sameAs names profiles we do not control",
   );
+});
+
+// ── What a search result actually shows ─────────────────────────────────────
+//
+// Measured live on 2026-08-22: 250 of 317 titles ran past 60 characters and 205
+// of 317 descriptions past 160, so on most pages the tail was cut. Nothing was
+// duplicated and nothing was missing — the uniqueness work held and the LENGTH
+// was never checked, because no test looked at it.
+
+test("boilerplate never pushes the subject out of a title", () => {
+  // The property that matters, stated as a property rather than as a list of
+  // pages: the qualifier is a nicety and the subject is not.
+  const short = fitTitle("Berlin", "the catch and the way in");
+  assert.ok(short.length <= SERP_TITLE_MAX);
+  assert.ok(short.startsWith("Berlin"), "the subject has to lead");
+  assert.ok(short.includes("Compass"), "the brand fits here and should be kept");
+
+  // Long subject: the qualifier goes first, then the brand, and the subject is
+  // never cut. A name sliced mid-word is worse in a result than a long one.
+  const long =
+    "Machine Learning Specialization by Andrew Ng and Stanford Online";
+  const fitted = fitTitle(long, "cost, dates and who can enter");
+  assert.ok(!fitted.includes("cost, dates"), "the qualifier survived past the budget");
+  assert.ok(fitted.startsWith(long), "the subject was truncated");
+
+  // The middle case: brand fits, qualifier does not.
+  const mid = fitTitle("Studying in the United Arab Emirates", "the honest picture");
+  assert.equal(mid, "Studying in the United Arab Emirates | Compass");
+  assert.ok(mid.length <= SERP_TITLE_MAX);
+});
+
+test("every real subject we publish produces a title inside the budget", () => {
+  // Over the actual registries, with the qualifiers the routes actually pass.
+  const cases: [string, string][] = [
+    ...HUBS.map(
+      (h) => [`Working in ${h.city}`, "the catch and the way in"] as [string, string],
+    ),
+    ...STUDY_DESTINATIONS.map(
+      (d) => [`Studying in ${d.name}`, "the honest picture"] as [string, string],
+    ),
+    ...MAJORS.map(
+      (m) => [m.name, "what it is, and who should not"] as [string, string],
+    ),
+    ...allCareerAreas().map(
+      ({ area }) => [area.title, "what it is and how you get in"] as [string, string],
+    ),
+  ];
+  const over = cases
+    .map(([s, q]) => ({ s, title: fitTitle(s, q) }))
+    .filter((c) => c.title.length > SERP_TITLE_MAX);
+  assert.deepEqual(
+    over.map((c) => `${c.title.length} ${c.title}`),
+    [],
+    "these titles are cut in a search result",
+  );
+
+  // The catalog is the one set where a name alone can exceed the budget, and
+  // that is allowed — but the fallback must have dropped everything droppable.
+  for (const c of COMPETITIONS) {
+    const t = fitTitle(c.name, "cost, dates and who can enter");
+    if (t.length > SERP_TITLE_MAX) {
+      assert.equal(t, c.name, `${c.id}: over budget but still carrying boilerplate`);
+    }
+  }
+
+  // Shortening must not make two pages share a title. Dropping a qualifier
+  // removes the differentiating half, so the subjects have to carry it — and
+  // for the catalog the fallback is the bare name, which is the only thing
+  // left to tell two rows apart.
+  const catalogTitles = COMPETITIONS.map((c) =>
+    fitTitle(c.name, "cost, dates and who can enter"),
+  );
+  assert.equal(
+    new Set(catalogTitles).size,
+    catalogTitles.length,
+    "two opportunities now produce the same title",
+  );
+  const guideTitles = cases.map(([s, q]) => fitTitle(s, q));
+  assert.equal(
+    new Set(guideTitles).size,
+    guideTitles.length,
+    "two guide pages now produce the same title",
+  );
+});
+
+test("no description we publish is longer than a result will show", () => {
+  const sources = [
+    ...HUBS.map((h) => h.what),
+    ...STUDY_DESTINATIONS.map((d) => d.oneLine),
+    ...MAJORS.map((m) => m.whatItActuallyIs),
+    ...allCareerAreas().map(({ area }) => area.what),
+  ];
+  for (const s of sources) {
+    const d = fitDescription(s);
+    assert.ok(
+      d.length <= SERP_DESCRIPTION_MAX,
+      `description is ${d.length}: ${d.slice(0, 60)}`,
+    );
+  }
+  // It trims at a boundary, not mid-word.
+  const long = "A".repeat(80) + " " + "B".repeat(120);
+  const cut = fitDescription(long);
+  assert.ok(cut.length <= SERP_DESCRIPTION_MAX);
+  assert.ok(cut.endsWith("…"), "a hard cut should say it was cut");
+  // A sentence boundary is preferred when there is one past the floor.
+  const twoSentences =
+    "This opening sentence is comfortably past the eighty-character floor and stands alone. " +
+    "This second one pushes the whole thing past the budget, so it is dropped entirely.";
+  assert.ok(twoSentences.length > SERP_DESCRIPTION_MAX, "fixture must need trimming");
+  assert.ok(fitDescription(twoSentences).endsWith("stands alone."));
+
+  // A short first sentence is NOT allowed to become the whole description: the
+  // ellipsis carries more of the text than stopping at the full stop would.
+  const shortThenLong =
+    "Too short. " +
+    "Everything worth knowing is in this second sentence, which runs well past the budget and therefore has to be cut somewhere.";
+  assert.ok(!fitDescription(shortThenLong).endsWith("Too short."));
+  // Short text is returned untouched.
+  assert.equal(fitDescription("Short and fine."), "Short and fine.");
 });
 
 test("the country list leads with what we actually model, and says nothing else", () => {

@@ -22,7 +22,7 @@ import { guidePickState } from "@/lib/guide/plan-state";
 import { AddToPlan } from "@/components/guide/AddToPlan";
 import { WorkFromHere } from "@/components/guide/Spine";
 import { areasForHub } from "@/lib/data/spine";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
 
 // One city, in full. Same three facts as everywhere in world.ts and in the same
 // order every time: what it is, what the catch is, how someone who is not from
@@ -37,7 +37,7 @@ export async function generateMetadata({
   const hub = HUBS.find((h) => h.id === params.hub);
   if (!hub) return { title: "Not found — Compass" };
   return pageMeta({
-    title: `Working in ${hub.city} — the catch and the way in | Compass`,
+    title: fitTitle(`Working in ${hub.city}`, "the catch and the way in"),
     description: hub.what,
     path: `/guide/cities/${hub.id}`,
     type: "article",

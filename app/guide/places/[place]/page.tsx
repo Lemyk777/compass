@@ -26,7 +26,7 @@ import { guidePickState, type PlanPickState } from "@/lib/guide/plan-state";
 import { AddToPlan } from "@/components/guide/AddToPlan";
 import { WorkFromHere } from "@/components/guide/Spine";
 import { areasForDestination } from "@/lib/data/spine";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
 
 // One destination, in full: what it uniquely gives, what it costs you, what
 // admissions weighs, what happens after you graduate, and who should not come.
@@ -47,7 +47,7 @@ export async function generateMetadata({
   const d = destinationById(params.place);
   if (!d) return { title: "Not found — Compass" };
   return pageMeta({
-    title: `Studying in ${d.name} — the honest picture | Compass`,
+    title: fitTitle(`Studying in ${d.name}`, "the honest picture"),
     description: d.oneLine,
     path: `/guide/places/${d.id}`,
     type: "article",
