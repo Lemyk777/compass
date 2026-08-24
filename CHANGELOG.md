@@ -21,6 +21,135 @@ record.
 
 ---
 
+## 2026-08-24 — The checks start telling the truth
+
+Four merges into `main` in one day, PRs
+[#141](https://github.com/Lemyk777/compass/pull/141),
+[#143](https://github.com/Lemyk777/compass/pull/143),
+[#145](https://github.com/Lemyk777/compass/pull/145),
+[#147](https://github.com/Lemyk777/compass/pull/147) and
+[#149](https://github.com/Lemyk777/compass/pull/149). Grouped here by day rather
+than one heading each, because they are one thread of work.
+
+### What a student notices
+
+The light behind the landing headline no longer has an edge running through the
+words. Three separate causes, all landing in the same place: the sheen was cut
+dead at the bottom of its own box, and the beam and the blobs reached zero with
+the same steepness they had all the way down, which the eye reads as a line.
+
+The companion's two questions stopped being riddles. They were one sentence of
+about twenty words with the situation buried in a subordinate clause, so nothing
+resolved until the last word. Now each is two sentences: what is happening, then
+what you do about it.
+
+A search result finally shows the whole title. It used to be cut, because a
+fixed explanatory tail was prepended to every page.
+
+### What changed underneath
+
+Every layer of the hero field now approaches zero with almost no slope, and the
+sheen gained a mask on a static parent so the band travels underneath the fade.
+`fitTitle` and `fitDescription` in `lib/seo.ts` hold the search-result budgets,
+with `fitDescription` applied inside `pageMeta`. `next.config.mjs` grew a
+`headers()` block — there had been none, so the sign-in page could be framed by
+anyone. `d3-geo` and `@types/d3-geo` are gone, and `lucide-react` left
+`optimizePackageImports`, where it had lingered after ceasing to be a dependency.
+
+`npm run test:links` now fails on one thing only: a 4xx that is not a bot wall.
+A 5xx, a timeout or a reset becomes `unreachable`, printed in full and failing
+nothing.
+
+Also fixed: `/about`, `/privacy` and `/terms` each rendered an `<a>` inside an
+`<a>` and failed hydration, because `BrandLink` is already a link and was being
+wrapped in another.
+
+### What anyone working on the code has to know
+
+**A guard can be correct, bite, read the right string, and still measure the
+wrong property.** The beats carried three guards — word count, opening word,
+banned nouns — and all three passed on copy a reader called philosophical. The
+proof that plain was possible was in the same file: `plainer`, the text behind
+"I don't get it", already said it in ordinary words. **When a file has a
+"simpler version" field that is genuinely clearer than the primary, the primary
+is the bug.**
+
+**A gate that has never once passed is worse than no gate.** The weekly link
+workflow had failed on all four runs of its life, always naming links that were
+alive, because the runners sit in datacenter ranges a dozen of those hosts
+refuse. Its own header and the checker's docstring both described the correct
+rule and neither implemented it. **Before deleting a catalog URL, reproduce from
+an ordinary connection.**
+
+**The `ch` multiplier belongs to the typeface.** It was 1.3× under Inter and is
+1.14× under Source Sans, so `max-w-[54ch]` bought nine fewer characters
+overnight. Re-measure after any change of body face.
+
+---
+
+## 2026-08-22 — The site says who made it, and a crawler can finally tell what it is
+
+Merged via [#139](https://github.com/Lemyk777/compass/pull/139), from PRs
+[#137](https://github.com/Lemyk777/compass/pull/137) and
+[#138](https://github.com/Lemyk777/compass/pull/138).
+
+### What a student notices
+
+There is an `/about` page, and it names the people who build this: Alibek
+Ussipbayev and Kirill Kim, final-year students at NIS Physics and Mathematics in
+Shymkent. It says how a date gets checked, what the site refuses to do, and what
+gets recorded about a reader.
+
+The whole site is set in a different typeface. On a phone, a call to action
+follows you through the stretch of the landing page that had none.
+
+The guide's country list no longer opens with Kazakhstan and Georgia.
+
+### What changed underneath
+
+`lib/schema.ts` builds the structured data and `components/seo/JsonLd.tsx` is the
+only thing that writes it into a page: Organization and WebSite on the home page,
+FAQPage on the landing, BreadcrumbList on 138 guide and 172 opportunity pages.
+There had been none at all.
+
+Source Serif 4 and Source Sans 3 replace Space Grotesk and Inter, both with the
+`cyrillic` subset — which fixed a heading that had been silently falling back to
+a system face, since the catalog holds "Турнир городов" and an opportunity's name
+is its own `<h1>`.
+
+The country order is DERIVED now, from the `modelled` flag that already existed:
+the five destinations where Compass computes admission odds lead, and the page
+says the rest of the order means nothing.
+
+### What anyone working on the code has to know
+
+**`serializeJsonLd` escapes rather than trusts.** A script body is raw text until
+`</script`, and a partner writes their own organisation name and post titles,
+both of which reach a breadcrumb. Same shape as the `.ics` injection.
+
+**Two schema types are deliberately absent.** No `SearchAction`, because the
+opportunity search is client state and nothing answers `?q=`. No `Course` or
+`EducationEvent`, because `Event` needs a `startDate` and the catalog stores an
+entry *deadline* — every row would claim a contest begins on the day entry
+closes.
+
+**The hero clamp's binding line moved.** Under the old grotesque it was the
+longest rotating phrase; a serif is wider, so the fixed sentence above them now
+decides, and the old ramp cleared 1024px by four pixels.
+
+**The country order argument was inverted by the people it was written to
+protect.** Leading with the home region was meant to stop the guide reading as
+"leave"; the founders said it reads as steering someone home instead. Both
+versions were a claim dressed as a list, so the lead now states a fact about the
+product rather than a view about a country.
+
+> **Not written up:** the releases of 2026-08-20 and the audit release of
+> 2026-08-22 (PRs #129–#136). They shipped before this file was next touched and
+> reconstructing them afterwards would be guessing; `git log` and
+> `docs/AUDIT_2026-08-14.md` are the record for those.
+
+---
+
 ## 2026-08-19 — The catalog reads like a person, and the type is big enough to read
 
 Two jobs in one release, and both started with a measurement because both had

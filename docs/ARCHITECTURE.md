@@ -38,7 +38,7 @@ almost never a prompt change.
 | Where a field can lead (career areas + the jobs in them) | `lib/data/careers.ts` — spheres, never one prescribed profession |
 | **What a student actually applies with** (44 subjects) | `lib/data/majors.ts` — guide step 2, between the work and the country. `catch`/`notForYou` mandatory; `alsoCalled`, `firstYear` and `schoolSubjects` are the three fields nobody else writes down |
 | **Where the student is on the thread** (the "step 3 of 7") | `lib/data/thread.ts` — pure, seven stations, DERIVED from stored facts. Never store a stage |
-| **What the companion asks** (two working days, "which is more like you") | `lib/data/beats.ts` — fixed weights, pure scoring. A beat opens with the ACTION in ≤24 words; never rename a beat id, production rows reference them |
+| **What the companion asks** (two working days, "which is more like you") | `lib/data/beats.ts` — fixed weights, pure scoring. A beat is TWO sentences, situation then action, opens with the ACTION in ≤24 words; never rename a beat id, production rows reference them |
 | **What the companion renders** | `lib/companion/load.ts` (server, cached) → `components/companion/Companion.tsx` + `BeatPair.tsx`. Mounted once in `StudentShell` |
 | Narrowing a list to what the student actually matches | `matchedOnly` in `lib/data/opportunity-filter.ts` — **mandatory on every surface without a filter panel**; see the rules section |
 | "What do you want out of work?" | `lib/data/values.ts` (3 questions + pure scoring) — may only REORDER the areas, never filter or change the fields |
@@ -120,7 +120,10 @@ fails the build on a violation.
 | `partners/` | `live.ts` — the single mapping from live rows to `Competition` for both student surfaces, and the filter that drops rows whose partner is not `active` |
 | `cron/` | `auth.ts` — the gate in front of both cron endpoints. **Fails closed**: no `CRON_SECRET` means 503 |
 | `dashboard/` | `load.ts` — the one loader feeding both the report shell and the student shell |
-| `calendar/`, `seo.ts`, `site.ts`, `limits.ts`, `tiers.ts`, `utils.ts` | ICS export, canonical/metadata helpers, the canonical host, input caps, tier colours, and `cn` (clsx + tailwind-merge) |
+| `calendar/`, `seo.ts`, `site.ts`, `limits.ts`, `tiers.ts`, `utils.ts` | ICS export, canonical/metadata helpers, the canonical host and `CONTACT_EMAIL`/`REPLY_WINDOW`, input caps, tier colours, and `cn` (clsx + tailwind-merge). `seo.ts` also holds `fitTitle`/`fitDescription` — the search-result budgets, with `fitDescription` applied inside `pageMeta` so no caller has to remember |
+| **Structured data** (Organization, WebSite, FAQPage, BreadcrumbList) | `lib/schema.ts` — pure builders; `serializeJsonLd` ESCAPES, because a partner's own name reaches a breadcrumb. Written into the page only by `components/seo/JsonLd.tsx`. No `SearchAction` and no `Course`/`EducationEvent`, deliberately; the file says why |
+| **The phone-only landing call to action** | `lib/data/sticky-cta.ts` (pure, unit-tested) → `components/marketing/StickyCTA.tsx`. The logic is pure because an `IntersectionObserver` does not fire in a throttled pane, so a rule written in the effect could not be checked |
+| **Who builds this, and what it refuses to do** | `app/about/page.tsx` — public, in the sitemap. Eleven parts declared as one array and read twice; every figure read from the registries at render. The "Who makes this" section is the founders' own words and nothing in it may be inferred |
 | `auth/` | Session, roles, post-signup provisioning |
 | `supabase/` | Three clients — `server.ts` (respects RLS, the default), `admin.ts` (service role, bypasses RLS, server-only), `client.ts` (browser) |
 | `discovery/`, `scraper/` | Finding new opportunities and refreshing their dates |
