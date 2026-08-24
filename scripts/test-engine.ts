@@ -49,6 +49,7 @@ import {
   organizationSchema,
 } from "@/lib/schema";
 import { RUBRIC, computeOverall, type FactorKey } from "@/lib/rubric";
+import { FACTOR_ORDER } from "@/lib/data/leaderboard";
 import {
   computeOverallFromFactors,
   computeBenchmarks,
@@ -6256,6 +6257,104 @@ test("the label maps stay keyed by their own vocabulary", () => {
     (c) => CATEGORY_LABEL[c] !== CATEGORY_LABEL_SHORT[c],
   );
   assert.deepEqual(differ, ["research_program"]);
+});
+
+// ── Validators point at a vocabulary; they never restate one ────────────────
+//
+// The same root cause as `opportunity-vocab`, one layer out. A `z.enum` taking
+// a literal array is a second declaration of a vocabulary that already exists,
+// and the compiler cannot tell it has fallen behind — a Zod enum is checked
+// for WRONG members and never for MISSING ones, exactly like a `T[]` literal.
+//
+// **This had already broken the product, and the repair was a comment.** The
+// intake schema's destinations enum was missing `"AE"`, so a student who
+// selected the United Arab Emirates could not save their intake at all. It was
+// fixed by adding the string and writing `// Keep in sync with DestinationCode`
+// above it. Two more restatements were sitting in the same file when this was
+// written — the eight faculty values and the five curricula — each one an
+// option the picker offers and the save would refuse.
+//
+// The rule is narrow on purpose: **a validator must take an identifier.** That
+// is checkable in one regex, it has exactly one legitimate exception, and it
+// catches the defect at the moment somebody types it.
+
+/** `z.enum([` — a validator declaring its own vocabulary inline. */
+const INLINE_ENUM = /z\.enum\(\s*\[/g;
+
+test("a validator points at a vocabulary rather than restating one", () => {
+  // `lib/ai/schema.ts` is the exception, and it is a real one: it validates the
+  // MODEL's reply, so those unions have no existence anywhere else in the
+  // codebase — the schema IS their canonical declaration. Everything else
+  // validates a vocabulary some registry already owns.
+  const allowed = new Set([
+    "lib/ai/schema.ts",
+  ]);
+  // Two-member unions are exempt. `"local" | "global"`, `"predicted" |
+  // "achieved": both members are always written together, there is nothing for
+  // a third to be missing from, and naming them would add indirection without
+  // adding a guarantee. The defect needs a list long enough to fall behind.
+  const offenders: string[] = [];
+  for (const file of projectSources()) {
+    const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+    if (allowed.has(rel)) continue;
+    const body = stripComments(readFileSync(file, "utf8"));
+    for (const m of body.matchAll(INLINE_ENUM)) {
+      const tail = body.slice(m.index, m.index + 600);
+      const close = tail.indexOf("]");
+      if (close < 0) continue;
+      const members = tail.slice(0, close).match(/"[^"]+"/g) ?? [];
+      if (members.length > 2) {
+        offenders.push(`${rel} — z.enum([${members.slice(0, 4).join(", ")}…]) declares ${members.length} members inline`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `a validator is restating a vocabulary instead of importing it:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the inline-validator guard actually bites", () => {
+  // The exact three lines that were in the intake schema, one of which had
+  // already cost a student their save.
+  const asItShipped = [
+    'destinations: z.array(z.enum(["US", "IT", "HK", "AE", "KR", "CN", "CA"]))',
+    'faculties: z.array(z.enum(["engineering", "computer_science", "business_economics"]))',
+    'curriculum: z.enum(["IB", "A-Level", "national", "US-GPA", "other"], {',
+  ];
+  for (const line of asItShipped) {
+    const hits = [...stripComments(line).matchAll(INLINE_ENUM)];
+    assert.equal(hits.length, 1, `not recognised as an inline enum: ${line}`);
+  }
+
+  // And the shapes it must leave alone.
+  assert.equal(
+    [...stripComments('level: z.enum(COMPETITION_LEVELS),').matchAll(INLINE_ENUM)].length,
+    0,
+    "an identifier is the whole point of the rule",
+  );
+  assert.equal(
+    [...stripComments('fields: z.array(z.enum(FACULTY_VALUES as [FacultyValue, ...FacultyValue[]]))').matchAll(INLINE_ENUM)].length,
+    0,
+    "a tuple CAST on an identifier is still an identifier",
+  );
+});
+
+test("every rubric factor has a place in the display order", () => {
+  // `FACTOR_ORDER` is deliberately a SUPERSET — it carries the country boards'
+  // own factors alongside the US rubric's — so it is not a restatement and
+  // `orderIndex` sends anything unknown to the end on purpose. What that
+  // graceful fallback also hides is a US factor going missing: it would sort
+  // last on the main board, silently, looking like a ranking decision.
+  const missing = RUBRIC.map((f) => f.key).filter(
+    (k) => !(FACTOR_ORDER as readonly string[]).includes(k),
+  );
+  assert.deepEqual(
+    missing,
+    [],
+    `these rubric factors have no position in FACTOR_ORDER and would sort last: ${missing.join(", ")}`,
+  );
 });
 
 test("opportunity-vocab imports nothing, so it can never become heavy", () => {
