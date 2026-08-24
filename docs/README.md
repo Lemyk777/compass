@@ -8,6 +8,7 @@
 | [AUDIT_2026-08-14.md](AUDIT_2026-08-14.md) | Nine findings with evidence, each saying what it costs a student. **A1 and A3 are closed; seven are open**, and they are cheaper than anything left on the backlog |
 | [../CLAUDE.md](../CLAUDE.md) | The product rules, in the form Claude Code reads. Every rule in it is a bug this codebase shipped |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Map of the codebase — which file to open for a given change |
+| [WORKFLOW.md](WORKFLOW.md) | **How the work is cut up and what each piece must prove.** The six kinds of work, the four agents in [`.claude/agents/`](../.claude/agents), what is never delegated, and why two agents can silently break each other |
 | [SETUP.md](SETUP.md) | Getting a working instance: Supabase project, environment, roles |
 
 ## The three student sections — plans of record

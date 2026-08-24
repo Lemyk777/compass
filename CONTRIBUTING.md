@@ -1,7 +1,10 @@
 # Contributing
 
 Conventions for this repository. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-says where code goes; this says how a change gets in.
+says where code goes; this says how a change gets in;
+[docs/WORKFLOW.md](docs/WORKFLOW.md) says how the work is cut up before any of
+that — which pieces may be split off, and what each one has to come back with
+before anybody believes it.
 
 ## Branches
 
