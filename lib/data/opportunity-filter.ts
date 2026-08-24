@@ -24,12 +24,23 @@
 //  3. An empty group means "no opinion", never "nothing". Same rule as empty
 //     faculties in the matcher: unknown facts never exclude.
 
-import type {
-  CompetitionCategory,
-  CompetitionLevel,
-  CostModel,
-  Opportunity,
-} from "./key-dates";
+import type { Opportunity } from "./key-dates";
+// Runtime, and allowed to be: `opportunity-vocab` imports nothing and carries no
+// catalog, which is the whole reason it exists. Before it, the canonical arrays
+// were locked inside key-dates — unreachable from anything client-side — so
+// every option list below was hand-written, and a hand-written `T[]` is checked
+// for wrong members and never for missing ones. That is how `simulation` lost
+// its tab and how `school` reached the admin form and nowhere else.
+import {
+  COMPETITION_CATEGORIES,
+  COMPETITION_LEVELS,
+  COST_MODELS,
+  LEVEL_HINT,
+  LEVEL_LABEL,
+  type CompetitionCategory,
+  type CompetitionLevel,
+  type CostModel,
+} from "./opportunity-vocab";
 
 /** Single-select "kind" — owned by the sticky tabs, not by the filter panel. */
 export type CategoryFilter = "all" | CompetitionCategory;
@@ -46,11 +57,18 @@ export type CategoryFilter = "all" | CompetitionCategory;
  * "All" of 114, and there is no way to find the missing one.
  *
  * The compiler catches a missing LABEL, because a `Record` over the union must
- * be complete. It cannot catch a missing entry in an ordered array — an array
- * has no obligation to cover a union — so the ORDER is covered by a unit test
+ * be complete. It could not catch a missing entry in an ordered array — an array
+ * has no obligation to cover a union — so the ORDER was covered by a unit test
  * instead. Both are needed: the order is editorial (olympiads lead, because
  * they are the clearest evidence a student can produce) and cannot simply be
  * derived from the data model's own ordering.
+ *
+ * **The order is now compiler-checked too**, by storing it as a rank rather than
+ * as a list: a `Record<CompetitionCategory, number>` must be complete, and
+ * sorting the canonical array by it reproduces the editorial order exactly. The
+ * unit test stays, because a test that has been proved to bite is worth more
+ * than the type it duplicates — but the omission it was there to catch can no
+ * longer reach it.
  */
 export const CATEGORY_TAB_LABEL: Record<CompetitionCategory, string> = {
   olympiad: "Olympiads",
@@ -64,16 +82,24 @@ export const CATEGORY_TAB_LABEL: Record<CompetitionCategory, string> = {
   simulation: "Try the work",
 };
 
-/** Editorial order, not the data model's. Test-enforced to cover every kind. */
+/**
+ * Where each kind sits in the tab strip. A `Record`, so adding a kind without
+ * placing it does not compile.
+ */
+const CATEGORY_RANK: Record<CompetitionCategory, number> = {
+  olympiad: 0,
+  competition: 1,
+  course: 2,
+  summer_program: 3,
+  research_program: 4,
+  community: 5,
+  simulation: 6,
+};
+
+/** Editorial order, not the data model's — derived, so it cannot miss a kind. */
 export const CATEGORY_ORDER: CompetitionCategory[] = [
-  "olympiad",
-  "competition",
-  "course",
-  "summer_program",
-  "research_program",
-  "community",
-  "simulation",
-];
+  ...COMPETITION_CATEGORIES,
+].sort((a, b) => CATEGORY_RANK[a] - CATEGORY_RANK[b]);
 
 /** What the sticky tabs render: "All", then every kind, each with its label. */
 export const CATEGORY_TABS: { key: CategoryFilter; label: string }[] = [
@@ -85,10 +111,12 @@ export const CATEGORY_TABS: { key: CategoryFilter; label: string }[] = [
 ];
 
 /** What money means to a student, as four answerable questions. */
-export type CostBucket = "free" | "funded" | "free_start" | "paid";
+export const COST_BUCKETS = ["free", "funded", "free_start", "paid"] as const;
+export type CostBucket = (typeof COST_BUCKETS)[number];
 
 /** What we can honestly say about when it happens. */
-export type TimingBucket = "closing" | "dated" | "open" | "tba";
+export const TIMING_BUCKETS = ["closing", "dated", "open", "tba"] as const;
+export type TimingBucket = (typeof TIMING_BUCKETS)[number];
 
 /**
  * The two narrowings that used to happen invisibly, inside matching.
@@ -106,12 +134,21 @@ export type TimingBucket = "closing" | "dated" | "open" | "tba";
  * what is MISSING. It is written down here because this is the one place in the
  * module where "empty means unset" does not hold.
  */
-export type MatchBucket = "field" | "region";
+export const MATCH_BUCKETS = ["field", "region"] as const;
+export type MatchBucket = (typeof MATCH_BUCKETS)[number];
 
-export const MATCH_OPTIONS: { id: MatchBucket; label: string }[] = [
-  { id: "field", label: "In my fields" },
-  { id: "region", label: "Open where I live" },
-];
+const MATCH_LABEL: Record<MatchBucket, string> = {
+  field: "In my fields",
+  region: "Open where I live",
+};
+
+/**
+ * Rendered in `MATCH_BUCKETS` order, and that is load-bearing rather than
+ * tidy: this field is a SET, `withoutChip` rebuilds it, and an unstable order
+ * makes two equal states compare unequal.
+ */
+export const MATCH_OPTIONS: { id: MatchBucket; label: string }[] =
+  MATCH_BUCKETS.map((id) => ({ id, label: MATCH_LABEL[id] }));
 
 export type OpportunityFilters = {
   /** Free text over the name, what it is, and who can enter. */
@@ -147,69 +184,102 @@ export const CLOSING_SOON_DAYS = 30;
 
 // ── The option lists (the UI renders straight from these) ────────────────────
 
-export const COST_OPTIONS: {
-  id: CostBucket;
+type CostBucketMeta = {
   label: string;
   /** Said out loud on hover/long-press — the bucket boundaries are the product. */
   hint: string;
   models: CostModel[];
-}[] = [
-  {
-    id: "free",
+};
+
+const COST_BUCKET_META: Record<CostBucket, CostBucketMeta> = {
+  free: {
     label: "Free all the way",
     hint: "Nothing to pay at any stage, certificate included.",
     models: ["free", "funded"],
   },
-  {
-    id: "funded",
+  funded: {
     label: "They pay you",
     hint: "Selected participants get a stipend or have their costs covered.",
     models: ["funded"],
   },
-  {
-    id: "free_start",
+  free_start: {
     label: "Free to start",
     hint: "Free to enter or learn, but money can appear later. A paid certificate, a later round, a paid tier.",
     models: ["free_then_paid", "free_cert_paid", "freemium"],
   },
-  {
-    id: "paid",
+  paid: {
     label: "Costs money",
     hint: "There is a fee. Some of these have need-based aid.",
     models: ["one_time", "subscription", "paid_aid"],
   },
-];
+};
 
-export const TIMING_OPTIONS: { id: TimingBucket; label: string; hint: string }[] = [
-  {
-    id: "closing",
+export const COST_OPTIONS: ({ id: CostBucket } & CostBucketMeta)[] =
+  COST_BUCKETS.map((id) => ({ id, ...COST_BUCKET_META[id] }));
+
+/**
+ * The models that belong to NO money bucket, named out loud instead of being
+ * left as a gap in the table above.
+ *
+ * Rule 2 in this file's header is that "Free" never includes a cost we have not
+ * verified, so `unknown` and `varies` are deliberately unbucketed — but a
+ * deliberate omission and a forgotten one look identical in a list of four
+ * buckets. Writing them down turns the difference into something a test can
+ * assert: every cost model must appear in a bucket OR appear here, and a new
+ * model that lands in neither fails the suite instead of silently vanishing
+ * from the money filter.
+ */
+export const COST_MODELS_WITHOUT_A_BUCKET: CostModel[] = ["varies", "unknown"];
+
+type TimingMeta = { label: string; hint: string };
+
+const TIMING_META: Record<TimingBucket, TimingMeta> = {
+  closing: {
     label: "Closing soon",
     hint: `A confirmed deadline within ${CLOSING_SOON_DAYS} days.`,
   },
-  {
-    id: "dated",
+  dated: {
     label: "Has a real date",
     hint: "We have checked the deadline against the organiser's own page.",
   },
-  {
-    id: "open",
+  open: {
     label: "Start tonight",
     hint: "No deadline to miss, self-paced or rolling, open right now.",
   },
-  {
-    id: "tba",
+  tba: {
     label: "Dates not announced",
     hint: "The next cycle has not been published yet. Worth knowing about early.",
   },
-];
+};
 
-export const LEVEL_OPTIONS: { id: CompetitionLevel; label: string }[] = [
-  { id: "international", label: "International" },
-  { id: "national", label: "National" },
-  { id: "regional", label: "Regional" },
-];
+export const TIMING_OPTIONS: ({ id: TimingBucket } & TimingMeta)[] =
+  TIMING_BUCKETS.map((id) => ({ id, ...TIMING_META[id] }));
 
-const COST_MODELS: Record<CostBucket, CostModel[]> = Object.fromEntries(
+/**
+ * The level facets, derived from the one canonical array.
+ *
+ * This list used to be hand-written, three entries against a three-member
+ * union, and it was the live half of a shipped bug: the admin write path
+ * accepted a fourth level (`school`) that nothing here had heard of, so such a
+ * row was counted in no facet, reachable by no filter, and the level numbers
+ * quietly stopped summing to the list total. Deriving it means adding a level
+ * is one edit in `opportunity-vocab` and the build tells you what else to write.
+ *
+ * The hint is new with it. Money and timing each explain their own options and
+ * this group did not, which mattered most for the level added: "School" alone
+ * reads as a kind of institution rather than as the narrowest rung.
+ */
+export const LEVEL_OPTIONS: {
+  id: CompetitionLevel;
+  label: string;
+  hint: string;
+}[] = COMPETITION_LEVELS.map((id) => ({
+  id,
+  label: LEVEL_LABEL[id],
+  hint: LEVEL_HINT[id],
+}));
+
+const COST_BUCKET_MODELS: Record<CostBucket, CostModel[]> = Object.fromEntries(
   COST_OPTIONS.map((o) => [o.id, o.models]),
 ) as Record<CostBucket, CostModel[]>;
 
@@ -217,7 +287,7 @@ const COST_MODELS: Record<CostBucket, CostModel[]> = Object.fromEntries(
 
 function matchesCost(o: Opportunity, bucket: CostBucket): boolean {
   // Absent cost is `unknown`, and `unknown` is in no bucket — see rule 2.
-  return COST_MODELS[bucket].includes(o.cost ?? "unknown");
+  return COST_BUCKET_MODELS[bucket].includes(o.cost ?? "unknown");
 }
 
 function matchesTiming(o: Opportunity, bucket: TimingBucket): boolean {
@@ -386,10 +456,17 @@ export function opportunityFacets(
   const forTiming = without({ timing: [] });
   const forLevels = without({ levels: [] });
   const forEligibility = without({ openOnly: false });
-  const matched = {
-    field: without({ matched: f.matched.filter((m) => m !== "field") }).length,
-    region: without({ matched: f.matched.filter((m) => m !== "region") }).length,
-  } as Record<MatchBucket, number>;
+  // Built from `MATCH_BUCKETS` rather than written out. The `as Record<…>` cast
+  // this replaces was the one shape in this function the compiler could not
+  // check: a cast asserts completeness instead of proving it, so a third
+  // narrowing would have compiled with no count and rendered a facet reading
+  // `undefined`.
+  const matched = Object.fromEntries(
+    MATCH_BUCKETS.map((id) => [
+      id,
+      without({ matched: f.matched.filter((m) => m !== id) }).length,
+    ]),
+  ) as Record<MatchBucket, number>;
 
   const cost = {} as Record<CostBucket, number>;
   for (const o of COST_OPTIONS) {

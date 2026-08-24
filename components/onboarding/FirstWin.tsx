@@ -1,8 +1,8 @@
 "use client";
 
 import { matchedOnly } from "@/lib/data/opportunity-filter";
-import { useEffect, useMemo, useState } from "react";
-import type { ExtracurricularsPlan } from "@/lib/data/key-dates";
+import { NO_FACTORS, useOpportunityPlan, useToday } from "@/lib/data/use-opportunity-plan";
+import { useMemo } from "react";
 import { useOnboardingContext } from "./context/OnboardingContext";
 
 // Pay the student before asking them for anything else.
@@ -26,9 +26,10 @@ export function FirstWin() {
   const { data } = useOnboardingContext();
 
   // Resolve "today" on the client — the countdown depends on the visitor's
-  // clock and a server-rendered one would hydrate wrong.
-  const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => setToday(new Date()), []);
+  // clock and a server-rendered one would hydrate wrong. The hook warms the
+  // catalog from mount, so it is already there by the time the wizard reaches
+  // this screen.
+  const today = useToday();
 
   const graduationYear = data.graduation_year;
   const faculties = useMemo(
@@ -38,28 +39,13 @@ export function FirstWin() {
 
   // Lazy-load the matching engine so the catalog is a separate async chunk, not
   // part of the onboarding bundle. No analysis yet → everyone starts "emerging".
-  const [plan, setPlan] = useState<ExtracurricularsPlan | null>(null);
-  useEffect(() => {
-    if (!today || !graduationYear) {
-      setPlan(null);
-      return;
-    }
-    let cancelled = false;
-    import("@/lib/data/key-dates").then((m) => {
-      if (cancelled) return;
-      setPlan(
-        m.buildExtracurriculars({
-          today,
-          faculties,
-          factors: [],
-          graduationYear,
-        }),
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [today, graduationYear, faculties]);
+  const plan = useOpportunityPlan({
+    today,
+    faculties,
+    factors: NO_FACTORS,
+    graduationYear,
+    ready: Boolean(graduationYear),
+  });
 
   if (!plan) return null;
 

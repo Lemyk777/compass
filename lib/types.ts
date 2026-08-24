@@ -27,6 +27,20 @@ export const CURRICULA = [
 
 export type Curriculum = (typeof CURRICULA)[number]["value"];
 
+/**
+ * Just the values, for the intake validator.
+ *
+ * `CURRICULA` carries labels, so a Zod enum cannot take it directly — and that
+ * one extra step is why the intake schema restated all five strings by hand
+ * instead. It is the same shape that had already broken this product once: the
+ * destinations enum in that file was missing `"AE"`, so a student who selected
+ * the United Arab Emirates could not save their intake at all. Adding a
+ * curriculum — an Attestat, a CBSE, any of the ones our own students actually
+ * sit — would have done it again, with the picker offering an option the save
+ * then refused.
+ */
+export const CURRICULUM_VALUES: Curriculum[] = CURRICULA.map((c) => c.value);
+
 // --- Common App: Activities -------------------------------------------------
 
 /** Common App activity-type categories (shown as a dropdown, stored as-is). */

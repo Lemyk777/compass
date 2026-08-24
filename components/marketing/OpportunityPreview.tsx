@@ -7,6 +7,12 @@ import {
   type CompetitionCategory,
 } from "@/lib/data/key-dates";
 import { daysLeftLabel, formatDate } from "@/lib/data/opportunity-format";
+// The chip's short names, shared with the opportunity card this preview is a
+// copy of. It held a third private copy of the map — undocumented, unlike the
+// card's, and so the front page printed "Research" while the page a click away
+// printed "Research program". The visual claims to be the product rather than a
+// picture of it; that only holds while it says the same words.
+import { CATEGORY_LABEL_SHORT } from "@/lib/data/opportunity-vocab";
 
 // The hero's visual: four REAL rows out of the catalog, rendered on the server.
 //
@@ -19,16 +25,6 @@ import { daysLeftLabel, formatDate } from "@/lib/data/opportunity-format";
 //
 // Server component on purpose. It ships as HTML, so it is on screen in the first
 // paint with no hydration, no images and no JS at all.
-
-const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
-  olympiad: "Olympiad",
-  competition: "Competition",
-  course: "Course",
-  research_program: "Research",
-  summer_program: "Summer program",
-  community: "Community",
-  simulation: "Try the work",
-};
 
 /**
  * Picks the rows to show, deterministically from today's date.
@@ -164,7 +160,7 @@ function Row({
             </p>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <CostChip tone={cost.tone} label={cost.short} />
-              <Chip>{CATEGORY_LABEL[competitionCategory(o)]}</Chip>
+              <Chip>{CATEGORY_LABEL_SHORT[competitionCategory(o)]}</Chip>
             </div>
           </div>
           <div className="shrink-0">

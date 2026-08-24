@@ -31,6 +31,43 @@ import {
 } from "@/lib/data/eligibility";
 import { COMPETITIONS } from "./competitions-data";
 
+// The four closed vocabularies — kind, level, tier, cost — moved to a module
+// that imports nothing, so a client bundle, a server action and an edge
+// function can all reach the SAME array. They lived here, and this file cannot
+// be reached at runtime from anything client-side, which is why five separate
+// hand-written copies of `level` and six of `cost` existed. See the header of
+// `opportunity-vocab.ts` for what that cost.
+//
+// Re-exported rather than moved-and-rewired: ~40 files import these names from
+// here, the same way `daysBetween` is still re-exported after moving to
+// `opportunity-format.ts`. New code should import from `opportunity-vocab`
+// directly; nothing breaks either way.
+export {
+  COMPETITION_LEVELS,
+  LEVEL_LABEL,
+  LEVEL_HINT,
+  COMPETITION_TIERS,
+  TIER_LABEL,
+  COMPETITION_CATEGORIES,
+  CATEGORY_LABEL,
+  CATEGORY_LABEL_SHORT,
+  COST_MODELS,
+  COST_LABEL,
+} from "./opportunity-vocab";
+export type {
+  CompetitionLevel,
+  CompetitionTier,
+  CompetitionCategory,
+  CostModel,
+} from "./opportunity-vocab";
+
+import type {
+  CompetitionCategory,
+  CompetitionLevel,
+  CompetitionTier,
+  CostModel,
+} from "./opportunity-vocab";
+
 // ── SAT sittings (digital SAT, international) ─────────────────────────────────
 // test = test day; regDeadline = standard registration deadline.
 // Source: https://satsuite.collegeboard.org/sat/dates-deadlines
@@ -63,60 +100,6 @@ export const SAT_REGISTER_URL =
 //    "one clean win" a strong applicant should chase).
 // Both are optional on the TYPE so live rows from a DB that predates the columns
 // still validate; `competitionTier`/`competitionCategory` supply a sane default.
-// Array first, union derived — the same shape `COMPETITION_CATEGORIES` uses
-// below, and for the same reason: `lib/discovery/discover.ts` kept a
-// `CompetitionLevel[]` literal to validate scraped rows, and such a literal is
-// checked for wrong members but never for MISSING ones.
-export const COMPETITION_LEVELS = [
-  "international",
-  "national",
-  "regional",
-] as const;
-export type CompetitionLevel = (typeof COMPETITION_LEVELS)[number];
-// The Opportunities pool is designed to GROW well beyond competitions: courses,
-// research programs and summer schools/programs are next. The category union is
-// pre-widened so adding them later is data-only (the UI filter derives its tabs
-// from the categories actually present). v1 only populates competition/olympiad.
-/**
- * The kinds of opportunity, as ONE list.
- *
- * It used to be a bare union, and the same five strings were then restated in
- * the partner form's Zod enum, in the admin quick-add's const, and in the
- * form's option list. Nothing made them agree; adding a sixth kind broke three
- * of them, which is how we found out. Server-side validators derive from this
- * array, so a new kind is one edit and the compiler finds the rest.
- */
-export const COMPETITION_CATEGORIES = [
-  "competition",
-  "olympiad",
-  "course",
-  "research_program",
-  "summer_program",
-  // A PLACE rather than an event: a forum, a club network, a citizen-science
-  // platform, an open-source month. The distinguishing fact is that there is
-  // nothing to win and usually nothing to miss — you join, and you keep going —
-  // so almost every row here is `alwaysOpen`.
-  //
-  // It earns its own kind because "where do I find people doing this" is a
-  // different question from "what can I enter", and filing it under
-  // `competition` answered neither. It is also the honest answer for a student
-  // who is twelve, or has no money, or lives somewhere none of the programmes
-  // reach: joining costs nothing and starts today.
-  "community",
-  // A TRY, not an entry. A job simulation is unpaid, ungraded, has no deadline
-  // and nothing to win: you do the actual tasks of a job for a few hours and
-  // find out whether you can stand it. That is a different question from every
-  // other kind here, and it is the best-evidenced answer we have to "what do I
-  // want to study" — the self-efficacy literature names simulations directly,
-  // and the platforms report completers as roughly twice as likely to be hired.
-  //
-  // We LINK OUT and never build these (release 3, PLANNER_PLAN.md §3).
-  "simulation",
-] as const;
-
-export type CompetitionCategory = (typeof COMPETITION_CATEGORIES)[number];
-export const COMPETITION_TIERS = ["accessible", "selective", "elite"] as const;
-export type CompetitionTier = (typeof COMPETITION_TIERS)[number];
 
 // ── Cost & accessibility ──────────────────────────────────────────────────────
 // The second question after "can I enter this" is "what does it cost me", and
@@ -139,17 +122,6 @@ export type CompetitionTier = (typeof COMPETITION_TIERS)[number];
 // `unknown` is the default for a reason: an unverified row must say "check the
 // official page", never imply free. The discovery pipeline deliberately does NOT
 // fill this in — a hallucinated price is worse than no price.
-export type CostModel =
-  | "free"
-  | "free_cert_paid"
-  | "free_then_paid"
-  | "freemium"
-  | "subscription"
-  | "one_time"
-  | "paid_aid"
-  | "funded"
-  | "varies"
-  | "unknown";
 
 export type Competition = {
   id: string;
