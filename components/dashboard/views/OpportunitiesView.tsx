@@ -1,9 +1,9 @@
 "use client";
 import dynamic from "next/dynamic";
+import { NO_FACTORS, useOpportunityPlan, useToday } from "@/lib/data/use-opportunity-plan";
 
 import {
   useDeferredValue,
-  useEffect,
   useMemo,
   useState,
   useTransition,
@@ -53,7 +53,6 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { MotionSafe } from "@/components/ui/MotionSafe";
 import type {
-  ExtracurricularsPlan,
   Opportunity,
   OpportunityFit,
   StrengthBand,
@@ -143,10 +142,11 @@ export function OpportunitiesView({
   // to wire correctly at every call site, and one more way to be wrong.
   const standalone = usePathname() === "/opportunities";
 
-  // "today" depends on the visitor's clock — resolve on the client to avoid a
-  // hydration mismatch (same pattern as the Timeline view).
-  const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => setToday(new Date()), []);
+  // "today" depends on the visitor's clock, so it resolves on the client. The
+  // hook also starts fetching the catalog on an idle callback in the same tick,
+  // which is the fix: this used to set a piece of state, re-render, and only
+  // then begin the download — see use-opportunity-plan.ts.
+  const today = useToday();
 
   const [category, setCategory] = useState<CategoryFilter>(
     initialCategory ?? "all",
@@ -198,41 +198,22 @@ export function OpportunitiesView({
   // that's the "grow with us" mode for younger students with thin portfolios.
   // Without factors the strength is 0 → "emerging" → accessible events first,
   // exactly the right starting point for someone building a record.
-  const [plan, setPlan] = useState<ExtracurricularsPlan | null>(null);
-  useEffect(() => {
-    if (!today) {
-      setPlan(null);
-      return;
-    }
-    let cancelled = false;
-    // Lazy-load the matching engine (and the ~2,700-entry catalog it pulls in)
-    // so the dataset is a separate async chunk instead of this route's initial
-    // JS. The client filter stays instant once the chunk has loaded — the plan
-    // is null for one paint (the skeleton already handles that).
-    import("@/lib/data/key-dates").then((m) => {
-      if (cancelled) return;
-      setPlan(
-        m.buildExtracurriculars({
-          today,
-          faculties,
-          factors: analysis?.factors ?? [],
-          liveCompetitions: liveDates.competitions,
-          homeCountry: profileMeta.homeCountry,
-          graduationYear,
-        }),
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [
+  // Memoised on the analysis object, not rebuilt per render: this array is a
+  // dependency of the plan, and `analysis?.factors ?? []` would be a new
+  // reference every time — an effect that always re-runs and a 172-row match
+  // recomputed to reach the same answer.
+  const factors = useMemo(
+    () => analysis?.factors ?? NO_FACTORS,
+    [analysis],
+  );
+  const plan = useOpportunityPlan({
     today,
-    analysis,
     faculties,
-    profileMeta.homeCountry,
+    factors,
     graduationYear,
-    liveDates.competitions,
-  ]);
+    homeCountry: profileMeta.homeCountry,
+    liveCompetitions: liveDates.competitions,
+  });
 
   // Two half-filtered sets, on purpose — each control's counts have to be
   // honest about what the OTHER controls have already done:

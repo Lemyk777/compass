@@ -6259,6 +6259,35 @@ test("the label maps stay keyed by their own vocabulary", () => {
   assert.deepEqual(differ, ["research_program"]);
 });
 
+/** A runtime load of one of the two heavy registries. */
+const DYNAMIC_CATALOG_IMPORT =
+  /import\(\s*["']@\/lib\/data\/(key-dates|roadmap)["']\s*\)/;
+
+/** The three-line pair five components each wrote out. */
+const HAND_ROLLED_TODAY = /setToday\s*\(\s*new Date\(\)\s*\)/;
+// ── The catalog load, and the render cycle it used to wait for ───────────────
+//
+// Four client components each held their own copy of this pair:
+//
+//     const [today, setToday] = useState<Date | null>(null);
+//     useEffect(() => setToday(new Date()), []);
+//     useEffect(() => {
+//       if (!today) return;
+//       import("@/lib/data/key-dates").then(…);
+//     }, [today, …]);
+//
+// The second effect cannot run until `today` exists, which takes a state
+// update and a re-render — so the largest asynchronous chunk on the route
+// began downloading one full render cycle after it could have, and it depends
+// on `today` in no way whatsoever. On the public checker the import was gated
+// on the visitor's ANSWER too, so it started at the moment of highest intent
+// instead of before it.
+//
+// `lib/data/use-opportunity-plan.ts` owns both halves now: `useToday` is the
+// date, `useWarmModule` is a mount-only effect that starts the fetch. These
+// tests keep it that way, because the old shape reads as perfectly ordinary
+// and would be written again by anybody adding a fifth surface.
+
 // ── Validators point at a vocabulary; they never restate one ────────────────
 //
 // The same root cause as `opportunity-vocab`, one layer out. A `z.enum` taking
@@ -6354,6 +6383,103 @@ test("every rubric factor has a place in the display order", () => {
     missing,
     [],
     `these rubric factors have no position in FACTOR_ORDER and would sort last: ${missing.join(", ")}`,
+  );
+});
+
+test("nothing outside the plan hook loads the catalog directly", () => {
+  // A direct dynamic import is not wrong in itself — it is how the hook does
+  // it — but each new one is a component deciding for itself WHEN the load
+  // starts, and four out of four decided the same wrong thing.
+  const allowed = new Set([
+    // The hook. Both loaders live here.
+    "lib/data/use-opportunity-plan.ts",
+    // Server-only, and already a single place: the planner's loader is the
+    // one spot the planner touches key-dates or roadmap at all.
+    "lib/planner/load.ts",
+    // A server action, which is an RPC endpoint rather than a rendered
+    // surface; there is no render cycle here to wait for.
+    "app/planner/maps/actions.ts",
+    // Server-only too. `partnerOpportunities` reaches for the tier/category
+    // resolvers so the partner console does not reimplement them, and it is
+    // lazy so the console's client bundle never carries the catalog. Same
+    // reasoning as the planner loader: nothing here renders, so nothing waits.
+    "lib/partners/queries.ts",
+  ]);
+  const offenders: string[] = [];
+  for (const file of projectSources()) {
+    const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+    if (allowed.has(rel)) continue;
+    const body = stripComments(readFileSync(file, "utf8"));
+    if (DYNAMIC_CATALOG_IMPORT.test(body)) offenders.push(rel);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `these load the catalog themselves instead of through use-opportunity-plan:\n${offenders.join("\n")}`,
+  );
+});
+
+test("no component resolves the visitor's date for itself", () => {
+  // Five did, each with its own comment giving the same hydration reason. The
+  // duplication was not the cost — the cost was that four of them then wired
+  // the catalog load behind it, so fixing one taught the others nothing.
+  const offenders: string[] = [];
+  for (const file of projectSources()) {
+    const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+    if (rel === "lib/data/use-opportunity-plan.ts") continue;
+    const body = stripComments(readFileSync(file, "utf8"));
+    if (HAND_ROLLED_TODAY.test(body)) offenders.push(rel);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `these resolve "today" by hand — call useToday() instead:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the catalog-load guards actually bite", () => {
+  // Both guards are collect-and-assert-empty, which fails OPEN: a pattern
+  // that matches nothing collects nothing and goes green. So each is shown
+  // catching the exact line that shipped, and ignoring the near-misses.
+  //
+  // They read DYNAMIC_CATALOG_IMPORT and HAND_ROLLED_TODAY rather than their
+  // own copies, which is the load-bearing part — a bite test written against
+  // a copy proves the copy works, and copies drift.
+  assert.match(
+    stripComments(
+      'useEffect(() => { import("@/lib/data/key-dates").then((m) => setPlan(m.x())); }, [today]);',
+    ),
+    DYNAMIC_CATALOG_IMPORT,
+  );
+  assert.match(
+    stripComments('import("@/lib/data/roadmap").then((m) => setRoadmap(m.buildRoadmap({})));'),
+    DYNAMIC_CATALOG_IMPORT,
+  );
+  assert.match(
+    stripComments("useEffect(() => setToday(new Date()), []);"),
+    HAND_ROLLED_TODAY,
+  );
+
+  // The near-misses, all real lines from this tree.
+  assert.doesNotMatch(
+    stripComments('import type { Competition } from "@/lib/data/key-dates";'),
+    DYNAMIC_CATALOG_IMPORT,
+    "a type-only import carries no runtime cost and is not a load",
+  );
+  assert.doesNotMatch(
+    stripComments('const { COMPETITIONS } = await import("./competitions-data");'),
+    DYNAMIC_CATALOG_IMPORT,
+    "another module is not the catalog",
+  );
+  assert.doesNotMatch(
+    stripComments("const today = new Date().toISOString().slice(0, 10);"),
+    HAND_ROLLED_TODAY,
+    "a server-side ISO date is not the client hydration pattern",
+  );
+  assert.doesNotMatch(
+    stripComments("//     useEffect(() => setToday(new Date()), []);"),
+    HAND_ROLLED_TODAY,
+    "the hook's own header quotes the shape it replaced; documentation is not a violation",
   );
 });
 
