@@ -2820,6 +2820,55 @@ const rel = (f: string) =>
 const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/[^\n]*$/gm, "");
 
+/**
+ * A JSX opening tag, with its attribute list COMPLETE.
+ *
+ * This exists because two guards below bounded a tag with the next `>` —
+ * `/<(a|button|Link)\s([^>]*?)>/` and `/<button\b[\s\S]{0,1200}?>/` — and
+ * `onClick={() =>` contains a `>`. Both therefore stopped before `className`
+ * on every tag carrying an arrow function, which is most of them. Measured
+ * 2026-08-25: the focus guard matched 227 tags, 80 truncated, and **78 were
+ * then dropped by its own `if (!/className/.test(attrs)) continue`** — 34% of
+ * the surface, never inspected. The dimmed-control guard was worse: run
+ * against the pre-fix `GuideFilterBar.tsx`, the file its own comment names, it
+ * flagged **0 of the 2** `opacity-50` chips it was written to catch.
+ *
+ * Both bite tests passed the whole time, because both fixtures used
+ * `onClick={onClick}` — the one attribute shape with no arrow in it.
+ *
+ * So: a tag ends at a `>` that sits at brace depth 0 and outside any string.
+ * The scan is bounded because a runaway (an unbalanced `{` in a template) would
+ * otherwise walk to end-of-file once per tag, which is quadratic over the tree.
+ */
+type JsxTag = { text: string; name: string; index: number };
+const JSX_TAG_LIMIT = 4000;
+const jsxOpenTags = (src: string, names: readonly string[]): JsxTag[] => {
+  const out: JsxTag[] = [];
+  const opener = new RegExp(`<(${names.join("|")})(?=[\\s/>])`, "g");
+  for (const m of src.matchAll(opener)) {
+    const from = m.index + m[0].length;
+    const limit = Math.min(src.length, from + JSX_TAG_LIMIT);
+    let depth = 0;
+    let end = -1;
+    for (let i = from; i < limit; i++) {
+      const c = src[i];
+      if (c === "{") depth++;
+      else if (c === "}") depth = Math.max(0, depth - 1);
+      else if (c === '"' || c === "'" || c === "`") {
+        const quote = c;
+        i += 1;
+        while (i < limit && src[i] !== quote) i += src[i] === "\\" ? 2 : 1;
+      } else if (c === ">" && depth === 0) {
+        end = i;
+        break;
+      }
+    }
+    if (end < 0) continue;
+    out.push({ text: src.slice(m.index, end + 1), name: m[1], index: m.index });
+  }
+  return out;
+};
+
 // A Tailwind `!` escape is never a style decision — it is an author discovering
 // that a component concatenated its classes with theirs, so the framework's
 // emission order beat their override, and forcing the issue locally. Button.tsx
@@ -2874,8 +2923,26 @@ test("every self-styled interactive element has a focus treatment", () => {
   const offenders: string[] = [];
   for (const file of sourceFiles()) {
     const src = readFileSync(file, "utf8");
-    for (const m of src.matchAll(/<(a|button|Link)\s([^>]*?)>/gs)) {
-      const attrs = m[2];
+    // A className assembled from a module-level constant says nothing about
+    // focus until the constant is put back: `fields.tsx` reported as an
+    // offender on `className={`${inputCls} flex …`}` while `inputCls` carries
+    // `focus-visible:focus-ring` three lines up the file. Expanding one level
+    // of `${NAME}` against this file's own string consts is what makes the
+    // reading true. Same lesson as the tag bounds — the guard was right and
+    // its INPUT was not the thing the rule is about.
+    const consts = new Map<string, string>();
+    for (const c of src.matchAll(/^const\s+([A-Za-z_$][\w$]*)\s*=\s*"([^"]*)";/gm)) {
+      consts.set(c[1], c[2]);
+    }
+    const expand = (s: string) =>
+      s.replace(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g, (whole, id: string) =>
+        consts.get(id) ?? whole,
+      );
+    // `jsxOpenTags`, never `[^>]` — see the helper's note. Bounding the tag
+    // with the next `>` hid 78 of these 227 tags behind an arrow function.
+    for (const tag of jsxOpenTags(src, ["a", "button", "Link"])) {
+      const { name, index } = tag;
+      const attrs = expand(tag.text);
       if (!/className/.test(attrs)) continue;
       // Only elements that paint themselves. A bare inline link inherits the
       // browser's own outline and is not the problem.
@@ -2883,7 +2950,7 @@ test("every self-styled interactive element has a focus treatment", () => {
       if (/focus-visible|focus-ring|focus:/.test(attrs)) continue;
       if (/sr-only/.test(attrs)) continue;
       offenders.push(
-        `${rel(file)}:${src.slice(0, m.index).split("\n").length} <${m[1]}>`,
+        `${rel(file)}:${src.slice(0, index).split("\n").length} <${name}>`,
       );
     }
   }
@@ -2891,6 +2958,76 @@ test("every self-styled interactive element has a focus treatment", () => {
     offenders,
     [],
     `interactive but unfocusable:\n  ${offenders.join("\n  ")}\nAdd \`focus-visible:focus-ring\`, or render it through <Button>/<ButtonLink>.`,
+  );
+});
+
+test("the focus guard actually bites — through an arrow, and not through a const", () => {
+  // This guard shipped for months reading `/<(a|button|Link)\s([^>]*?)>/`, and
+  // had no bite test at all. Both halves below are failures it really had:
+  //
+  //   1. `onClick={() =>` contains a `>`, so the tag ended 60 characters in and
+  //      `className` fell past the cut. Measured 2026-08-25: of 227 tags, 80
+  //      truncated and 78 were then dropped by the `className` filter — 34% of
+  //      the surface, silently unchecked. Five controls with no focus style
+  //      were sitting in that blind spot.
+  //   2. Once it could see them, `fields.tsx` reported a FALSE positive: its
+  //      className is `${inputCls} …` and the constant carries the focus ring.
+  //
+  // A guard that cannot see the common shape and cries wolf on the correct one
+  // is two bugs, not one. Both are asserted here against the shipped helpers.
+  const painted = "rounded-full border px-4 py-2";
+
+  const arrowNoFocus =
+    `<button type="button" onClick={() => go(1)} className="${painted}">`;
+  const [arrowTag] = jsxOpenTags(arrowNoFocus, ["a", "button", "Link"]);
+  assert.ok(arrowTag, "an arrow handler must not end the tag");
+  assert.ok(
+    /className/.test(arrowTag.text),
+    "className must survive the arrow — this is the 78-tag blind spot",
+  );
+  assert.ok(
+    !/focus-visible|focus-ring|focus:/.test(arrowTag.text),
+    "and the guard must see that this one has no focus treatment",
+  );
+
+  // The near-miss: same tag, focus ring present. It must NOT be reported.
+  const arrowWithFocus =
+    `<button type="button" onClick={() => go(1)} className="${painted} focus-visible:focus-ring">`;
+  const [okTag] = jsxOpenTags(arrowWithFocus, ["a", "button", "Link"]);
+  assert.ok(
+    /focus-visible/.test(okTag.text),
+    "a correct control must not be reported",
+  );
+
+  // And the const expansion, which is what stops the false positive. The
+  // shapes here are `fields.tsx` exactly: a multi-line `const NAME = "…";`
+  // and a className that interpolates it.
+  const src =
+    'const inputCls =\n  "h-12 rounded-xl border focus-visible:focus-ring";\n' +
+    "export function F() {\n" +
+    "  return <button type=\"button\" onClick={() => t()} className={`${inputCls} flex`}>x</button>;\n" +
+    "}\n";
+  const consts = new Map<string, string>();
+  for (const c of src.matchAll(/^const\s+([A-Za-z_$][\w$]*)\s*=\s*"([^"]*)";/gm)) {
+    consts.set(c[1], c[2]);
+  }
+  assert.equal(
+    consts.get("inputCls"),
+    "h-12 rounded-xl border focus-visible:focus-ring",
+    "a const declared across two lines must still be read",
+  );
+  const [interpolated] = jsxOpenTags(src, ["a", "button", "Link"]);
+  const expanded = interpolated.text.replace(
+    /\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g,
+    (whole, id: string) => consts.get(id) ?? whole,
+  );
+  assert.ok(
+    !/focus-visible/.test(interpolated.text),
+    "unexpanded, the tag looks unfocusable — which is the false positive",
+  );
+  assert.ok(
+    /focus-visible/.test(expanded),
+    "expanded, it is correct and must not be reported",
   );
 });
 
@@ -3775,10 +3912,21 @@ test("map actions validate on the server, and never delete the thinking", () => 
 
   // "Send to plan" copies the node into planner_items. It must NOT remove it:
   // deleting the thinking at the moment you act on it is exactly backwards.
-  const promote = src.slice(
-    src.indexOf("export async function promoteNodeToTask"),
+  // Assert the INDEX, not the slice's length. Written as
+  // `src.slice(src.indexOf(…))` with one argument, a renamed function makes
+  // `indexOf` return −1, `slice(-1)` returns the file's LAST CHARACTER, and
+  // `length > 0` passes — after which the delete check scans one character and
+  // finds nothing. The guard would have gone green on a `promoteNodeToTask`
+  // that deleted the node, which is the exact thing it exists to forbid. Its
+  // two siblings in this file pass a second argument and fail closed on the
+  // same input; this one was the outlier.
+  const at = src.indexOf("export async function promoteNodeToTask");
+  assert.notEqual(
+    at,
+    -1,
+    "promoteNodeToTask is missing or renamed — this guard now reads nothing",
   );
-  assert.ok(promote.length > 0, "promoteNodeToTask is missing");
+  const promote = src.slice(at);
   assert.ok(
     !/\.delete\(\)/.test(promote),
     "sending a node to the plan deletes it — the map must keep the node",
@@ -6294,7 +6442,6 @@ const HAND_ROLLED_TODAY = /setToday\s*\(\s*new Date\(\)\s*\)/;
  * Bounded at 1200 characters: these className strings are long, and a
  * runaway match would swallow the element after it and report the wrong file.
  */
-const BUTTON_TAG = /<button\b[\s\S]{0,1200}?>/g;
 
 /** An opacity utility with no state prefix — it applies always, not on a state. */
 const BARE_OPACITY = /(?<![\w:-])opacity-(?:[0-6]?[0-9])(?![\w-])/;
@@ -6321,7 +6468,10 @@ test("a dimmed control is a disabled control", () => {
   for (const file of projectSources()) {
     const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
     const body = stripComments(readFileSync(file, "utf8"));
-    for (const tag of body.match(BUTTON_TAG) ?? []) {
+    // `jsxOpenTags`, never a lazy `[\s\S]*?>` — see the helper's note. The
+    // first version of this guard stopped at the `>` inside `onClick={() =>`
+    // and found 0 of the 2 chips named in the comment above.
+    for (const { text: tag } of jsxOpenTags(body, ["button"])) {
       if (!BARE_OPACITY.test(tag)) continue;
       // `disabled` anywhere in the same opening tag means the dimming is
       // conditional on a state WCAG exempts. `aria-disabled` counts too.
@@ -6343,10 +6493,54 @@ test("the dimmed-control guard actually bites", () => {
     '<button type="button" aria-pressed={on} onClick={onClick} className={`inline-flex h-8 ' +
     'items-center rounded-full border px-3 text-xs ${on ? "border-accent" : "border-line ' +
     'text-ink-soft"} ${count === 0 && !on ? "opacity-50" : ""}`}>';
-  const shipped = asItShipped.match(BUTTON_TAG) ?? [];
+  const shipped = jsxOpenTags(asItShipped, ["button"]);
   assert.equal(shipped.length, 1, "the real chip must be recognised as a button");
-  assert.ok(BARE_OPACITY.test(shipped[0]), "and its bare opacity must be found");
-  assert.ok(!/\bdisabled\b/.test(shipped[0]), "and it must not look disabled");
+  assert.ok(BARE_OPACITY.test(shipped[0].text), "and its bare opacity must be found");
+  assert.ok(!/\bdisabled\b/.test(shipped[0].text), "and it must not look disabled");
+
+  // ── The case the first version of this guard could not see ───────────────
+  //
+  // Every fixture above uses `onClick={onClick}`, the one handler shape with
+  // no arrow in it — which is why this test passed while the guard found 0 of
+  // the 2 chips in `GuideFilterBar.tsx`. `onClick={() =>` contains a `>`, so a
+  // tag bounded by the next `>` ended 60 characters in, long before
+  // `className`. Both shapes below are copied from that file as it shipped;
+  // the second nests an object literal inside the arrow, so it also proves the
+  // scan counts braces rather than stopping at the first `}`.
+  const withArrow =
+    '<button\n  type="button"\n  aria-pressed={on}\n  onClick={() => toggleRegion(r)}\n' +
+    '  className={`inline-flex h-11 rounded-full border px-4 ${\n' +
+    '    on ? "border-accent" : "border-line text-ink-soft"\n' +
+    '  } ${n === 0 && !on ? "opacity-50" : ""}`}\n>';
+  const arrowTags = jsxOpenTags(withArrow, ["button"]);
+  assert.equal(arrowTags.length, 1, "an arrow handler must not end the tag");
+  assert.ok(
+    BARE_OPACITY.test(arrowTags[0].text),
+    "the chip that actually shipped must be caught — this is the whole defect",
+  );
+
+  const withNestedObject =
+    '<button\n  type="button"\n  onClick={() =>\n    write({\n' +
+    '      [GUIDE_FILTER_KEYS.modelled]: filters.modelledOnly ? null : "1",\n' +
+    "    })\n  }\n" +
+    '  className={`… ${facets.modelled === 0 ? "opacity-50" : ""}`}\n>';
+  const nestedTags = jsxOpenTags(withNestedObject, ["button"]);
+  assert.equal(nestedTags.length, 1, "a nested object literal must not end the tag");
+  assert.ok(
+    BARE_OPACITY.test(nestedTags[0].text),
+    "the second guide chip must be caught too",
+  );
+
+  // And the boundary in the other direction: the tag really does END at its
+  // own `>`, so a dimmed element that is NOT this button must not be swept in.
+  const twoElements =
+    '<button type="button" onClick={() => go()} className="rounded">go</button>' +
+    '<span className="opacity-50">dimmed text, not a control</span>';
+  const [first] = jsxOpenTags(twoElements, ["button"]);
+  assert.ok(
+    !BARE_OPACITY.test(first.text),
+    "the scan must stop at the button's own `>`, not run on into a sibling",
+  );
 
   // The near-misses, all real shapes from this tree, each excluded by exactly
   // one character of the pattern — which is the case a bite test has to carry.
@@ -6574,11 +6768,48 @@ test("opportunity-vocab imports nothing, so it can never become heavy", () => {
     path.join(process.cwd(), "lib/data/opportunity-vocab.ts"),
     "utf8",
   );
-  const imports = stripComments(src).match(/^\s*import\b[^;]*;/gm) ?? [];
+  // Match the DEPENDENCY EDGE, not the keyword `import`. Until 2026-08-25 this
+  // read `/^\s*import\b[^;]*;/gm`, which is blind to `export { X } from "y"`
+  // and `export * from "y"` — both of which pull the module in at runtime in
+  // exactly the same way. A re-export is not a hypothetical here: `key-dates`
+  // re-exports ten names from this very file, so the idiom is one line away,
+  // and `export { HEAVY } from "./world"` would have kept this test green while
+  // shipping `world.ts` into every client bundle and both 1 MB edge functions.
+  const body = stripComments(src);
+  const edges = [
+    ...(body.match(/^[^\n]*\bfrom\s*["'][^"']+["']/gm) ?? []),
+    ...(body.match(/^\s*import\s+["'][^"']+["']\s*;?/gm) ?? []), // bare `import "x";`
+  ].map((s) => s.trim());
   assert.deepEqual(
-    imports,
+    edges,
     [],
-    `opportunity-vocab must import nothing; it now imports:\n${imports.join("\n")}`,
+    `opportunity-vocab must reach nothing; it now depends on:\n${edges.join("\n")}`,
+  );
+});
+
+test("the imports-nothing guard actually bites — on an import AND a re-export", () => {
+  // Written because the first version only knew the word `import`, and a
+  // re-export creates the identical runtime edge. Both forms must be caught,
+  // and the module's own real content must not be.
+  const scan = (s: string) =>
+    [
+      ...(stripComments(s).match(/^[^\n]*\bfrom\s*["'][^"']+["']/gm) ?? []),
+      ...(stripComments(s).match(/^\s*import\s+["'][^"']+["']\s*;?/gm) ?? []),
+    ].map((x) => x.trim());
+
+  assert.equal(scan('import { HUBS } from "./world";').length, 1, "a plain import");
+  assert.equal(scan('import type { X } from "./world";').length, 1, "even a type import");
+  assert.equal(scan('export { HUBS } from "./world";').length, 1, "a named re-export");
+  assert.equal(scan('export * from "./world";').length, 1, "a star re-export");
+  assert.equal(scan('import "./side-effect";').length, 1, "a bare side-effect import");
+
+  // The near-misses: this module is arrays and label maps, and the word "from"
+  // appears in its prose and could appear in a value. Neither is an edge.
+  assert.deepEqual(scan('// derived from the canonical array'), [], "a comment is not an edge");
+  assert.deepEqual(
+    scan('export const COST_LABEL = { free: "Free from the organiser" } as const;'),
+    [],
+    "the word from inside a string is not an edge",
   );
 });
 // ── Majors ───────────────────────────────────────────────────────────────────
@@ -8187,26 +8418,42 @@ test("the days-left phrasings handle today, tomorrow and the plural", () => {
 });
 
 test("no component spells the days-left sentence for itself", () => {
-  // The guard that stops this drifting back apart. It reads the four files
-  // that render a countdown and fails on a literal " days left" / "days left`"
-  // built inline — the exact construction all three copies used.
-  const callers = [
-    "components/opportunities/OpportunityCard.tsx",
-    "components/opportunities/OpportunityDetail.tsx",
-    "components/opportunities/EligibilityChecker.tsx",
-    "components/marketing/OpportunityPreview.tsx",
-  ];
-  for (const rel of callers) {
-    const src = readFileSync(path.join(process.cwd(), rel), "utf8");
-    assert.ok(
-      !/days left/.test(src),
-      `${rel} still spells the countdown itself — import daysLeftLabel instead`,
-    );
-    assert.ok(
-      !/closes today/.test(src),
-      `${rel} still spells "closes today" itself`,
-    );
+  // This scanned a hardcoded list of four files until 2026-08-25, and by then
+  // SIX rendered a countdown: `RoadmapView.tsx` said "due today" where every
+  // other surface says "closes today", and `FirstWin.tsx` printed
+  // `{days} days left` with no singular case, so a student one day out read
+  // "1 days left". Both sat outside the list, so the guard reported nothing.
+  //
+  // **An inclusion list fails OPEN and an exemption list fails CLOSED**, and
+  // that is the whole repair: a file added tomorrow is now scanned by default
+  // and has to be argued out, rather than being invisible by default. The same
+  // inversion is worth applying to every other hardcoded file list in here.
+  const OWNS_THE_WORDING = new Set([
+    // The module the label belongs to. `daysLeftLabel` and `closesInPhrase`
+    // are defined here; this is the one place the words may be typed.
+    "lib/data/opportunity-format.ts",
+    // Builds a full SENTENCE with its own pluraliser (`${title} closes in 3
+    // days.`), which is a different job from a badge label. Exempt by name and
+    // with a reason, rather than by not being looked at.
+    "lib/data/next-move.ts",
+  ]);
+  const offenders: string[] = [];
+  for (const file of allRepoSources()) {
+    const name = rel(file);
+    if (OWNS_THE_WORDING.has(name)) continue;
+    const src = stripComments(readFileSync(file, "utf8"));
+    if (/\bdays? left\b/.test(src)) {
+      offenders.push(`${name} — spells the countdown itself`);
+    }
+    if (/closes today|due today/.test(src)) {
+      offenders.push(`${name} — spells the closing day itself`);
+    }
   }
+  assert.deepEqual(
+    offenders,
+    [],
+    `import daysLeftLabel/closesInPhrase instead of retyping the words:\n  ${offenders.join("\n  ")}`,
+  );
 });
 
 test("daysBetween reads a date-only string without building a Date", () => {
@@ -8910,7 +9157,12 @@ test("only a WRONG url fails the link gate, and a wrong one still does", () => {
   // The far end answered and refused this caller because it thinks we are a
   // script. A human browser sails past, so this proves nothing and fails
   // nothing.
-  for (const s of [403, 406, 409, 429]) {
+  // 412 is in this list, and it was missing until 2026-08-25. The guide's
+  // checker had treated it as a bot wall for releases and CLAUDE.md stated the
+  // rule as "403/429/412", so the catalog gate was the one copy that had not
+  // been told — and a catalog URL behind such a rule would have fallen through
+  // to `broken` and exited 1 on a live page. Two gates, one rule.
+  for (const s of [403, 406, 409, 412, 429]) {
     assert.equal(classifyStatus(s), "blocked");
   }
 

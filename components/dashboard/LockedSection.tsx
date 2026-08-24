@@ -47,7 +47,7 @@ export function LockedSection({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="rounded-xl border border-line bg-card px-4 py-2 text-sm font-medium text-ink shadow-card transition-colors hover:border-ink/30"
+            className="rounded-xl border border-line bg-card px-4 py-2 text-sm font-medium text-ink shadow-card transition-colors focus-visible:focus-ring hover:border-ink/30"
           >
             What&apos;s this?
           </button>

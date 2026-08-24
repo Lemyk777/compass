@@ -34,7 +34,14 @@ type Verdict = {
 // answers 401 to everyone else — and the gate reported the run as
 // "170/173 healthy · 0 broken" with that row in it. That is the precise failure
 // this whole script exists to catch, waved through by the set below.
-const BOT_WALL = new Set([403, 406, 409, 429]);
+// 412 belongs here and was missing until 2026-08-25. The guide's checker
+// (`test-guide-links.ts`) has treated it as a bot wall for releases, because
+// government portals answer it to a caller with no browser fingerprint, and
+// CLAUDE.md states the rule as "403/429/412 is a bot wall". Only this set had
+// not been told — so a catalog URL behind such a rule fell through to `broken`
+// and exited 1, which is the cry-wolf failure the whole file was rewritten to
+// stop. Two gates, one rule: keep them in step.
+const BOT_WALL = new Set([403, 406, 409, 412, 429]);
 
 /**
  * A link that requires credentials, which for a public catalog is always wrong.
@@ -231,7 +238,14 @@ async function main() {
   // /edit address answering 401 to everybody except its owner, reported as
   // healthy on a run that printed "0 broken". A bot wall is a server refusing
   // a SCRIPT while letting a browser through; 401 refuses the browser too.
-  if (broken.length + priv.length) process.exit(1);
+  // Read the constant rather than restating it. `FAILS_THE_GATE` was exported
+  // and asserted in test-engine while this line was a hand-written
+  // `broken.length + priv.length` — so the declaration and the behaviour were
+  // two separate copies, and adding a third failing verdict would have gone
+  // green in both places while the run kept exiting 0. That is the same shape
+  // as the bug in this file's own header: a stated rule the code did not
+  // implement, unnoticed for four runs.
+  if (results.some((r) => FAILS_THE_GATE.includes(r.status))) process.exit(1);
 }
 
 // Guarded so the rule above can be imported and asserted without firing 172

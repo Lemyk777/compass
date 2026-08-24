@@ -218,7 +218,7 @@ export default function MapView({ className }: { className?: string }) {
                 type="button"
                 onClick={() => go(-1)}
                 aria-label="Previous country"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-[#0E7B57]/10 hover:text-[#0E7B57]"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition-colors focus-visible:focus-ring hover:bg-[#0E7B57]/10 hover:text-[#0E7B57]"
               >
                 <Chevron dir="left" />
               </button>
@@ -236,7 +236,7 @@ export default function MapView({ className }: { className?: string }) {
                 type="button"
                 onClick={() => go(1)}
                 aria-label="Next country"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-[#0E7B57]/10 hover:text-[#0E7B57]"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition-colors focus-visible:focus-ring hover:bg-[#0E7B57]/10 hover:text-[#0E7B57]"
               >
                 <Chevron dir="right" />
               </button>
