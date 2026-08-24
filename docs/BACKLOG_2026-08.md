@@ -23,8 +23,45 @@ scripts in §6 take under a minute between them.
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**As of 2026-08-24 everything in this repository is in production.** `main` =
-`a29a828`, and its tree is identical to `develop` = `87e6354`. **Compare TREE
+**As of 2026-08-24 there is ONE release on `develop` that is not yet in
+production: the root-cause pass below.** Everything before it is live.
+
+### The root-cause pass, 2026-08-24 (on `develop`, unreleased)
+
+Four defects that turned out to be **one cause plus three neighbours of it**,
+found by asking why the same mistake appeared in many places written by people
+who plainly knew better.
+
+1. **The vocabularies are one list, enforced by the compiler.** A5, A6, A9 and
+   A4's root cause, all closed together — see item 3 of §8. New:
+   `lib/data/opportunity-vocab.ts`. `school` is a real level; `funded` is
+   postable; the admin console stopped printing database spellings
+   (`free cert paid`) and shows the partner form's human labels.
+2. **The catalog load starts on mount, not a render later.** Five components
+   each wrote the same `useState<Date|null>` + gated-`import()` pair; the
+   import depended on `today` in no way at all, so the largest chunk on the
+   route (31.6 kB gzipped) waited a full render cycle, and on the public
+   checker it waited for the visitor's ANSWER. New:
+   `lib/data/use-opportunity-plan.ts`. **An idle callback was tried and
+   measured out** — it fired at its 2000 ms ceiling, 2.2s after the initial
+   bundle, slower than the waterfall it was meant to fix.
+3. **A measured contrast failure the existing guards could not see.** A filter
+   chip with no results rendered at `opacity-50`: label **3.27:1**, count
+   **2.41:1**, against 8.78 and 5.48 with results. Every token inside was
+   checked; the alpha over the top was not. Three chips had it. Fixed as a
+   branch of the colour in both themes (5.48:1), guard added.
+4. **401 is no longer read as a bot wall** — A2, item 4 of §8.
+
+Verification: `npm run build` clean, **313** unit tests (from 301), **61**
+session checks, `npm run test:links` **168/172 healthy · 0 broken**, and the
+browser measurements above taken against `next start` rather than assumed.
+
+**Everything else in this repository is in production.** Re-derived 2026-08-24:
+`origin/main` = `f8a0913`, `origin/develop` = `d897244`, and **both point at the
+same tree, `2c8ed60`** — so the two branches are byte-identical despite the
+different commit hashes. The values this line held before (`a29a828` and
+`87e6354`) were both stale, which is problem 5 of §8 happening again in the file
+that warns about it. Re-derive rather than read. **Compare TREE
 hashes, never commit counts** — `git rev-list --count origin/develop..origin/main`
 reads 10+ while the two are byte-identical, because every release leaves a merge
 commit on `main` that `develop` never gets back. That count nearly sent a session
@@ -93,7 +130,7 @@ git fetch origin && git log --oneline origin/main..HEAD
 | On `main` (deployed) | everything through **the audit release**. `origin/main` = `9694dde`, released via [#132](https://github.com/Lemyk777/compass/pull/132) and [#134](https://github.com/Lemyk777/compass/pull/134). `origin/main` and `origin/develop` are identical |
 | Open PRs | none |
 | Branch | `develop` |
-| Unit tests | **289** (`npm run test:unit`) — 282 before this release; the four added are the two countdown guards and the two heading/glyph guards, each watched failing before being kept |
+| Unit tests | **313** (`npm run test:unit`), re-derived 2026-08-24. This line has read 289 since release 9 and the real number was 301 before this pass, so treat it as a claim: run the command. The twelve added here are the vocabulary, catalog-load and dimmed-control guards plus their bite tests, each watched failing before being kept |
 | Session checks | **61** (`node --import tsx scripts/test-session-checks.ts`) |
 | Catalog | **172 entries · 0 broken links locally** (1 unverifiable — a bot wall, reported without failing). **The weekly job on `main` reads differently and has failed since at least 2026-08-03** — see below |
 | Migrations | **All applied through `0031_beat_reactions.sql`** — `npm run db:check` reports 33/33 |
@@ -2127,29 +2164,34 @@ needs no code and no migration.
    already has a date-health panel, and scope the verification against that
    rather than against 7%. Each date verified also moves a card onto the
    planner's agenda, so this is worth more than when it was written.
-3. **A5 + A6 — close the last two vocabulary splits.** Release 6 gave categories
-   one list (`COMPETITION_CATEGORIES` / `CATEGORY_ORDER`, read by both the
-   student's tabs and the admin form) and the same move works twice more:
-   - `school` is a fourth level the write path accepts (`ADMIN_LEVELS`) and the
-     read path has never heard of (`COMPETITION_LEVELS` has three). Such a row
-     is invisible to the filter and counted in no facet, silently. A
-     school-level competition is a genuinely useful thing for our students — the
-     first rung, and the one most likely to exist in Shymkent — so adding it to
-     the union is probably right rather than removing it from the form.
-   - `funded` — *they pay you*, the strongest cost signal we have — cannot be
-     selected in the admin quick-add form, which still hardcodes nine of the ten
-     cost models.
+3. ~~**A5 + A6 — close the last two vocabulary splits.**~~ **DONE 2026-08-24,
+   and at the root rather than at the two symptoms.** The split was never two
+   missing entries: the canonical arrays were bare unions living inside
+   `key-dates`, which nothing client-reachable may import at runtime, so every
+   option list had to hand-write its own copy and the compiler could check
+   none of them for completeness. `level` was declared in FIVE places and
+   `cost` in SEVEN — one more than the audit had counted, and the seventh was
+   found by the guard written for the other six. All four vocabularies now
+   live in [lib/data/opportunity-vocab.ts](../lib/data/opportunity-vocab.ts),
+   which imports nothing at all, and every label map is a `Record<Union, …>`,
+   so **a member added without its label does not compile**. `school` is a real
+   level with its own facet, hint and count; `funded` is postable. Four new
+   guards, and three of them were proved to bite by deliberate breakage.
 
-   Both are small. They are third rather than sixth because this exact pattern
-   (a union on the read side, a hand-written array on the write side, nothing
-   tying them together) is what produced three separate shipped bugs.
-4. **A2 — 401 must fail the link gate.** `BOT_WALL` in
-   [scripts/test-links.ts](../scripts/test-links.ts) still contains `401`, so a
-   private document or an expired share link is reported as healthy. 403/429/412
-   mean "we think you are a robot"; 401 means "this needs credentials you do not
-   have", which for a public catalog link is precisely what the gate exists to
-   catch. Move it to its own bucket that fails, with a message naming the likely
-   cause. Leave 403/406/409/429 alone.
+   **The generalisable half:** when the same mistake appears in many places
+   written by people who plainly knew better — the tell here was one Zod object
+   whose first field derived from a canonical array and whose next three were
+   written out by hand — stop looking for carelessness and look for a SECOND
+   rule that made the first one impossible to obey at those sites. The
+   violations cluster on one side of a line; the fix is to dissolve the
+   conflict, after which the instances stop being written rather than being
+   corrected one at a time.
+4. ~~**A2 — 401 must fail the link gate.**~~ **DONE 2026-08-24.** 401 has its
+   own verdict, `private`, which fails the run and names the likely cause: a
+   private document, an expired share link, or an `/edit` URL pasted in place
+   of the public one. `BOT_WALL` is 403/406/409/429, exactly as the audit said.
+   Verified against the live catalog — **168/172 healthy · 0 private · 0
+   broken** — so the trap is armed without anything newly red.
 5. **#14 — Malaysia and Australia.** Two country profiles, self-contained, and
    they widen the spine's chain immediately. Rules are test-enforced: trade-offs
    must outnumber strengths, `notForYou` is mandatory, no prices or rankings,
@@ -2237,6 +2279,37 @@ and that no item on any list will fix, because nobody has owned them.
      failure directions were then verified by breaking a pattern on purpose and
      watching the suite go red: the loosened boundary, and the one that matches
      nothing at all.
+
+   **A FIFTH way for a guard to be useless, found 2026-08-24, and it is not a
+   broken regex.** CLAUDE.md lists four. The fifth is that the defect arrives
+   through a channel the guard cannot see at all. Alongside it, one lesson that
+   is not a fail-open at all but a different disease — a guard so imprecise it
+   gets exempted to death:
+
+   - **A guard aimed at the vocabulary instead of the SHAPE.** The first
+     version of the private-copy guard counted how many literals of a
+     vocabulary appeared anywhere in a file, threshold three. It flagged nine
+     files and eight were false: the cost vocabulary's generic members
+     (`"unknown"`, `"free"`, `"varies"`) belong to half a dozen unrelated
+     unions here, and three uses of one fallback counted as three. Every real
+     instance had one shape — an ARRAY LITERAL with three or more DISTINCT
+     members. Rewriting it that way went from 9 findings (1 real) to 1 finding
+     (1 real), and the one was a seventh copy nobody had counted. **Words are
+     shared across unrelated concepts; shape is not.**
+   - **A guard that cannot see the mechanism.** The contrast guards scan class
+     names for alpha colour utilities (`text-ink/60`). The failure arrived as
+     an `opacity-50` on the element — one level up, compositing afterwards onto
+     colours that individually pass. No class-name scan could ever have caught
+     it. **Verified tokens do not compose into a verified pixel: audit contrast
+     at the rendered node.** The source-level guard that IS possible guards the
+     mechanism instead — an opacity reduction on an interactive element must be
+     `disabled:`-prefixed, so it can only apply where WCAG exempts it.
+
+   **And the near-miss rule got a second confirmation.** Every `ignores` list
+   in a bite test has to contain the boundary case — the line the pattern
+   excludes by a single character. Here that was `opacity-100` against
+   `opacity-10`, which differ by one trailing character and would otherwise
+   have made the guard fire on every full-opacity override in the tree.
 
    **Still open, and smaller than it was:** the guards that are not simple bans —
    the ones that parse structure (`walk` + `matchAll` over JSX, the import-graph

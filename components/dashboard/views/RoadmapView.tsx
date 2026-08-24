@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  roadmapModule,
+  useToday,
+  useWarmModule,
+} from "@/lib/data/use-opportunity-plan";
 import { Card } from "@/components/report/Section";
 import { GapAnalysis } from "@/components/report/GapAnalysis";
 import { useDashboard } from "@/components/dashboard/DashboardContext";
@@ -30,9 +35,15 @@ export function RoadmapView() {
   const { analysis, profileMeta, basePath, liveDates } = useDashboard();
 
   // "today" depends on the visitor's clock, so resolve it on the client to avoid
-  // a hydration mismatch. Until then, render nothing date-dependent.
-  const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => setToday(new Date()), []);
+  // a hydration mismatch. Until then, render nothing date-dependent. The hook
+  // also starts fetching `roadmap` (which reaches the catalog, and is why this
+  // import is dynamic at all) on an idle callback in the same tick — it used to
+  // wait for this state to land and force a second render first.
+  const today = useToday();
+  // Start fetching `roadmap` (which reaches the catalog, and is why this import
+  // is dynamic at all) on mount rather than after `today` lands and forces a
+  // second render. See useWarmModule.
+  useWarmModule(roadmapModule);
 
   // The roadmap is deterministic (dates + profile facts), so it renders BEFORE
   // any analysis exists — the "grow with us" mode for younger students. Without
@@ -62,7 +73,7 @@ export function RoadmapView() {
           universities: uniq(c.universities(analysis)),
         })).filter((t) => t.universities.length > 0)
       : [];
-    import("@/lib/data/roadmap").then((m) => {
+    roadmapModule().then((m) => {
       if (cancelled) return;
       setRoadmap(
         m.buildRoadmap({

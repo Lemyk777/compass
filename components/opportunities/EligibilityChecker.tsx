@@ -1,10 +1,10 @@
 "use client";
 
 import { matchedOnly } from "@/lib/data/opportunity-filter";
-import { useEffect, useRef, useState } from "react";
+import { NO_FACTORS, useOpportunityPlan, useToday } from "@/lib/data/use-opportunity-plan";
+import { useRef, useState } from "react";
 import type {
   Competition,
-  ExtracurricularsPlan,
   Opportunity,
 } from "@/lib/data/key-dates";
 import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
@@ -51,9 +51,11 @@ export function EligibilityChecker({
   live?: Competition[];
 } = {}) {
   // `today` resolves on the client — the countdown depends on the visitor's
-  // clock, and a server-rendered one would hydrate wrong.
-  const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => setToday(new Date()), []);
+  // clock, and a server-rendered one would hydrate wrong. The hook also warms
+  // the catalog on an idle callback from mount, which matters most here: the
+  // load used to be gated on the grade answer as well as on the date, so the
+  // fetch began at the moment of highest intent instead of before it.
+  const today = useToday();
 
   const [grade, setGrade] = useState<number | null>(null);
   const [fields, setFields] = useState<FacultyValue[]>([]);
@@ -64,29 +66,20 @@ export function EligibilityChecker({
   // Lazy-load the matching engine so the ~2,700-entry catalog is a separate
   // async chunk, not part of this public page's initial JS. Everyone starts at
   // "emerging" (factors: []), exactly right for a beginner: accessible first.
-  const [plan, setPlan] = useState<ExtracurricularsPlan | null>(null);
-  useEffect(() => {
-    if (!today || grade == null) {
-      setPlan(null);
-      return;
-    }
-    let cancelled = false;
-    import("@/lib/data/key-dates").then((m) => {
-      if (cancelled) return;
-      setPlan(
-        m.buildExtracurriculars({
-          today,
-          faculties: fields,
-          factors: [],
-          graduationYear: graduationYearFromGrade(grade, today),
-          liveCompetitions: live,
-        }),
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [today, grade, fields, live]);
+  // `ready` gates the PLAN and never the load. Everyone starts at "emerging"
+  // (no factors), which is exactly right for a beginner: accessible things
+  // first.
+  const plan = useOpportunityPlan({
+    today,
+    faculties: fields,
+    factors: NO_FACTORS,
+    graduationYear:
+      today && grade != null
+        ? graduationYearFromGrade(grade, today)
+        : undefined,
+    liveCompetitions: live,
+    ready: grade != null,
+  });
 
   // Open now vs later. The "later" ones stay knowable — a younger student
   // should be able to see what they are aiming at — but they never compete for

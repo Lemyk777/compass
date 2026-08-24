@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useToday } from "@/lib/data/use-opportunity-plan";
 import type { Analysis } from "@/lib/ai/schema";
 import { Section, Card } from "@/components/report/Section";
 import { LikelihoodGauge } from "@/components/charts/LikelihoodGauge";
@@ -94,9 +94,10 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
   const { profileMeta } = useDashboard();
 
   // "today" depends on the visitor's clock; resolve it on the client so the
-  // deadline countdowns don't cause a hydration mismatch.
-  const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => setToday(new Date()), []);
+  // deadline countdowns don't cause a hydration mismatch. This was the fifth
+  // copy of that three-line pair, each with its own comment saying the same
+  // thing.
+  const today = useToday();
 
   if (analysis.schools.length === 0) return <EmptyCountryList code="US" />;
   return (

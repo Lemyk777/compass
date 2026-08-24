@@ -9,6 +9,12 @@
 
 import { z } from "zod";
 import { LIMITS } from "@/lib/limits";
+import {
+  ALL_DESTINATION_CODES,
+  type DestinationCode,
+} from "@/lib/data/destinations";
+import { FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
+import { CURRICULUM_VALUES, type Curriculum } from "@/lib/types";
 
 // Bounds (LIMITS) are enforced here so an oversized profile can never be stored
 // and later overwhelm the analysis. The UI mirrors these caps for good UX.
@@ -26,25 +32,26 @@ export const inputSchema = z.object({
     .trim()
     .min(1, "Add your citizenship.")
     .max(LIMITS.shortText),
+  // Both vocabularies below are DERIVED, and the comment that used to sit here
+  // is why. It read: "Keep in sync with DestinationCode — 'AE' was missing here
+  // once, an onboarding save with UAE selected failed validation." So the defect
+  // had already shipped, a student picking the United Arab Emirates could not
+  // save their intake at all, and the repair was to add the missing string and
+  // ask the next person to remember. Nobody remembers; the compiler does.
+  //
+  // `ALL_DESTINATION_CODES` is itself derived from the available and planned
+  // lists, so adding a country is one edit at the far end and this validator
+  // follows. Same for `FACULTY_VALUES`, which is derived from `FACULTIES` — the
+  // partner form's own schema already reads it, and this one is the INTAKE, so
+  // it is the place a mismatch costs the most.
   destinations: z
-    // Keep in sync with DestinationCode (lib/data/destinations.ts). "AE" was
-    // missing here once — an onboarding save with UAE selected failed validation.
-    .array(z.enum(["US", "IT", "HK", "AE", "KR", "CN", "CA"]))
+    .array(
+      z.enum(ALL_DESTINATION_CODES as [DestinationCode, ...DestinationCode[]]),
+    )
     .min(1, "Pick at least one destination country.")
     .max(LIMITS.destinations),
   faculties: z
-    .array(
-      z.enum([
-        "engineering",
-        "computer_science",
-        "business_economics",
-        "natural_sciences",
-        "humanities_social",
-        "medicine_health",
-        "law",
-        "arts_design",
-      ]),
-    )
+    .array(z.enum(FACULTY_VALUES as [FacultyValue, ...FacultyValue[]]))
     .min(1, "Pick at least one field of study.")
     .max(LIMITS.faculties),
   intended_major: z
@@ -58,7 +65,10 @@ export const inputSchema = z.object({
   graduation_year: z.number().int().min(2000).max(2100).optional(),
   // Total grades in the student's school system (11 KZ/RU, 12 US, 13 IT/DE).
   school_years: z.number().int().min(9).max(14).optional(),
-  curriculum: z.enum(["IB", "A-Level", "national", "US-GPA", "other"], {
+  // Derived too. `CURRICULA` carries the labels the picker renders, so the
+  // values are lifted off it — a curriculum added there now reaches this
+  // validator instead of being offered and then refused.
+  curriculum: z.enum(CURRICULUM_VALUES as [Curriculum, ...Curriculum[]], {
     errorMap: () => ({ message: "Pick your curriculum." }),
   }),
   grades: z.object({

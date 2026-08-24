@@ -4,8 +4,9 @@
 //
 // Needs no API key.  npm run test:links
 //
-// Exit code 1 only when a link is WRONG — a 4xx that is not a bot wall. A 5xx,
-// a timeout or a reset means we could not get an answer, which proves nothing
+// Exit code 1 only when a link does not work FOR A STUDENT: a 4xx that is not a
+// bot wall, or a 401 asking for credentials nobody we ship it to has. A 5xx, a
+// timeout or a reset means we could not get an answer, which proves nothing
 // about the link and is reported without failing.
 
 import { COMPETITIONS } from "../lib/data/key-dates";
@@ -16,7 +17,7 @@ const UA =
 type Verdict = {
   id: string;
   url: string;
-  status: "ok" | "redirected" | "blocked" | "unreachable" | "broken";
+  status: "ok" | "redirected" | "blocked" | "unreachable" | "private" | "broken";
   detail: string;
 };
 
@@ -25,27 +26,60 @@ type Verdict = {
 // 403 here and serve a "checking your browser" interstitial in a real browser.
 // Treating those as dead links makes this gate cry wolf on every run — and a
 // gate that is always red stops being read.
-const BOT_WALL = new Set([401, 403, 406, 409, 429]);
+//
+// 401 is NOT among them, and it used to be. "You are a robot" and "this needs
+// credentials you do not have" are different sentences, and only one of them
+// describes a link a student can open. The catalog's NAO Cup row was a Google
+// Forms **/edit** address carrying a response token — an owner-only link that
+// answers 401 to everyone else — and the gate reported the run as
+// "170/173 healthy · 0 broken" with that row in it. That is the precise failure
+// this whole script exists to catch, waved through by the set below.
+const BOT_WALL = new Set([403, 406, 409, 429]);
+
+/**
+ * A link that requires credentials, which for a public catalog is always wrong.
+ *
+ * Kept separate from `broken` at the type level so the report can say WHY: the
+ * cause is nearly always a private document, an expired share link, or an
+ * editing URL pasted in place of the public one, and each of those has a
+ * different fix. "404" and "you are not allowed in" send a reader looking in
+ * different places.
+ */
+const NEEDS_CREDENTIALS = 401;
 
 /**
  * What one HTTP status means for a link we ship. Exported so the rule can be
  * asserted without the network — a gate whose verdict nothing checks is how
  * this one ended up failing four weeks running on links that were all alive.
  *
- *   blocked      the server answered and refused this caller. Go look.
+ *   blocked      the server answered and refused this caller because it thinks
+ *                we are a script. A human browser gets in. Go look.
  *   unreachable  the server said the fault is its own, or never answered.
  *                Proves nothing about our URL.
- *   broken       the server says this address is wrong. The only failing case.
+ *   private      the server wants credentials. Nobody we ship this to has them.
+ *   broken       the server says this address is wrong.
+ *
+ * The last two fail the run; the first two never do.
  */
 export function classifyStatus(status: number): Verdict["status"] {
+  if (status === NEEDS_CREDENTIALS) return "private";
   if (BOT_WALL.has(status)) return "blocked";
   if (status >= 500) return "unreachable";
   if (status >= 400) return "broken";
   return "ok";
 }
 
-/** Only this verdict may fail the run. */
-export const FAILS_THE_GATE: Verdict["status"] = "broken";
+/**
+ * The verdicts that may fail the run.
+ *
+ * Two, not one, and the second was the whole point of splitting 401 out: "the
+ * far end says this address is wrong" and "the far end says you may not have
+ * this" are both statements that the link we ship does not work for the person
+ * we ship it to. Everything else — a bot wall, a 5xx, a timeout, a reset — is
+ * the far end telling us about ITSELF, and is printed every run without failing
+ * anything.
+ */
+export const FAILS_THE_GATE: Verdict["status"][] = ["broken", "private"];
 
 /**
  * A single attempt. Only 4xx (other than the bot wall) proves the URL itself is
@@ -70,6 +104,12 @@ async function attempt(url: string): Promise<{ status: Verdict["status"]; detail
     }
     if (verdict === "unreachable") {
       return { status: verdict, detail: `HTTP ${res.status} — their server, not our URL` };
+    }
+    if (verdict === "private") {
+      return {
+        status: verdict,
+        detail: `HTTP ${res.status} — needs credentials. Usually a private document, an expired share link, or an /edit URL pasted instead of the public one`,
+      };
     }
     if (verdict === "broken") return { status: verdict, detail: `HTTP ${res.status}` };
 
@@ -141,10 +181,17 @@ async function main() {
   const redirected = results.filter((r) => r.status === "redirected");
   const blocked = results.filter((r) => r.status === "blocked");
   const unreachable = results.filter((r) => r.status === "unreachable");
+  const priv = results.filter((r) => r.status === "private");
 
   if (broken.length) {
     console.log("BROKEN — student sees a browser error:");
     for (const r of broken) console.log(`  ✗ ${r.id.padEnd(24)} ${r.url}\n      ${r.detail}`);
+  }
+  if (priv.length) {
+    console.log(
+      "\nPRIVATE — the link asks for credentials nobody we ship it to has:",
+    );
+    for (const r of priv) console.log(`  ✗ ${r.id.padEnd(24)} ${r.url}\n      ${r.detail}`);
   }
   if (redirected.length) {
     console.log("\nREDIRECTED — the stored URL is stale, update it:");
@@ -164,9 +211,10 @@ async function main() {
     broken.length -
     redirected.length -
     blocked.length -
-    unreachable.length;
+    unreachable.length -
+    priv.length;
   console.log(
-    `\n${ok}/${results.length} links healthy · ${redirected.length} stale · ${blocked.length} unverifiable · ${unreachable.length} unreachable · ${broken.length} broken`,
+    `\n${ok}/${results.length} links healthy · ${redirected.length} stale · ${blocked.length} unverifiable · ${unreachable.length} unreachable · ${priv.length} private · ${broken.length} broken`,
   );
   // Only a URL the far end says is WRONG fails the gate: a 4xx that is not a
   // bot wall. Everything else is printed every run so it cannot be forgotten,
@@ -177,7 +225,13 @@ async function main() {
   // and a gate that has never once passed is a red light people learn to
   // scroll past. That is worse than no gate, because it also hides the day
   // something is really wrong.
-  if (broken.length) process.exit(1);
+  //
+  // 401 joined `broken` on 2026-08-24. It had been filed under the bot wall,
+  // where it passed — and the catalog's own NAO Cup row was a Google Forms
+  // /edit address answering 401 to everybody except its owner, reported as
+  // healthy on a run that printed "0 broken". A bot wall is a server refusing
+  // a SCRIPT while letting a browser through; 401 refuses the browser too.
+  if (broken.length + priv.length) process.exit(1);
 }
 
 // Guarded so the rule above can be imported and asserted without firing 172

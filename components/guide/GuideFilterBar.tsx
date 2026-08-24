@@ -158,13 +158,23 @@ export function GuideFilterBar({
                 type="button"
                 aria-pressed={on}
                 onClick={() => toggleRegion(r)}
-                // A zero stays clickable and only dims. Removing it would make
-                // the row change shape while you type, which reads as a bug.
+                // A zero stays clickable and only quietens. Removing it would
+                // make the row change shape while you type, which reads as a bug.
+                //
+                // Quietened by a BRANCH of the colour, never by an alpha over
+                // it: measured on the sibling filter, `opacity-50` took a 8.78:1
+                // label to 3.27:1 and a 5.48:1 count to 2.41:1, both under the
+                // 4.5 this text size needs. Every token here is checked; an
+                // opacity laid over them is not, and no class-name scan can see
+                // it. Elsewhere in this codebase a dimmed control is a genuinely
+                // disabled one, which WCAG exempts. This one is not.
                 className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-out active:scale-[0.96] active:duration-75 focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none ${
                   on
                     ? "border-accent bg-accent-soft text-accent-ink"
-                    : "border-line bg-surface text-ink-soft hover:border-ink/30 hover:text-ink"
-                } ${n === 0 && !on ? "opacity-50" : ""}`}
+                    : n === 0
+                      ? "border-line/60 bg-surface text-ink-faint"
+                      : "border-line bg-surface text-ink-soft hover:border-ink/30 hover:text-ink"
+                }`}
               >
                 {REGION_LABEL[r]}
                 <span data-num className="tabular-nums text-xs text-ink-faint">
@@ -189,8 +199,10 @@ export function GuideFilterBar({
               className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-out active:scale-[0.96] active:duration-75 focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none ${
                 filters.modelledOnly
                   ? "border-accent bg-accent-soft text-accent-ink"
-                  : "border-line bg-surface text-ink-soft hover:border-ink/30 hover:text-ink"
-              } ${facets.modelled === 0 && !filters.modelledOnly ? "opacity-50" : ""}`}
+                  : facets.modelled === 0
+                    ? "border-line/60 bg-surface text-ink-faint"
+                    : "border-line bg-surface text-ink-soft hover:border-ink/30 hover:text-ink"
+              }`}
             >
               We model your odds
               <span data-num className="tabular-nums text-xs text-ink-faint">
