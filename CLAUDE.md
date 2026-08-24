@@ -857,16 +857,23 @@ registries. Every one of them was fetched on 2026-08-24 and all 317 resolved.
   and a permissions policy for four APIs nothing here uses. **A CSP is
   deliberately absent** until it can be done with nonces; a permissive one
   shipped to look protected is worse than none.
-- **`npm run test:links` fails on one thing only: a 4xx that is not a bot
-  wall** — the far end saying the address we ship is wrong. A 5xx, timeout,
-  reset or DNS failure becomes `unreachable`, printed in full and failing
-  nothing, because from a datacenter IP it mostly means the host refused *this
-  caller*. The weekly workflow had failed on all four runs of its life while
-  naming links that were alive; `classifyStatus` is exported and unit-tested
-  across all four bands so the rule is asserted rather than described. **Before
-  deleting a catalog URL, reproduce from an ordinary connection** — three links
-  it called dead answer 200 from one, and `globe.gov` really was down for days
-  and came back on its own.
+- **`npm run test:links` fails on two things, and `FAILS_THE_GATE` names them:
+  `broken` (a 4xx that is not a bot wall) and `private` (a 401)** — both are the
+  far end saying the link we ship does not work for the person we ship it to. A
+  5xx, timeout, reset or DNS failure becomes `unreachable`, and 403/406/409/429
+  become `blocked`; both are printed in full and fail nothing, because from a
+  datacenter IP they mostly mean the host refused *this caller*. **401 was in
+  the bot-wall set until 2026-08-24 and splitting it out was the point:** the
+  NAO Cup row was a Google Forms `/edit` address carrying an owner-only response
+  token, 401 to every student, and the run reported "170/173 healthy · 0 broken"
+  with it in. "You are a robot" and "this needs credentials you do not have" are
+  different sentences. `classifyStatus` is exported and unit-tested across every
+  band so the rule is asserted rather than described. Note the **guide's**
+  checker keeps its own set — `scripts/test-guide-links.ts` also treats **412**
+  as a bot wall, because government portals answer it. **Before deleting a
+  catalog URL, reproduce from an ordinary connection** — three links it called
+  dead answer 200 from one, and `globe.gov` really was down for days and came
+  back on its own.
 
 **What is NOT fixed, deliberately: the guide is still `force-dynamic` and
 uncacheable.** Two independent causes, both measured: the layout reads the
