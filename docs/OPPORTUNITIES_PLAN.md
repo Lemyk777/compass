@@ -36,7 +36,7 @@ two disagree, this one wins.
 | `region`-tagged rows | **0** — same row. The local-opportunity mechanism applies to nothing curated. This is the highest-value data work available (audit A8) |
 | The guide | **five** steps: 33 areas of work → 44 majors → 17 countries → 38 cities → 6 routes from home |
 | Named institutions | 79, never ranked |
-| Tests | 282 unit · 61 session checks |
+| Tests | 301 unit · 61 session checks |
 
 **The catalog's prose was rewritten on 2026-08-19, and the rules for writing a
 new entry now live in [lib/data/README.md](../lib/data/README.md)** under
@@ -469,7 +469,7 @@ competition; the admin page lists broken links first.
 ## Verification (no API key needed)
 
 ```bash
-npm run test:unit       # 282 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner, the bundle guards
+npm run test:unit       # 301 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner, the bundle guards, structured data, SERP budgets
 npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
 npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog

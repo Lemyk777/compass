@@ -207,8 +207,10 @@ Tokens in [tailwind.config.ts](../tailwind.config.ts) + [app/globals.css](../app
   **one accent** `#2F6FED` (azure) reserved for the user's own scores.
 - **Tier scale (used everywhere):** Reach `#E0664F`, Target `#D98A2B`, Likely
   `#3F9B6E` — see [lib/tiers.ts](../lib/tiers.ts).
-- **Type:** Space Grotesk (display + tabular figures) + Inter (body). Numbers use
-  `tabular-nums` (`data-num` / `.tnum`).
+- **Type:** Source Serif 4 (display) + Source Sans 3 (body), one superfamily, both
+  with the `cyrillic` subset — the catalog holds "Турнир городов" and an
+  opportunity's name is the `<h1>` of its own page. They replaced Space Grotesk +
+  Inter on 2026-08-22. Numbers use `tabular-nums` (`data-num` / `.tnum`).
 - **Signature element:** the Scorecard (gauge + radar + factor bars) — the hero,
   the thing students screenshot.
 - Motion is minimal (gauge counts up once; marquee scrolls; reduced-motion honored).

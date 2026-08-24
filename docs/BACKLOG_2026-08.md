@@ -23,17 +23,45 @@ scripts in §6 take under a minute between them.
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**As of 2026-08-22 everything in this repository is in production**, including
-the audit release — three P0 fixes, link-preview cards, and one type step per
-heading level — merged through
-[#131](https://github.com/Lemyk777/compass/pull/131) and
-[#133](https://github.com/Lemyk777/compass/pull/133) into `develop`, released
-via [#132](https://github.com/Lemyk777/compass/pull/132) and
-[#134](https://github.com/Lemyk777/compass/pull/134). Vercel is green, and the
-live pages were verified rather than assumed: `applycompass.app` serves
-`og:image` on every route, the Germany profile measures h1 36 → h2 24 → h3 19
-with zero contrast failures and nothing under 12px, and `/guide` says five steps
-with a count on all five cards.
+**As of 2026-08-24 everything in this repository is in production.** `main` =
+`a29a828`, and its tree is identical to `develop` = `87e6354`. **Compare TREE
+hashes, never commit counts** — `git rev-list --count origin/develop..origin/main`
+reads 10+ while the two are byte-identical, because every release leaves a merge
+commit on `main` that `develop` never gets back. That count nearly sent a session
+branching off the wrong place; see CONTRIBUTING.
+
+Six releases shipped on 2026-08-22 and 2026-08-24, PRs
+[#137](https://github.com/Lemyk777/compass/pull/137)–[#149](https://github.com/Lemyk777/compass/pull/149):
+
+1. **Structured data on every public page**, where there had been none at all —
+   Organization + WebSite on the home page, FAQPage on the landing,
+   BreadcrumbList on 138 guide and 172 opportunity pages. Plus Search Console
+   verification from an env var, a phone-only sticky CTA, and a stated partner
+   reply window.
+2. **A new typeface pair**, Source Serif 4 + Source Sans 3. It also fixed
+   Cyrillic headings falling back to a system face, since the old pair declared
+   `latin` only. Two measured constants had to be re-solved with it: the hero
+   clamp (the binding line moved from the rotating phrase to the fixed one, and
+   the old ramp cleared 1024px by four pixels) and the `ch` multiplier, which is
+   a property of the TYPEFACE and not of this codebase — 1.3× under Inter, 1.14×
+   under Source Sans.
+3. **`/about`**, naming the founders, and the country list no longer leading
+   with the home region — it leads with the five destinations that have an odds
+   engine, derived from the existing `modelled` flag.
+4. **The hero field's three hard edges**, all of which landed on the headline,
+   plus an `<a>`-inside-`<a>` hydration failure on three public pages.
+5. **The companion's beats rewritten** to two sentences each after a reader
+   called them philosophical; words per sentence 19.2 → 10.5.
+6. **Security headers** (there were none), two dead dependencies, and the search
+   result budgets — 250 of 317 titles ran past 60 characters and 205 of 317
+   descriptions past 160. Then **a link gate that can pass**: the weekly
+   workflow had failed on all four runs of its life while naming links that were
+   alive.
+
+Verified live rather than assumed: all 317 sitemap URLs resolve, six unknown ids
+return a real 404, the security headers are served on root and deep routes, the
+breadcrumb trail on `/guide/places/germany?f=law` reports the bare canonical, and
+the light theme passes AA. `npm run db:check` is 33/33.
 
 **One thing here is new in kind and worth reading before touching it: this
 repository now has EDGE functions**, the two Open Graph routes. They exist
@@ -70,17 +98,30 @@ git fetch origin && git log --oneline origin/main..HEAD
 | Catalog | **172 entries · 0 broken links locally** (1 unverifiable — a bot wall, reported without failing). **The weekly job on `main` reads differently and has failed since at least 2026-08-03** — see below |
 | Migrations | **All applied through `0031_beat_reactions.sql`** — `npm run db:check` reports 33/33 |
 
-**The `Link health` workflow has been red for at least three weekly runs**
-(2026-08-03, 08-10, 08-17), and it is not a regression from anything recent. It
-reports 161/172 with **2 broken** — `future-problem-solving` and
-`odysseyofthemind` — and 9 unverifiable, where a run from a home connection the
-same week gets 171/172, **0 broken** and 1 unverifiable. Both "broken" URLs
-answer **200** when fetched with an ordinary browser user agent, so this is the
-datacenter-IP problem `ARCHITECTURE.md` already names as the reason the job sits
-outside the CI gate — the checker is being blocked, not finding dead links. It
-still needs a decision, because a check that is permanently red is a check
-nobody reads: either the job tolerates a connection-level failure the way it
-already tolerates a 403/429/412, or it stops running in CI.
+**The `Link health` workflow — RESOLVED 2026-08-24.** It had been red on every
+run of its life (08-03, 08-10, 08-17, 08-24), always naming links that were
+alive: the runners sit in datacenter ranges a dozen of these hosts refuse, so
+anything they could not reach was reported as dead. Checked by hand on the last
+red morning — the three it called broken all answer **200** from an ordinary
+connection, and one of them renders in full in a browser while resetting the
+connection to a script.
+
+The decision this waited on turned out not to be a trade-off. **Both the
+workflow header and the checker's own docstring already stated the correct
+rule** — "read a failure as go-and-look, not a verdict"; "only a 4xx proves the
+URL is wrong" — and neither was implemented: every non-2xx and every thrown
+error returned `broken`, which exits 1. The code now does what its comments
+said. A fourth verdict, `unreachable`, takes 5xx, timeouts, resets and DNS
+failures; `broken` is exactly a 4xx that is not a bot wall. Everything else is
+still printed in full every run. `classifyStatus` is exported and unit-tested
+across all four bands, so the rule is asserted rather than described.
+
+It passed for the first time on 2026-08-24: **162/172 healthy, 0 broken**,
+against `160/172 · 3 broken` that same morning.
+
+**The trap it leaves behind: before deleting a catalog URL, reproduce from an
+ordinary connection.** `globe.gov` really was down for several days — 504 to a
+real browser, on every path — and came back on its own.
 
 ### What shipped in release 9 — the copy and readability pass, 2026-08-19
 
@@ -2216,9 +2257,13 @@ and that no item on any list will fix, because nobody has owned them.
    thing a student came for. Every date verified moves a card onto the planner's
    agenda, so this compounds with the section we just spent four releases
    building.
-4. **`Link health` has been red since at least 2026-08-03** and is waiting on an
-   owner decision that has not been made. A permanently red check is a check
-   nobody reads, which is how `ijso` stayed broken.
+4. ~~**`Link health` has been red since at least 2026-08-03** and is waiting on
+   an owner decision.~~ **CLOSED 2026-08-24** — see §1. It needed no decision:
+   the workflow header and the checker's docstring both already described the
+   right rule and neither implemented it. It fails on a 4xx that is not a bot
+   wall and on nothing else, and it passes. The durable half of this entry is
+   still true and now has a fourth instance behind it: **a permanently red check
+   is a check nobody reads**, and it also hides the day something is real.
 5. **The docs drift, including the file whose job is preventing drift.** §1
    carried a `main` SHA two releases stale while telling the reader that a stale
    note here has cost a release twice. It is corrected, but the mechanism that
