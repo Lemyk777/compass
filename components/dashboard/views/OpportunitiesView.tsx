@@ -143,7 +143,7 @@ export function OpportunitiesView({
   const standalone = usePathname() === "/opportunities";
 
   // "today" depends on the visitor's clock, so it resolves on the client. The
-  // hook also starts fetching the catalog on an idle callback in the same tick,
+  // hook also starts fetching the catalog from mount, in the same tick,
   // which is the fix: this used to set a piece of state, re-render, and only
   // then begin the download — see use-opportunity-plan.ts.
   const today = useToday();

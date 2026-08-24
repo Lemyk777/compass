@@ -34,7 +34,6 @@ import type { Opportunity } from "./key-dates";
 import {
   COMPETITION_CATEGORIES,
   COMPETITION_LEVELS,
-  COST_MODELS,
   LEVEL_HINT,
   LEVEL_LABEL,
   type CompetitionCategory,

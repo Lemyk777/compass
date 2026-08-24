@@ -357,7 +357,14 @@ export async function quickAddOpportunity(
   // The check reads as trivial now, and it is: it is trivial BECAUSE the
   // vocabularies became arrays something can point at. It could not be written
   // while they were bare unions.
-  const level = oneOf(ADMIN_LEVELS, input.level, "international");
+  // The fallback is the NARROWEST rung, never the widest. `quickAddOpportunity`
+  // writes no `tier` column, so `competitionTier()` derives one from the level —
+  // and `international` derives `elite`. A malformed level therefore used to
+  // publish a row wearing the "The big one" chip and matched preferentially to
+  // strong students, which is the opposite of what a fallback should do. Its
+  // two siblings already fall the safe way (`discover.ts` → `national`,
+  // `partners/queries.ts` → `regional`); this matches the form's own default.
+  const level = oneOf(ADMIN_LEVELS, input.level, "regional");
   const category = oneOf(ADMIN_CATEGORIES, input.category, "competition");
   const cost = oneOf(COST_MODELS, input.cost, "unknown");
 

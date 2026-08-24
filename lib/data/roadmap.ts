@@ -22,6 +22,9 @@ import {
   type Competition,
   type SatSitting,
 } from "@/lib/data/key-dates";
+// `opportunity-vocab` imports nothing at all, so reaching it from here costs
+// no bundle weight anywhere — that is the whole point of the module.
+import { LEVEL_LABEL } from "@/lib/data/opportunity-vocab";
 import { resolveSchoolDeadlines } from "@/lib/data/app-deadlines";
 import { resolveUniversityDeadlines } from "@/lib/data/intl-deadlines";
 import type { DestinationCode } from "@/lib/data/destinations";
@@ -681,7 +684,12 @@ function competitionActions(
     url: c.url,
     anchorDate: c.deadline,
     daysLeft: c.daysToDeadline,
-    tag: c.level,
+    // `LEVEL_LABEL`, never the raw union. The values are database spellings and
+    // any surface printing one shows a reader an enum — the admin form was
+    // given the label and this, the one a STUDENT reads, was not. It matters
+    // more here since `school` was added: the bare word reads as a kind of
+    // institution rather than as the narrowest rung.
+    tag: LEVEL_LABEL[c.level],
   }));
 }
 
