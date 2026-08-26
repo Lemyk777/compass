@@ -23,10 +23,30 @@ scripts in §6 take under a minute between them.
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**As of 2026-08-24 everything in this repository is in production**, including
-the root-cause pass below. Released via [#152](https://github.com/Lemyk777/compass/pull/152);
-`origin/main` = `d541c7b`, `origin/develop` = `1cefa19`, and both point at the
-same tree `e792ae4`.
+**As of 2026-08-25 there is ONE thing not in production: the Kazakhstan catalog
+rows.** Everything before them is released. The state re-derived on 2026-08-25,
+before that work began: `origin/main` = `3df0458`, `origin/develop` = `5b2caab`,
+both pointing at the same tree `b67feba`. (The two SHAs written here on
+2026-08-24 — `d541c7b` and `1cefa19` — were already stale by the next day, which
+is problem 5 below happening in the file that warns about it. **Re-derive.**)
+
+**Not yet released — A8, the local rows (2026-08-25).** The catalog went 172 →
+192 and now holds **20 `region: "KZ"` rows** where it held none: the state
+calendar from Дарын, the Kazakh programmes of Yandex and Samsung, a leadership
+prize, an open online debate tournament and its free practice league, a Model UN
+in Almaty, a university tournament carrying a scholarship, FLEX, SDU's SPT olympiad and NU Summer Camp. It also
+corrected a wrong claim on the shipped `wro` row (world final December, not
+November) and a stale rule in CLAUDE.md about which link checker treats 412 as a
+bot wall — both checkers do.
+
+Gate at the time of writing: `npm run build` clean, **321** unit tests (from
+318), **61** session checks, `npm run test:links` **191/192 healthy · 0 private ·
+0 broken**. Both new guards were seen FAILING against a deliberately seeded
+defect before being trusted — the seed was the pre-annotate hard filter, one
+line, and it turned three tests red. Full write-up in
+[AUDIT_2026-08-14.md](AUDIT_2026-08-14.md) §A8, which is now closed.
+
+The release before that, and everything below it, IS in production:
 
 ### The root-cause pass, released 2026-08-24 ([#152](https://github.com/Lemyk777/compass/pull/152))
 
@@ -2150,25 +2170,102 @@ already keys on `FacultyValue`. It shipped in release 5 as `lib/data/majors.ts`
 The order below is by value per hour, and the first two are both data work that
 needs no code and no migration.
 
-1. **A8 — local (KZ / Central Asia) catalog rows. The catalog now has ZERO.**
-   This was item 6 on the old list, where it read "`region` exists exactly for
-   this and NAO Cup is still the only one". That row was removed on 2026-08-15,
-   so the local-opportunity mechanism now applies to nothing curated at all.
-   The product exists for students outside the first tier and currently reaches
-   them with nothing they can turn up to in person: republican olympiads,
-   university-run competitions, local hackathons, regional debate leagues. A
-   unit test pins the zero, so the first row added will fail it and force
-   whoever adds it to read the audit entry. **Highest value available, and it is
-   data, not code.**
+1. ~~**A8 — local (KZ / Central Asia) catalog rows. The catalog now has
+   ZERO.**~~ **DONE 2026-08-25 — 20 rows carry `region: "KZ"`, catalog 172 →
+   192.** The state calendar from Дарын, the Kazakh programmes of Yandex and
+   Samsung, a leadership prize, two debate surfaces, an Almaty Model UN, a
+   university tournament carrying a scholarship, FLEX, SDU's SPT olympiad and
+   NU Summer Camp. Every eligibility
+   sentence is quoted from the organiser's own page; `test:links` reads
+   **191/192 healthy · 0 broken**. The level split moved from 16 national to
+   **36 national and 1 regional**, and the KZ rows between them touch all eight
+   faculties, which matters because the local gap was worst in law, humanities
+   and the arts.
+
+   **Five things it taught, and the second and fourth are the durable ones.**
+
+   - **Not one of the 20 carries a confirmed date, and that is the calendar
+     rather than the sourcing.** Дарын fixes each cycle by ministerial order in
+     mid-September, so every one of its pages still showed the closed 2025-26
+     cycle. Re-fetch the rural-school and science-project rows **by 8 September** (their windows open and close in the first half of the month) and the rest **after 20 September** — this is the cheapest
+     confirmed-date work available and it feeds item 2 directly.
+   - **Adding real data found a guard that had been vacuously green**, which is
+     a new way into the problem this file has been circling for a month. The
+     reference implementation in the one-pass matcher test hard-filtered
+     off-region rows — the behaviour from before the one-list release — and had
+     passed for six days only because the catalog held nothing that could reach
+     the line. **Five of the six known fail-open modes were found by reading;
+     this one could only be found by giving the code something to chew on.**
+     Where a guard's subject is a data shape the catalog does not currently
+     contain, it is not passing, it is abstaining.
+   - **The Open Graph card cannot draw the Kazakh alphabet**, nor ₸. Worked
+     around by using the Russian names Дарын publishes; see problem 7 below.
+     Still open, deliberately — but **cheaper than it looks**: the edge bundle
+     was re-measured at **865,764 bytes gzipped, 0.826 MB**, so there is 183 kB
+     of headroom under the 1 MB cap. What made that task look risky was the
+     memory of hitting 1.06 MB, not a current number.
+   - **The public detail page never drew the local badge, and only LOOKING
+     found it.** `/opportunities/[id]` is the third renderer of an opportunity
+     and the only one nobody had thought of as one. Of five Kazakhstan-only
+     pages, two named no country anywhere on them; the other three were saved
+     by their eligibility sentence happening to mention Kazakhstan, which is a
+     coincidence rather than a mechanism. This is the same lesson as the
+     companion's sticky panel — the defect was a property of what renders, not
+     of what the diff says — and it is the reason the measurement step is not
+     optional. Fixed and guarded, with the guard seen failing on the real
+     defect. **A component's justification does not travel with its markup:**
+     the card's comment says the badge "reads as *near you*", which is true on
+     a card only ever shown to someone in that country and false on a public
+     page that arrives from anywhere.
+   - **An owner's question the data now raises, and it is not ours to settle.**
+     Measured in the guest checker at year 11 with Law selected: **35 rows open
+     to that student, and none of the local ones in the top five.** The
+     ordering runs fit → confirmed date → days left, and a local row is neither
+     lifted nor sunk — it just has no confirmed date, so it loses to rows that
+     do. The mechanism works and the shelf is stocked; whether *local* should
+     outrank *global* for a student in that country is a product decision.
+     Note it interacts with item 2: confirming those dates would move them up
+     on their own, without touching the ordering at all.
 2. **#15 / A7 — verify the unconfirmed dates, but measure production first.**
-   **12 of 172** committed rows carry `dateConfirmed: true`; 57 are `alwaysOpen`
-   and correctly have no date to confirm. That leaves roughly a hundred rows
+   **18 of 192** committed rows carry `dateConfirmed: true`; 58 are `alwaysOpen`
+   and correctly have no date to confirm. That leaves **116** rows
    reading "Dates not announced". **The repository figure is not the live one** —
    production overlays dates from the `sync-dates` cron, which an audit of a
    checkout cannot see. Read the real number off `/admin/opportunities`, which
    already has a date-health panel, and scope the verification against that
    rather than against 7%. Each date verified also moves a card onto the
    planner's agenda, so this is worth more than when it was written.
+
+   **First pass done 2026-08-26 — 32 rows, 12 → 18 confirmed — and the headline
+   is that the dates were the least of it.** Six rows were carrying a claim that
+   was wrong, and none of it is reachable by a link check, a type-check or a
+   reading of the diff. Two rows were REMOVED, both answering HTTP 200:
+   `caribou-math` has ceased operations in its own words, and `mun` pointed
+   school students at an organiser that calls itself university-level. Four were
+   lying about money or timing — `conrad-challenge` gave students eleven days
+   they did not have, `ippf` shipped "free" over a stated $25 fee, `scholastic`
+   understated a fee by half, `hacktoberfest` described a programme its
+   organiser has ended. Full write-up in [AUDIT_2026-08-14.md](AUDIT_2026-08-14.md) §A7.
+
+   **Two things to carry into the next pass, both cheap and both learned the
+   hard way:**
+
+   - **Strip HTML comments before believing a page.** It changed the answer
+     three times in one batch, and two of the three would have produced a FALSE
+     CONFIRM — prepared-but-unpublished registration banners sitting in pages
+     that otherwise read as current.
+   - **Ask what KIND of date you found before shipping it.** Three near-misses
+     were correctly refused: a price-tier boundary (`nhsmun`), a practice
+     deadline standing in front of the real gate (`future-problem-solving`), and
+     a team's payment date rather than a student's (`first-robotics`, shipped
+     anyway with the distinction written down). The field means the point after
+     which entry is impossible, and the sooner date always makes the livelier
+     countdown, which is exactly why it is the tempting wrong answer.
+
+   **116 rows still undated.** The next batches are the ones between three and
+   seven months out; the Kazakh block is the highest-value slice of it and has
+   its own two dates — the rural-school and science-project rows by 8 September,
+   the rest of Дарын after the 20th.
 3. ~~**A5 + A6 — close the last two vocabulary splits.**~~ **DONE 2026-08-24,
    and at the root rather than at the two symptoms.** The split was never two
    missing entries: the canonical arrays were bare unions living inside
@@ -2322,16 +2419,21 @@ and that no item on any list will fix, because nobody has owned them.
    than patterns. The reachability one already has its own bite test. The rest
    are read-and-assert shapes that fail CLOSED, so a broken regex there makes
    the test fail rather than pass.
-2. **The product's stated mission and its data disagree.** Compass exists for
-   students outside the first tier, most of them in Central Asia. The catalog is
-   **155 international, 16 national, 1 regional, 0 school-level, 0
-   `region`-tagged**. There is nothing in it a student in Shymkent can turn up
-   to in person. This is A8, and it is written here too because it reads as a
-   data chore on that list and it is actually the gap between what the product
-   says it is and what it contains.
+2. ~~**The product's stated mission and its data disagree.**~~ **Mostly closed
+   2026-08-25.** It read: 155 international, 16 national, 1 regional, 0
+   school-level, 0 `region`-tagged, and nothing a student in Shymkent could turn
+   up to in person. It is now **155 international, 36 national, 1 regional, 20
+   `region`-tagged** — and still **0 school-level**. That last zero is the part
+   that survives, and it is smaller than it looks: `school` became a real level
+   with its own facet on 2026-08-24, so the filter now offers a rung that
+   nothing occupies. A school-run competition is the kind most likely to
+   actually exist in Shymkent and the least likely to have a website, which is
+   why none of the five verification passes found one. **The honest route to it
+   is probably the admin quick-add or a partner account, not a catalog row** —
+   somebody standing in the building can post what they know is happening.
 3. **The countdown is the product's central promise and 93% of rows cannot make
-   it.** 12 of 172 carry a confirmed date. 57 are legitimately `alwaysOpen`,
-   which leaves ~103 rows showing "dates not announced" — honest, and also the
+   it.** 18 of 192 carry a confirmed date. 58 are legitimately `alwaysOpen`,
+   which leaves 116 rows showing "dates not announced" — honest, and also the
    thing a student came for. Every date verified moves a card onto the planner's
    agenda, so this compounds with the section we just spent four releases
    building.
@@ -2354,6 +2456,26 @@ and that no item on any list will fix, because nobody has owned them.
    the funnel, and no one has reported a number off it in this file. Every
    release since #17 has been justified by reasoning rather than by evidence
    that a student did something differently.
+7. **The share card cannot draw the Kazakh alphabet — added 2026-08-25.**
+   `OG_GLYPHS` covers Cyrillic А-я plus Ёё, which is the Russian alphabet. Every
+   Kazakh-specific letter — ә, қ, ғ, ң, ө, ұ, ү, һ, і — is outside it, and so is
+   ₸. A glyph outside a subset does not throw; it renders as a blank box, on a
+   public card, in someone else's chat. So a product built for students in
+   Kazakhstan cannot put a Kazakh name on the one surface designed to be sent to
+   a friend, and the two `.kz` rows in the old catalog never exposed it because
+   both were named in English.
+
+   It was worked around rather than fixed: the 20 new rows use the Russian names
+   Дарын itself publishes, and a rule in the catalog block says why. **The fix
+   is small and the measurement is not** — widen the ranges, re-run
+   `scripts/subset-og-fonts.mjs`, then gzip the non-`.map` files in
+   `.next/server/edge-chunks` and compare against the **1 MB** Vercel edge cap,
+   which has already been hit once at 1.06 MB while `next build` passed locally
+   AND in CI. Nothing enforces that limit before a deploy, which is why this is
+   a task rather than a one-line change. It also has a **second half worth
+   deciding at the same time**: the OG cards are still set in Inter while the
+   site moved to Source Serif / Source Sans, so a shared link already unfurls in
+   a face the page it opens does not use. One re-subset could close both.
 
 ## 9. Where this can go next — direction, 2026-08-19
 
@@ -2368,6 +2490,24 @@ worth more per hour than any new feature, because both make existing screens
 say something they currently cannot. A student who opens Opportunities and sees
 one thing happening in their own city, with a real date, has had the product
 work as advertised; today that student cannot exist.
+
+**Updated 2026-08-25, and the update is the more useful half.** A8 shipped, so
+that sentence is now exactly half true and the remaining half is sharper than
+the original. A student in Shymkent opens Opportunities and sees twenty things
+in their own COUNTRY — but **not one carries a date**, and **nineteen of the
+twenty are national rather than local to any city**. So:
+
+- **The date half is now the whole of it**, and A8 made it cheaper rather than
+  harder. Дарын publishes each cycle by ministerial order in mid-September;
+  fetching ten pages — two of them by 8 September, the rest after the 20th — would put ten dated Kazakh rows on
+  the planner's agenda, which is the single most visible thing available.
+- **The city half is a different problem and probably not a catalog problem.**
+  `level: "school"` is a real rung with a facet since 2026-08-24 and holds zero
+  rows, because the competitions most likely to be running in Shymkent are the
+  ones least likely to have a website. Five verification passes found none. The
+  route in is somebody standing in the building — the admin quick-add, or a
+  partner account for a school or an oblast education department. That is a
+  distribution question, not a data-entry one.
 
 **2. Make the guards trustworthy, once.** See problem 1. This is the cheapest
 possible insurance against the class of bug this repo keeps shipping, and it is
