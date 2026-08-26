@@ -119,8 +119,14 @@ export const COMPETITIONS: Competition[] = [
     id: "usabo",
     name: "USABO (biology olympiad)",
     fields: ["medicine_health", "natural_sciences"],
+    // CONFIRMED 2026-08-26 from the organiser's 2027 calendar: "November 15
+    // School Registration Closes / Student Registration Closes". Our estimate
+    // was already right to the day, which is why it took a check to find out.
+    // (The calendar is published as two PNGs, so a text scrape of that page
+    // looks empty — do not read that as "no date".)
     deadline: "2026-11-15",
-    window: "Register by mid-Nov; Open Exam in February",
+    dateConfirmed: true,
+    window: "School registers you by Nov 15, 2026; Open Exam Feb 3, 2027",
     level: "national",
     category: "olympiad",
     tier: "selective",
@@ -130,7 +136,7 @@ export const COMPETITIONS: Competition[] = [
       "The biology olympiad to enter if you are heading for medicine or the life sciences.",
     cost: "varies",
     costDetail:
-      "Your school registers and pays a fee (roughly $100 per school); individual students are usually not charged. Ask your teacher to register you.",
+      "Your school registers and pays $125 for the school; individual students are usually not charged. Ask your teacher to register you.",
   },
   {
     id: "usapho",
@@ -250,8 +256,19 @@ export const COMPETITIONS: Competition[] = [
       "business_economics",
       "natural_sciences",
     ],
-    deadline: "2026-11-09",
-    window: "Activation deadline Nov, finals April",
+    // CONFIRMED 2026-08-26 against the organiser: "End of Phase 1: Activation
+    // Stage — Thursday, October 29, 2026". We shipped 2026-11-09 and a window
+    // reading "Nov", which is eleven days LATE and in the wrong month — the
+    // one direction that actually costs a student the entry.
+    //
+    // The organiser contradicts itself by a day: its homepage carousel says the
+    // 30th, the Activation Stage page says the 29th twice, and 29 October 2026
+    // is a Thursday as that page states. The earlier date ships, because a
+    // countdown that is a day short never tells a student they have longer
+    // than they do.
+    deadline: "2026-10-29",
+    dateConfirmed: true,
+    window: "Activation stage closes Oct 29, 2026; Innovation Summit April 2027",
     level: "international",
     category: "competition",
     tier: "selective",
@@ -411,35 +428,29 @@ export const COMPETITIONS: Competition[] = [
     id: "ippf",
     name: "International Public Policy Forum",
     fields: ["humanities_social", "law"],
-    deadline: "2026-09-30",
-    window: "Qualifying essay due fall",
+    // CONFIRMED 2026-08-26 from the organiser, under the heading "2026-27
+    // contest schedule": "October 13, 2026 - Qualifying Round Essays Due".
+    // Our estimate was two weeks early.
+    deadline: "2026-10-13",
+    dateConfirmed: true,
+    window: "Qualifying essays due Oct 13, 2026; finals April 16-17, 2027",
     level: "international",
     category: "competition",
     tier: "selective",
-    eligibility: "Grades 9–12, no minimum age",
+    eligibility: "Grades 9–12, in a team of three to six students",
     url: "https://www.ippfdebate.com/",
     blurb:
       "Public-policy debate, written and spoken. Sharp for law and policy applicants.",
-    cost: "free",
-    costDetail:
-      "The qualifying rounds are online and free, and the organisers cover finalists' travel to the finals.",
-  },
-  {
-    id: "mun",
-    name: "Model UN conference",
-    fields: ["humanities_social", "law", "business_economics"],
-    deadline: "2026-10-01",
-    window: "Conferences run year-round",
-    level: "regional",
-    category: "competition",
-    tier: "accessible",
-    eligibility: "Typically 13+, varies by conference",
-    url: "https://www.nmun.org/",
-    blurb:
-      "Diplomacy, public speaking and knowing what is happening in the world. Easy to start.",
+    // Shipped as "free" until 2026-08-26, on the strength of the qualifying
+    // rounds being online. The organiser's own rules page says otherwise:
+    // "There is a $25 entry fee per essay. (Fee waived for teams that
+    // registered prior to closure of Early Bird Registration.)" Early bird
+    // shuts before general registration does, so a student arriving through
+    // this card in October pays. Exactly the case the cost vocabulary exists
+    // for — never let a free entry hide a paid one.
     cost: "one_time",
     costDetail:
-      "Conference fees are typically $100-400 per delegate, plus travel and accommodation. A Model UN season is one of the pricier extracurriculars. Local and school-run conferences cost far less than the big international ones.",
+      "$25 per essay, waived only for teams that registered before early bird closed. The organisers cover finalists' travel to the finals.",
   },
   {
     id: "world-scholars-cup",
@@ -473,10 +484,11 @@ export const COMPETITIONS: Competition[] = [
     tier: "selective",
     eligibility: "Ages 13+ · grades 7–12",
     url: "https://www.artandwriting.org/",
-    blurb: "The best-known US awards for creative arts and writing.",
+    blurb:
+      "Regional juries judge first, then the national round in New York. Categories run from poetry and journalism to sculpture and film, so most things you make have somewhere to go.",
     cost: "one_time",
     costDetail:
-      "There is a per-entry fee, around $10 per work and more for a portfolio. Fee waivers are available for students who need them, so ask your teacher to request one.",
+      "$15 per entry and $40 for a portfolio. If you cannot afford it you claim a waiver yourself and are believed — the organiser says in as many words that no proof of need is required inside the portal, so you do not have to ask a teacher to do it for you.",
   },
   {
     id: "youngarts",
@@ -802,23 +814,6 @@ export const COMPETITIONS: Competition[] = [
     costDetail:
       "Teams pay a registration fee, around $165 for the middle-school division and $205 for the open division in recent seasons, so confirm the current figure. Free and discounted places exist for Title I and JROTC teams, and the cost sits with the team rather than the student.",
   },
-  {
-    id: "caribou-math",
-    name: "Caribou Mathematics Competition",
-    fields: ["natural_sciences"],
-    deadline: "2026-10-15",
-    window: "Multiple online contests throughout the year",
-    level: "international",
-    category: "competition",
-    tier: "accessible",
-    eligibility: "Grades K–12, no minimum age",
-    url: "https://cariboutests.com/",
-    blurb:
-      "Online maths contests six times a year. Low-stress, and easy to get to.",
-    cost: "varies",
-    costDetail:
-      "Registration goes through a school or supervisor and carries a small per-student fee set by the organiser; some schools cover it.",
-  },
   // (NaNoWriMo YWP removed — the NaNoWriMo nonprofit shut down in 2025; we
   // don't recommend programs that no longer exist.)
   {
@@ -1113,7 +1108,14 @@ export const COMPETITIONS: Competition[] = [
     name: "World Robot Olympiad",
     fields: ["engineering", "computer_science"],
     deadline: "2027-04-01",
-    window: "National rounds spring, world final in November",
+    // Said "world final in November" until 2026-08-25, and it was wrong. The
+    // Kazakhstan national organiser publishes the season in full — regional
+    // stage to 3 April, national round 18-19 June in Almaty, international
+    // final "США, Пуэрто-Рико, 8-10 декабря 2026 года" — so the month on our
+    // own card disagreed with the body that sends the teams. No month is
+    // pinned to a year here, because the row is a recurring one and its date
+    // is an estimate; December is the correction.
+    window: "National rounds in spring, world final in December",
     level: "international",
     category: "competition",
     tier: "selective",
@@ -1124,14 +1126,23 @@ export const COMPETITIONS: Competition[] = [
       "Build and program a robot for a themed challenge. Hands-on engineering evidence that is hard to fake.",
     cost: "varies",
     costDetail:
-      "Team registration fees are set by your national organiser and vary widely by country. Ask the national WRO organiser what a team pays.",
+      "Team registration fees are set by your national organiser and vary widely by country. Ask the national WRO organiser what a team pays. In Kazakhstan that is Nazarbayev Intellectual Schools, and the regional rounds are held at their campuses.",
   },
   {
     id: "first-robotics",
     name: "FIRST Robotics Competition",
     fields: ["engineering", "computer_science"],
-    deadline: "2026-11-05",
-    window: "Team registration autumn; build season Jan–Mar",
+    // CONFIRMED 2026-08-26: "1 Regional Event | $6,500 | November 17, 2026",
+    // the 2026-27 season team registration and first event payment date.
+    //
+    // Read what it is before trusting the countdown: this is the TEAM's date,
+    // not an individual's, which matches the eligibility line below. It is the
+    // date by which a student has to be ON a team that has registered, and it
+    // is the closest organiser-stated fact to a student deadline that exists
+    // for this one.
+    deadline: "2026-11-17",
+    dateConfirmed: true,
+    window: "Your team registers by Nov 17, 2026; build season Jan–Mar",
     level: "international",
     category: "competition",
     tier: "selective",
@@ -1399,8 +1410,21 @@ export const COMPETITIONS: Competition[] = [
       "natural_sciences",
       "business_economics",
     ],
-    deadline: "2026-10-15",
-    window: "Qualifying problems through the school year, finals in June",
+    // CONFIRMED 2026-08-26 from the organiser's "2026-2027 Competition Season"
+    // page, via the Open Affiliate route — the one a student in Central Asia
+    // takes, since the affiliate list has nothing nearer.
+    //
+    // The date is the QUALIFYING problem, not the first practice one. Both are
+    // published — "October 15, 2026 Global Issues Practice Problem #1 Due" and
+    // "February 4, 2027 Global Issues Qualifying Problem Due" — and October was
+    // tempting because it is sooner and therefore a livelier countdown. But
+    // this field means the point after which entry is impossible, and a student
+    // who misses a practice problem has not lost the season. The window names
+    // the earlier work so nobody reads five months as five months of nothing.
+    deadline: "2027-02-04",
+    dateConfirmed: true,
+    window:
+      "Registration from August, practice problem due Oct 15, 2026, qualifying problem Feb 4, 2027, finals in June",
     level: "international",
     category: "competition",
     tier: "accessible",
@@ -1666,8 +1690,14 @@ export const COMPETITIONS: Competition[] = [
     eligibility:
       "Ages 9–16. School or community teams, age bands vary by country",
     url: "https://www.firstlegoleague.org/",
+    // Kept, with the ending disclosed. The organiser announced on its own
+    // homepage that "The 2026-2027 FIRST LEGO League season, BIOGLOW™, will be
+    // the final season of the program". A student can still enter this one, so
+    // dropping the row would take away something real — but recommending a
+    // season-long team commitment without saying it is the last season would be
+    // the brochure behaviour this catalog exists to avoid.
     blurb:
-      "Build, program and present a robot with a team. The standard first robotics entry.",
+      "Build, program and present a robot with a team. The organiser has said this is the programme's final season, so it is a year rather than a ladder.",
     cost: "varies",
     costDetail:
       "Team-based: the team pays a registration fee plus the LEGO set (a few hundred dollars in total). Students joining a school team usually pay nothing directly.",
@@ -1747,7 +1777,7 @@ export const COMPETITIONS: Competition[] = [
       "Long-term creative engineering problems solved as a team. You can start as young as primary school.",
     cost: "varies",
     costDetail:
-      "Team-based: a school or group buys a membership and pays regional tournament fees on top. We could not confirm the current membership price, so ask your coach what the season costs before you sign up.",
+      "Team-based: a school or group buys a membership, $290 for a standard one and $190 for each additional, then pays regional tournament fees on top. Ask your coach what the season costs before you sign up.",
   },
   {
     id: "globe-ivss",
@@ -1772,6 +1802,14 @@ export const COMPETITIONS: Competition[] = [
     name: "Tournament of Towns (Турнир городов)",
     fields: ["computer_science", "engineering", "natural_sciences"],
     deadline: "2026-10-11",
+    // Two traps on this host, both found 2026-08-26. It answers 200 with a
+    // complete page and then holds the connection open until the client times
+    // out, so `test:links` will one day call it `unreachable`; it is not, and
+    // this is the icaci.org pattern — reproduce from an ordinary connection
+    // before touching the URL. And its autumn-round registration banner
+    // ("РЕГИСТРАЦИЯ НА ОСЕННИЙ ТУР ОТКРОЕТСЯ 26 СЕНТЯБРЯ") sits inside an HTML
+    // COMMENT, carrying no year — prepared and unpublished. Strip comments
+    // before believing a page, or it becomes a false confirm.
     window: "Autumn round in October, spring round in February",
     level: "international",
     category: "olympiad",
@@ -1806,19 +1844,29 @@ export const COMPETITIONS: Competition[] = [
     id: "nhsmun",
     name: "NHSMUN — National High School Model UN",
     fields: ["law", "humanities_social", "business_economics"],
+    // NOT confirmed, and the reason is the useful half: 2026-10-31 is the end
+    // of a PRICE TIER, not a deadline. "Registration will remain open until the
+    // conference reaches capacity. Registration requests are accepted on a
+    // first-come, first-served basis." Nothing closes on 31 October; it gets
+    // more expensive. Confirming it would put a countdown on the card saying
+    // entry ends when it does not, which is the failure this rule exists for.
     deadline: "2026-10-31",
-    window: "Conference in New York each March",
+    window:
+      "Open until the conference is full; the fee rises Nov 1. Sessions March 12-15 and 17-20, 2027",
     level: "international",
     category: "competition",
     tier: "selective",
+    // "No minimum age set by the conference" was ours, not theirs. The
+    // organiser states a band: "delegations of up to 50 students of secondary
+    // school age (most often, ages 13-18)".
     eligibility:
-      "School delegations worldwide. No minimum age set by the conference",
+      "Secondary-school age, most often 13–18, entering as a school delegation",
     url: "https://imuna.org/nhsmun/nyc/",
     blurb:
       "The largest MUN conference, held at the UN itself. A serious first credit in law and policy.",
     cost: "one_time",
     costDetail:
-      "Delegate fees run into the hundreds of dollars, plus travel and hotel in New York. Limited scholarships exist, so ask before you commit.",
+      "$145 per delegate rising to $185 after Nov 1, plus a $95 fee for the delegation. Travel and a New York hotel are the real cost. Limited scholarships exist, so ask before you commit.",
   },
   // (The John Locke Institute's Junior Prize — its own under-15 category — is
   // part of the john-locke entry above, not a separate listing: it shares one
@@ -1871,9 +1919,18 @@ export const COMPETITIONS: Competition[] = [
     id: "harvard-model-congress",
     name: "Harvard Model Congress",
     fields: ["law", "humanities_social", "business_economics"],
-    deadline: "2026-11-20",
+    // CONFIRMED 2026-08-26: "Registration for HMC Boston 2027 opens September 1,
+    // 2026 and runs through November 30, 2026."
+    //
+    // Boston's date, and Boston is what this URL is — the other conferences run
+    // their own calendars (Asia closed 15 Nov 2026, Europe and Middle East
+    // publish no close). San Francisco came OUT of the window: hmcsanfran.org
+    // answers 404 "Squarespace - Website Expired" while the organiser's own
+    // homepage still lists and links it. Not our link, but it was our claim.
+    deadline: "2026-11-30",
+    dateConfirmed: true,
     window:
-      "Five conferences a year: Boston, San Francisco, Asia, Middle East, Europe",
+      "Boston closes Nov 30, 2026, conference in February; Asia, Europe and the Middle East run their own dates",
     level: "international",
     category: "competition",
     tier: "selective",
@@ -3207,15 +3264,19 @@ export const COMPETITIONS: Competition[] = [
     name: "Hacktoberfest",
     fields: ["computer_science"],
     deadline: "2026-10-31",
-    window: "Every October: contribute to open source for a month",
+    // The date is unconfirmable BECAUSE the thing changed shape: "Attendee
+    // sign-ups are not open yet. Fest dates, cities, and venues have not been
+    // announced." Estimate kept at the end of October only to hold its place in
+    // the ordering.
+    window: "Throughout October; 2026 event dates not announced",
     level: "international",
     category: "community",
     tier: "accessible",
     eligibility:
-      "Anyone worldwide with a GitHub or GitLab account. Free; beginner pull requests are the point",
+      "Ages 13 and over worldwide, subject to US export and embargo rules",
     url: "https://hacktoberfest.com/",
     blurb:
-      "A month-long push to get people into open source. Maintainers deliberately label beginner-friendly issues, which makes October the easiest time of year to land a first real contribution.",
+      "Since 2026 it is built around events and open-source AI work rather than counting pull requests, after AI-generated submissions swamped maintainers. Several hundred community sessions run worldwide through October, in person and online.",
     alwaysOpen: false,
     cost: "free",
     costDetail:
