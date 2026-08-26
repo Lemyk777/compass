@@ -8,6 +8,7 @@ import { ShareLink } from "@/components/opportunities/ShareLink";
 import { resolveCompetitions, type Competition } from "@/lib/data/key-dates";
 import { formatDate, opportunityCost } from "@/lib/data/opportunity-format";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
+import { regionLabel } from "@/lib/data/geo";
 import { fetchLivePool } from "@/lib/partners/queries";
 import { getSession } from "@/lib/auth/session";
 import { fitTitle, pageMeta } from "@/lib/seo";
@@ -46,7 +47,20 @@ function previewLine(c: Competition): string {
       : "Dates to be confirmed"
     : "Open now, no deadline";
   const who = c.eligibility ?? "Open to school students";
-  return `${who} · ${cost.short} · ${when}. ${c.blurb}`;
+  // Where it is comes FIRST, and only when the row is local.
+  //
+  // This is the same fix as the badge in the page body below, on the surface
+  // that actually travels: a shared link unfurls into this string, and three
+  // Kazakhstan-only rows produced a description naming no country at all. The
+  // page underneath was corrected first and the card that decides whether
+  // anybody clicks was not, which is worse than either — it puts the honest
+  // sentence one tap PAST the moment the reader forms an impression.
+  //
+  // It leads rather than trails because `fitDescription` cuts this to ~160
+  // characters and several eligibility sentences are longer than that on their
+  // own, so a trailing fact is a fact that does not survive.
+  const place = c.region ? `In ${c.city ?? regionLabel(c.region)} · ` : "";
+  return `${place}${who} · ${cost.short} · ${when}. ${c.blurb}`;
 }
 
 export async function generateMetadata({
@@ -157,6 +171,27 @@ export default async function OpportunityPage({
                 ))
               )}
             </ul>
+            {/* WHERE it is, and this page has to say so itself.
+                On a card the same chip reads as "near you", because a local
+                row is only ever shown to a student from that country or one
+                whose country we do not know. THIS page is public and arrives
+                from anywhere — a shared link, a search result — so for most of
+                its readers the fact is the opposite one, and the card's
+                reasoning does not transfer.
+                It was missing because this route is the THIRD renderer of an
+                opportunity and only the other two ever got the badge. Measured
+                on 2026-08-25, right after the first local rows landed: of five
+                Kazakhstan-only pages, two named no country anywhere on them —
+                a free online debate league and a residential summer camp — so
+                a reader in Rome met a row they cannot enter with nothing on
+                the page saying which country it belongs to. The others were
+                saved only by their eligibility sentence happening to mention
+                Kazakhstan, which is not a mechanism. */}
+            {o.region && (
+              <p className="mt-3 inline-flex items-center rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent-ink">
+                Local · {o.city ?? regionLabel(o.region)}
+              </p>
+            )}
           </header>
 
           {/* The three facts a student decides on, level with each other. Only

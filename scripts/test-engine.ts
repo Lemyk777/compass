@@ -295,6 +295,7 @@ import {
   screenPage,
   shouldDrop,
 } from "@/lib/discovery/screen";
+import { previewOpportunities } from "@/components/marketing/OpportunityPreview";
 
 // A fixed "today" in the second half of the year → academic year end rolls to
 // the next year (June rollover), so a Class of 2027 student is in grade 12.
@@ -8043,6 +8044,72 @@ test("every surface without a filter panel narrows to the student's own list", (
       src,
       /matchedOnly\(/,
       `${file} reads the matched plan without calling matchedOnly — it will show a student other people's opportunities`,
+    );
+  }
+});
+
+test("every surface that renders an opportunity says WHERE a local one is", () => {
+  // Three files render an opportunity's identity, and for a long time only two
+  // of them drew the `Local · …` badge. The third — the public detail page,
+  // which exists so a student can send a row to a friend — never got it,
+  // because it is a hand-built page rather than a caller of OpportunityDetail.
+  //
+  // That was invisible until the catalog had local rows to render. Measured on
+  // 2026-08-25 against the running app: of five Kazakhstan-only detail pages,
+  // TWO named no country anywhere on them. The other three were saved by their
+  // eligibility sentence happening to mention Kazakhstan, which is a
+  // coincidence rather than a mechanism — `debat-eli-practice-games` says only
+  // "School students and first-year university students starting out in
+  // debate", so a reader arriving from a shared link met a row they cannot
+  // enter with nothing on the page to tell them.
+  //
+  // The card's own comment says the badge "reads as 'near you', not as a
+  // restriction", and that is true THERE: a local row only reaches a student
+  // from that country or one whose country we do not know. A public page
+  // arrives from anywhere, so for most of its readers the fact is the opposite
+  // one. Same badge, different job, and both jobs need it drawn.
+  // FOUR files, and the fourth is the one the first version of this guard
+  // missed. The share card is a separate surface from the page it links to:
+  // `page.tsx` was fixed and its Open Graph image was not, so a shared link
+  // still unfurled into a card naming no country while the page underneath
+  // named one. That is worse than the original defect, because it puts the
+  // honest sentence one tap PAST the moment the reader decides.
+  const files = [
+    "components/opportunities/OpportunityCard.tsx",
+    "components/opportunities/OpportunityDetail.tsx",
+    "app/opportunities/[id]/page.tsx",
+    "app/opportunities/[id]/opengraph-image.tsx",
+  ];
+  for (const file of files) {
+    const full = path.join(process.cwd(), file);
+    assert.ok(existsSync(full), `${file} is missing — this guard has no subject`);
+    const src = stripComments(readFileSync(full, "utf8"));
+    assert.match(
+      src,
+      /regionLabel\(/,
+      `${file} renders an opportunity without naming the country a local one belongs to`,
+    );
+  }
+});
+
+test("the front page shows global rows only", () => {
+  // The one surface where excluding local rows is a RULE rather than a filter.
+  //
+  // Everywhere else a local row is shown to someone we know is in that country,
+  // or marked `offRegion` and narrowed away by the panel. The landing hero is
+  // neither: it renders before anyone has told us anything, to every visitor on
+  // earth, and it does not go through `buildExtracurriculars`, so `matchedOnly`
+  // never sees these rows and `reachableFrom` is never consulted.
+  //
+  // Asserted over the real catalog and over the DATED pool specifically,
+  // because that is the half about to become live: `dated` sorts by nearest
+  // confirmed deadline, and the Kazakh rows carry the nearest estimates in the
+  // catalog. Confirm two of them in September — the next item on the backlog —
+  // and without this rule they take the top of the front page by construction.
+  for (const c of previewOpportunities(TODAY, 12)) {
+    assert.ok(
+      !c.region,
+      `${c.id} is local to ${c.region} and is on the front page, which cannot know where the reader is`,
     );
   }
 });

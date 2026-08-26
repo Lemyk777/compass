@@ -8,6 +8,7 @@ import {
   formatDate,
   opportunityCost,
 } from "@/lib/data/opportunity-format";
+import { regionLabel } from "@/lib/data/geo";
 import { fetchLivePool } from "@/lib/partners/queries";
 import {
   OG_CONTENT_TYPE,
@@ -85,7 +86,19 @@ export default async function Image({ params }: { params: { id: string } }) {
   return new ImageResponse(
     (
       <OgFrame
-        eyebrow={CATEGORY_LABEL[competitionCategory(o)].toUpperCase()}
+        eyebrow={
+          // The kind, and WHERE — because this card is the surface a shared
+          // link actually renders, and a local row that names no country here
+          // reaches a reader who cannot enter it with nothing saying so. It
+          // rides on the eyebrow rather than becoming a fourth `OgFact`: the
+          // three facts below are the ones every row carries, and adding a
+          // fourth that is usually absent would make the card's shape depend
+          // on the row.
+          CATEGORY_LABEL[competitionCategory(o)].toUpperCase() +
+          (o.region
+            ? ` · ${(o.city ?? regionLabel(o.region)).toUpperCase()}`
+            : "")
+        }
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div

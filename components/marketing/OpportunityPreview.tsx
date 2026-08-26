@@ -40,13 +40,32 @@ export function previewOpportunities(
   const picked: Competition[] = [];
   const seen = new Set<CompetitionCategory>();
 
-  const dated = COMPETITIONS.filter(
-    (c) => c.dateConfirmed && daysBetween(today, c.deadline) >= 0,
-  ).sort(
-    (a, b) => daysBetween(today, a.deadline) - daysBetween(today, b.deadline),
-  );
+  // GLOBAL rows only, and this is the one surface where that is a rule rather
+  // than a filter.
+  //
+  // Everywhere else a local row is either shown to someone we know is in that
+  // country, or marked `offRegion` and narrowed away by the panel. The front
+  // page is neither: it renders before anyone has told us anything, to every
+  // visitor on earth, and it does not go through `buildExtracurriculars` at
+  // all — so `matchedOnly` never sees these rows and `reachableFrom` is never
+  // consulted. A `region`-tagged row here would be a Kazakhstan-only olympiad
+  // shown to a reader in Lagos as the product's opening example.
+  //
+  // It reads as latent today and it is one date-verification pass from being
+  // live: `dated` sorts by NEAREST confirmed deadline, and the Kazakh rows are
+  // the nearest estimates in the catalog. Confirm two of them in September —
+  // which is the next item on the backlog — and they take the top of this list
+  // by construction, in the component whose own comment says it "is the
+  // product, not a picture of it".
+  const global = COMPETITIONS.filter((c) => !c.region);
 
-  const open = COMPETITIONS.filter(
+  const dated = global
+    .filter((c) => c.dateConfirmed && daysBetween(today, c.deadline) >= 0)
+    .sort(
+      (a, b) => daysBetween(today, a.deadline) - daysBetween(today, b.deadline),
+    );
+
+  const open = global.filter(
     (c) => c.alwaysOpen && opportunityCost(c).tone === "free",
   );
 
