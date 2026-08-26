@@ -30,13 +30,13 @@ two disagree, this one wins.
 
 | | |
 |---|---|
-| Deployed | everything through release 8. **The copy and readability pass (release 9) is on `copy/humanize-catalog` and is NOT deployed** — see §1 of [BACKLOG_2026-08.md](BACKLOG_2026-08.md) |
-| Catalog | **172 entries · 0 broken links** · **12 confirmed dates** · **57 always-open** |
+| Deployed | everything through 2026-08-24. **The Kazakhstan local rows (2026-08-25) are NOT deployed** — see §1 of [BACKLOG_2026-08.md](BACKLOG_2026-08.md) |
+| Catalog | **192 entries · 0 broken links** · **18 confirmed dates** · **58 always-open** · **20 `region: "KZ"`** |
 | `pinned` rows | **0** — the NAO Cup row was the only one and was removed 2026-08-15 |
-| `region`-tagged rows | **0** — same row. The local-opportunity mechanism applies to nothing curated. This is the highest-value data work available (audit A8) |
+| `region`-tagged rows | **20**, all Kazakhstan, added 2026-08-25. Audit A8 closed. None carries a confirmed date — Дарын fixes each cycle by ministerial order in mid-September, so re-fetch the block after 20 Sept 2026 |
 | The guide | **five** steps: 33 areas of work → 44 majors → 17 countries → 38 cities → 6 routes from home |
 | Named institutions | 79, never ranked |
-| Tests | 301 unit · 61 session checks |
+| Tests | 321 unit · 61 session checks |
 
 **The catalog's prose was rewritten on 2026-08-19, and the rules for writing a
 new entry now live in [lib/data/README.md](../lib/data/README.md)** under
@@ -349,7 +349,7 @@ fixed, structurally rather than by copy:
   cycles ("dates TBA"). Candidate fee/date research notes live in
   [OPPORTUNITIES_CANDIDATES.md](OPPORTUNITIES_CANDIDATES.md).
 
-**Catalog** — **172 curated opportunities as of 2026-08-16** in
+**Catalog** — **192 curated opportunities as of 2026-08-26** in
 `lib/data/competitions-data.ts` (the array moved out of `key-dates.ts`, which now
 holds the matching logic and re-exports the data). The figure is asserted against
 `COMPETITIONS.length` by a unit test where the README states it, because this
@@ -435,7 +435,7 @@ students without approval at `/admin/opportunities`.
 
 **Dates** — `/api/cron/sync-dates` runs daily over a rotating batch of 8. It
 reads the landing page *and* the linked "key dates"/"apply" page, because
-landing pages carry no deadlines. **12 of 172 entries have a confirmed date** (re-measured 2026-08-16)
+landing pages carry no deadlines. **18 of 192 entries have a confirmed date** (re-measured 2026-08-25; the 20 Kazakh rows added that day are all unconfirmed, because Дарын fixes each cycle by ministerial order in mid-September)
 plus SAT sittings — see step (3), date coverage is still the constraint on
 everything in the "remove the work" direction.
 
@@ -469,7 +469,7 @@ competition; the admin page lists broken links first.
 ## Verification (no API key needed)
 
 ```bash
-npm run test:unit       # 301 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner, the bundle guards, structured data, SERP budgets
+npm run test:unit       # 321 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner, the bundle guards, structured data, SERP budgets
 npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
 npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog
@@ -729,7 +729,7 @@ the repeated headings are fixed, the body prose is not.
 
 ## Next steps, in order
 
-1. **Keep expanding the catalog.** Now **172 entries as of 2026-08-16**, across
+1. **Keep expanding the catalog.** Now **192 entries as of 2026-08-25**, across
    7 kinds (competition, olympiad, course, summer_program, research_program,
    community, simulation). The
    guiding filter for new entries is the mission: would a student in Kazakhstan
@@ -889,7 +889,7 @@ the repeated headings are fixed, the body prose is not.
    the college-access literature (information alone ≈ 0; information plus
    someone doing the form with you ≈ +25–30% enrollment). The calendar file
    ships already — but it is **blocked on date coverage**: 12 confirmed dates in
-   172 entries (7%, re-measured 2026-08-16) covers a fraction of the cards.
+   192 entries (9%, re-measured 2026-08-26) covers a fraction of the cards.
    See (3).
 
 8. **Run discovery for real and review what it finds.** The whole local

@@ -13,7 +13,7 @@ every run.
 | `universities.ts` | The US dataset (also shipped in the cached system prompt) |
 | `italian-universities.ts`, `hk-universities.ts`, `uae-universities.ts`, `korea-universities.ts` | Per-country programme datasets |
 | `branch-campuses.ts` | US-parent campuses abroad, scored through the US pipeline |
-| `competitions-data.ts` | **The catalog itself** — 172 curated competitions, olympiads, courses, programmes, communities and job simulations. Entries only; no logic |
+| `competitions-data.ts` | **The catalog itself** — 192 curated competitions, olympiads, courses, programmes, communities and job simulations, 20 of them `region`-tagged to Kazakhstan. Entries only; no logic |
 | `key-dates.ts` | The **types and the matching engine** over that catalog, which it re-exports so existing imports still work. It builds a lookup map over the whole catalog at module load, so it cannot be tree-shaken — see the bundle rule below |
 | `opportunity-filter.ts` | The filter panel's rules, pure: groups ANDed, options inside a group ORed, every option carrying its own count. Also `matchedOnly`, which is **mandatory on any surface without a filter panel** |
 | `opportunity-format.ts` | `formatDate` / `opportunityCost` / `daysBetween`. **Client components import these from here, never from key-dates** |
@@ -63,6 +63,16 @@ every run.
    **The dash between two numbers is load-bearing** ("Grades 9–12", "Ages
    13–18"): `parseEligibility` reads the range off it. A dash separating two
    whole facts is not, and should be a comma or a full stop instead.
+   **So write any SECOND number in words.** `mismun-almaty` says "a school
+   delegation of five to seven" rather than "5–7", because that dash beside
+   "Grades 9–12" is one edit away from silently becoming the grade rule. The
+   same trap in a different costume: the phrase **"final-year"** is matched by
+   the parser and pinned to grade 12 alone, which is the last year of a 12-year
+   programme and not of an 11-year one — `kimep-debate-tournament` carries an
+   explicit `gate` for exactly that reason.
+   After adding a row, print what it actually parsed to rather than assuming:
+   `parseEligibility(c.eligibility)` beside `c.gate`, over the rows you touched.
+   Every trap above was found that way and none of them is visible in a diff.
 3. Set `dateConfirmed: true` **only** for a sourced date in the current cycle.
    Otherwise the UI says "dates not yet announced" instead of a countdown we
    cannot stand behind.
@@ -130,11 +140,16 @@ student**.
   cost eight routes 27–41 kB each. The guard walks the module graph, stopping at
   `"use server"` files. Size is not the test: `world.ts` is 822 lines and shakes
   clean, because it is plain consts.
-- **The catalog currently has ZERO `pinned` rows and ZERO `region`-tagged rows,
-  and a unit test pins each zero.** Both were the same entry, removed on the
-  owner's instruction. Adding the first local row will fail that test on
-  purpose — read audit finding A8 before changing it, because widening local
-  (KZ / Central Asia) coverage is the highest-value data work available.
+- **The catalog has ZERO `pinned` rows, and a unit test pins that zero.**
+- **It has 20 `region: "KZ"` rows, and a unit test now fails if that goes back
+  to zero.** It held none for ten days — the last local entry was removed on the
+  owner's instruction, and the mechanism that exists so a student in Shymkent
+  meets something they can attend applied to nothing curated at all. That was
+  audit finding A8, closed on 2026-08-25. The test used to pin the zero and say
+  the first local row would trip it; it points the other way now, for the same
+  reason it existed. **Adding a local row means reading the `── Kazakhstan
+  (local) ──` block first** — it carries four rules, including why the grade
+  ceilings are written as 12 and why no Kazakh script may appear in these fields.
 - **Prose registries carry rules a test enforces**: a mandatory `catch` and
   `notForYou`, trade-offs outnumbering strengths, and **no prices, salaries or
   rankings** — figures rot within a year and shape does not.

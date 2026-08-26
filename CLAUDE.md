@@ -22,7 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > Reading is insufficient there, which is not the same as worthless — the
 > measurement half is the `measurer`, and it is not optional.
 >
-> **The recurring one is that a guard here can be useless in FIVE distinct ways,
+> **The recurring one is that a guard here can be useless in SIX distinct ways,
 > and only the first is visible in a diff.** (1) The regex loses its
 > backslashes, so it matches nothing and reports nothing — three guards, found
 > by grepping 433 regex literals for the signature; the eleven ban patterns now
@@ -40,8 +40,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > that individually pass. No class-name scan could ever have caught it. Ask
 > what a passing guard actually proves, and whether a reader's complaint could
 > survive it untouched.
+> **(6) The guard is correct in every respect and the DATA CANNOT REACH the
+> branch where it would disagree** — found 2026-08-25, and the first of the six
+> that reading could never have caught. The one-pass matcher test re-derives
+> membership from primitives and compares; its reference still hard-filtered
+> off-region rows, the behaviour from before matching started annotating. It
+> was written three days after that release and stayed green for six, because
+> the catalog held zero `region`-tagged rows and neither side could take the
+> branch. The first local rows made the two disagree on ten entries at once.
+> **Where a guard's subject is a data shape the dataset does not contain, it is
+> not passing — it is abstaining.** So when a dataset gains its first row of a
+> kind, read the tests covering that kind before believing the suite.
 >
-> **A sixth thing, not a fail-open but a guard that gets exempted to death:**
+> **A seventh thing, not a fail-open but a guard that gets exempted to death:**
 > one aimed at a vocabulary's WORDS rather than its SHAPE. Counting how often
 > a cost model's name appeared anywhere in a file flagged nine files and eight
 > were unrelated unions sharing a generic word (`"unknown"`, `"free"`).
@@ -60,9 +71,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > `main` for every branch, and the owner's answer on 2026-08-15 was to remove the
 > row (catalog 173 → 172). The audit's do-not-touch instruction did its job — it
 > said raise it with the owner rather than fix it, and that is what happened. A3
-> closed with the one-list release. **Two side effects of removing that row are
-> live rules now: the catalog has ZERO `pinned` entries and ZERO `region`-tagged
-> entries, and a unit test pins each zero.**
+> closed with the one-list release. One side effect of removing that row is a
+> live rule: **the catalog has ZERO `pinned` entries, and a unit test pins that
+> zero.**
+>
+> **The other side effect ran the other way and is now closed. A8 — local
+> coverage — was the highest-value item on the whole backlog, and it shipped on
+> 2026-08-25:** the catalog holds **20 `region: "KZ"` rows** where it held none,
+> and the test that used to pin the zero now fails if the count goes back to it.
+> The state calendar (Дарын: the republican, rural-school, presidential,
+> 7-8-class, linguistics, philosophy and financial-literacy olympiads, the
+> science-projects competition, the Abai readings and Zerde), the Kazakh
+> programmes of Yandex and Samsung, a leadership prize, two debate surfaces, an
+> Almaty Model UN, FLEX, SDU's SPT olympiad and NU Summer Camp — the last of
+> which is the only local row reaching medicine, and SPT the only one reaching
+> law and business at once. **Not one carries a confirmed date, and that is the
+> calendar rather than the sourcing** — Дарын fixes each cycle by ministerial
+> order in mid-September, so every one of its pages still showed the closed
+> 2025-26 cycle on the day they were verified. **Two re-fetch dates, and the
+> earlier one matters more: by 8 September** for the rural-school olympiad and
+> the science-projects competition, whose windows open AND close in the first
+> half of the month, and **after 20 September** for the rest, once the
+> ministerial order fixing the cycle lands.
 
 ## What this is
 
@@ -77,7 +107,7 @@ npm run dev            # dev server at http://localhost:3000
 npm run build          # production build — also runs ESLint + type-check (use as the main gate)
 npm run lint           # ESLint only
 npx tsc --noEmit       # type-check only
-npm run test:unit      # 316 unit tests for the deterministic engine (node:test, no key/network)
+npm run test:unit      # 321 unit tests for the deterministic engine (node:test, no key/network)
 npm run test:onboarding # 126 tests over the intake schema + server action (db/auth mocked, not in CI)
 npm run test:links     # every catalog URL; fails ONLY on a 4xx that is not a bot wall
 npm run test:guide-links # the guide's official sources (ministries, portals)
@@ -116,6 +146,19 @@ Two shells, and the distinction is load-bearing:
   unfurls into who can enter, what it costs and when it closes rather than into
   the site-wide banner. Sending the organiser's own link sends a page that says
   none of that.
+  **That page is a THIRD renderer of an opportunity, and it is the one nobody
+  remembers is one** — it is hand-built rather than a caller of
+  `OpportunityDetail`, so a rule added to the card and the panel does not reach
+  it. It shipped without the `Local · <place>` badge, which was invisible until
+  the catalog had local rows: measured 2026-08-25, two of five Kazakhstan-only
+  pages named no country anywhere on them, and the other three were saved only
+  by their eligibility sentence happening to mention Kazakhstan. A test now
+  requires all three renderers to call `regionLabel`.
+  **And a component's justification does not travel with its markup.** The
+  card's comment says the badge "reads as *near you*, not as a restriction" —
+  true there, because a local row only ever reaches a student from that country
+  or one whose country we do not know. This page arrives from anywhere, so for
+  most of its readers the same chip carries the opposite fact.
 - **The report** — `/dashboard/*`, the opt-in admission analysis, in the sidebar
   shell. **Whether Opportunities appears as a tab there depends on one thing:
   does the student have an analysis?**
@@ -450,7 +493,7 @@ is its own route now:
 - **An area of work says how to TRY it, and we never build the try ourselves**
   ([lib/data/try-it.ts](lib/data/try-it.ts) → `TryTheWork`, inside "Test it this
   month"). A student weighing investment banking meets the bank's own simulation
-  on that page rather than in a catalog of 172 rows — the best-evidenced item on
+  on that page rather than in a catalog of 192 rows — the best-evidenced item on
   the backlog, and free. Three rules, test-enforced:
   **no URLs in the file** (the catalog owns links because `test:links` keeps
   them alive, and the individual company pages sit behind bot protection the
@@ -775,11 +818,15 @@ The guide is public on purpose — a family choosing between Germany and Korea
 should read it without an account — and for a while nothing told a crawler that
 any of it existed. Four things now do, and each has a rule:
 
-The sitemap is **317 URLs** as of 2026-08-24 — 138 guide pages, 172 opportunity
+The sitemap is **337 URLs** as of 2026-08-26 — 138 guide pages, 192 opportunity
 pages, and the public marketing and partner routes, `/about` among them. **Do
 not write that number down anywhere it has to be maintained**; it is stated here
 only to give a sense of scale, and it is derived at build time from the
-registries. Every one of them was fetched on 2026-08-24 and all 317 resolved.
+registries. It was 317 the day before, and moved because the catalog gained 22
+rows — which is the derivation working: nobody edited the sitemap.
+Every URL was fetched on 2026-08-24 and all 317 of them resolved; the 20 new
+opportunity pages have not been fetched, because they do not exist until this
+deploys.
 
 - **[app/sitemap.ts](app/sitemap.ts) is generated from the registries**
   (`GUIDE_SECTIONS`, `allCareerAreas`, `STUDY_DESTINATIONS`, `HUBS`), never
@@ -872,7 +919,7 @@ registries. Every one of them was fetched on 2026-08-24 and all 317 resolved.
 - **`npm run test:links` fails on two things, and `FAILS_THE_GATE` names them:
   `broken` (a 4xx that is not a bot wall) and `private` (a 401)** — both are the
   far end saying the link we ship does not work for the person we ship it to. A
-  5xx, timeout, reset or DNS failure becomes `unreachable`, and 403/406/409/429
+  5xx, timeout, reset or DNS failure becomes `unreachable`, and 403/406/409/412/429
   become `blocked`; both are printed in full and fail nothing, because from a
   datacenter IP they mostly mean the host refused *this caller*. **401 was in
   the bot-wall set until 2026-08-24 and splitting it out was the point:** the
@@ -880,9 +927,21 @@ registries. Every one of them was fetched on 2026-08-24 and all 317 resolved.
   token, 401 to every student, and the run reported "170/173 healthy · 0 broken"
   with it in. "You are a robot" and "this needs credentials you do not have" are
   different sentences. `classifyStatus` is exported and unit-tested across every
-  band so the rule is asserted rather than described. Note the **guide's**
-  checker keeps its own set — `scripts/test-guide-links.ts` also treats **412**
-  as a bot wall, because government portals answer it. **Before deleting a
+  band so the rule is asserted rather than described. **The two checkers hold
+  the SAME bot-wall set — `403, 406, 409, 412, 429` — and 412 reached
+  `test-links.ts` on 2026-08-25, a day after the 401 split.** Government portals
+  answer 412 to a caller with no browser fingerprint; until then a catalog URL
+  behind one fell through to `broken` and exited 1, which is the cry-wolf
+  failure that rewrite existed to stop.
+  **The correction this replaces was itself wrong, and the way it was wrong is
+  the point.** This note used to say 412 belonged to the guide's checker alone.
+  That was accurate the day it was written and went stale ONE DAY later; the
+  first attempt to fix it over-corrected into "has carried it since the same
+  pass", which reads as though the original author had been careless. They had
+  not. **A stale note and a wrong note are different failures and the second is
+  worse**, because it also rewrites the history that would have explained the
+  first. Date the claim instead of characterising the person who made it.
+  **Before deleting a
   catalog URL, reproduce from an ordinary connection** — three links it called
   dead answer 200 from one, and `globe.gov` really was down for days and came
   back on its own.
@@ -1068,7 +1127,10 @@ inferred or filled in; if a detail is added it comes from them.**
   rewritten after seeing it render: "12 of 172 entries clear that bar" about
   confirmed dates reads as a 7% verification rate, when most of the remainder
   never had a date to verify. It states the true and more useful fact instead —
-  57 of 172 are open whenever you are ready.
+  how many are open whenever you are ready. (Those two figures were the values
+  on 2026-08-14 and are quoted as the reasoning, not as the state; the page
+  renders 18 and 58 out of 192 today, and will render something else tomorrow.
+  That is the point of the rule above.)
 - **The eleven parts are ONE array read twice**, by the contents nav and by the
   sections, same rule as a guide subject page: a part cannot exist in the map and
   be missing from the page.
