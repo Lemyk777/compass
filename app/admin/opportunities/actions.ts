@@ -341,7 +341,18 @@ export async function quickAddOpportunity(
   }
 
   const fields = input.fields.filter((f) => FACULTY_VALUES.includes(f));
-  const region = input.region.trim().toUpperCase() || null;
+  // Narrowed against a canonical set, exactly like `level`/`category`/`cost`
+  // three lines below — and it was the one field here that was not.
+  //
+  // `input.region.trim().toUpperCase()` stored whatever was typed. An admin
+  // entering "Kazakhstan" rather than "KZ" stored `KAZAKHSTAN`, which equals no
+  // student's normalized country, so `reachableFrom` was false for every
+  // signed-in student and the row reached only visitors whose country we do not
+  // know — while the badge read "Local · KAZAKHSTAN". A row that is invisible
+  // to precisely the people it is for, with nothing anywhere reporting an
+  // error. Rejecting the value is better than storing a plausible one.
+  const typed = input.region.trim().toUpperCase();
+  const region = typed && typed in LOCAL_TARGETS ? typed : null;
 
   // The three vocabulary fields, narrowed against the canonical arrays.
   //
