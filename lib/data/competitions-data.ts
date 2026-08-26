@@ -3416,4 +3416,633 @@ export const COMPETITIONS: Competition[] = [
     costDetail:
       "Free across the platform, because employers fund these to recruit. Confirm on the page before you start.",
   },
+
+  // ── Kazakhstan (local) ─────────────────────────────────────────────────────
+  //
+  // The catalog's first `region`-tagged rows since nao-cup-2026 was removed on
+  // 2026-08-15, which left the local mechanism applying to nothing curated at
+  // all. That is audit finding A8, and it is the gap between what this product
+  // says it is — built for students outside the first tier, most of them in
+  // Central Asia — and what it actually contained: 155 international rows, and
+  // nothing a student in Shymkent could turn up to in person.
+  //
+  // `region: "KZ"` means a student whose country we KNOW is elsewhere does not
+  // see these. A visitor whose country we do not know still does, badged
+  // "Local · Kazakhstan", because a logged-out reader in Shymkent is exactly
+  // who a local event is for.
+  //
+  // Four things to know before editing this block.
+  //
+  // **"9-11 (12)" is written here as "Grades 9–12", deliberately.** Kazakhstan
+  // runs an 11-year and a 12-year school programme side by side, so organisers
+  // write the ceiling as "11 (12)". `parseEligibility` reads the range off the
+  // dash and takes the FIRST match, so "Grades 9–11 (or 12 …)" would cap out a
+  // genuinely eligible 12th-grader — including every NIS student, which is the
+  // school this product was built in. Nobody sits in a 12th grade that does not
+  // exist, so the superset admits exactly the right people.
+  //
+  // **Not one date here is confirmed, and that is the calendar rather than the
+  // sourcing.** Дарын fixes each cycle by a ministerial order published in
+  // mid-September (2025-26 was № 218 of 18.09.2025), so on 2026-08-25 every one
+  // of its pages still shows the closed 2025-26 cycle. Each `deadline` below is
+  // an ESTIMATE from the last two cycles and each row's comment says so.
+  //
+  // **Two re-fetch dates, not one, and the earlier one is the one that
+  // matters.** An earlier draft of this comment said "after 20 September" and
+  // then, one sentence later, that the rural olympiad's registration window
+  // opened 4-20 Sept in 2024 and 9-15 Sept in 2025 — which is a instruction to
+  // go and look after the door has shut, propagated into three documents.
+  //
+  //   • **By 8 September**: `kz-rural-schools-olympiad` and
+  //     `kz-science-projects`. Both open AND close inside the first half of the
+  //     month, and the rural one is the only row in this block a student signs
+  //     themselves up for, so missing it costs more than missing any other.
+  //   • **After 20 September**: everything else from Дарын. The ministerial
+  //     order fixing the cycle lands mid-month (2025-26 was № 218 of
+  //     18.09.2025) and nothing is confirmable before it.
+  //
+  // **`cost: "unknown"` on the state rows is the rule working, not failing.**
+  // None of those pages states a fee. "Free" is not the absence of a stated
+  // price, so the honest pill is "not checked yet" and `costDetail` says what
+  // was and was not found. The three company-run rows below DO state it, and
+  // they carry `free`.
+  //
+  // **No Kazakh script in these fields.** `OG_GLYPHS` covers Cyrillic А-я plus
+  // Ёё, which is Russian; the Kazakh letters all sit outside it and would
+  // render as blank boxes on a share card. Дарын publishes in Russian too, so
+  // the bracketed names use that. Widening the subset is a real task with a
+  // 1 MB edge cap behind it — see og-glyphs.ts.
+  //
+  // Every URL below was fetched on 2026-08-25 and answered 2xx.
+  {
+    id: "kz-rural-schools-olympiad",
+    name: "Republican Olympiad for rural schools (олимпиада для сельских школ)",
+    fields: ["natural_sciences", "computer_science", "humanities_social", "law"],
+    // Registration opened 9-15 Sept in 2025 and 4-20 Sept in 2024, so this is
+    // the middle of that window carried forward. An estimate, not a date.
+    deadline: "2026-09-15",
+    window:
+      "You register yourself on smart.daryn.kz in September; 2026-27 dates not announced",
+    level: "national",
+    category: "olympiad",
+    tier: "selective",
+    eligibility:
+      "Grades 9–12 at a rural school in Kazakhstan, having studied at one for the last two years. Specialised schools in rural areas are excluded",
+    region: "KZ",
+    url: "https://daryn.kz/aul-olimp/",
+    blurb:
+      "Thirteen subjects, four rounds, about 125,000 entrants at the school stage last year. You sign yourself up for this one, rather than waiting for a teacher to put your name forward.",
+    cost: "unknown",
+    costDetail:
+      "The organiser names no fee and you register from a school computer, but no page says entry is free in as many words, so we have not marked it as such. Last year's winners took a full SDU grant and IELTS fees paid by the British Council.",
+  },
+  {
+    id: "kz-republican-olympiad",
+    name: "Republican Olympiad in school subjects (республиканская олимпиада)",
+    fields: ["natural_sciences", "computer_science", "humanities_social", "law"],
+    // The 2025-26 final ran March-April; the school stage that feeds it runs in
+    // the autumn and its date is set by the same September order. Estimate.
+    deadline: "2026-11-01",
+    window:
+      "School stage in autumn, national final in March-April; 2026-27 dates not announced",
+    level: "national",
+    category: "olympiad",
+    tier: "elite",
+    eligibility: "Grades 9–12 at a school in Kazakhstan",
+    region: "KZ",
+    url: "https://daryn.kz/respa/",
+    blurb:
+      "Subjects from informatics to law, climbing school → district → oblast → national. Your school enters you at the first stage, so the move is to find the teacher who runs it and say you want to sit it.",
+    cost: "unknown",
+    costDetail:
+      "No fee is named anywhere on the organiser's pages and the stages are sat inside schools. We have not found a statement that entry is free, so this stays unverified rather than becoming a claim.",
+  },
+  {
+    id: "kz-presidential-olympiad",
+    name: "Presidential Olympiad in maths and science (президентская олимпиада)",
+    fields: ["natural_sciences", "computer_science"],
+    // The 6 October date is INFERRED from one retrospective sentence, and the
+    // first version of this comment overstated it. The page does not publish a
+    // standing rule; it reports "Первый (региональный) этап состоялся 6 октября
+    // т.г." — past tense, about the 2025 round. So this is a pattern read off a
+    // single past cycle, which is thinner ground than a rule, and the next pass
+    // must not treat it as confirmable merely because the page repeats it. The
+    // cycle is fixed by a ministerial order each September. Estimate.
+    deadline: "2026-10-06",
+    window:
+      "Regional round on 6 October, national round by late November; 2026-27 order not published",
+    level: "national",
+    category: "olympiad",
+    tier: "accessible",
+    eligibility:
+      "Grades 11–12, and only if you have never taken part in a republican or international subject olympiad",
+    // Two facts in one sentence and the parser reads the first. The grade range
+    // is the half it can express; the exclusion is what makes this olympiad
+    // unusual and it stays in the sentence, where the student reads it.
+    gate: { gradeMin: 11, gradeMax: 12 },
+    region: "KZ",
+    url: "https://daryn.kz/po-ru/",
+    blurb:
+      "One day, four papers: maths, physics, chemistry and biology, all sat by everyone. It is the one built for students who have never been to an olympiad, and everyone who places gets priority in the state grant competition.",
+    cost: "unknown",
+    costDetail:
+      "No entry fee is stated. The ministry's order puts travel and meals for the national round on the regional education department, which answers who pays for the final and not whether entering costs anything.",
+  },
+  {
+    id: "kz-science-projects",
+    name: "Republican Competition of Scientific Projects (конкурс научных проектов)",
+    fields: [
+      "natural_sciences",
+      "computer_science",
+      "engineering",
+      "humanities_social",
+      "business_economics",
+    ],
+    // Regional education authorities file their entry lists by mid-September;
+    // the 2025-26 final ran 17-27 February. Estimate.
+    deadline: "2026-09-15",
+    window:
+      "Entries filed in September, national round in February; 2026-27 dates not announced",
+    level: "national",
+    category: "competition",
+    tier: "selective",
+    // The page says grades 8-11 (12) and the rules PDF it links says 9-11. The
+    // page is the student-facing document and the more recent of the two, so it
+    // wins; the rules text comes from a 2012 ministerial order.
+    eligibility:
+      "Grades 8–12, put forward by your school's science society or a supervising teacher. One or two authors per project",
+    region: "KZ",
+    url: "https://daryn.kz/rknp-ru/",
+    blurb:
+      "You build a research project and defend it, judged against the standards Regeneron ISEF uses. This is the domestic road to ISEF, and about 28,600 students started it at the school stage last year.",
+    cost: "unknown",
+    costDetail:
+      "Nothing on the organiser's page or in the rules names a fee. Materials for the project itself are on you, and that is the real cost to plan for.",
+  },
+  {
+    id: "kz-financial-literacy-olympiad",
+    name: "Republican Olympiad in Financial Literacy (олимпиада по финансовой грамотности)",
+    fields: ["business_economics"],
+    // School stage 17 Oct, district 14 Nov, oblast 15 Dec in the 2025-26 cycle.
+    // The page gives those days with no year, under a cycle-labelled tab.
+    deadline: "2026-10-17",
+    window:
+      "School stage in October, national round by May; 2026-27 dates not announced",
+    level: "national",
+    category: "olympiad",
+    tier: "accessible",
+    eligibility: "Grades 9–12. Anyone who wants to can sit the school stage",
+    region: "KZ",
+    url: "https://daryn.kz/karjy-sauattylygy-ru-2/",
+    blurb:
+      "Thirty questions in an hour, sat in your own school, set with the National Bank of Kazakhstan. The top thirty from each district go through to the next round.",
+    cost: "unknown",
+    costDetail:
+      "No fee is named. Дарын supplies the question papers and the first round is sat on paper at school; the later rounds run under Safe Exam Browser, so from then on you need a computer.",
+  },
+  {
+    id: "kz-junior-olympiad",
+    name: "Republican Olympiad for grades 7-8 (олимпиада для 7-8 классов)",
+    fields: ["natural_sciences", "computer_science", "humanities_social"],
+    // The 2025-26 papers were sat 3 December (grade 7) and 4 December (grade 8),
+    // given on the page as days without a year. Estimate.
+    deadline: "2026-12-03",
+    window: "District round in early December; 2026-27 dates not announced",
+    level: "national",
+    category: "olympiad",
+    tier: "accessible",
+    eligibility: "Grades 7–8 at a school in Kazakhstan",
+    region: "KZ",
+    url: "https://daryn.kz/resp-junior-olimpiad-ru/",
+    blurb:
+      "Thirteen subjects, district then oblast then national, with about 95,000 sitting the first round. It is the rung below the senior olympiad.",
+    cost: "unknown",
+    costDetail:
+      "No fee is named on the organiser's page. You sit the district round at a school, so what it can cost you is the journey if that school is not your own.",
+  },
+  {
+    id: "kz-linguistics-olympiad",
+    name: "Republican Linguistics Olympiad (олимпиада по лингвистике)",
+    fields: ["humanities_social", "computer_science"],
+    // District 5 Nov, oblast 24 Nov, national 23 Dec in the 2025-26 cycle.
+    deadline: "2026-11-05",
+    window:
+      "District round in November, national round in December; 2026-27 dates not announced",
+    level: "national",
+    category: "olympiad",
+    tier: "selective",
+    // The page's heading and the site menu both say 9-11 (12); one paragraph
+    // inside it says 8-11 (12). Two of three signals say 9, and a lower bound
+    // wrong in the permissive direction tells an 8th-grader they can enter
+    // something they cannot. The narrower reading ships.
+    eligibility: "Grades 9–12 at a school in Kazakhstan",
+    region: "KZ",
+    url: "https://daryn.kz/resp-ol-lingvist/",
+    blurb:
+      "Language puzzles you solve by reasoning rather than by knowing the language. It picks the Kazakhstan team for the International Linguistics Olympiad.",
+    cost: "unknown",
+    costDetail:
+      "No fee is stated for any of the three rounds. What the selection body covers for the international olympiad is handled separately and we have not verified it.",
+  },
+  {
+    id: "kz-philosophy-olympiad",
+    name: "Republican Olympiad in Critical Thinking and Philosophy",
+    fields: ["humanities_social", "law"],
+    // Selection round 12 Feb 2025, final 12 Mar 2025. The 2025-26 cycle is
+    // evidenced by protocol documents under its tab rather than by dated prose,
+    // which is thinner than the rest of this block — re-read before Feb 2027.
+    deadline: "2027-02-12",
+    window:
+      "Online selection round in February, final in March; dates not announced",
+    level: "national",
+    category: "olympiad",
+    tier: "accessible",
+    eligibility: "Grades 9–12 at a school in Kazakhstan",
+    region: "KZ",
+    url: "https://daryn.kz/philosophy-syni-oilau-ru/",
+    blurb:
+      "Fifty questions online, then a handwritten essay of up to 500 words on a quotation you choose. A hundred people reach the final, and the whole thing is written in English.",
+    cost: "unknown",
+    costDetail:
+      "No fee is stated. The first round is online, so a computer and a connection are what it actually asks of you.",
+  },
+  {
+    id: "kz-abai-readings",
+    name: "Republican Abai Readings (Абайские чтения)",
+    fields: ["humanities_social", "arts_design"],
+    // The XXVI readings ran 18-21 June 2025 in Semey; the 2025-26 tab carries
+    // that cycle's protocol and closing stream. Estimate for the next one.
+    deadline: "2027-06-18",
+    window:
+      "District and oblast rounds through the year, national final in June; dates not announced",
+    level: "national",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Grades 8–12 at a school in Kazakhstan. Held in Kazakh",
+    region: "KZ",
+    url: "https://daryn.kz/abay-oqulary-ru/",
+    blurb:
+      "Five categories: reciting Abai from memory, reciting his pupils, performing his songs, analysing him as a character, and reading out a poem you wrote yourself. The rounds run district, then oblast, then a national final in Semey.",
+    cost: "unknown",
+    costDetail:
+      "No fee is named. The national final is held in Semey and the page does not say who pays to get there, so ask your school before the oblast round.",
+  },
+  {
+    id: "kz-zerde",
+    name: "Zerde research competition for grades 2-7 (Зерде)",
+    fields: [
+      "natural_sciences",
+      "computer_science",
+      "humanities_social",
+      "medicine_health",
+    ],
+    // The 2025-26 national round ran 20-23 February 2026 at the Baldauren
+    // centre in Shchuchinsk. Estimate for the next cycle.
+    deadline: "2027-01-28",
+    window: "National round in winter; 2026-27 dates not announced",
+    level: "national",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Grades 2–7 at a school in Kazakhstan",
+    region: "KZ",
+    url: "https://daryn.kz/zerde-ru/",
+    blurb:
+      "The first research competition a Kazakh student can enter, with sections running from robotics to local history. Almost a third of last year's finalists came from village schools.",
+    cost: "unknown",
+    costDetail:
+      "No fee is named. The national round is held at the Baldauren centre in Shchuchinsk and the page does not state who covers the trip.",
+  },
+  {
+    id: "yandex-coding-school-kz",
+    name: "Yandex School of Programming, Kazakhstan",
+    fields: ["computer_science"],
+    // The page states the rhythm and no year: selection in September, classes
+    // October to April. The 2025 intake closed on 30 September, so this is that
+    // date carried forward. Re-read in mid-September 2026.
+    deadline: "2026-09-30",
+    window:
+      "Selection in September, classes October to April; 2026 intake dates not announced",
+    level: "national",
+    category: "course",
+    tier: "selective",
+    eligibility:
+      "Ages 14–17. Classes are in person, so you have to be able to reach one of the six cities",
+    region: "KZ",
+    url: "https://codingschool.yandex.kz/ru",
+    blurb:
+      "Two lessons a week through the school year, taught face to face in Almaty, Astana, Petropavlovsk, Taldykorgan, Shymkent and Kostanay. Getting in means an entrance test and an interview with the teacher.",
+    cost: "free",
+    costDetail:
+      "Nothing to pay, certificate at the end included. Teaching is in Russian, twice a week for an hour and a half, and there is no remote option, so the journey to the classroom is the part to plan for.",
+  },
+  {
+    id: "samsung-solve-for-tomorrow-kz",
+    name: "Samsung Solve for Tomorrow Kazakhstan",
+    fields: ["engineering", "computer_science", "natural_sciences"],
+    // Applications open 1 March and close 30 April each cycle; the 2026 final
+    // was judged on 25 August 2026. The 2027 cycle is not announced, so this is
+    // the recurring close date carried forward.
+    deadline: "2027-04-30",
+    window:
+      "Applications March to April, final in Almaty in August; 2027 dates not announced",
+    level: "national",
+    category: "competition",
+    tier: "selective",
+    eligibility:
+      "Ages 13–18, in a team from one school with a teacher from that school as mentor. No adults on the team",
+    region: "KZ",
+    url: "https://solvefortomorrow.kz/",
+    blurb:
+      "You find a problem where you live and build something that answers it. Ten teams reach the final, and this year's came from Turkestan, Aktobe, Uralsk, Kokshetau and Karatau rather than from the two big cities.",
+    cost: "free",
+    costDetail:
+      "Free to enter, and if your team reaches the final the organisers pay travel and accommodation in Almaty for three of you. Building the prototype is on your team.",
+  },
+  {
+    id: "samsung-innovation-campus-kz",
+    name: "Samsung Innovation Campus Kazakhstan",
+    fields: ["computer_science", "engineering"],
+    // The Data Analytics track was badged as open on 2026-08-25, but the newest
+    // dated post on the site is 25.02.2026, so the badge may be stale. Check
+    // the registration page rather than the badge.
+    deadline: "2027-02-28",
+    window: "Intakes announced per track; registration opens only during one",
+    level: "national",
+    category: "course",
+    tier: "accessible",
+    eligibility:
+      "Ages 13–25. Some tracks set their own age limit and the site does not list them",
+    region: "KZ",
+    url: "https://samsung-campus.kz/ru",
+    blurb:
+      "Courses in Python, big data and AI, taught face to face in Almaty, Astana, Aktobe and Taldykorgan, or over Google Meet from anywhere else in the country. You finish with a certificate from Samsung.",
+    cost: "free",
+    costDetail:
+      "The programme is free and so is the certificate. If you are not in one of the four cities you take it online, which needs a computer and a connection you can rely on for the length of the course.",
+  },
+  // The rows above are the state's own calendar. These six are not: a private
+  // foundation, a debate federation, a school-run Model UN, an embassy
+  // scholarship and a university tournament. They matter disproportionately
+  // because the state calendar is thin in exactly the fields this catalog is
+  // thinnest in — law, humanities, business — and because two of them can be
+  // entered from a phone in Shymkent without anyone's permission.
+  {
+    id: "el-umiti-prize",
+    name: "El Umiti Prize (премия «El Umiti»)",
+    fields: ["business_economics", "humanities_social"],
+    // Registration runs 15 September to 15 November in the regulations, and the
+    // fund publishes no year against it. The 2026 laureates were announced on
+    // 6 August 2026, so the next window opens within weeks. Estimate.
+    deadline: "2026-11-15",
+    window:
+      "Registration September to November; the year is not published against it",
+    level: "national",
+    category: "competition",
+    tier: "selective",
+    // The regulations say 14-17, the FAQ says 15-17, and the fund has not
+    // reconciled them. Taking the wider bound is the same call the AMC row
+    // records: a ceiling read too narrowly hid that contest from every 11th and
+    // 12th grader, and the sentence is where a student reads the detail.
+    eligibility: "Ages 14–17, at school in Kazakhstan",
+    region: "KZ",
+    url: "https://premia.elumiti.kz/",
+    blurb:
+      "A leadership prize that ends in a funded camp and money to start something with. Winners take a compulsory course in enterprise and media skills first, so it is a programme rather than a certificate.",
+    cost: "unknown",
+    costDetail:
+      "Nothing on the site prices entry, so we have not called it free. What it says about money runs the other way: the camp costs the selected nothing, and each winner gets one million tenge toward their own project.",
+  },
+  {
+    id: "el-umiti-cup-debate",
+    name: "El Umiti Cup — national school debate tournament",
+    fields: ["humanities_social", "law"],
+    // The organiser publishes no month for either stage, and the page still
+    // describes the 2025 edition. This date is a placeholder that keeps the row
+    // in a sensible place in the ordering; it is never rendered, because
+    // dateConfirmed is false. Re-read when the next cycle is announced.
+    deadline: "2027-03-01",
+    window: "Online stage first, then an invited final in Astana; dates not announced",
+    level: "national",
+    category: "competition",
+    tier: "accessible",
+    eligibility: "Ages 13+, at school in Kazakhstan",
+    region: "KZ",
+    url: "https://debateli.kz/euc",
+    blurb:
+      "The first stage is online and open to anyone, so you do not have to be in Astana to start. Two leagues run side by side, English in the world schools format and Kazakh in British Parliamentary, and the English one picks the team Kazakhstan sends to the world championship.",
+    cost: "unknown",
+    costDetail:
+      "No fee is named for either stage. Teams can be put together across schools and regions, so the online stage asks for a connection and three people rather than a club.",
+  },
+  {
+    id: "debat-eli-practice-games",
+    name: "Debat Eli online practice games",
+    fields: ["humanities_social", "law"],
+    deadline: "2027-06-30",
+    window: "Twice a month on Thursdays, over Zoom",
+    level: "national",
+    category: "community",
+    tier: "accessible",
+    eligibility:
+      "School students and first-year university students starting out in debate. No selection",
+    // NOT `region`-tagged, and it was for a day. The organiser states no country
+    // rule, it runs on Zoom, and you join through a chat — so tagging it KZ
+    // would hide it from a student in Tashkent or Bishkek for whom a free,
+    // selection-free, travel-free row is the best match in the whole catalog,
+    // and nothing would look wrong. That is the same reading as
+    // `issai-summer-research` below, and having the two disagree was the real
+    // error: one situation, opposite treatment, with the deciding rule written
+    // in this very file. The country belongs in the blurb, where it informs
+    // rather than excludes.
+    url: "https://debateli.kz/pracgames",
+    blurb:
+      "Twice a month, on Zoom, with no trial to pass and nobody keeping score of you. Debat Eli runs it from Kazakhstan, so it is the answer for a student whose town has no debate club.",
+    alwaysOpen: true,
+    cost: "free",
+    costDetail:
+      "Free, and you join through the organiser's WhatsApp group rather than a form on the site: leave a request in the chat for the Thursday you want. Say so out loud before you go looking for a button.",
+  },
+  {
+    id: "mismun-almaty",
+    name: "MIS MUN — Model UN at Miras International School, Almaty",
+    fields: ["humanities_social", "law"],
+    // The 2026 conference ran 19-20 February and no 2027 edition is announced
+    // yet. It has run for 22 years, so this is next February. Estimate.
+    deadline: "2027-02-19",
+    window: "Two days in February; the 2027 edition is not announced",
+    level: "regional",
+    city: "Almaty",
+    category: "competition",
+    tier: "selective",
+    // The delegation size is written out in words on purpose: parseEligibility
+    // reads the FIRST range it finds off a dash, and "5–7" beside "Grades 9–12"
+    // is one edit away from becoming the grade rule.
+    eligibility:
+      "Grades 9–12. You enter as a school delegation of five to seven, with a teacher",
+    region: "KZ",
+    url: "https://mismun.miras.kz/en/",
+    blurb:
+      "Two days of committee debate in Almaty, run by the school itself for twenty-two years. You cannot enter alone: your school sends a delegation and a teacher comes with it, so the first move is convincing them.",
+    cost: "one_time",
+    costDetail:
+      "The delegate fee is 30,000 KZT and covers transport during the conference, breakfast, lunch, a coffee break and the closing buffet. Getting to Almaty and staying there is on top of that and on you.",
+  },
+  {
+    id: "flex-kazakhstan",
+    name: "FLEX — Future Leaders Exchange, Kazakhstan",
+    fields: "all",
+    // Re-checked 2026-08-26, and the answer was a negative worth recording.
+    // The eligibility block still reads "Возрастные требования обновляются
+    // каждый год в августе" with NO rule under it, so shipping no age gate
+    // stays correct until that line is replaced. The application portal says
+    // "Recruitment for the 2026-27 FLEX program has concluded. There are no
+    // FLEX applications currently open. Please check back in September." — one
+    // month later than "each August" implies, so the window says September.
+    //
+    // A block reading "recruitment for 2027-28 will begin in August 2026" sits
+    // in that page's source COMMENTED OUT. Reading it as live would have
+    // produced a false confirm.
+    deadline: "2026-10-15",
+    window:
+      "Applications open in the autumn — the organiser says check back in September",
+    level: "national",
+    category: "competition",
+    tier: "elite",
+    eligibility:
+      "School students anywhere in Kazakhstan. The organiser republishes the exact age rule every August",
+    region: "KZ",
+    url: "https://kazakhstan.americancouncils.org/flex-rn",
+    blurb:
+      "A year at an American high school, living with an American family. Selection is on merit alone and runs in three rounds, the first of them a short English test you sit locally.",
+    cost: "funded",
+    costDetail:
+      "The US State Department pays for the year: flights, school, the host family and insurance. Entering the competition costs nothing, and the organiser says so in as many words.",
+  },
+  {
+    id: "kimep-debate-tournament",
+    name: "KIMEP Grand National Debate Tournament",
+    fields: ["law", "humanities_social"],
+    // The 2026 tournament ran 28-29 March in Almaty; the 2026-27 edition is not
+    // announced. Estimate from that.
+    deadline: "2027-03-28",
+    window: "Two days in Almaty in late March; the next edition is not announced",
+    level: "national",
+    category: "competition",
+    tier: "elite",
+    // "Final-year" in the sentence would be read by parseEligibility as grade
+    // 12 only, which is the final year of the 12-year programme and not of the
+    // 11-year one — so it would hide the tournament from every student in an
+    // ordinary Kazakh school. The gate states both.
+    gate: { gradeMin: 11, gradeMax: 12 },
+    eligibility:
+      "Final-year school or college students who could enrol at KIMEP, in teams of two, with English at IELTS 6.5 or TOEFL 85",
+    region: "KZ",
+    url: "https://www.kimep.kz/school-of-law/kz/law-school-grand-national-debate-tournament-in-english-and-scholarship-competition/",
+    blurb:
+      "Debate in English for two days, with scholarships of up to the full fee at KIMEP attached to how far you get. It is a contest and an admissions route at the same time, which is unusual enough to say plainly.",
+    cost: "unknown",
+    costDetail:
+      "No entry fee is stated. The English requirement is the real cost: an IELTS or TOEFL sitting has to be paid for and booked well before the tournament.",
+  },
+  // Two universities run something a school student can enter. Both are worth
+  // more than their count suggests: SPT is the only row in this block that
+  // reaches law and business at once, and NU Summer Camp is the only local row
+  // of any kind that reaches medicine.
+  //
+  // Three Kazakhstani university hosts had to be given up on for a reason worth
+  // recording, because no retry will change it: `kbtu.edu.kz`,
+  // `farabi.university` and `satbayev.university` all serve their leaf
+  // certificate with NO intermediate. A browser and curl chase the AIA
+  // extension and get a 200; Node's `fetch` does not, so `test:links` throws and
+  // classifies them `unreachable` — permanently, not for a bad minute. That is
+  // the one case where the standing "go and reproduce it from an ordinary
+  // connection" rule sends you on an errand whose answer is already known.
+  {
+    id: "sdu-spt-olympiad",
+    name: "SDU SPT Olympiad (олимпиада SPT)",
+    fields: [
+      "natural_sciences",
+      "business_economics",
+      "law",
+      "humanities_social",
+      "computer_science",
+    ],
+    // Round one was 15 February and round two 1 March in the 2025-26 cycle, and
+    // the registration portal now reads "Онлайн регистрация закрыта". Estimate.
+    deadline: "2027-02-15",
+    window:
+      "Round one online in February, round two in person in March; the next cycle is not announced",
+    level: "national",
+    category: "olympiad",
+    tier: "selective",
+    // "Final-year college student" in the sentence would be matched by
+    // parseEligibility and pinned to grade 12 alone, which is the last year of
+    // the 12-year programme and not of the 11-year one. The gate states both.
+    gate: { gradeMin: 11, gradeMax: 12 },
+    eligibility:
+      "Grades 11–12, or a final-year college student, applying to university this cycle",
+    region: "KZ",
+    url: "https://sdu.edu.kz/ru/spt/",
+    // No city COUNT in the blurb on purpose: the page says sixteen and then
+    // lists seventeen. The names are checkable and the number is not.
+    blurb:
+      "Fifty logic questions online, then a paper in the subject cluster you chose. Shymkent, Turkestan, Kyzylorda and Semey are among the venues for the second round, so this is one of the few you do not have to reach Almaty for.",
+    cost: "unknown",
+    costDetail:
+      "No fee is stated, and the page does not use the Kazakh or Russian word for free either, so this stays unverified rather than becoming a claim. What you win is an SDU grant or a four-year fee discount, and to use it you still have to sit the ENT.",
+  },
+  {
+    id: "nu-summer-camp",
+    name: "NU Summer Camp (Nazarbayev University)",
+    fields: [
+      "natural_sciences",
+      "engineering",
+      "computer_science",
+      "medicine_health",
+    ],
+    // Four ten-day streams ran between 3 June and 25 July 2026. The organiser
+    // states no application deadline at all, so this is the first stream's
+    // start date a year on. Estimate.
+    deadline: "2027-06-03",
+    window:
+      "Four ten-day streams across June and July; no application deadline is stated",
+    level: "national",
+    category: "summer_program",
+    tier: "selective",
+    eligibility: "Grades 9–12, ages 14–18 depending on the track",
+    region: "KZ",
+    url: "https://camp.nu.edu.kz/",
+    blurb:
+      "Ten days living on the Nazarbayev University campus in Astana, on one of five tracks: research, making things, robotics, the human body, and applying to university. There is a trip to Borovoye in the middle and a certificate at the end.",
+    cost: "one_time",
+    costDetail:
+      "600,000 tenge, which the organiser says covers accommodation, meals, teaching and the Borovoye trip with nothing added later. Getting to Astana is on top. There is no application form on the page: you leave a request and a manager contacts you to agree payment.",
+  },
+  {
+    id: "issai-summer-research",
+    name: "ISSAI Summer Research Program (Nazarbayev University)",
+    fields: ["computer_science", "engineering"],
+    // NOT `region`-tagged, and that is a decision rather than an omission. The
+    // programme accepts international participants — its own page requires
+    // health insurance "for the entire duration of their stay in Kazakhstan" —
+    // so tagging it KZ would hide it from an Uzbek or Georgian student who
+    // could in fact apply. Same reading as `izho`, which is held in Almaty and
+    // is likewise global.
+    //
+    // Ship the /srp/ URL and never /srp-2026/: the first is a same-host
+    // redirect onto whichever cycle is current, the second dies with the year.
+    deadline: "2027-03-29",
+    window:
+      "Applications close in late March, six weeks on campus in June and July; 2027 dates not announced",
+    level: "international",
+    category: "research_program",
+    tier: "elite",
+    eligibility: "Grades 9–12, or a university student. Taught and tested in English",
+    url: "https://issai.nu.edu.kz/srp/",
+    blurb:
+      "Six weeks of full-time AI research at Nazarbayev University, living on campus in Astana. Everything runs in English, the entrance test included, which is a real gate if you study in Kazakh or Russian.",
+    cost: "paid_aid",
+    costDetail:
+      "Two routes in, and they are not the usual pair: the funded places are won on the assessment test rather than granted on need. Paying instead is 1,200,000 tenge with accommodation or 1,050,000 without, and earlier payment is cheaper. Travel and personal costs are yours either way.",
+  },
 ];

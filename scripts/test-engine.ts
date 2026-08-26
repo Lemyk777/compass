@@ -3209,6 +3209,17 @@ test("pinning reorders, it never bypasses eligibility", () => {
   // failure that would matter: a card saying "you can enter this" to someone who
   // cannot is the one thing the product does not get to do, and "we pinned it"
   // is not an excuse the student can see.
+  //
+  // "Reach" is what needed re-deriving, and this test had the OLD answer. It
+  // asserted plain absence from `items`, which was right when matching hid
+  // off-region rows and wrong from the one-list release onward — the matcher
+  // marks now, and the default filters narrow. It never fired either way,
+  // because it iterates pinned local rows and there have been none; the day
+  // somebody pinned a Kazakh olympiad, which is the likeliest pin this product
+  // will ever have, it would have failed while the code was correct.
+  //
+  // So the guarantee is stated where it actually lives: the row is marked, and
+  // it is gone from the list the student is shown.
   const local = COMPETITIONS.filter((c) => c.pinned && c.region);
   for (const c of local) {
     const elsewhere = buildExtracurriculars({
@@ -3218,8 +3229,15 @@ test("pinning reorders, it never bypasses eligibility", () => {
       homeCountry: c.region === "IT" ? "KZ" : "IT",
       graduationYear: 2028,
     });
+    const row = elsewhere.items.find((i) => i.id === c.id);
+    if (row) {
+      assert.ok(
+        row.offRegion,
+        `${c.id} is region-scoped to ${c.region} and came back unmarked to a student outside it`,
+      );
+    }
     assert.ok(
-      !elsewhere.items.some((i) => i.id === c.id),
+      !matchedOnly(elsewhere.items).some((i) => i.id === c.id),
       `${c.id} is region-scoped to ${c.region} but reached a student outside it`,
     );
   }
@@ -7734,24 +7752,72 @@ test("stating no field marks nothing off-field", () => {
   assert.ok(plan.items.every((o) => !o.offField));
 });
 
-test("nothing in the curated catalog is off-region, because nothing is local", () => {
-  // NOT a tautology, and worth failing on: `region` exists on a catalog row
-  // exactly so a Kazakh student meets things they can turn up to, and the
-  // curated catalog currently carries ZERO region-tagged rows — the last one
-  // was nao-cup-2026, removed on the owner's instruction. AUDIT §A8 already
-  // called local coverage the highest-value widening available; this pins how
-  // thin it actually is, so adding local rows will trip this test and make
-  // somebody read the comment.
-  const plan = buildExtracurriculars({
-    today: TODAY,
-    faculties: [],
-    factors: [],
-    homeCountry: "IT",
-  });
+test("the catalog carries local rows at all", () => {
+  // This test used to assert the opposite — that NOTHING was region-tagged —
+  // and its own comment said the first local row would trip it and force
+  // somebody to read audit finding A8. That happened on 2026-08-25.
+  //
+  // It is kept pointing the other way rather than deleted, because the zero it
+  // pinned was not a neutral state: `region` exists so that a student in
+  // Shymkent meets something they can turn up to, and for ten days it applied
+  // to nothing curated at all. A product whose stated mission is students
+  // outside the first tier, holding no row any of them can attend in person,
+  // is the gap A8 names. Going back to zero should fail.
+  const local = COMPETITIONS.filter((c) => c.region);
+  assert.ok(
+    local.length > 0,
+    "no region-tagged rows left — the local mechanism applies to nothing again, see AUDIT §A8",
+  );
+});
+
+test("a local row is marked for a student elsewhere, not hidden from them", () => {
+  // The three cases of the region rule, over the REAL catalog rather than over
+  // a synthetic row. `reachableFrom` has had unit coverage all along; what had
+  // none was whether the matcher above it agrees, and it did not — the
+  // reference implementation in the one-pass matcher test still hard-filtered
+  // region six days after the release that stopped doing so.
+  const forCountry = (homeCountry: string | null) =>
+    buildExtracurriculars({
+      today: TODAY,
+      faculties: [],
+      factors: [],
+      homeCountry,
+    }).items;
+
+  const abroad = forCountry("IT");
+  const marked = abroad.filter((o) => o.offRegion);
+  assert.ok(marked.length > 0, "a local row vanished instead of being marked");
+  for (const o of marked) {
+    assert.ok(o.region && o.region !== "IT", `${o.id} is marked but not local`);
+  }
+  // Marked means filterable, and both match options default ON — so the list
+  // the student is actually shown carries none of them.
   assert.equal(
-    plan.items.filter((o) => o.offRegion).length,
+    matchedOnly(abroad).filter((o) => o.offRegion).length,
     0,
-    "a region-tagged row appeared — good news, and this test now needs updating",
+    "an off-region row survived the default narrowing",
+  );
+
+  // Its own country sees it as an ordinary row.
+  const athome = forCountry("KZ");
+  const kzRows = athome.filter((o) => o.region === "KZ");
+  assert.ok(kzRows.length > 0, "a Kazakh student cannot see the Kazakh rows");
+  for (const o of kzRows) {
+    assert.ok(!o.offRegion, `${o.id} is marked off-region inside its own region`);
+  }
+
+  // And an unknown country is not a different country. A logged-out reader in
+  // Shymkent is exactly who a local event is for, and they were once the only
+  // person who could not see it.
+  const anon = forCountry(null);
+  assert.equal(
+    anon.filter((o) => o.offRegion).length,
+    0,
+    "a visitor who has not said where they live was treated as being elsewhere",
+  );
+  assert.ok(
+    kzRows.every((o) => anon.some((a) => a.id === o.id)),
+    "a local row is missing from the signed-out list",
   );
 });
 
@@ -8506,9 +8572,17 @@ test("a cached eligibility gate is the gate the parser would have produced", () 
 });
 
 test("the one-pass matcher returns what the five-pass chain returned", () => {
-  // The chain was five map/filter stages; it is one loop now. Membership is
-  // re-derived here straight from the primitives — no shared helper, so a bug
-  // in the loop cannot hide behind the same bug in the reference.
+  // The chain was five map/filter stages; it is one loop now. MEMBERSHIP is
+  // re-derived here straight from the primitives, so a bug in the loop cannot
+  // hide behind the same bug in the reference.
+  //
+  // That independence does NOT extend to the region flag asserted further
+  // down, which calls `reachableFrom` — the same helper the matcher calls. It
+  // is deliberate rather than sloppy: `reachableFrom` is three lines of pure
+  // logic with its own direct unit coverage, including the empty-string case,
+  // and re-deriving it here would only re-test the thing that is already
+  // tested. Worth stating, because an earlier version of this comment claimed
+  // the independence for the whole test and a reader would have believed it.
   const today = new Date("2026-08-19T00:00:00Z");
   const profiles: {
     faculties: string[];
@@ -8531,9 +8605,23 @@ test("the one-pass matcher returns what the five-pass chain returned", () => {
       for (const graduationYear of [undefined, 2027, 2028, 2031]) {
         const grade = gradeFromGraduationYear(graduationYear, today);
         const ageRange = grade == null ? null : plausibleAgeForGrade(grade);
+        // Region does NOT appear here, and that absence is the point.
+        //
+        // It used to: this reference read `if (!reachableFrom(c, homeCountry))
+        // return false;`, which is what the matcher did BEFORE the one-list
+        // release made matching annotate instead of hide. The reference was
+        // written on 2026-08-19, three days after that release, and it stayed
+        // green for six days — not because it agreed with the code, but
+        // because the catalog held zero `region`-tagged rows and the line
+        // could not be reached. The first local row made the two disagree on
+        // ten entries at once.
+        //
+        // So the membership rule is: a confirmed past date is gone, a row the
+        // student can never enter is gone, and everything else comes back.
+        // Off-region is a FLAG, asserted separately below, and the default
+        // filters are what narrow the list a student actually sees.
         const expected = COMPETITIONS.filter((c) => {
           if (c.dateConfirmed && daysBetween(today, c.deadline) < 0) return false;
-          if (!reachableFrom(c, homeCountry)) return false;
           const v = checkEligibility(c.gate ?? parseEligibility(c.eligibility), {
             country: homeCountry,
             grade,
@@ -8542,19 +8630,42 @@ test("the one-pass matcher returns what the five-pass chain returned", () => {
           return v.ok || v.reason === "too_young";
         }).map((c) => c.id);
 
-        const got = buildExtracurriculars({
+        const items = buildExtracurriculars({
           today,
           faculties: p.faculties,
           factors: p.factors,
           homeCountry,
           graduationYear,
-        }).items.map((o) => o.id);
+        }).items;
+        const got = items.map((o) => o.id);
 
         assert.deepEqual(
           [...got].sort(),
           [...expected].sort(),
           `membership drift: fields=${p.faculties} country=${homeCountry} year=${graduationYear}`,
         );
+
+        // The half the membership rule above deliberately stopped covering.
+        // Taking region out of `expected` without putting it back HERE would
+        // have turned a stale guard into an absent one, which is the worse of
+        // the two — the flag is what the panel filters on and what
+        // `matchedOnly` reads, so a wrong flag shows a student in Rome a
+        // one-day event in Kostanay with nothing looking broken.
+        for (const o of items) {
+          assert.equal(
+            o.offRegion,
+            !reachableFrom(o, homeCountry),
+            `offRegion drift on ${o.id} for country=${homeCountry}`,
+          );
+        }
+        // And the narrowed list — what a student actually sees, since both
+        // match options default ON — still carries nothing from anywhere else.
+        for (const o of matchedOnly(items)) {
+          assert.ok(
+            reachableFrom(o, homeCountry),
+            `${o.id} survived matchedOnly for country=${homeCountry}`,
+          );
+        }
         combinations++;
       }
     }
