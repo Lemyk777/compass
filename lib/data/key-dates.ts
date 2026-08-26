@@ -268,6 +268,24 @@ export const COMPETITION_BY_ID = new Map(COMPETITIONS.map((c) => [c.id, c]));
 const RETIRED_IDS = new Set([
   "lumiere-research", // duplicate of "lumiere" — same program, same URL
   "nytimes-stem-writing", // one of the contests listed by "nyt-contests"
+  // Removed 2026-08-26 by the date-verification pass, and both for a reason a
+  // link check can never produce: the URL was fine and the CLAIM was not.
+  //
+  // Caribou answers 200 with a live-looking site — the sponsor line still
+  // renders — and the first thing in its body is "we have made the very
+  // difficult decision to cease all contest operations effective immediately".
+  // The contest menu is still there, commented out. This is the Goi Peace case
+  // the README names, met in the wild.
+  "caribou-math",
+  // A generic "Model UN conference" card resolved to one organiser's homepage,
+  // and that organiser describes itself as "the world's largest ... oldest
+  // ongoing UNIVERSITY-level Model UN". We were telling school students they
+  // could enter something they cannot, which is the one failure this product
+  // does not get to make. The row also could not be fixed in place: a generic
+  // name pointing at a specific host means its eligibility sentence and its
+  // URL can never agree. Four real school-level MUNs remain in the catalog —
+  // nhsmun, wimun, harvard-model-congress and mismun-almaty.
+  "mun",
 ]);
 
 /**
