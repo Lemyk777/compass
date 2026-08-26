@@ -6,7 +6,7 @@ order.
 1. **Opportunities** — the front door, and the thing a student arrives for. A
    curated, link-checked registry of competitions, olympiads, courses,
    programmes, communities and job simulations — **192 entries as of
-   2026-08-26** — matched to their field, country, school year and age, with
+   2026-08-25** — matched to their field, country, school year and age, with
    honest dates and honest costs. Works signed out, with no analysis: see
    `/opportunities`.
 
@@ -62,7 +62,7 @@ in [docs/SETUP.md](docs/SETUP.md).
 | `npm run build` | Production build — **also the lint + type-check gate** |
 | `npm run lint` | ESLint only |
 | `npx tsc --noEmit` | Type-check only |
-| `npm run test:unit` | **301 unit tests** over the deterministic core (node:test — no key, no network, no database) |
+| `npm run test:unit` | **321 unit tests** over the deterministic core (node:test — no key, no network, no database) |
 | `npm run test:onboarding` | **126 tests** over the intake schema and its server action, with the database and auth mocked. Not in CI — it needs `--experimental-test-module-mocks` |
 | `npm run db:check` | Read-only: is the database actually what this code assumes? |
 | `npm run test:links` | Every catalog URL; fails on a dead link |
