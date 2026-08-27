@@ -11,6 +11,7 @@ import { normalizeDestinations } from "@/lib/types";
 import type { AvailableDestinationCode } from "@/lib/data/destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
 import { LIMITS } from "@/lib/limits";
+import { isOpportunityId } from "@/lib/data/opportunity-vocab";
 import {
   cleanIntentText,
   isIntentStatus,
@@ -441,8 +442,14 @@ export async function saveOpportunityIntent(input: {
   startDetail?: string | null;
   whyMatters?: string | null;
 }): Promise<SaveResult> {
+  // The shape, not the length. A 120-character ceiling let any string at all
+  // into `opportunity_intents` — the one table that carries this product's only
+  // behavioural signal, and the one `/admin/intents` counts. See the note on
+  // `isOpportunityId` for why this is a shape check and not a membership one:
+  // an admin quick-add and a partner post both mint ids that are not in the
+  // curated catalog, and refusing those would break a real commitment.
   const opportunityId = input.opportunityId?.trim();
-  if (!opportunityId || opportunityId.length > 120) {
+  if (!opportunityId || !isOpportunityId(opportunityId)) {
     return { ok: false, error: "Unknown opportunity." };
   }
   const status: IntentStatus = isIntentStatus(input.status)
@@ -491,6 +498,15 @@ export async function saveOpportunityIntent(input: {
 export async function clearOpportunityIntent(
   opportunityId: string,
 ): Promise<SaveResult> {
+  // The same gate as the write above, and it is here for symmetry rather than
+  // for safety: the delete is already scoped by `user_id`, so a malformed id
+  // matches nothing. But "the writer validates and the deleter does not" is the
+  // exact shape this codebase keeps shipping, and a pair that disagrees is how
+  // the next person learns the wrong rule.
+  if (!isOpportunityId(opportunityId?.trim() ?? "")) {
+    return { ok: false, error: "Unknown opportunity." };
+  }
+
   const supabase = createClient();
   const {
     data: { user },

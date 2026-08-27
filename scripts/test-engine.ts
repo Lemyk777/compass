@@ -110,6 +110,7 @@ import {
   LEVEL_HINT,
   LEVEL_LABEL,
   TIER_LABEL,
+  isOpportunityId,
 } from "@/lib/data/opportunity-vocab";
 import {
   PARTNER_CATEGORY_OPTIONS,
@@ -1774,6 +1775,18 @@ const BAN = {
   ungrampedBand: /className="([^"]*\bmax-w-6xl\b[^"]*)"/g,
   /** Hardcoded type, in px or rem, checked against the floor. */
   hardcodedType: /text-\[(\d+(?:\.\d+)?)(px|rem)\]/g,
+  /**
+   * The same floor arriving as a NUMBER on a JSX prop, which no class-string
+   * scan can see. CLAUDE.md names this exact case — `fontSize: 10` passed as a
+   * prop — as the third way a guard is useless: correct, biting, reading the
+   * right string, and pointed at an input surface narrower than its own rule.
+   * Nine chart labels sat below the floor behind it, in four files, each of
+   * which already set 12 for its own tooltip a few lines away.
+   *
+   * Unitless, because that is what Recharts and SVG take; the capture is the
+   * bare number and the consumer treats it as px.
+   */
+  hardcodedFontSizeProp: /\bfontSize:\s*(\d+(?:\.\d+)?)\b/g,
   /** A client component reading the clock disagrees with the server's `todayISO`. */
   clockInClient: /new Date\(\s*\)/,
 } as const;
@@ -1869,6 +1882,15 @@ const BAN_FIXTURES: Record<
     catches: ['<span className="text-[10px]">', 'className="text-[0.7rem]"'],
     // A scale class carries no bracket; `text-[color:…]` is not a size.
     ignores: ['<span className="text-sm">', 'className="text-[#fff]"'],
+  },
+  hardcodedFontSizeProp: {
+    catches: [
+      'tick={{ fill: "rgb(var(--ink-faint))", fontSize: 10 }}',
+      "wrapperStyle={{ fontSize: 11, color: \"rgb(var(--ink-soft))\" }}",
+    ],
+    // The near-misses. A CSS string value is the class-string guard's business
+    // and carries a unit; a name that merely ends in the word is not the prop.
+    ignores: ['style={{ fontSize: "0.8rem" }}', "const baseFontSize = 10;"],
   },
   clockInClient: {
     catches: ["const t = new Date();", "const t = new Date(  );"],
@@ -4483,6 +4505,17 @@ function hardcodedTypeSizes(): { at: string; px: number }[] {
             out.push({
               at: `${path.relative(process.cwd(), file)}:${i + 1}`,
               px: m[2] === "rem" ? Number(m[1]) * 16 : Number(m[1]),
+            });
+          }
+          // The same rule arriving as a number on a prop. Kept as a second
+          // pass over the same line rather than one combined pattern, because
+          // the two have different capture shapes and a merged regex is where
+          // a group index quietly shifts and the size becomes NaN — which is
+          // how this guard failed open the first time.
+          for (const m of line.matchAll(BAN.hardcodedFontSizeProp)) {
+            out.push({
+              at: `${path.relative(process.cwd(), file)}:${i + 1}`,
+              px: Number(m[1]),
             });
           }
         });
@@ -8602,6 +8635,111 @@ test("the scoring core has one factor list, not two", () => {
     "narrative_fit",
     "test_scores",
   ]);
+});
+
+// ── What may reach the one table that measures the product ─────────────────
+//
+// `saveOpportunityIntent` accepted any string of 1 to 120 characters as an
+// opportunity id and wrote it to `opportunity_intents` — the only behavioural
+// signal this product collects, and the number `/admin/intents` reports. Four
+// files away, `recordReaction` refuses a `beatId` the registry does not
+// contain. Same job, one of them done: the repository's most frequent bug
+// shape, a rule enforced in one place and not in the one beside it.
+//
+// The check is on the SHAPE, and that was chosen by measurement rather than by
+// taste. Membership would have been a regression: an admin quick-add mints
+// `slugId(name)` and a partner post mints `${partnerUuid}-${slug}`, neither of
+// which is in the curated catalog, and both are things a student really commits
+// to. Refusing those would read as the button not working.
+const INTENT_ID_CALLERS: { file: string; must: RegExp; why: string }[] = [
+  {
+    file: "app/dashboard/actions.ts",
+    must: /saveOpportunityIntent[\s\S]{0,900}?!isOpportunityId\(/,
+    why: "the write path stopped validating the id, so anything at all reaches opportunity_intents again",
+  },
+  {
+    file: "app/dashboard/actions.ts",
+    must: /clearOpportunityIntent[\s\S]{0,400}?!isOpportunityId\(/,
+    why: "the delete path stopped validating, so the pair disagrees and teaches the next reader the wrong rule",
+  },
+];
+
+test("an opportunity id has to look like one before it is stored", () => {
+  // Every real writer, checked against the shape rather than assumed.
+  for (const c of COMPETITIONS) {
+    assert.ok(
+      isOpportunityId(c.id),
+      `catalog row ${c.id} would be refused by its own validator`,
+    );
+  }
+  // The two live writers, reproduced from their sources.
+  const slugId = (name: string) =>
+    `${name
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 48) || "opportunity"}-${Date.now().toString(36)}`;
+  assert.ok(isOpportunityId(slugId("Turnir Gorodov 2027")), "admin quick-add");
+  // A name with no latin characters collapses to the fallback, and that still
+  // has to pass — otherwise an admin posting a Russian-named contest is told
+  // their own opportunity does not exist.
+  assert.ok(isOpportunityId(slugId("Турнир городов")), "admin quick-add, non-latin name");
+  const partnerPost = `550e8400-e29b-41d4-a716-446655440000-${"a".repeat(43)}`;
+  assert.equal(partnerPost.length, 80, "the partner ceiling moved; re-check the bound");
+  assert.ok(isOpportunityId(partnerPost), "partner post at its 80-character ceiling");
+});
+
+test("the opportunity-id guard bites, and spares the near-misses", () => {
+  // Everything the 120-character ceiling used to let through.
+  for (const junk of [
+    "../../etc/passwd",
+    "<script>alert(1)</script>",
+    "DROP TABLE opportunity_intents",
+    "a b c",
+    "ÜBER",
+    "Has-Capitals",
+    "trailing space ",
+    "",
+    "a".repeat(97),
+  ]) {
+    assert.ok(!isOpportunityId(junk), `${JSON.stringify(junk)} still reaches the table`);
+  }
+  // The near-misses, which is the half that gets skipped. Each differs from a
+  // rejected string by one character, and a guard that fired on these would be
+  // exempted away inside a month.
+  assert.ok(isOpportunityId("a".repeat(96)), "the bound is off by one at the top");
+  assert.ok(isOpportunityId("a"), "a single character is a legal id");
+  assert.ok(isOpportunityId("0-a"), "a leading digit is legal");
+  assert.ok(!isOpportunityId("-a"), "a leading hyphen is not");
+});
+
+test("both intent actions call the guard, not just the one that writes", () => {
+  for (const { file, must, why } of INTENT_ID_CALLERS) {
+    const full = path.join(process.cwd(), file);
+    assert.ok(existsSync(full), `${file} is missing — this guard has no subject`);
+    assert.match(stripComments(readFileSync(full, "utf8")), must, `${file}: ${why}`);
+  }
+});
+
+test("that caller guard bites on the exact line that shipped", () => {
+  // The real code, before the fix. It compiles, type-checks and lints.
+  const asShipped = `
+export async function saveOpportunityIntent(input: { opportunityId: string }) {
+  const opportunityId = input.opportunityId?.trim();
+  if (!opportunityId || opportunityId.length > 120) {
+    return { ok: false, error: "Unknown opportunity." };
+  }
+`;
+  assert.ok(
+    !INTENT_ID_CALLERS[0].must.test(asShipped),
+    "the pattern passes the code it was written to reject",
+  );
+  const fixed = asShipped.replace(
+    "opportunityId.length > 120",
+    "!isOpportunityId(opportunityId)",
+  );
+  assert.match(fixed, INTENT_ID_CALLERS[0].must, "the pattern rejects the fix as well");
 });
 
 // ── The commitment step has to be REACHABLE ─────────────────────────────────

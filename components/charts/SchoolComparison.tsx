@@ -49,14 +49,14 @@ export function SchoolComparison({ schools }: { schools: SchoolLikelihood[] }) {
           <XAxis
             type="number"
             domain={[0, 100]}
-            tick={{ fill: "rgb(var(--ink-faint))", fontSize: 11 }}
+            tick={{ fill: "rgb(var(--ink-faint))", fontSize: 12 }}
             tickFormatter={(v) => `${v}%`}
           />
           <YAxis
             type="category"
             dataKey="name"
             width={96}
-            tick={{ fill: "rgb(var(--ink-soft))", fontSize: 11 }}
+            tick={{ fill: "rgb(var(--ink-soft))", fontSize: 12 }}
             tickLine={false}
             axisLine={false}
           />

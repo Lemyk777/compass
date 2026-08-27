@@ -252,3 +252,32 @@ export const COST_LABEL: Record<CostModel, { label: string; hint: string }> = {
     hint: "We haven’t verified this one. The card says so and points at the official page.",
   },
 };
+
+// ── An opportunity's ID, and why the shape rather than the membership ────────
+//
+// `saveOpportunityIntent` writes the row that `/admin/intents` counts, and it
+// is the ONLY behavioural signal this product collects. It used to accept any
+// string of 1–120 characters. Its neighbour four files away, `recordReaction`,
+// refuses a `beatId` the registry does not contain — the same job, done
+// properly — which is this repository's most frequent bug shape: a rule
+// enforced in one place and not in the one beside it.
+//
+// **Membership is the wrong check here, and it would have been a regression.**
+// A valid id is not only a curated catalog row: an admin quick-add writes
+// `slugId(name)` and a partner post writes `${partnerUuid}-${slug}`, both into
+// `competition_deadlines`, and both are real things a student can commit to.
+// Validating against `COMPETITION_BY_ID` would have silently refused every
+// commitment to a partner's own posting — a worse failure than the hole,
+// because it would look like the button simply not working.
+//
+// So this is a SHAPE check, the same call `isPickId` makes in `plan-picks.ts`.
+// Measured against every writer before it was chosen: all 192 catalog rows
+// pass, `slugId("Турнир городов")` → `opportunity-mtbt3qkb` passes, and a
+// partner post at its 80-character ceiling passes. `../../etc/passwd`,
+// `<script>…`, `a b c` and `""` do not.
+//
+// 96 rather than 80, because the ceiling belongs to today's two writers and a
+// third would not think to ask. It is a bound on nonsense, not a schema.
+export function isOpportunityId(id: string): boolean {
+  return /^[a-z0-9][a-z0-9-]{0,95}$/.test(id);
+}
