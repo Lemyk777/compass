@@ -8178,6 +8178,62 @@ test("that two-sentence rule bites on the shape it was written for", () => {
   assert.ok(rewritten.split(/\s+/).length <= 24, "the replacement broke the word cap");
 });
 
+test("the plainer version is actually plainer — never longer than its own beat", () => {
+  // The rule that was missing entirely, and the field it was missing from is
+  // the one a student reaches only after saying "I don't get it".
+  //
+  // The beats were rewritten on 2026-08-22 because each was one sentence of
+  // about twenty words carrying its situation in a subordinate clause. That fix
+  // was applied to `text` and never to its neighbour: measured on 2026-08-27,
+  // `plainer` ran to a median of 28 words against the beat's 21, **19 of 24
+  // were LONGER than the beat they explain**, and all but one were a single
+  // clause chained with "and", "because" or "though". The most confused reader
+  // on the surface was handed the harder sentence.
+  //
+  // Words, not characters, and against its OWN beat rather than a fixed cap:
+  // "plainer" is a comparison, so the guard has to be one. A flat ceiling would
+  // pass a 24-word explanation of an 18-word beat.
+  //
+  // What is deliberately NOT asserted here: two sentences, and an opening word.
+  // Both are `text`'s rules and both would be wrong here —
+  // `same-question-fortieth` is thirteen words in one clean clause, and forcing
+  // a second sentence onto it would make it worse. The audit that found this
+  // originally reported those two as failures; they were the wrong properties,
+  // and re-checking beat acting on them.
+  const words = (s: string) => s.trim().split(/\s+/).length;
+  for (const b of BEATS) {
+    assert.ok(
+      words(b.plainer) <= words(b.text),
+      `${b.id}: the plainer version is ${words(b.plainer)} words against the beat's ${words(b.text)} — "${b.plainer}"`,
+    );
+  }
+  // And it must still SAY something: the existing floor is 40 characters, which
+  // a one-word "Accounting." would pass in spirit but not in use.
+  for (const b of BEATS) {
+    assert.ok(words(b.plainer) >= 8, `${b.id}: the plainer version says nothing`);
+  }
+});
+
+test("the plainer rule bites on the copy that shipped", () => {
+  const words = (s: string) => s.trim().split(/\s+/).length;
+  // Verbatim, the worst pair as it stood before the rewrite.
+  const beat =
+    "You spot a pattern in this morning's numbers that might be nothing. You spend six more months finding out which.";
+  const asShipped =
+    "A pattern shows up in your data, but nobody can yet tell if it means something real or is just chance, and it will take another six months of testing to find out.";
+  assert.equal(words(beat), 20, "the fixture's beat changed; re-derive the numbers");
+  assert.equal(words(asShipped), 33, "the fixture stopped being the shipped copy");
+  assert.ok(
+    words(asShipped) > words(beat),
+    "the guard would not have fired on the copy it was written for",
+  );
+  // The replacement has to pass, or the rule is unmeetable rather than strict.
+  const rewritten =
+    "Research data shows a pattern that might be chance. Six more months of testing decide which.";
+  assert.ok(words(rewritten) <= words(beat));
+  assert.ok(words(rewritten) >= 8);
+});
+
 // ── The gates, made visible ──────────────────────────────────────────────────
 test("by default the student still gets their own list", () => {
   assert.deepEqual([...NO_FILTERS.matched].sort(), ["field", "region"]);
