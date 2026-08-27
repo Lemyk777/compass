@@ -145,7 +145,18 @@ export function Companion({
       // scrolled away at the first flick, and did not come back. Measured, not
       // guessed: `position` computed to `sticky`, `top` to `80px`, and the
       // element still left the viewport, because height was the problem.
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-20 xl:self-start xl:rounded-2xl xl:border xl:border-accent/40 xl:shadow-card"
+      // `xl:z-auto` is the other half of that, and it is not tidiness either.
+      // StudentNav is `sticky top-0 z-30` with a backdrop filter, so the header
+      // is its own STACKING CONTEXT — the account menu's `z-40` is sealed
+      // inside that 30 and cannot rise above it. This aside kept a bare `z-40`
+      // into `xl`, where it becomes sticky, so it outranked the header and
+      // painted over the menu hanging below it. Measured at 1440×900 with the
+      // menu open: the panel spans y 62→220, this rail y 101→358, and
+      // `elementFromPoint` returned THIS element for both "Admin" and
+      // "Sign out" — 75% of the menu was unclickable. Below `xl` the 40 is
+      // correct and stays: the dock is `fixed` and must clear page content,
+      // and it never shares a band with the header.
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-20 xl:z-auto xl:self-start xl:rounded-2xl xl:border xl:border-accent/40 xl:shadow-card"
     >
       {/* The toggle exists only below xl; the rail is always open. It comes
           FIRST in the DOM so a screen reader meets the control before the
