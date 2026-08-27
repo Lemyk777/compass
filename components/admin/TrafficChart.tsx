@@ -41,7 +41,7 @@ export type ChartRow = {
 };
 
 const AXIS = {
-  tick: { fill: "rgb(var(--ink-faint))", fontSize: 10 },
+  tick: { fill: "rgb(var(--ink-faint))", fontSize: 12 },
   tickLine: false,
   axisLine: false,
 } as const;
@@ -79,7 +79,7 @@ export function TrafficChart({ data }: { data: ChartRow[] }) {
           height={28}
           iconType="circle"
           iconSize={8}
-          wrapperStyle={{ fontSize: 11, color: "rgb(var(--ink-soft))" }}
+          wrapperStyle={{ fontSize: 12, color: "rgb(var(--ink-soft))" }}
         />
         <Bar
           dataKey="returningVisitors"
