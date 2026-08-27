@@ -122,7 +122,19 @@ export function DetailExit({
         onClick={onClick}
         tabIndex={adrift ? undefined : -1}
         aria-hidden={adrift ? undefined : true}
-        className={`fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 inline-flex h-11 items-center gap-2 rounded-full border border-line bg-card/95 pl-3 pr-4 text-sm font-medium text-ink-soft shadow-lift backdrop-blur transition-[opacity,transform,color,border-color] duration-300 ease-out hover:border-accent hover:text-ink active:scale-[0.97] active:duration-75 focus-visible:focus-ring motion-reduce:transition-none sm:bottom-6 sm:right-6 ${
+        // The bottom offset clears the companion's DOCK, and that is why it is
+        // a variable rather than a number. Below `xl` the companion is
+        // `fixed inset-x-0 bottom-0` at the same `z-40` as this pill, and
+        // `{children}` renders before it in StudentShell — so the dock wins.
+        // Measured at 375×812: dock y 767→812, this pill y 764→808, 41 of its
+        // 44px covered, and `elementFromPoint` at the centre returned the
+        // dock's label. The control that exists BECAUSE a phone may have no
+        // Back gesture was itself unreachable on a phone.
+        // `--companion-dock-h` is published by StudentShell and is 0px wherever
+        // there is no companion, so a guest's guide page is unchanged. From
+        // `xl` the companion is a rail rather than a dock, so `xl:bottom-6`
+        // takes the variable back out of the sum.
+        className={`fixed bottom-[calc(1rem+var(--companion-dock-h,0px)+env(safe-area-inset-bottom))] right-4 z-40 inline-flex h-11 items-center gap-2 rounded-full border border-line bg-card/95 pl-3 pr-4 text-sm font-medium text-ink-soft shadow-lift backdrop-blur transition-[opacity,transform,color,border-color] duration-300 ease-out hover:border-accent hover:text-ink active:scale-[0.97] active:duration-75 focus-visible:focus-ring motion-reduce:transition-none sm:bottom-[calc(1.5rem+var(--companion-dock-h,0px))] sm:right-6 xl:bottom-6 ${
           adrift
             ? "translate-y-0 opacity-100"
             : "pointer-events-none translate-y-3 opacity-0"
