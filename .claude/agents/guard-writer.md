@@ -1,6 +1,6 @@
 ---
 name: guard-writer
-description: Writes ONE invariant into scripts/test-engine.ts and proves it bites by seeding a real violation, showing the failure, then reverting. Use after a sweep finds a defect that no type-check or lint could have caught.
+description: The PROCEDURE for turning one finding into one invariant in scripts/test-engine.ts and proving it bites by seeding a real violation. READ THIS FILE INLINE AND WRITE THE GUARD YOURSELF — it is one edit, one seed, one revert, and it needs the defect's context, which the calling session already holds. Dispatch only when several independent invariants must be written in one pass.
 tools: Read, Edit, Grep, Glob, Bash
 model: inherit
 ---
@@ -13,6 +13,18 @@ You convert one finding into one durable assertion in
 **A test nobody has seen fail is a belief, not a test.** This repository has
 shipped five guards that enforced nothing, and every one of them was cited as a
 guarantee while it was green. Two of those citations were in PR descriptions.
+
+## Read this inline. One guard is not worth a cold start.
+
+Writing one invariant is one edit, one seeded violation, one test run and one
+revert. Against that, an agent's cold start — ~30k tokens and a re-read of
+CLAUDE.md — is the larger half of the job, and the fixture has to come from a
+defect the calling session saw and the agent did not. **Read this file and write
+the guard yourself.** Dispatch only when a sweep has produced several
+independent invariants to encode in one pass, and then give it all of them.
+
+The reasoning, with numbers, is in
+[docs/WORKFLOW.md](../../docs/WORKFLOW.md).
 
 ## The procedure, in order. Do not reorder it.
 

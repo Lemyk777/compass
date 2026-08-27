@@ -10,17 +10,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > as opposed to what it is. §8 also ends with a list of **problems** that are
 > nobody's work item.
 >
-> **Splitting the work up? [docs/WORKFLOW.md](docs/WORKFLOW.md)** says which
-> kinds of work may be handed to a subagent and what each one has to come back
-> with. The rule is one sentence — *a piece of work may be split off only when
-> it ends in a fact the main session can check without redoing the work* — and
-> the five agents that satisfy it live in [.claude/agents/](.claude/agents).
+> **Splitting the work up? [docs/WORKFLOW.md](docs/WORKFLOW.md), and the
+> default there is now DO IT YOURSELF.** The rule used to be one sentence about
+> trust — *a piece may be split off only when it ends in a fact the main session
+> can check without redoing the work* — and on its own it produced a workflow
+> that split by reflex. It has a second half now: **and only when finding that
+> fact yourself would cost more than the agent's cold start**, which is ~30k
+> tokens and several minutes, because an agent re-reads this file and re-derives
+> a repository the caller already knows. Measured 2026-08-27: three parallel
+> sweeps cost 163k, 201k and 219k tokens, a fourth agent died on the session
+> limit returning nothing, and the defect that mattered was found inline in
+> about fifteen calls. **An agent pays when its cold start is either the point or
+> negligible against the work** — so `catalog-verifier` (dozens of slow fetches)
+> and `reviewer` (not having written the diff IS the product) stay agents, a
+> `sweeper` is worth it only for a search that needs an instrument built, and
+> **measurement and guard-writing are done INLINE**: read
+> [.claude/agents/measurer.md](.claude/agents/measurer.md) and
+> [.claude/agents/guard-writer.md](.claude/agents/guard-writer.md) as
+> checklists rather than dispatching them.
 > **The `reviewer` is never the last gate**, and every review it returns has to
 > close by naming what its channel could not reach: three whole-branch reviews
 > of the companion found six real bugs by reading and missed the three that
 > mattered, because all three were properties of height, position and adjacency.
-> Reading is insufficient there, which is not the same as worthless — the
-> measurement half is the `measurer`, and it is not optional.
+> Reading is insufficient there, which is not the same as worthless — but the
+> measuring half belongs to whoever holds the hypothesis, and it is not optional.
+> Scope a review to ONE diff; those three misses were whole-branch reads.
 >
 > **The recurring one is that a guard here can be useless in SIX distinct ways,
 > and only the first is visible in a diff.** (1) The regex loses its
