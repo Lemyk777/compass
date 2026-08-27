@@ -21,6 +21,73 @@ record.
 
 ---
 
+## 2026-08-28 — Rules that held in one place and not in the one beside it
+
+PRs [#163](https://github.com/Lemyk777/compass/pull/163) and
+[#164](https://github.com/Lemyk777/compass/pull/164). One heading, because both
+are the same shape — the shape this repository ships most often.
+
+### What a student notices
+
+**The answer to "I don't get it" is finally the easier sentence.** Pressing it
+swaps a beat for its `plainer` version, and that version was *longer* than the
+beat it explains: a median of 28 words against 21, 19 of the 24 longer than
+their own beat, and all but one a single clause chained with "and", "because"
+or "though". The most confused reader on the surface was handed the harder
+sentence. Median is now 18 words, in two short sentences, and not one is longer
+than its beat.
+
+**Chart labels are readable.** Nine of them sat below the product's own 12px
+floor, in four files that each already used 12 for their own tooltip a few lines
+away.
+
+### What changed underneath
+
+`saveOpportunityIntent` accepted any string of 1–120 characters as an
+opportunity id and wrote it to `opportunity_intents` — the only behavioural
+signal this product collects, and the number `/admin/intents` reports. Four
+files away, `recordReaction` refuses a `beatId` the registry does not contain.
+
+The new gate is on the **shape**, and that was chosen by measurement rather than
+by taste: validating membership would have refused every commitment to an admin
+quick-add or a partner post, neither of which is in the curated catalog and both
+of which are real. That failure would have looked like the button not working.
+All 192 catalog rows pass, both live writers pass including a partner post at
+its 80-character ceiling, and `../../etc/passwd`, `<script>…`, `a b c` and `""`
+do not. `clearOpportunityIntent` got the same gate for symmetry rather than
+safety — the delete was already scoped by `user_id`.
+
+`BAN.hardcodedFontSizeProp` widens the type-floor guard to a numeric JSX prop,
+which is the channel CLAUDE.md names as the third way a guard is useless. The
+raised labels were measured at 375×812 on the two charts that render publicly:
+17 ticks, all 12px, zero overlapping pairs, zero clipped. The six on the admin
+console were not measured and the commit says so.
+
+### What anyone working on the code has to know
+
+**Two of the three findings that started this were the wrong property, and
+checking beat acting.** The audit reported `plainer` as failing the beats'
+opener rule and their two-sentence rule. Both belong to `text`; enforcing them
+here would have forced a second sentence onto a thirteen-word line and rewritten
+a deliberate register into a duplicate of the beat. The real defect was simply
+length, and only measuring found it.
+
+`plainer` **may** legally name a profession — the ban at
+`scripts/test-engine.ts` reads `b.text` only. It still does not, and that is
+deliberate: the ban's own reason is "that is the vocabulary the student does not
+have", which applies twice over to someone who has just said they do not
+understand. The domain is named in ordinary words instead.
+
+Three guards were added across the two releases and every one was seen failing
+first — on the exact `length > 120` line that shipped, on `RadarScorecard.tsx:79
+(11px)` which no class-string scan can reach, and on the verbatim 33-word
+`plainer` as it stood. Seeds were reverted by editing back, never by
+`git checkout`, because the same files carried the fixes.
+
+Unit tests 325 → **331**.
+
+---
+
 ## 2026-08-27 — Things that were spelled correctly and connected to nothing
 
 Two merges, PRs [#160](https://github.com/Lemyk777/compass/pull/160) and
