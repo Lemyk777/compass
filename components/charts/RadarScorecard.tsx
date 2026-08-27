@@ -76,7 +76,7 @@ export function RadarScorecard({
           <PolarGrid stroke="rgb(var(--line))" />
           <PolarAngleAxis
             dataKey="factor"
-            tick={{ fill: "rgb(var(--ink-soft))", fontSize: 11 }}
+            tick={{ fill: "rgb(var(--ink-soft))", fontSize: 12 }}
           />
           <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
           <Radar
