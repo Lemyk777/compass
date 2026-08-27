@@ -133,7 +133,15 @@ function AccountMenu({
       ref={ref}
       open={open}
       onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
-      className="relative shrink-0"
+      // `group` is not decoration: the chevron below is `group-open:rotate-180`,
+      // which Tailwind compiles to `.group[open] .group-open\:rotate-180`. With
+      // no `group` on this element that selector matched nothing, so the arrow
+      // never turned while the menu was open — for the whole life of the
+      // component. Nothing catches it: the class is one Tailwind can generate,
+      // so `no-custom-classname` passes, the build is green and a review reads
+      // the intent rather than the selector. Same shape as the four modals that
+      // carried `animate-in fade-in zoom-in-95` from an uninstalled plugin.
+      className="group relative shrink-0"
     >
       <summary
         aria-label="Account"

@@ -1449,6 +1449,109 @@ test("no destination is a brochure: trade-offs >= strengths, and all filled", ()
   }
 });
 
+// ── The register a country profile is written in ─────────────────────────────
+// `world.ts`, `place-universities.ts` and `majors.ts` each ban superlatives.
+// STUDY_DESTINATIONS — 17 profiles, the deepest prose in the product and the
+// only one of the four that reaches a page a stranger can land on from a search
+// result — had no such guard at all, and on 2026-08-27 two of its pages were
+// live with one: `/guide/places/switzerland` opened on "World-class research"
+// and called ETH and EPFL "top-tier"; `/guide/places/poland` opened on "The
+// best ratio of cost to opportunity in the European Union".
+//
+// TWO TIERS, because one list of words was measured and was the wrong tool.
+// Running the majors pattern over these registries returned SEVEN hits of which
+// ONE was real: `\bbest\b` fires on "the students who do best here", "many of
+// the best reporters", "the best technical solution frequently loses" — all
+// ordinary comparative English, and all of it in the fields that exist to be
+// honest. Meanwhile it missed BOTH live defects, because "world-class" and
+// "top-tier" were in nobody's list. Words are shared across unrelated concepts;
+// shape is not.
+//
+//   MARKETING_REGISTER  — never ordinary English here. Every string field.
+//   SELLING_SUPERLATIVE — ambiguous, so only the three fields that make the
+//                         case FOR the country: oneLine, unique, strengths.
+//
+// Split that way it returns three findings and three are real.
+//
+// DELIBERATELY NOT BANNED: a superlative pointed at the READER rather than at
+// the country. "The hardest admission in Europe" is a catch, and a catch stated
+// strongly is still a catch — the rule exists because an appeal without its
+// catch is an advert, so the catch is the half we are protecting.
+const MARKETING_REGISTER =
+  /(\bworld[- ]class\b|\btop[- ]tier\b|\bworld[- ]leading\b|\bworld[- ]famous\b|\bcutting[- ]edge\b|\bstate[- ]of[- ]the[- ]art\b|\brenowned\b|\bprestigious\b|\bpremier\b|\bunrivall?ed\b|\bfinest\b|\belite\b|\bbest[- ]in[- ]class\b|\bleading\b(?!\s+to\b)|\bno\.? ?1\b|\btop \d+\b|\brank(ed|ing)? (?:#|no\.?\s?)\d)/i;
+const SELLING_SUPERLATIVE = /\bbest\b/i;
+/** The fields that argue FOR a destination. The rest are allowed comparatives. */
+const DEST_SELLING_FIELD = /^[a-z-]+\.(oneLine|unique|strengths)(\[\d+\])?$/;
+
+/** Every string in a destination, as `id.path` → text. Skips `url` — a link is
+ *  not prose, and a host name is not a claim we wrote. */
+function destinationStrings(d: unknown, path: string): [string, string][] {
+  if (typeof d === "string") return path.endsWith(".url") ? [] : [[path, d]];
+  if (Array.isArray(d))
+    return d.flatMap((v, i) => destinationStrings(v, `${path}[${i}]`));
+  if (d && typeof d === "object")
+    return Object.entries(d).flatMap(([k, v]) =>
+      destinationStrings(v, `${path}.${k}`),
+    );
+  return [];
+}
+
+test("no country profile is written in the marketing register", () => {
+  for (const d of STUDY_DESTINATIONS) {
+    for (const [path, text] of destinationStrings(d, d.id)) {
+      const sold = text.match(MARKETING_REGISTER);
+      assert.ok(
+        !sold,
+        `${path} is written like an advert ("${sold?.[0]}"): ${text.slice(0, 90)}`,
+      );
+      if (!DEST_SELLING_FIELD.test(path)) continue;
+      const boast = text.match(SELLING_SUPERLATIVE);
+      assert.ok(
+        !boast,
+        `${path} makes a superlative claim for the country ("${boast?.[0]}"): ${text.slice(0, 90)}`,
+      );
+    }
+  }
+});
+
+test("that register guard bites on the two shapes that shipped", () => {
+  // Built from the lines that were live, not from a paraphrase of them.
+  const shippedSwitzerlandOneLine =
+    "World-class research at low tuition, gated by the hardest admission and the highest cost of living in Europe.";
+  const shippedSwitzerlandUnique =
+    "ETH Zurich and EPFL charge among the lowest tuition of any top-tier research university on earth.";
+  const shippedPolandOneLine =
+    "The best ratio of cost to opportunity in the European Union for a student from this region.";
+
+  assert.match(shippedSwitzerlandOneLine, MARKETING_REGISTER);
+  assert.match(shippedSwitzerlandUnique, MARKETING_REGISTER);
+  assert.match(shippedPolandOneLine, SELLING_SUPERLATIVE);
+  assert.ok(
+    DEST_SELLING_FIELD.test("poland.oneLine"),
+    "the selling-field test stopped recognising oneLine",
+  );
+
+  // And the near-misses, which are the half that decides whether this guard
+  // survives a month or gets exempted. Every one of these is real prose from
+  // this repository or one word away from it.
+  for (const honest of [
+    "Treating staying as failure. The students who do best here choose the local degree deliberately.",
+    "Many of the best reporters bring expertise in economics, science or law to a beat.",
+    "The best technical solution frequently loses to the one that fits the existing workflow.",
+    "A bachelor's here is three years, leading to a master's that most employers expect.",
+  ]) {
+    assert.doesNotMatch(
+      honest,
+      MARKETING_REGISTER,
+      `the marketing ban fires on honest prose: ${honest.slice(0, 60)}`,
+    );
+  }
+  // `best` in an honest field is allowed, and the field test is what allows it.
+  assert.ok(!DEST_SELLING_FIELD.test("kazakhstan.commonMistake"));
+  assert.ok(!DEST_SELLING_FIELD.test("poland.tradeoffs[0]"));
+  assert.ok(DEST_SELLING_FIELD.test("switzerland.strengths[2]"));
+});
+
 // The depth layer on countries. A student picks a country on admissions and
 // then lives inside its teaching culture and its calendar for years, so those
 // are stated too — and timing especially, because missing a deadline is the one
@@ -3029,6 +3132,100 @@ test("the focus guard actually bites — through an arrow, and not through a con
   assert.ok(
     /focus-visible/.test(expanded),
     "expanded, it is correct and must not be reported",
+  );
+});
+
+// ── A variant whose parent does not exist ────────────────────────────────────
+// `group-hover:` / `group-open:` / `group-focus:` compile to
+// `.group:hover .group-hover\:x`. Without a `group` on an ancestor the selector
+// matches nothing — and NOTHING in this repository notices. The class is one
+// Tailwind can generate, so `tailwindcss/no-custom-classname` is satisfied; the
+// build is green; a reader sees the intent and not the selector. This is the
+// same failure as the four modals that carried `animate-in fade-in zoom-in-95`
+// from a plugin nobody installed and simply never animated for months, and as
+// `text-[10px]` slipping past a floor guard whose capture captured nothing:
+// **a rule can be spelled correctly and still be connected to nothing.**
+//
+// Found on 2026-08-27 in `StudentNav.tsx`, the only offender in the tree: the
+// account menu's chevron was `group-open:rotate-180` on a `<details>` carrying
+// `className="relative shrink-0"`. The arrow never turned, for the life of the
+// component.
+//
+// SCOPE, stated because it is looser than it looks: this is a FILE-level check,
+// not an element-level one. It cannot tell you the `group` is on the right
+// ancestor, only that the file declares one somewhere. That is the level the
+// real defect lived at, and an ancestor walk through JSX is a parser rather
+// than a pattern. If a file ever declares `group` for one subtree and uses a
+// `group-` variant in an unrelated one, this passes and it should not.
+const GROUP_VARIANT = /\bgroup-(hover|open|focus|focus-within|active|disabled|checked|first|last)[:/]/;
+/**
+ * Does this source declare a `group` PARENT anywhere?
+ *
+ * Two things make the reading true rather than approximately true. It looks
+ * only inside string literals, and only after comments are stripped — so a line
+ * of prose about "a group of cards" cannot satisfy it, which would be the
+ * fail-open. And the lookahead excludes `-` but allows `/`: `group-hover` is
+ * the variant asking for a parent, while `group/card` is a NAMED group, which
+ * is a real parent. Nothing in the tree uses a named group today; the day one
+ * does, this must not report it.
+ */
+function declaresGroupParent(src: string): boolean {
+  const strings = stripComments(src).matchAll(
+    /"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/g,
+  );
+  return [...strings].some((m) =>
+    /\bgroup\b(?![-\w:.])/.test(m[1] ?? m[2] ?? m[3] ?? ""),
+  );
+}
+
+test("a group- variant always has a group parent to hang off", () => {
+  const offenders: string[] = [];
+  for (const file of sourceFiles()) {
+    const src = readFileSync(file, "utf8");
+    if (!GROUP_VARIANT.test(stripComments(src))) continue;
+    if (declaresGroupParent(src)) continue;
+    offenders.push(path.relative(process.cwd(), file).replace(/\\/g, "/"));
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `these files use a group- variant with no \`group\` anywhere, so the selector matches nothing:\n${offenders.join("\n")}`,
+  );
+});
+
+test("that group- guard bites on the markup that shipped", () => {
+  // The real pair, verbatim from StudentNav before the fix.
+  const asShipped = `
+    <details className="relative shrink-0">
+      <summary className="inline-flex min-h-11 items-center gap-1.5">
+        <svg className="transition-transform duration-200 group-open:rotate-180" />
+      </summary>
+    </details>`;
+  assert.ok(GROUP_VARIANT.test(asShipped), "the fixture stopped using a group- variant");
+  assert.ok(
+    !declaresGroupParent(asShipped),
+    "the guard must see that nothing here declares `group`",
+  );
+
+  // The fix, which must pass.
+  assert.ok(declaresGroupParent(asShipped.replace('"relative shrink-0"', '"group relative shrink-0"')));
+
+  // Near-misses, each one character or one context away from the real thing.
+  assert.ok(
+    !declaresGroupParent(`<div className="group-hover:opacity-100" />`),
+    "`group-hover` is the VARIANT, not a declaration of the parent",
+  );
+  assert.ok(
+    !declaresGroupParent(`<div className="grouped flex" />`),
+    "`grouped` is a different word",
+  );
+  assert.ok(
+    !declaresGroupParent(`// the cards are laid out in a group, three per row\nconst x = 1;`),
+    "prose in a comment must not satisfy the guard — that is the fail-open",
+  );
+  assert.ok(
+    declaresGroupParent(`<li className="group/card relative" />`),
+    "a named group is a real parent — `group/card` must count, or this guard fires falsely the day someone uses one",
   );
 });
 

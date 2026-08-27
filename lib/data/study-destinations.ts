@@ -773,9 +773,9 @@ const DESTINATIONS: StudyDestination[] = [
     name: "Switzerland",
     where: "Central Europe: Zurich, Lausanne, Geneva",
     oneLine:
-      "World-class research at low tuition, gated by the hardest admission and the highest cost of living in Europe.",
+      "Low tuition at research universities, gated by very selective admission and a cost of living that outweighs the fees.",
     unique:
-      "ETH Zurich and EPFL charge among the lowest tuition of any top-tier research university on earth. The wall here is entrance and living costs, not fees.",
+      "ETH Zurich and EPFL charge a fraction of what comparable research universities charge elsewhere. The wall here is entrance and living costs, not fees.",
     fields: ["computer_science", "engineering", "natural_sciences", "business_economics"],
     hubs: ["zurich", "lausanne", "geneva"],
     strengths: [
@@ -820,7 +820,7 @@ const DESTINATIONS: StudyDestination[] = [
     name: "Poland",
     where: "Central Europe: Warsaw, Kraków and a large network of public universities",
     oneLine:
-      "The best ratio of cost to opportunity in the European Union for a student from this region: an EU degree, a familiar culture and a short trip home.",
+      "An EU degree at Central European cost, in a familiar culture and a short trip from home.",
     unique:
       "An EU degree at Central European prices, in the country where a student from the CIS finds the largest existing community from home and the smallest cultural distance to cross.",
     fields: [
