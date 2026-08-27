@@ -21,6 +21,143 @@ record.
 
 ---
 
+## 2026-08-27 — Things that were spelled correctly and connected to nothing
+
+Two merges, PRs [#160](https://github.com/Lemyk777/compass/pull/160) and
+[#161](https://github.com/Lemyk777/compass/pull/161), grouped under one heading
+because they are one thread: every defect below came out of a single audit, and
+not one of them could be seen by any check this repository had.
+
+### What a student notices
+
+**On a wide screen, the account menu works.** "Admin" and "Sign out" were not
+clickable — the companion rail painted over them and a click landed on the
+companion instead. Three quarters of the menu was dead.
+
+**The filter tabs stay on screen while you scroll.** They were pinned eight
+pixels from the top of the window, which on the student's section is *inside* a
+69-pixel header, so the moment you scrolled they went behind it and stayed
+there — invisible and unclickable, under a comment promising they would "stay
+reachable while you scroll a hundred cards".
+
+**On a phone, the way out of a guide page is reachable.** The "← Countries"
+button sat under the companion's dock with 93% of it covered, so a tap operated
+the dock. That control exists precisely because a phone may have no Back
+gesture.
+
+**Two country profiles stopped reading like an advert.** Switzerland opened on
+"World-class research" and called ETH and EPFL "top-tier"; Poland opened on "The
+best ratio of cost to opportunity in the European Union". The rule against that
+had existed for three other registries and never for this one.
+
+**The arrow beside the account avatar turns when the menu opens.** It never had.
+
+### What changed underneath
+
+The three overlaps were one root cause: `z-index` is assigned per component, on
+ten levels, with no shared scale, and three pairs of layers had never been
+measured together. `StudentNav` is `sticky z-30` with a backdrop filter, so the
+header is its own stacking context and the menu's `z-40` is sealed inside that
+30; the companion carried a bare `z-40` into `xl`, where it becomes sticky, and
+outranked it. `xl:z-auto` fixes it.
+
+The other two are the rule the layout section already states about width — **a
+component that renders in more than one shell must not be pinned to an absolute
+number** — arriving as a sticky offset and a fixed one. `StudentShell` now
+publishes `--shell-sticky-top` and `--companion-dock-h`, both read through a
+`0px` fallback, so the report shell and a signed-out guide page are unchanged.
+
+`STUDY_DESTINATIONS` gained the superlative ban it never had, in two tiers.
+Copying the `majors` pattern was measured and rejected: over these registries it
+returns seven hits of which one is real, and it misses both live defects because
+"world-class" and "top-tier" were in nobody's list. `MARKETING_REGISTER` reads
+every field; `SELLING_SUPERLATIVE` reads only the three that argue *for* a
+country, so "the students who do best here" stays. A superlative pointed at the
+reader is still allowed — a catch stated strongly is still a catch.
+
+`group-open:rotate-180` sat on a `<details>` with no `group`, so
+`.group[open] .group-open\:rotate-180` matched nothing. The class is one
+Tailwind can generate, so the lint rule passed and the build was green — the
+same shape as the four modals that carried `animate-in` from a plugin nobody
+installed.
+
+### What anyone working on the code has to know
+
+**`docs/WORKFLOW.md` was rewritten, and the default inverted to "do it
+yourself".** The old rule was about trust alone — a piece may be split off when
+it ends in a checkable fact — which says when a split is *permitted* and never
+when it is *worth* it. Measured: three parallel sweeps cost 163k, 201k and 219k
+tokens, a fourth agent died on a session limit returning nothing, and the defect
+that mattered was found inline in about fifteen tool calls. The second rule is
+now **and only when finding that fact yourself would cost more than the agent's
+~30k-token cold start**. Measurement and guard-writing are done inline;
+`.claude/agents/measurer.md` and `guard-writer.md` are checklists to read, not
+agents to dispatch.
+
+Two guards are new and both were seen failing against the real lines before
+being trusted. The `group-` one reads only string literals and only after
+comments are stripped, which is load-bearing: the seeded run has an explanatory
+comment three lines above containing the word "group".
+
+`isolation: "remote"` is **not** verified to work in this setup — an agent
+dispatched with it ran as a local git worktree. Never promise that work survives
+a closed laptop until a branch is pushed. And CI does not run on a plain branch
+push; opening the PR is what runs the gate.
+
+---
+
+## 2026-08-26 — Twenty things a student in Kazakhstan can actually enter
+
+PRs [#158](https://github.com/Lemyk777/compass/pull/158) and
+[#159](https://github.com/Lemyk777/compass/pull/159). *Written up on 2026-08-27,
+after the fact, from the commits and `docs/AUDIT_2026-08-14.md` §A8 — the entry
+was missed on the day.*
+
+### What a student notices
+
+The catalog holds **20 rows a student in Kazakhstan can attend in person**,
+where it held none: the state olympiad calendar, the Kazakh programmes of two
+tech companies, a leadership prize, two debate surfaces, a Model UN in Almaty,
+FLEX, and two university programmes. Catalog 172 → 192.
+
+Every card that is local to somewhere now says so. **Not one of the twenty
+carries a confirmed date, and that is the calendar rather than the sourcing** —
+the state olympiads are fixed each cycle by ministerial order in mid-September,
+so on the day they were verified every page still showed the closed 2025–26
+cycle.
+
+### What changed underneath
+
+Six existing rows carried a claim the organiser's own page contradicts and were
+corrected. The admin console's region field took free text and stored it
+verbatim. A local badge could print a two-letter country code at a reader
+instead of a country name.
+
+The `Local · <place>` badge was missing from `/opportunities/[id]`, which is a
+third renderer of an opportunity and the one nobody remembers is one: two of
+five Kazakhstan-only pages named no country anywhere, and the other three were
+saved only by their eligibility sentence happening to mention Kazakhstan. A test
+now requires all three renderers to call `regionLabel`.
+
+### What anyone working on the code has to know
+
+**Two re-fetch dates, and the earlier one matters more: by 8 September** for the
+rural-school olympiad and the science-projects competition, whose windows open
+*and* close in the first half of the month, and **after 20 September** for the
+rest, once the ministerial order fixing the cycle lands.
+
+The one-pass matcher test had been green for six days while its reference
+implementation disagreed with the code it checks — the catalog held zero
+`region`-tagged rows, so neither side could reach the branch. The first local
+rows made them disagree on ten entries at once. **A guard whose subject is a
+data shape the dataset does not contain is not passing; it is abstaining.**
+
+The share card cannot draw the Kazakh alphabet: `OG_GLYPHS` covers Russian
+Cyrillic, and ә, қ, ғ, ң, ө, ұ, ү, һ, і are all outside it. Worked around by
+using the Russian names the organisers themselves publish.
+
+---
+
 ## 2026-08-24 — The checks start telling the truth
 
 Four merges into `main` in one day, PRs
