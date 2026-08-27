@@ -44,8 +44,31 @@ export async function StudentShell({
     ? STATIONS[companion.station.index - 1].label
     : "";
 
+  // TWO MEASURED CONSTANTS THE SHELL PUBLISHES TO WHATEVER RENDERS INSIDE IT.
+  // Both exist because a component that renders in more than one shell must
+  // not be pinned to an absolute number — the same rule the layout section of
+  // CLAUDE.md states about width, arriving here as a sticky offset and a fixed
+  // one.
+  //
+  //   --shell-sticky-top   how far down this shell's own sticky header reaches.
+  //                        StudentNav is `py-3` around a `min-h-11` row: 4.25rem,
+  //                        measured 69px. OpportunitiesView pins its kind tabs
+  //                        below it. That view ALSO renders inside the report
+  //                        shell, which sets nothing — the `0px` fallback there
+  //                        is exactly the behaviour it had before.
+  //   --companion-dock-h   the height of the companion's phone dock, or 0px
+  //                        when there is no companion at all. DetailExit's
+  //                        floating exit sits above it.
+  //
+  // Both are read through `var(--x, 0px)`, so a surface that never meets this
+  // shell is unaffected rather than broken.
+  const shellVars = {
+    "--shell-sticky-top": "4.25rem",
+    "--companion-dock-h": companion ? "2.75rem" : "0px",
+  } as React.CSSProperties;
+
   return (
-    <div className="min-h-dvh bg-surface text-ink">
+    <div className="min-h-dvh bg-surface text-ink" style={shellVars}>
       <SkipLink />
       <StudentNav isAdmin={isAdmin} hasReport={hasReport} />
       {/* `tabIndex={-1}` is what makes the skip link move focus and not merely

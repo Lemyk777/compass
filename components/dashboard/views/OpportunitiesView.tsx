@@ -450,7 +450,7 @@ export function OpportunitiesView({
                   {/* The tabs stay reachable while you scroll a hundred cards —
                       having to scroll back up to change filter is the thing
                       that makes a long list feel like work. */}
-                  <div className="sticky top-2 z-20 -mx-1 px-1 py-1">
+                  <div className="sticky top-[calc(var(--shell-sticky-top,0px)+0.5rem)] z-20 -mx-1 px-1 py-1">
                     <CategoryTabs
                       active={category}
                       onChange={setCategory}

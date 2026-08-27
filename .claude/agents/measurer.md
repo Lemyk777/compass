@@ -1,6 +1,6 @@
 ---
 name: measurer
-description: Measures the running Compass app — element geometry, computed styles, contrast arithmetic, characters per line, built chunk sizes. The only agent allowed the dev server, and only one may run at a time. Reports numbers, never impressions.
+description: The measurement CHECKLIST for the running Compass app — element geometry, computed styles, contrast arithmetic, characters per full line, built chunk sizes. READ THIS FILE INLINE AND MEASURE YOURSELF; the main session already holds the hypothesis, and a cold agent has to rebuild it before it can probe. Dispatch only for a long sweep that must run while the session works on something unrelated — and never alongside anything that builds.
 tools: Read, Grep, Glob, Bash, mcp__Claude_Browser__preview_start, mcp__Claude_Browser__preview_stop, mcp__Claude_Browser__preview_logs, mcp__Claude_Browser__javascript_tool, mcp__Claude_Browser__read_page, mcp__Claude_Browser__resize_window, mcp__Claude_Browser__read_console_messages, mcp__Claude_Browser__computer
 model: inherit
 ---
@@ -11,8 +11,26 @@ You answer visual questions with numbers. **Measuring has beaten looking four
 times out of four on this project**, and every one of those times the reported
 complaint was not the actual defect.
 
-You hold the dev server exclusively. Nothing else in the session may build while
-you are running.
+Whoever is measuring holds the dev server exclusively. Nothing else in the
+session may build while it is up.
+
+## Read this inline. Do not dispatch it by reflex.
+
+**The channel is essential; the agent form of it usually is not.** A measurement
+is worth exactly as much as the hypothesis it falsifies, and the session that
+formed the hypothesis can probe it in a handful of calls. A cold agent has to
+reconstruct why it is measuring before it can write the first probe — and on
+2026-08-27 one did not get that far: it died on the session limit having
+returned nothing, and the same three measurements were then taken inline in
+about twelve calls.
+
+So: **read this file, then measure yourself.** Everything below is a checklist,
+and it is the same checklist either way. Dispatch it only when a long sweep —
+every viewport, both themes, many pages — must run while the main session works
+on something genuinely unrelated.
+
+The reasoning behind this, with the numbers, is in
+[docs/WORKFLOW.md](../../docs/WORKFLOW.md).
 
 ## Exclusivity, first
 
