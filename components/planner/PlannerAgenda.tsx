@@ -98,7 +98,7 @@ export function PlannerAgenda({
                 {month.phases.map((p) => (
                   <li
                     key={p.id}
-                    className="inline-flex items-center rounded-full border border-line bg-surface px-3 py-1 text-[0.8125rem] text-ink-soft"
+                    className="inline-flex items-center rounded-full border border-line/70 bg-card px-3.5 py-1 text-[0.8125rem] text-ink-soft shadow-sm"
                   >
                     <span className="font-medium text-ink">{p.name}</span>
                     <span className="ml-1.5 text-ink-faint">{p.rangeLabel}</span>
@@ -113,7 +113,7 @@ export function PlannerAgenda({
                 <CardGrid items={month.items} />
               </div>
             ) : (
-              <p className="rounded-2xl border border-dashed border-line px-5 py-8 text-center text-sm text-ink-soft">
+              <p className="rounded-2xl border border-dashed border-line/80 bg-card/40 px-5 py-8 text-center text-sm text-ink-soft">
                 Nothing dated in {month.label}. Step forward, or add something of
                 your own on the board.
               </p>
@@ -125,7 +125,7 @@ export function PlannerAgenda({
         // things whose dates nobody has announced, or tasks of their own with no
         // date. Said plainly rather than drawn as an empty calendar.
         overdue.length === 0 && (
-          <p className="rounded-2xl border border-dashed border-line px-5 py-8 text-center text-sm text-ink-soft">
+          <p className="rounded-2xl border border-dashed border-line/80 bg-card/40 px-5 py-8 text-center text-sm text-ink-soft">
             Nothing you&rsquo;re carrying has a date we can stand behind yet, so
             there is no calendar to show. Everything you have is on the board.
           </p>
@@ -161,7 +161,7 @@ function Frame({
   items: PlannerItem[];
 }) {
   return (
-    <details className="group rounded-2xl border border-line bg-card">
+    <details className="group rounded-2xl border border-line/70 bg-card shadow-card transition-all">
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 focus-visible:focus-ring sm:px-5">
         <span
           className={`text-sm font-semibold ${
@@ -177,7 +177,7 @@ function Frame({
           &rsaquo;
         </span>
       </summary>
-      <div className="space-y-3 border-t border-line px-4 py-4 sm:px-5">
+      <div className="space-y-3 border-t border-line/60 px-4 py-4 sm:px-5">
         <p className="max-w-[54ch] text-sm leading-relaxed text-ink-soft">
           {note}
         </p>
@@ -199,7 +199,7 @@ function periodSummary(m: PlannerMonth): string {
 
 function CardGrid({ items }: { items: PlannerItem[] }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       {items.map((i) => (
         <PlannerCard key={i.key} item={i} />
       ))}

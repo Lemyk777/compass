@@ -124,11 +124,16 @@ export function Overview() {
       {/* Two cards on one row, equal height. */}
       <div className="grid items-stretch gap-6 lg:grid-cols-2">
         {/* Spider chart */}
-        <section className="flex flex-col rounded-2xl border border-line bg-card p-6 shadow-card">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-faint">
-            {t("dash.yourStanding")}
-          </h2>
-          <div className="flex flex-1 items-center justify-center">
+        <section className="flex flex-col rounded-2xl border border-line/70 bg-card p-6 sm:p-7 shadow-card transition-all duration-300 hover:shadow-lift">
+          <div className="flex items-center justify-between border-b border-line/50 pb-3 mb-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-ink-faint">
+              {t("dash.yourStanding")}
+            </h2>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft/60 px-2.5 py-0.5 text-xs font-semibold text-accent-ink">
+              Multi-factor Analysis
+            </span>
+          </div>
+          <div className="flex flex-1 items-center justify-center py-2">
             <div className="w-full">
               <RadarScorecard
                 factors={analysis.factors}
@@ -141,7 +146,15 @@ export function Overview() {
         </section>
 
         {/* Gauge + factor bars + CTA */}
-        <section className="flex flex-col rounded-2xl border border-line bg-card p-6 shadow-card">
+        <section className="flex flex-col rounded-2xl border border-line/70 bg-card p-6 sm:p-7 shadow-card transition-all duration-300 hover:shadow-lift">
+          <div className="flex items-center justify-between border-b border-line/50 pb-3 mb-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-ink-faint">
+              Competitiveness Breakdown
+            </h2>
+            <span className="text-xs font-semibold text-ink-soft">
+              Top Drivers
+            </span>
+          </div>
           <div className="flex flex-1 flex-col items-center gap-6 sm:flex-row sm:items-center">
             <div className="flex flex-col items-center">
               <OverallGauge score={overall} />
@@ -154,16 +167,16 @@ export function Overview() {
                 const shown = Math.round(f.score);
                 return (
                   <li key={f.key}>
-                    <div className="mb-1 flex items-baseline justify-between gap-4">
-                      <span className="text-sm font-medium text-ink">
+                    <div className="mb-1.5 flex items-baseline justify-between gap-4">
+                      <span className="text-sm font-semibold text-ink">
                         {f.label}
                       </span>
-                      <span data-num className="text-sm font-semibold text-ink">
+                      <span data-num className="text-sm font-bold text-ink">
                         {shown}
-                        <span className="text-ink-faint">/10</span>
+                        <span className="font-normal text-ink-faint">/10</span>
                       </span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-line">
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-line/80 shadow-inner">
                       <div
                         className="h-full w-full rounded-full bg-accent origin-left transition-transform duration-700 ease-out"
                         style={{ transform: `scaleX(${shown / 10})` }}
@@ -177,7 +190,7 @@ export function Overview() {
           <ButtonLink
             href={`${basePath}/standing`}
             variant="subtle"
-            className="mt-6 w-full"
+            className="mt-6 w-full shadow-sm hover:border-accent/40"
           >
             {t("dash.seeFull")}
           </ButtonLink>
@@ -188,9 +201,9 @@ export function Overview() {
       <ButtonLink
         href={`${basePath}/odds`}
         variant="subtle"
-        className="h-auto w-full justify-start gap-6 rounded-2xl px-6 py-6 text-left"
+        className="group h-auto w-full justify-start gap-6 rounded-2xl border border-line/70 bg-gradient-to-r from-card via-card to-accent-soft/20 px-6 py-6 text-left shadow-card hover:shadow-lift hover:border-accent/40 transition-all duration-300 sm:px-7"
       >
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-on-fill">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent text-on-fill shadow-sm group-hover:scale-105 transition-transform duration-200">
           <svg
             className="h-6 w-6"
             viewBox="0 0 24 24"
@@ -204,17 +217,17 @@ export function Overview() {
           </svg>
         </span>
         <span className="flex-1">
-          <span className="block text-xs font-medium uppercase tracking-wide text-ink-faint">
+          <span className="block text-xs font-bold uppercase tracking-wider text-accent-ink">
             {t("dash.firstStep")}
           </span>
-          <span className="mt-0.5 block text-lg font-semibold text-ink">
+          <span className="mt-0.5 block text-xl font-bold tracking-tight text-ink">
             {t("dash.oddsCta")}
           </span>
           <span className="mt-0.5 block text-sm text-ink-soft">
             {t("dash.oddsTime")}
           </span>
         </span>
-        <span className="text-ink-faint">
+        <span className="text-ink-faint group-hover:text-accent group-hover:translate-x-1 transition-all duration-200">
           <svg
             className="h-5 w-5"
             viewBox="0 0 24 24"

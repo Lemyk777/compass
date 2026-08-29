@@ -2,7 +2,8 @@
 
 import { matchedOnly } from "@/lib/data/opportunity-filter";
 import { NO_FACTORS, useOpportunityPlan, useToday } from "@/lib/data/use-opportunity-plan";
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
+import { Container } from "@/components/ui/Container";
 import type {
   Competition,
   Opportunity,
@@ -88,24 +89,30 @@ export function EligibilityChecker({
   // hiding rows so the panel could own the narrowing, and a surface without one
   // narrows nothing unless it asks. Without it a visitor in Uzbekistan is shown
   // a competition that only runs in Kazakhstan.
-  const mine = matchedOnly(plan?.items ?? []);
-  const openNow = mine.filter((o) => !o.notYetEligible);
-  const later = mine.filter((o) => o.notYetEligible);
-  // Actionable first. A real deadline earns the top spot (the promise on this
-  // page is "and when they close"), then the ones with no deadline at all —
-  // which a student can start tonight — and only then the "dates TBA" rows we
-  // cannot say anything useful about yet.
-  const rank = (o: Opportunity) => (o.dateConfirmed ? 0 : o.alwaysOpen ? 1 : 2);
-  const shown = [...openNow].sort((a, b) => rank(a) - rank(b)).slice(0, SHOWN);
-  // The soonest real deadline on screen — the minimum, not the first one we
-  // happen to render.
-  const nearest = shown
-    .filter((o) => o.dateConfirmed)
-    .reduce<Opportunity | null>(
-      (best, o) =>
-        best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
-      null,
-    );
+  const { openNow, later, shown, nearest } = useMemo(() => {
+    const mine = matchedOnly(plan?.items ?? []);
+    const openNow = mine.filter((o) => !o.notYetEligible);
+    const later = mine.filter((o) => o.notYetEligible);
+    
+    // Actionable first. A real deadline earns the top spot (the promise on this
+    // page is "and when they close"), then the ones with no deadline at all —
+    // which a student can start tonight — and only then the "dates TBA" rows we
+    // cannot say anything useful about yet.
+    const rank = (o: Opportunity) => (o.dateConfirmed ? 0 : o.alwaysOpen ? 1 : 2);
+    const shown = [...openNow].sort((a, b) => rank(a) - rank(b)).slice(0, SHOWN);
+    
+    // The soonest real deadline on screen — the minimum, not the first one we
+    // happen to render.
+    const nearest = shown
+      .filter((o) => o.dateConfirmed)
+      .reduce<Opportunity | null>(
+        (best, o) =>
+          best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
+        null,
+      );
+      
+    return { openNow, later, shown, nearest };
+  }, [plan?.items]);
 
   function pickGrade(g: number) {
     setGrade(g);
@@ -130,7 +137,7 @@ export function EligibilityChecker({
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-6">
+    <Container size="dashboard" className="pb-24">
       {/* ── The question ───────────────────────────────────────────────────
           One question, eight taps, no account, no email. Everything the
           research says about hassle points at making the first answer free. */}
@@ -248,7 +255,7 @@ export function EligibilityChecker({
           </section>
         )}
       </div>
-    </div>
+    </Container>
   );
 }
 

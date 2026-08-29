@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
-  PLANNER_SECTIONS,
   type PlannerSectionId,
 } from "@/lib/data/planner-sections";
 import { agendaHomeIndex, PLANNER_COLUMNS } from "@/lib/data/planner";
@@ -10,8 +9,8 @@ import type { PlannerColumn, PlannerItem, PlannerMonth } from "@/lib/data/planne
 import type { PlanPick } from "@/lib/data/plan-picks";
 import { PlannerAgenda } from "@/components/planner/PlannerAgenda";
 import { PlannerBoard } from "@/components/planner/PlannerBoard";
-import { PlannerLenses } from "@/components/planner/PlannerLenses";
 import { YourPicks } from "@/components/planner/YourPicks";
+import { Container } from "@/components/ui/Container";
 
 // ONE WINDOW.
 //
@@ -64,8 +63,6 @@ export function PlannerWindow({
   nextMove: React.ReactNode;
   mapsLens: React.ReactNode;
 }) {
-  const [view, setView] = useState<PlannerSectionId>(initialView);
-
   // Pure, and in lib/data/planner.ts with the rest of the model — the planner's
   // rules are testable or they are folklore.
   const homeIndex = useMemo(
@@ -74,71 +71,54 @@ export function PlannerWindow({
   );
   const [period, setPeriod] = useState(homeIndex);
 
-  // The address follows the lens, and only the address: `replaceState` leaves
-  // the history stack alone, so the Back button still means "leave the plan".
-  // Guarded because this runs in the browser only — and written by hand rather
-  // than through the router, because `router.replace` on a `force-dynamic`
-  // route re-runs the server render, which is the exact round trip this whole
-  // component exists to remove.
-  useEffect(() => {
-    const section = PLANNER_SECTIONS.find((s) => s.id === view);
-    if (!section) return;
-    const url = new URL(window.location.href);
-    url.searchParams.set("view", section.view);
-    window.history.replaceState(window.history.state, "", url.toString());
-  }, [view]);
-
   const step = useCallback(
     (delta: number) =>
       setPeriod((i) => Math.min(months.length - 1, Math.max(0, i + delta))),
     [months.length],
   );
 
-  const counts: Record<PlannerSectionId, number | null> = {
-    // What is ahead of them, which is what "next" means. Overdue is deliberately
-    // not added in: it is the frame around the window, and a badge that grew
-    // when something LAPSED would read as progress.
-    next: months.reduce((n, m) => n + m.items.length, 0) || null,
-    board: PLANNER_COLUMNS.reduce((n, c) => n + columns[c].length, 0) || null,
-    maps: mapCount || null,
-  };
-
   return (
-    <div className="space-y-6">
-      {nextMove}
-
-      <YourPicks picks={picks} />
-
-      <div className="space-y-4">
-        <PlannerLenses view={view} onView={setView} counts={counts} />
-
-        {/* `key` remounts the panel so the entrance replays — the one motion
-            this window has, and it is the one that answers "something changed
-            here". The global reduced-motion guard zeroes it. */}
-        <div
-          key={view}
-          id="planner-lens"
-          role="tabpanel"
-          aria-label={PLANNER_SECTIONS.find((s) => s.id === view)?.title}
-          className="lens-in"
-        >
-          {view === "next" && (
-            <PlannerAgenda
-              months={months}
-              overdue={overdue}
-              undated={undated}
-              index={period}
-              homeIndex={homeIndex}
-              onStep={step}
-              onHome={() => setPeriod(homeIndex)}
-            />
-          )}
-          {view === "board" && (
-            <PlannerBoard columns={columns} droppedCount={droppedCount} />
-          )}
-          {view === "maps" && mapsLens}
-        </div>
+    <Container size="dashboard" className="space-y-10 pb-20">
+      {/* 1. The Consultant Block */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] gap-6 items-start">
+        {nextMove}
+        <YourPicks picks={picks} />
       </div>
-    </div>
+
+      {/* 2. Interactive Timeline (Agenda) */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-accent" />
+          <h2 className="text-xl font-bold tracking-tight text-ink">Action Timeline</h2>
+        </div>
+        <PlannerAgenda
+          months={months}
+          overdue={overdue}
+          undated={undated}
+          index={period}
+          homeIndex={homeIndex}
+          onStep={step}
+          onHome={() => setPeriod(homeIndex)}
+        />
+      </div>
+
+      {/* 3. Task Pool (Board) */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-target" />
+          <h2 className="text-xl font-bold tracking-tight text-ink">Backlog & Execution Board</h2>
+        </div>
+        <PlannerBoard columns={columns} droppedCount={droppedCount} />
+      </div>
+
+      {/* 4. Strategic Roadmap (Maps) */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-likely" />
+          <h2 className="text-xl font-bold tracking-tight text-ink">Strategic Roadmap & Milestones</h2>
+        </div>
+        {mapsLens}
+      </div>
+    </Container>
   );
 }

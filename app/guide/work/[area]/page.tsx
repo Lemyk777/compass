@@ -220,7 +220,7 @@ export default async function GuideAreaPage({
             label={area.title}
             signedIn={pick.signedIn}
             saved={pick.saved}
-            maps={pick.maps}
+            
             returnTo={`/guide/work/${params.area}`}
           />
           {/* Nearby areas, for the student who is close but not quite. The

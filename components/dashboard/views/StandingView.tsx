@@ -62,7 +62,7 @@ function ShareButton({ score }: { score: number }) {
     }
   }
   return (
-    <Button variant="subtle" className="w-full" onClick={share}>
+    <Button variant="subtle" className="w-full shadow-card hover:shadow-lift hover:border-accent/40 transition-all duration-200" onClick={share}>
       {copied ? t("report.copied") : t("report.share")}
     </Button>
   );

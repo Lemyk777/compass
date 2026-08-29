@@ -873,7 +873,7 @@ function CategoryTabs({
   const tabs = CATEGORY_TABS;
   return (
     // Scrollable on a phone rather than wrapping into two ragged rows.
-    <div className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-card/95 p-1 shadow-card backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex gap-1.5 overflow-x-auto rounded-2xl border border-line/70 bg-card/95 p-1.5 shadow-card backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {tabs.map((t) => {
         const on = t.key === active;
         const n = counts[t.key] ?? 0;
@@ -888,10 +888,10 @@ function CategoryTabs({
             type="button"
             aria-pressed={on}
             onClick={() => onChange(t.key)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-200 focus-visible:focus-ring ${
+            className={`flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 focus-visible:focus-ring ${
               on
-                ? "bg-accent text-on-fill"
-                : "text-ink-soft hover:bg-surface hover:text-ink"
+                ? "bg-accent text-on-fill shadow-sm"
+                : "text-ink-soft hover:bg-surface/80 hover:text-ink"
             }`}
           >
             {t.label}
@@ -901,7 +901,7 @@ function CategoryTabs({
               // with `accent`, which gets LIGHTER in dark mode — so white at
               // 70% on it sat near 1.9:1 and the count on the tab you were
               // standing on was the one you could not read.
-              className={`tabular-nums text-xs ${on ? "text-on-fill/75" : "text-ink-faint"}`}
+              className={`tabular-nums text-xs ${on ? "text-on-fill/75 font-semibold" : "text-ink-faint"}`}
             >
               {n}
             </span>

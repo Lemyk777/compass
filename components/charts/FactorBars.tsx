@@ -25,15 +25,15 @@ export function FactorBars({
 
         return (
           <li key={f.key}>
-            <div className="mb-1 flex items-baseline justify-between gap-3">
-              <span className="text-sm font-medium text-ink">{f.label}</span>
-              <span data-num className="text-sm font-semibold text-ink">
+            <div className="mb-1.5 flex items-baseline justify-between gap-3">
+              <span className="text-sm font-semibold text-ink">{f.label}</span>
+              <span data-num className="text-sm font-bold text-ink">
                 {shown}
-                <span className="text-ink-faint">/10</span>
+                <span className="font-normal text-ink-faint">/10</span>
               </span>
             </div>
             <div
-              className="h-2 w-full overflow-hidden rounded-full bg-line"
+              className="h-2.5 w-full overflow-hidden rounded-full bg-line/80 shadow-inner"
               role="meter"
               aria-valuenow={shown}
               aria-valuemin={0}

@@ -68,24 +68,24 @@ export function PeriodStepper({
       onKeyDown={onKeyDown}
       role="group"
       aria-label="Period"
-      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl border border-line bg-card px-4 py-3.5 sm:px-5"
+      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl border border-line/70 bg-card px-5 py-4 shadow-card transition-all duration-200 hover:shadow-lift sm:px-6"
     >
       <div className="min-w-0">
-        <h2 className="text-lg font-semibold leading-snug text-ink">{label}</h2>
+        <h2 className="text-lg font-bold leading-snug tracking-tight text-ink">{label}</h2>
         <p className="mt-0.5 text-sm leading-relaxed text-ink-soft">{sub}</p>
         <span ref={liveRef} aria-live="polite" className="sr-only" />
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-2">
         {/* "Now" only appears when it would do something. A control that is
             always there and usually inert teaches people to ignore it. */}
         {!atHome && (
           <button
             type="button"
             onClick={onHome}
-            className="mr-1 inline-flex h-11 items-center rounded-xl px-3 text-sm font-medium text-accent-ink transition-colors hover:bg-accent-soft focus-visible:focus-ring"
+            className="mr-1 inline-flex h-11 items-center rounded-xl bg-accent-soft/80 px-3.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-soft focus-visible:focus-ring shadow-sm"
           >
-            Now
+            Current Period
           </button>
         )}
         <StepButton
@@ -96,9 +96,9 @@ export function PeriodStepper({
         />
         <span
           data-num
-          className="min-w-[3.5rem] text-center text-sm tabular-nums text-ink-soft"
+          className="min-w-[3.75rem] rounded-lg bg-surface/80 px-2.5 py-1.5 text-center text-xs font-semibold tabular-nums text-ink-soft"
         >
-          {index + 1} / {count}
+          {index + 1} of {count}
         </span>
         <StepButton
           dir={1}
@@ -131,7 +131,7 @@ function StepButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-surface text-ink-soft transition-colors hover:border-accent hover:text-ink focus-visible:focus-ring disabled:pointer-events-none disabled:opacity-40"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-line/70 bg-surface/80 text-ink-soft transition-all hover:border-accent hover:bg-card hover:text-ink focus-visible:focus-ring disabled:pointer-events-none disabled:opacity-40 shadow-sm active:scale-95"
     >
       <svg
         viewBox="0 0 24 24"

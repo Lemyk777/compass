@@ -32,7 +32,7 @@ export function SearchBar({
   cap: number;
 }) {
   return (
-    <div className="sticky top-0 z-10 -mx-4 bg-surface/90 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8">
+    <div className="sticky top-0 z-10 -mx-4 bg-surface/85 px-4 py-3 backdrop-blur-md sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10 xl:-mx-12 xl:px-12 2xl:-mx-14 2xl:px-14 border-b border-line/40">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-0 flex-1">
           <svg
@@ -51,10 +51,10 @@ export function SearchBar({
             value={query}
             onChange={(e) => onQuery(e.target.value)}
             placeholder={placeholder}
-            className="h-11 w-full rounded-xl border border-line bg-card pl-10 pr-3.5 text-[0.95rem] text-ink placeholder:text-ink-faint focus-visible:focus-ring"
+            className="h-11 w-full rounded-xl border border-line/70 bg-card pl-10 pr-3.5 text-[0.95rem] text-ink placeholder:text-ink-faint focus-visible:focus-ring shadow-sm"
           />
         </div>
-        <span className="shrink-0 text-sm font-medium text-ink-soft">
+        <span className="shrink-0 rounded-full bg-accent-soft/80 px-3 py-1 text-xs font-semibold tabular-nums text-accent-ink shadow-sm">
           {count} / {cap} selected
         </span>
       </div>
@@ -82,17 +82,17 @@ export function PickCard({
       aria-pressed={on}
       disabled={disabled}
       onClick={onClick}
-      className={`flex flex-col rounded-2xl border p-4 text-left transition-colors focus-visible:focus-ring ${
+      className={`flex flex-col rounded-2xl border p-5 text-left transition-all duration-150 focus-visible:focus-ring shadow-card hover:shadow-lift ${
         on
-          ? "border-accent bg-accent-soft"
+          ? "border-accent bg-accent-soft/80"
           : disabled
-            ? "cursor-not-allowed border-line bg-card opacity-50"
-            : "border-line bg-card hover:border-ink/20"
+            ? "cursor-not-allowed border-line/50 bg-card/60 opacity-50"
+            : "border-line/70 bg-card hover:border-accent/40"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col">
-          <h3 className="text-[0.95rem] font-semibold leading-tight text-ink">
+          <h3 className="text-base font-bold leading-snug text-ink">
             {title}
           </h3>
           {subtitle && (
@@ -147,7 +147,7 @@ export function StickyActionBar({
 }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-card/95 backdrop-blur lg:left-64">
-      <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:px-8">
+      <div className="flex w-full items-center justify-between gap-4 px-4 py-3 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
         <div className="min-w-0">
           {error ? (
             <p className="truncate text-sm text-reach-ink">{error}</p>

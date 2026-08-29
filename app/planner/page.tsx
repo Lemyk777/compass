@@ -66,12 +66,12 @@ export default async function PlannerPage({
       picks={data.picks}
       mapCount={data.maps.length}
       initialView={view}
-      // Both are server-rendered and handed down as nodes. The next move uses
-      // the shared button system, whose class merging costs ~9 kB in any client
-      // bundle that imports it; the maps lens reaches the map registry. Neither
-      // needs a callback from the window, so neither has to cross over.
-      nextMove={<NextMoveCard move={data.move} />}
-      mapsLens={<PlannerMaps maps={data.maps} picks={data.picks} />}
+      // The next move uses the shared button system, whose class merging costs
+      // ~9 kB in any client bundle that imports it; the maps lens reaches the
+      // map registry. Neither needs a callback from the window, so neither has
+      // to cross over.
+      nextMove={<NextMoveCard move={data.move} simulation={data.simulation} />}
+      mapsLens={<PlannerMaps roadmap={data.roadmap} picks={data.picks} />}
     />
   );
 }

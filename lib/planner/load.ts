@@ -18,6 +18,7 @@ import {
   type PlannerStatus,
   type PlannerView,
 } from "@/lib/data/planner";
+import { recommendSimulation, type JobSimulation } from "@/lib/data/simulations";
 
 // Everything the planner's ONE page needs, fetched once.
 //
@@ -65,6 +66,10 @@ export type PlannerData = PlannerView & {
   move: NextMove;
   /** The maps, for the third lens. Cheap — one flat select, counted in memory. */
   maps: MapSummary[];
+  /** Recommended external simulation, if any, based on picks. */
+  simulation: JobSimulation | null;
+  /** The full auto-generated roadmap. */
+  roadmap: import("@/lib/data/roadmap").Roadmap;
 };
 
 const load = cache(
@@ -277,5 +282,8 @@ async function loadUncached(
     });
   }
 
-  return { ...view, todayISO, suggestions, starts, picks, move, maps };
+  const pickIds = picks.map((p) => p.href.split('/').pop() || "");
+  const simulation = recommendSimulation(pickIds);
+
+  return { ...view, todayISO, suggestions, starts, picks, move, maps, simulation, roadmap };
 }

@@ -29,26 +29,26 @@ export function CostBreakdown({
   return (
     <Section title={t("report.costTitle")} hint={t(view.hintKey)}>
       <Card>
-        <ul className="divide-y divide-line">
+        <ul className="divide-y divide-line/60">
           {rows.map((r) => (
             <li
               key={r.name}
-              className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+              className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
             >
-              <span className="min-w-0 truncate text-sm text-ink">
+              <span className="min-w-0 truncate text-sm font-medium text-ink">
                 {r.name}
               </span>
-              <span data-num className="shrink-0 text-sm font-medium text-ink">
+              <span data-num className="shrink-0 text-sm font-semibold text-ink">
                 {fmt(r.fee)}
               </span>
             </li>
           ))}
         </ul>
-        <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-          <span className="text-sm font-semibold text-ink">
+        <div className="mt-4 flex items-center justify-between border-t border-line/60 pt-3.5">
+          <span className="text-sm font-bold text-ink">
             {t("report.costTotal")}
           </span>
-          <span data-num className="text-base font-semibold text-ink">
+          <span data-num className="text-lg font-bold text-ink">
             {formatFee(view.currency, total)}
           </span>
         </div>

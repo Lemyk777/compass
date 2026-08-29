@@ -107,7 +107,7 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
           title={t("report.schoolsTitle")}
           hint={t("report.schoolsHint")}
         >
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {analysis.schools.map((s) => (
               <LikelihoodGauge
                 key={s.name}

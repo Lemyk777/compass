@@ -488,54 +488,46 @@ export default async function LandingPage() {
           </Band>
         </section>
 
-        {/* ── Then it becomes work ── the planner, the student's third section.
-          Held back for two releases on purpose: this page does not describe a
-          feature until it works, and until 0028/0029 were applied two of the
-          three views returned an error naming a migration. They are applied
-          (`npm run db:check`, 31/31), so it can be said out loud.
-
-          The three cards are read from PLANNER_SECTIONS rather than written
-          here, for the same reason every count on this page is computed: a
-          fourth view would otherwise exist in the product and not on the page
-          that sells it. */}
+        {/* ── Then it becomes a strategy ── the advisory, the student's third section. */}
         <section className="w-full border-y border-line bg-card px-6 py-24 md:px-12 md:py-28 lg:px-20">
           <Band>
             <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-ink">
-                Then it becomes work
+                Then it becomes a strategy
               </p>
               <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
-                A deadline you agreed to is a different thing from one you read.
+                A goal without a timeline is just a wish.
               </h2>
               <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
-                Say you are doing something and it gets a date and a state. The
-                planner keeps both, what you committed to, the cutoffs around it,
-                and the stretch of the year you are in, as one list you can
-                read two ways. Nothing is typed twice, and nothing is invented:
-                a date we have not confirmed is listed without a countdown
-                rather than guessed at.
+                Our Advisory workspace merges your calendar, your backlog, and your next steps into a single, unified view. No more disconnected tools. We recommend the exact micro-experiments you need (like real job simulations) and help you schedule them, turning your profile weaknesses into action plans.
               </p>
             </div>
 
             <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {PLANNER_SECTIONS.map((view, i) => (
-                <PlannerCard
-                  key={view.id}
-                  href={view.href}
-                  step={String(i + 1)}
-                  title={view.label}
-                  body={view.blurb}
-                />
-              ))}
+              <PlannerCard
+                href="/planner"
+                step="1"
+                title="The Consultant"
+                body="Context-aware recommendations. If you're unsure about a career, we suggest a free job simulation to test it out."
+              />
+              <PlannerCard
+                href="/planner"
+                step="2"
+                title="Interactive Timeline"
+                body="A calendar built for students. Drag and drop opportunities directly into your schedule to commit to them."
+              />
+              <PlannerCard
+                href="/planner"
+                step="3"
+                title="Strategic Roadmap"
+                body="No more blank canvases. Your path from high school to university is auto-generated based on your guide picks."
+              />
             </div>
 
             <div className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-3">
-              <ButtonLink href="/planner" shape="pill">
-                Open your planner
+              <ButtonLink href="/planner" shape="pill" variant="subtle">
+                Open your advisory board
               </ButtonLink>
-              {/* Worth saying, because it is a real property of the thing and
-                not a reassurance: /planner is behind a session, robots.ts
-                blocks it and the sitemap does not list it. */}
               <p className="text-sm font-light text-ink-soft">
                 Private. Not indexed, and nobody else can see it.
               </p>
