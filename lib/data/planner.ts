@@ -22,7 +22,18 @@ import type { IntentStatus, OpportunityIntent } from "@/lib/data/intents";
 
 // ── Vocabulary ────────────────────────────────────────────────────────────────
 
-export type PlannerStatus = "todo" | "doing" | "done" | "dropped";
+/**
+ * The array is the source and the union is DERIVED from it, never the other way
+ * round. Written the other way — a union here, a `PlannerStatus[]` literal in
+ * `app/planner/actions.ts` — an array is free to be short: the compiler checks
+ * that every member is a valid status, and never that every status is a member.
+ * That is precisely the hole a whole kind of opportunity fell through in
+ * release 3 (audit A4), and the server action validating this one is a public
+ * HTTP endpoint.
+ */
+export const PLANNER_STATUSES = ["todo", "doing", "done", "dropped"] as const;
+
+export type PlannerStatus = (typeof PLANNER_STATUSES)[number];
 
 /**
  * The board's visible columns. `dropped` is deliberately absent: the row is
@@ -314,7 +325,7 @@ export function buildPlanner(input: PlannerInputs): PlannerView {
         "deadline",
         `${d.university ?? "all"}-${d.round}-${d.iso}`,
         {
-          title: d.university ? `${d.university} — ${d.round}` : d.round,
+          title: d.university ? `${d.university}, ${d.round}` : d.round,
           dueISO: d.iso,
           status: "todo",
           href: null,

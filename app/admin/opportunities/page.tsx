@@ -9,6 +9,7 @@ import { LOCAL_TARGETS, regionLabel } from "@/lib/data/geo";
 import { resolveCompetitions, type Competition } from "@/lib/data/key-dates";
 import { SEARCH_ANGLES } from "@/lib/discovery/discover";
 import type { ScreenWarning } from "@/lib/discovery/screen";
+import { COST_LABEL, COST_MODELS } from "@/lib/data/opportunity-vocab";
 import { approveCandidate, rejectCandidate } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -82,18 +83,18 @@ const WARNING_RANK: Record<ScreenWarning["code"], number> = {
   cost_signal: 8,
 };
 
-const COST_OPTIONS: { value: string; label: string }[] = [
-  { value: "unknown", label: "Cost: not verified" },
-  { value: "free", label: "Free, end to end" },
-  { value: "free_cert_paid", label: "Free; certificate costs" },
-  { value: "free_then_paid", label: "Free to enter; pay later round" },
-  { value: "freemium", label: "Free tier + paid plan" },
-  { value: "subscription", label: "Subscription" },
-  { value: "one_time", label: "One-time fee" },
-  { value: "paid_aid", label: "Paid, aid/waivers exist" },
-  { value: "funded", label: "Funded (they pay you)" },
-  { value: "varies", label: "Varies by school/country" },
-];
+// The seventh copy of the cost vocabulary, and the weakest: its members were
+// typed as a bare string, so the compiler could not check they were even VALID cost
+// models, let alone that all ten were present. A typo here would have compiled
+// and written a value nothing renders straight into a live row.
+//
+// Derived now. The labels come with it, so the reviewer approving a discovered
+// row reads the same words the partner filling in the form reads.
+const COST_CHOICES = COST_MODELS.map((value) => ({
+  value,
+  label: COST_LABEL[value].label,
+  hint: COST_LABEL[value].hint,
+}));
 
 export default async function AdminOpportunitiesPage() {
   await requireRole("admin", "/admin/opportunities");
@@ -244,7 +245,7 @@ export default async function AdminOpportunitiesPage() {
                         {fieldsLabel(c.fields)} · {c.level} · {c.tier} ·{" "}
                         {c.category}
                         {c.region && (
-                          <span className="ml-1.5 rounded-full bg-accent-soft px-1.5 py-0.5 text-[11px] font-semibold text-accent-ink">
+                          <span className="ml-1.5 rounded-full bg-accent-soft px-1.5 py-0.5 text-[12px] font-semibold text-accent-ink">
                             Local · {c.city ?? regionLabel(c.region)}
                           </span>
                         )}
@@ -275,7 +276,7 @@ export default async function AdminOpportunitiesPage() {
                       {warnings.map((w, i) => (
                         <li key={i} className="text-xs text-ink-soft">
                           <span
-                            className={`mr-1.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
+                            className={`mr-1.5 rounded-full px-1.5 py-0.5 text-[12px] font-semibold ${
                               WARNING_RANK[w.code] <= 2
                                 ? "bg-reach-soft text-ink"
                                 : "bg-surface text-ink-soft"
@@ -297,7 +298,7 @@ export default async function AdminOpportunitiesPage() {
                     >
                       {c.deadline ? `${c.deadline} · ` : ""}
                       {c.event_window}
-                      {" — "}
+                      {" · "}
                       <span
                         className={
                           c.date_confirmed
@@ -331,21 +332,21 @@ export default async function AdminOpportunitiesPage() {
                     action={approveCandidate.bind(null, c.id)}
                     className="mt-3 flex flex-wrap items-end gap-2 border-t border-line pt-3"
                   >
-                    <label className="flex flex-col gap-1 text-[11px] text-ink-faint">
+                    <label className="flex flex-col gap-1 text-[12px] text-ink-faint">
                       What it costs
                       <select
                         name="cost"
                         defaultValue="unknown"
                         className="rounded-xl border border-line bg-surface px-2 py-1.5 text-xs text-ink"
                       >
-                        {COST_OPTIONS.map((o) => (
+                        {COST_CHOICES.map((o) => (
                           <option key={o.value} value={o.value}>
                             {o.label}
                           </option>
                         ))}
                       </select>
                     </label>
-                    <label className="flex min-w-[16rem] flex-1 flex-col gap-1 text-[11px] text-ink-faint">
+                    <label className="flex min-w-[16rem] flex-1 flex-col gap-1 text-[12px] text-ink-faint">
                       One sentence about the money (optional)
                       <input
                         type="text"

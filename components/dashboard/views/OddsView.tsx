@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useToday } from "@/lib/data/use-opportunity-plan";
 import type { Analysis } from "@/lib/ai/schema";
 import { Section, Card } from "@/components/report/Section";
 import { LikelihoodGauge } from "@/components/charts/LikelihoodGauge";
@@ -56,7 +56,7 @@ export function OddsView() {
         <LockedSection
           eyebrow={t("nav.results")}
           headline="See your real odds at every school"
-          description="Add the universities you're aiming for and Compass scores your admission likelihood at each one — a reach/target/likely read, with a confidence level, built from your profile and real admitted-student data."
+          description="Add the universities you're aiming for and Compass scores your admission likelihood at each one. A reach/target/likely read, with a confidence level, built from your profile and real admitted-student data."
           bullets={[
             "Per-school admission-likelihood ranges",
             "Reach / target / likely tiers, side by side",
@@ -94,9 +94,10 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
   const { profileMeta } = useDashboard();
 
   // "today" depends on the visitor's clock; resolve it on the client so the
-  // deadline countdowns don't cause a hydration mismatch.
-  const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => setToday(new Date()), []);
+  // deadline countdowns don't cause a hydration mismatch. This was the fifth
+  // copy of that three-line pair, each with its own comment saying the same
+  // thing.
+  const today = useToday();
 
   if (analysis.schools.length === 0) return <EmptyCountryList code="US" />;
   return (
@@ -106,7 +107,7 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
           title={t("report.schoolsTitle")}
           hint={t("report.schoolsHint")}
         >
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {analysis.schools.map((s) => (
               <LikelihoodGauge
                 key={s.name}
@@ -117,7 +118,7 @@ function UsOdds({ analysis }: { analysis: Analysis }) {
             ))}
           </div>
           <p className="mt-3 text-xs text-ink-faint">
-            Deadlines are dated to your graduation year and indicative — always
+            Deadlines are dated to your graduation year and indicative, so always
             confirm the exact date on each school&apos;s official admissions
             site. <span className="font-medium text-ink-soft">Binding</span> =
             Early Decision: if admitted you must enrol and withdraw other

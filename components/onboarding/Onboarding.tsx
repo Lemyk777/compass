@@ -47,7 +47,7 @@ const SECTIONS: SectionDef[] = [
     label: "Academics",
     title: "Academics",
     sub: "Your grades and test scores",
-    why: "Your academic profile is the single biggest driver of your competitiveness — we score it against real admitted-student data.",
+    why: "Your academic profile is the single biggest driver of your competitiveness, we score it against real admitted-student data.",
     Component: AcademicsSection,
   },
   {
@@ -55,7 +55,7 @@ const SECTIONS: SectionDef[] = [
     label: "Activities",
     title: "Activities",
     sub: "What you do outside the classroom",
-    why: "Activities show depth, leadership, and commitment — the part of your story that grades alone can't tell.",
+    why: "Activities show depth, leadership, and commitment. The part of your story that grades alone can't tell.",
     Component: ActivitiesSection,
   },
   {
@@ -71,7 +71,7 @@ const SECTIONS: SectionDef[] = [
     label: "Budget",
     title: "Budget",
     sub: "What your family can invest each year",
-    why: "Affordability shapes which schools are realistic — and lets us factor financial aid into your odds.",
+    why: "Affordability shapes which schools are realistic, and lets us factor financial aid into your odds.",
     Component: BudgetSection,
   },
 ];
@@ -160,9 +160,9 @@ function Wizard({
             any more — this is the admission report's intake, reached on
             purpose — but a five-step form with no explanation still reads as
             "finish setting up your account", which is the wall we removed. */}
-          <p className="mt-2 max-w-[60ch] text-pretty text-sm leading-relaxed text-ink-soft">
+          <p className="mt-2 max-w-[54ch] text-pretty text-sm leading-relaxed text-ink-soft">
             This is the intake for the{" "}
-            <span className="font-medium text-ink">admission report</span> — the
+            <span className="font-medium text-ink">admission report</span>: the
             scores, the per-school odds and the benchmarks. It is optional: your
             Opportunities work without any of it, and you can leave
             half-answered and come back.{" "}
@@ -184,7 +184,7 @@ function Wizard({
                   key={s.key}
                   type="button"
                   onClick={() => go(i)}
-                  className={`flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors focus-visible:focus-ring ${
                     active
                       ? "border-accent bg-accent-soft text-accent-ink"
                       : "border-line bg-card text-ink-soft hover:border-ink/20"

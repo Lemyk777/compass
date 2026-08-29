@@ -33,7 +33,7 @@ export function EmptyPlanner({
     <div className="space-y-5">
       <div className="max-w-[62ch]">
         <h2 className="text-xl font-semibold leading-snug text-ink">
-          Nothing here yet — and that is the normal way to arrive.
+          Nothing here yet, and that is the normal way to arrive.
         </h2>
         <p className="mt-2 text-base leading-relaxed text-ink-soft">
           Most people cannot say what they want to study. You do not have to
@@ -83,7 +83,7 @@ export function EmptyPlanner({
       {suggestions.length > 0 && (
         <div className="rounded-2xl border border-line bg-card p-5">
           <p className="text-sm font-semibold text-ink">
-            Or start with one of these — you can enter both
+            Or start with one of these. You can enter both
           </p>
           <ul className="mt-3 space-y-2">
             {suggestions.map((s) => (

@@ -6,11 +6,107 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > [docs/BACKLOG_2026-08.md](docs/BACKLOG_2026-08.md) **§1 first** — it says what
 > is deployed versus what is only on the branch, and getting that wrong is the
 > fastest way to do work twice. §8 has the ordered next list, §5 the findings,
-> §7 the working method.
+> §7 the working method, and **§9 the direction** — what the next build is for,
+> as opposed to what it is. §8 also ends with a list of **problems** that are
+> nobody's work item.
 >
-> **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine open
-> findings with evidence, none of them fixed. **A1 is marked do-not-touch by the
-> owner; do not "fix" it.**
+> **Splitting the work up? [docs/WORKFLOW.md](docs/WORKFLOW.md), and the
+> default there is now DO IT YOURSELF.** The rule used to be one sentence about
+> trust — *a piece may be split off only when it ends in a fact the main session
+> can check without redoing the work* — and on its own it produced a workflow
+> that split by reflex. It has a second half now: **and only when finding that
+> fact yourself would cost more than the agent's cold start**, which is ~30k
+> tokens and several minutes, because an agent re-reads this file and re-derives
+> a repository the caller already knows. Measured 2026-08-27: three parallel
+> sweeps cost 163k, 201k and 219k tokens, a fourth agent died on the session
+> limit returning nothing, and the defect that mattered was found inline in
+> about fifteen calls. **An agent pays when its cold start is either the point or
+> negligible against the work** — so `catalog-verifier` (dozens of slow fetches)
+> and `reviewer` (not having written the diff IS the product) stay agents, a
+> `sweeper` is worth it only for a search that needs an instrument built, and
+> **measurement and guard-writing are done INLINE**: read
+> [.claude/agents/measurer.md](.claude/agents/measurer.md) and
+> [.claude/agents/guard-writer.md](.claude/agents/guard-writer.md) as
+> checklists rather than dispatching them.
+> **The `reviewer` is never the last gate**, and every review it returns has to
+> close by naming what its channel could not reach: three whole-branch reviews
+> of the companion found six real bugs by reading and missed the three that
+> mattered, because all three were properties of height, position and adjacency.
+> Reading is insufficient there, which is not the same as worthless — but the
+> measuring half belongs to whoever holds the hypothesis, and it is not optional.
+> Scope a review to ONE diff; those three misses were whole-branch reads.
+>
+> **The recurring one is that a guard here can be useless in SIX distinct ways,
+> and only the first is visible in a diff.** (1) The regex loses its
+> backslashes, so it matches nothing and reports nothing — three guards, found
+> by grepping 433 regex literals for the signature; the eleven ban patterns now
+> live in one `BAN` table with a typed fixture each. (2) The regex is correct
+> but aimed at a string the defect never appears in. (3) The guard is correct
+> and its INPUT SURFACE is narrower than the rule — a class-string scanner
+> cannot see `fontSize: 10` passed as a JSX prop. (4) **The guard is correct,
+> bites, reads the right string, and measures the wrong PROPERTY** — the
+> companion's beats passed a word cap, an opening-word rule and a banned-noun
+> list while reading as riddles, because all three measure form and the defect
+> was structure. (5) **The defect arrives through a channel the guard cannot
+> see at all** — the contrast guards read class names for alpha colour
+> utilities, and a filter chip failed at **3.27:1** because of an `opacity-50`
+> on the element, which composites AFTER the class is written and over colours
+> that individually pass. No class-name scan could ever have caught it. Ask
+> what a passing guard actually proves, and whether a reader's complaint could
+> survive it untouched.
+> **(6) The guard is correct in every respect and the DATA CANNOT REACH the
+> branch where it would disagree** — found 2026-08-25, and the first of the six
+> that reading could never have caught. The one-pass matcher test re-derives
+> membership from primitives and compares; its reference still hard-filtered
+> off-region rows, the behaviour from before matching started annotating. It
+> was written three days after that release and stayed green for six, because
+> the catalog held zero `region`-tagged rows and neither side could take the
+> branch. The first local rows made the two disagree on ten entries at once.
+> **Where a guard's subject is a data shape the dataset does not contain, it is
+> not passing — it is abstaining.** So when a dataset gains its first row of a
+> kind, read the tests covering that kind before believing the suite.
+>
+> **A seventh thing, not a fail-open but a guard that gets exempted to death:**
+> one aimed at a vocabulary's WORDS rather than its SHAPE. Counting how often
+> a cost model's name appeared anywhere in a file flagged nine files and eight
+> were unrelated unions sharing a generic word (`"unknown"`, `"free"`).
+> Rewriting it to the shape every real instance had — an array literal holding
+> 3+ DISTINCT members — went from 9 findings (1 real) to 1 finding (1 real).
+> Words are shared across unrelated concepts; shape is not.
+>
+> **Then [docs/AUDIT_2026-08-14.md](docs/AUDIT_2026-08-14.md)** — nine findings
+> with evidence. **Seven are closed and two are open** (status table at the top
+> of that file, re-verified 2026-08-24). The two left, A7 and A8, are both DATA
+> rather than code. Four closed together on 2026-08-24 because they were four
+> symptoms of one cause — see the vocabulary rule in the Opportunities section.
+>
+> A1 closed because its date passed on
+> 2026-08-14, which turned "a confirmed date is never already in the past" red on
+> `main` for every branch, and the owner's answer on 2026-08-15 was to remove the
+> row (catalog 173 → 172). The audit's do-not-touch instruction did its job — it
+> said raise it with the owner rather than fix it, and that is what happened. A3
+> closed with the one-list release. One side effect of removing that row is a
+> live rule: **the catalog has ZERO `pinned` entries, and a unit test pins that
+> zero.**
+>
+> **The other side effect ran the other way and is now closed. A8 — local
+> coverage — was the highest-value item on the whole backlog, and it shipped on
+> 2026-08-25:** the catalog holds **20 `region: "KZ"` rows** where it held none,
+> and the test that used to pin the zero now fails if the count goes back to it.
+> The state calendar (Дарын: the republican, rural-school, presidential,
+> 7-8-class, linguistics, philosophy and financial-literacy olympiads, the
+> science-projects competition, the Abai readings and Zerde), the Kazakh
+> programmes of Yandex and Samsung, a leadership prize, two debate surfaces, an
+> Almaty Model UN, FLEX, SDU's SPT olympiad and NU Summer Camp — the last of
+> which is the only local row reaching medicine, and SPT the only one reaching
+> law and business at once. **Not one carries a confirmed date, and that is the
+> calendar rather than the sourcing** — Дарын fixes each cycle by ministerial
+> order in mid-September, so every one of its pages still showed the closed
+> 2025-26 cycle on the day they were verified. **Two re-fetch dates, and the
+> earlier one matters more: by 8 September** for the rural-school olympiad and
+> the science-projects competition, whose windows open AND close in the first
+> half of the month, and **after 20 September** for the rest, once the
+> ministerial order fixing the cycle lands.
 
 ## What this is
 
@@ -25,11 +121,12 @@ npm run dev            # dev server at http://localhost:3000
 npm run build          # production build — also runs ESLint + type-check (use as the main gate)
 npm run lint           # ESLint only
 npx tsc --noEmit       # type-check only
-npm run test:unit      # unit tests for the deterministic engine (node:test, no key/network)
-npm run test:links     # every catalog URL; non-zero exit if any is DEAD
+npm run test:unit      # 321 unit tests for the deterministic engine (node:test, no key/network)
+npm run test:onboarding # 126 tests over the intake schema + server action (db/auth mocked, not in CI)
+npm run test:links     # every catalog URL; fails ONLY on a 4xx that is not a bot wall
 npm run test:guide-links # the guide's official sources (ministries, portals)
 npm run test:analyze   # run the §12 sample profile through the LIVE analysis engine
-node --import tsx scripts/test-session-checks.ts   # 60 pure logic checks
+node --import tsx scripts/test-session-checks.ts   # 61 pure logic checks
 ```
 
 The **CI gate** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on every push and PR without secrets: `npm run build`, the session logic checks, then `npm run test:unit`. Locally that trio is the verification path — `test:analyze` is the only one needing a real `ANTHROPIC_API_KEY` in `.env.local` (loaded via `node --env-file`).
@@ -40,17 +137,42 @@ The **CI gate** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs on e
 
 ## Environment
 
-Five vars (see [.env.example](.env.example)) in `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SITE_URL`. Without them the app still builds and `/demo` renders the full report from a sample; auth and analysis require them.
+**Six** vars (see [.env.example](.env.example)) in `.env.local`. Five run the app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SITE_URL`. Without them the app still builds and `/demo` renders the full report from a sample; auth and analysis require them.
+
+The sixth is **`CRON_SECRET`**, and it is easy to miss because nothing looks broken without it: both cron endpoints fail CLOSED with a 503, so the date sync and the discovery run simply never happen. It must be set in Vercel or the scheduled runs stop. See "Cost & abuse" below for why that direction is deliberate.
 
 ## Site structure: the student's section vs the report
 
 Two shells, and the distinction is load-bearing:
 
-- **The student's section** — `/opportunities` (what you can enter) and `/guide/*`
-  (where it leads). Frame: [components/student/StudentShell.tsx](components/student/StudentShell.tsx)
-  — one narrow column, two destinations, the report a link away. Both are
-  session-aware and work signed out; `/opportunities` shows the guest
-  eligibility checker, the guide opens on every field instead of the student's.
+- **The student's section** — `/opportunities` (what you can enter), `/guide/*`
+  (where it leads) and `/planner` (what it becomes). Frame:
+  [components/student/StudentShell.tsx](components/student/StudentShell.tsx)
+  — one narrow column, the companion beside it, the report a link away. The
+  first two are session-aware and work signed out; `/opportunities` shows the
+  guest eligibility checker, the guide opens on every field instead of the
+  student's. `/planner` is private.
+  **Every opportunity also has its own address** — `/opportunities/[id]`,
+  server-rendered, public, in the sitemap, and the reason the detail stopped
+  being a modal: a modal has no URL, so the most natural thing a student does
+  with this product (find a contest and send it to a friend) was impossible. Its
+  Open Graph tags carry the four facts every card carries, so a shared link
+  unfurls into who can enter, what it costs and when it closes rather than into
+  the site-wide banner. Sending the organiser's own link sends a page that says
+  none of that.
+  **That page is a THIRD renderer of an opportunity, and it is the one nobody
+  remembers is one** — it is hand-built rather than a caller of
+  `OpportunityDetail`, so a rule added to the card and the panel does not reach
+  it. It shipped without the `Local · <place>` badge, which was invisible until
+  the catalog had local rows: measured 2026-08-25, two of five Kazakhstan-only
+  pages named no country anywhere on them, and the other three were saved only
+  by their eligibility sentence happening to mention Kazakhstan. A test now
+  requires all three renderers to call `regionLabel`.
+  **And a component's justification does not travel with its markup.** The
+  card's comment says the badge "reads as *near you*, not as a restriction" —
+  true there, because a local row only ever reaches a student from that country
+  or one whose country we do not know. This page arrives from anywhere, so for
+  most of its readers the same chip carries the opposite fact.
 - **The report** — `/dashboard/*`, the opt-in admission analysis, in the sidebar
   shell. **Whether Opportunities appears as a tab there depends on one thing:
   does the student have an analysis?**
@@ -76,6 +198,35 @@ Everything here is **deterministic** — no model call — and the design rules 
 
 - **The default intake is two inline questions**, both on the Opportunities view: school year (`YearPrompt` → `saveGraduationYear`) then field (`FieldPrompt` → `saveFaculties`, both in [app/dashboard/actions.ts](app/dashboard/actions.ts)). A student who can't answer the second takes the optional **interest quiz** ([lib/data/interest-quiz.ts](lib/data/interest-quiz.ts) — fixed per-option weights, pure scoring). **The full analysis questionnaire is opt-in** — new signups land on `/dashboard/opportunities`, not `/onboarding`. Don't re-add a mandatory intake gate.
 - **Empty faculties is a valid answer** meaning "show everything", not "show nothing". Unknown facts never exclude.
+- **Matching ANNOTATES; it does not hide — and that makes `matchedOnly`
+  mandatory.** `buildExtracurriculars` used to drop rows outside the student's
+  field or country, which meant a student saw 114 of 172 with no way to ask why
+  and **no route to the rest at all**; the control that looked like the way
+  there read "Show everything we track for you (114)", where "everything" was
+  false. It returns every row now, carrying `offField` / `offRegion`, and the
+  filter panel owns the narrowing.
+  **Every surface WITHOUT a filter panel must call `matchedOnly`**
+  ([lib/data/opportunity-filter.ts](lib/data/opportunity-filter.ts)) — the guest
+  eligibility checker, onboarding's `FirstWin`, and `lib/planner/load.ts`. This
+  is not tidiness: without it a student in Uzbekistan is shown a competition
+  that only runs in Kazakhstan, and **nothing looks wrong** — there are simply
+  more rows than there should be. A unit test pins all three files by name, and
+  the session check asserts the guarantee where a student meets it (the row
+  comes back MARKED, and `matchedOnly` drops it).
+  Still hard filters, deliberately: a **past confirmed date** (a closed date is
+  a fact about the world, not a narrowing — "show expired" is offering rubbish)
+  and rows the student can never enter. `too_young` stays visible.
+- **The "matched to you" filter group is INVERTED from every other group**, and
+  the type says so. Everywhere else an empty array means "no narrowing"; here
+  the default is both options ON, because the honest default is still the
+  student's own list. Two consequences, both implemented: `activeFilterCount`
+  counts the group by what is **missing** (a widened list is a choice and must
+  open the full list like any other filter), and `withoutChip` restores in
+  `MATCH_OPTIONS` order because this field is a set and an unstable order makes
+  two equal states compare unequal.
+  It also killed a shortcut that had been correct for years:
+  `filterOpportunities` returned the array untouched when no filter was active,
+  which now returns all 172 — the exact bug the group exists to fix.
 - **The filter panel is pure, and its rules are the product's rules**
   ([lib/data/opportunity-filter.ts](lib/data/opportunity-filter.ts), rendered by
   [components/opportunities/FilterBar.tsx](components/opportunities/FilterBar.tsx)):
@@ -90,6 +241,32 @@ Everything here is **deterministic** — no model call — and the design rules 
   counts on each control are computed with that control's own selection lifted.
   The module type-imports key-dates only (see the bundle rule below), and the
   rules are unit-tested in [scripts/test-engine.ts](scripts/test-engine.ts).
+- **An opportunity's four vocabularies — kind, level, tier, cost — live in
+  [lib/data/opportunity-vocab.ts](lib/data/opportunity-vocab.ts), and that
+  module exists to settle a fight between two of the rules on this page.** The
+  one-list rule says a vocabulary is declared once and every validator, filter,
+  facet and form derives from it. The bundle rule below says nothing
+  client-reachable may import a runtime value from `key-dates`. The canonical
+  arrays lived in `key-dates`, so the one-list rule was **unfollowable**
+  everywhere the bundle rule applied, and it lost silently every time: `level`
+  ended up hand-written in five places and `cost` in seven. The tell was four
+  consecutive fields of one Zod object in `app/partner/actions.ts` — the first
+  derived from the canonical array, the next three written out by hand. Two of
+  those copies were already wrong, both silently: `school` was accepted by the
+  admin write path and unknown to everything that reads it, and the admin form
+  offered nine of the ten cost models with **`funded`** — *they pay you* — as
+  the missing one.
+  **`opportunity-vocab` imports nothing at all**, so a client bundle, a server
+  action, an edge function and a test can all reach the same array. Every label
+  map in it is a `Record<Union, …>`, so **a member added without its label does
+  not compile** — the guarantee belongs to the compiler, not to a test somebody
+  has to remember. `key-dates` re-exports every name, so old imports still
+  resolve. Four tests cover what a type cannot: that nobody keeps a private
+  copy, that the derived lists still cover their vocabulary, that every cost
+  model reaches a money bucket or is *named* as unbucketed, and that this module
+  never gains an import. **When you find the same mistake in many places written
+  by people who plainly knew better, look for the second rule that made the
+  first one impossible to obey.**
 - **The catalog is split by concern**: entries live in [lib/data/competitions-data.ts](lib/data/competitions-data.ts), matching logic in [lib/data/key-dates.ts](lib/data/key-dates.ts) (which re-exports the data, so existing imports still work), and the careers layer in [lib/data/careers.ts](lib/data/careers.ts). The careers
   layer moved to **the guide** — a section of routes, not a page (see below),
   which runs interest → field → sphere of work → the cities that work lives in
@@ -98,11 +275,21 @@ Everything here is **deterministic** — no model call — and the design rules 
   news listed is an advert, and a test enforces it. The deep layer is
   [lib/data/study-destinations.ts](lib/data/study-destinations.ts) → `/guide/places/[place]`:
   17 full country profiles (money, admissions, after-study, cities, sources).
-  **The home region leads the list on purpose** — Kazakhstan and Georgia first —
-  for the same reason the world map does: for many of our
-  readers a strong degree at home plus a funded master's abroad is the honest
-  answer, and a guide listing sixteen ways to leave and none to stay is not
-  neutral, it is recommending. **Rules,
+  **The list leads with the five destinations we actually MODEL, and the order
+  is derived from `modelled` rather than written down** (changed 2026-08-22).
+  It used to lead with the home region, Kazakhstan and Georgia first, on the
+  argument that a guide listing eighteen ways to leave and none to stay is
+  recommending rather than reporting. That argument lost to its mirror image,
+  raised by the students who built this: leading with Kazakhstan reads as
+  steering a reader home, which is the same bias pointing the other way, and it
+  is not the question they arrive with. Both versions were a claim dressed as a
+  list. `modelled` means Compass already computes admission odds there, which is
+  a fact about the product and not a view about a country — past those five the
+  order asserts nothing, and `/about` says so in as many words. A unit test pins
+  that the lead IS the modelled set, so a country that gains an engine moves on
+  its own. **`REGION_ORDER` is untouched and still puts Central Asia first**: it
+  groups the world map and the guide's chain geographically, which is not a
+  ranking. **Rules,
   test-enforced: trade-offs must outnumber strengths, `notForYou` is mandatory,
   and no prices or rankings** — those rot within a year, structural facts don't.
   Post-study work rules DO drift; they're written as "current rule, check it"
@@ -114,8 +301,55 @@ Everything here is **deterministic** — no model call — and the design rules 
   ([lib/data/values.ts](lib/data/values.ts)) may only **reorder** those areas —
   never filter them, and never change the chosen fields, which are what actually
   drive matching. Answers live in `localStorage`, not the profile.
-- **Bundle rule (easy to break):** `key-dates.ts` builds a lookup map over the whole ~2,700-entry catalog at module load, so *any* runtime import drags the dataset into that route's client bundle. Client components must import `formatDate`/`opportunityCost` from [lib/data/opportunity-format.ts](lib/data/opportunity-format.ts), and the three matching views (`OpportunitiesView`, `EligibilityChecker`, `FirstWin`) **dynamic-import** `buildExtracurriculars`. Keep it that way; type-only imports from key-dates are free.
+- **Bundle rule (easy to break, and the criterion is SIDE EFFECTS, not size):**
+  `key-dates.ts` builds a lookup map over the whole ~2,700-entry catalog at
+  module load, so it cannot be tree-shaken and *any* runtime import drags the
+  dataset into that route's client bundle. Client components must import
+  `formatDate`/`opportunityCost`/`daysBetween` from
+  [lib/data/opportunity-format.ts](lib/data/opportunity-format.ts), and anything
+  needing catalog-derived data — the three matching views (`OpportunitiesView`,
+  `EligibilityChecker`, `FirstWin`) and `RoadmapView` — reaches it through
+  [lib/data/use-opportunity-plan.ts](lib/data/use-opportunity-plan.ts), which
+  owns the only two dynamic imports of `key-dates`/`roadmap` on the client.
+  Type-only imports are free.
+  **The load starts on MOUNT, and the date is a separate hook.** All four views
+  used to write the same pair by hand: a `useState<Date|null>` set in one effect,
+  and a second effect that imported the catalog only once that date existed. The
+  second effect cannot run in the first commit, so the largest chunk on the route
+  — 120 kB raw, **31.6 kB gzipped** — began downloading a full render cycle after
+  it could have, and it depends on `today` in no way at all. The public checker
+  was worse: its import was gated on the visitor's ANSWER too, so it started at
+  the moment of highest intent. `useToday()` is the date, `useWarmModule()` is a
+  mount-only effect that starts the fetch, and `ready` gates the PLAN and never
+  the load. Two tests keep it that way, because the old shape reads as perfectly
+  ordinary and would be written again by anyone adding a fifth surface.
+  **Do not put the load on `requestIdleCallback`.** That was tried and measured:
+  the callback did not fire early, it fired at its own 2000 ms ceiling — 2.2s
+  after the initial bundle, slower than the waterfall it was meant to fix. The
+  `MapView` precedent it was copied from warms a country nobody has clicked yet;
+  this chunk *is* the page. A prefetch belongs on idle, the current page's own
+  content does not.
+  **Reachability, not adjacency.** The rule is about what ends up in a bundle,
+  which is transitive, and the guard used to scan for a DIRECT import edge from
+  a client component. Two chains slipped through one hop of indirection and cost
+  eight routes 27–41 kB each: `RoadmapView → roadmap.ts → key-dates`, and
+  `LikelihoodGauge → app-deadlines.ts → key-dates` — the second one for a
+  two-line date helper. The test walks the module graph now, stopping at
+  `"use server"` files (a server action is an RPC stub, not a dependency).
+  **Size alone is not the test:** `world.ts` is 822 lines and shakes clean
+  because it is plain consts, which is measurable in `.next/static/chunks`. Do
+  not reason about this from line counts — grep the built chunk, or read the
+  guard.
 - **Never show a countdown for a date we can't stand behind.** A confirmed date renders as a countdown; anything else is "Dates TBA" or "open now". Verify a date against the organiser's own page before setting `dateConfirmed: true`, and read what the page says — `test:links` cannot tell you a contest was discontinued.
+- **The catalog's prose has rules, and they live in
+  [lib/data/README.md](lib/data/README.md)** under "Adding an opportunity" —
+  read them before writing a `blurb`. In short: two sentences of different
+  lengths rather than one split by a dash, **no superlatives** (the guide's
+  registries are test-banned from them and the catalog is held to the same rule
+  by hand), never restate the cost the `CostPill` already shows, and no
+  admissions jargon. A blanket find-and-replace is the wrong tool here: the dash
+  between two numbers in `eligibility` is read by `parseEligibility`, and one
+  between two proper names is a join key.
 - **`pinned` is the ONLY editorial override in the ordering, and it reorders
   only.** Everything else about the order is derived from the student's profile
   (fit → confirmed date → days left). A pinned row still has to pass eligibility:
@@ -125,6 +359,20 @@ Everything here is **deterministic** — no model call — and the design rules 
   student's own fit has no order at all. Tests assert all three, and they are
   written against whatever is pinned *today* rather than a named entry, because a
   pinned row is short-lived and a test naming one fails the day it expires.
+- **The commitment step lives INSIDE the detail panel, and it must stay
+  reachable.** "I'm doing this" → "when will you start?" (`CommitRow`) is the
+  product's only behavioural signal and the number `/admin/intents` counts. It
+  used to render as the card's footer on the five-row shortlist — so deleting
+  that shortlist for the one list deleted its only caller, and
+  `saveOpportunityIntent` became **unreachable from the UI for a whole release**
+  while still compiling, still exported, still type-checked. It now rides as
+  `OpportunityCard`'s `commit` **node** (passed, never imported — the public
+  checker has no `DashboardProvider`) and renders in a band of
+  `OpportunityDetail` that sits outside the scrolling body. Every row carries
+  it, because one tap inside the opportunity you opened is still a decision,
+  whereas a hundred of them lying open in the list is the checklist the
+  original rule banned. A three-link test pins the chain by name — plus a
+  second test proving those patterns BITE on the exact edit that broke it.
 - **An admin can post an opportunity from the top of the list**
   ([QuickAddOpportunity](components/admin/QuickAddOpportunity.tsx) →
   `quickAddOpportunity` in [app/admin/opportunities/actions.ts](app/admin/opportunities/actions.ts)).
@@ -144,17 +392,39 @@ detail behind every card was a modal with no URL. Every step and every subject
 is its own route now:
 
 ```
-/guide                    index — the four steps, with counts
+/guide                    index — the five steps, with counts
 /guide/work               1 · areas of work      → /guide/work/[area]
-/guide/places             2 · countries in full  → /guide/places/[place]
-/guide/cities             3 · the cities in them → /guide/cities/[hub]
-/guide/from-home          4 · routes that need no move
+/guide/majors             2 · what you'd study   → /guide/majors/[major]
+/guide/places             3 · countries in full  → /guide/places/[place]
+/guide/cities             4 · the cities in them → /guide/cities/[hub]
+/guide/from-home          5 · routes that need no move
 /guide/compare?a=&b=      two countries on the same axes
 ```
 
 - **The order is a zoom IN, and it shipped backwards once.** Cities came before
   countries, so the guide asked a student to weigh Berlin and then zoomed out to
   Germany a step later. A country contains cities; it comes first.
+- **The MAJOR sits between the work and the country, and that placement is the
+  argument.** You apply *with* a subject, so choosing a country before you have
+  one is the cities-before-countries mistake a layer up. `lib/data/majors.ts`
+  holds 44 of them and is held to the same rules as every other prose registry
+  — `catch` and `notForYou` mandatory, no prices, rankings, superlatives or
+  URLs — plus three fields that exist because nobody else writes them down:
+  **`alsoCalled`** (one subject is taught under three names across the countries
+  we profile, and a student who does not know that cannot tell they found the
+  same door twice), **`firstYear`** (what the year is really made of and what
+  makes people leave in it), and **`schoolSubjects`** (the only thing on the
+  page that can be started today).
+  **The chain is asserted in BOTH directions**: every major leads to at least
+  one real area of work, and every one of the 33 areas is reachable from at
+  least one major. The reverse edge is the one that protects a student — a kind
+  of work nothing leads to is a page whose reader has nowhere to go next, and
+  the person most likely to hit it is the one with the least common interest.
+- **A major needed no migration.** `planner_path` has no `kind` column — a
+  pick's kind is its `ref` prefix — so `major:computer-science` was storable the
+  day the registry existed. `PickKind` gained a case, `pickHref` gained a line,
+  and the existing test that `pickHref` can only produce `/guide/…` covered it
+  for free.
 - **One hub is one city.** Four hubs used to carry a paired label — `Toronto &
   Waterloo`, `Dubai & Abu Dhabi`, `Zurich & Lausanne`, `Osaka & Kyoto` — because
   a hub models a *labour market*, and those pairs recruit across. It reads as a
@@ -209,7 +479,7 @@ is its own route now:
   level with strengths. On mobile the columns stack, so each answer is labelled
   with its country — an unlabelled stack is not a comparison.
 
-- **The four steps are JOINED, and the join is a function**
+- **The five steps are JOINED, and the join is a function**
   ([lib/data/spine.ts](lib/data/spine.ts), rendered by
   [components/guide/Spine.tsx](components/guide/Spine.tsx)). Every layer already
   carried `FacultyValue` — `CAREER_AREAS_BY_FACULTY` is keyed by it,
@@ -237,7 +507,7 @@ is its own route now:
 - **An area of work says how to TRY it, and we never build the try ourselves**
   ([lib/data/try-it.ts](lib/data/try-it.ts) → `TryTheWork`, inside "Test it this
   month"). A student weighing investment banking meets the bank's own simulation
-  on that page rather than in a catalog of 173 rows — the best-evidenced item on
+  on that page rather than in a catalog of 192 rows — the best-evidenced item on
   the backlog, and free. Three rules, test-enforced:
   **no URLs in the file** (the catalog owns links because `test:links` keeps
   them alive, and the individual company pages sit behind bot protection the
@@ -277,6 +547,108 @@ is its own route now:
   never in a shell** — hoisting it would drag framer into the guide's route
   bundles, which are server-rendered apart from two islands.
 - **The loading skeleton is on the LIST routes only, and that is load-bearing.** A `loading.tsx` is a Suspense boundary, and a boundary lets the server flush the response — status line included — before the page under it renders. One section-wide `app/guide/loading.tsx` therefore made every unknown id answer **200** carrying a not-found page. The skeleton (`components/guide/Skeleton.tsx`) now sits in six scoped files, which is why `/guide`, `/guide/work`, `/guide/places` and `/guide/cities` each live in a `(index)`/`(list)` route group — a group adds nothing to the URL but stops the subject pages inheriting the boundary. It is also where the wait actually is: a list page resolves the session (`guideView`), a subject page reads static data. Don't "tidy" the groups away or hoist the file back up.
+
+## The companion — the thread, on every screen (read [the spec](docs/superpowers/specs/2026-08-15-guided-thread-design.md) first)
+
+The diagnosis it answers: **we built an excellent library and called it
+accompaniment.** A library answers a question that is already formed, and our
+student cannot form the question — that is the reason they came. The complaint
+was never about the entrance ("I get more confused the more I use the site"), so
+a guided route that hands a student to a section and stops is not a fix: it
+leaves them alone in the library one step later.
+
+It is mounted once, in [StudentShell](components/student/StudentShell.tsx), and
+appears on Opportunities, the whole guide and the plan. It is the compass
+needle — not a new thing to learn, the product finally doing what its name says.
+
+- **Its stage is DERIVED, never stored** ([lib/data/thread.ts](lib/data/thread.ts)).
+  Seven stations, each reached by a fact that already exists: reactions in
+  `beat_reactions`, picks in `planner_path`, commitments in
+  `opportunity_intents`. **"Opened the page" is deliberately not a condition** —
+  per-student page reads are not recorded (`page_views` is the anonymous traffic
+  table and stays that way), and recording them to drive a step counter would be
+  a tracking system built for a progress bar.
+  Two rules, both tested: the stage is **where they ARE, not the furthest thing
+  they have touched** (someone who commits before answering a pair is still at
+  the beginning, and taking the maximum would tell a lost student they were
+  nearly finished); and **nothing moves it backwards** — an overdue deadline is
+  the move ladder's business, and a figure that fell because something lapsed
+  would read as punishment.
+- **It stops talking when it cannot judge honestly.** From the moment a student
+  has committed to something, the next move depends on agenda facts
+  `lib/companion/load.ts` does not carry. Handing the ladder zeroes there did
+  not produce vaguer copy, it produced a FALSE claim ("nothing you're carrying
+  has an announced date yet"). So `move` is `NextMove | "deferred" | null`:
+  an object to render, `"deferred"` to hand over to the plan, and `null` where
+  **the page owns the move** — the planner renders its own `NextMoveCard`, and
+  two ladders reasoning from different inputs on one screen is how a section
+  contradicts itself.
+- **One ask at a time.** While a reaction pair is on screen the move is not
+  rendered at all. It shipped with both, three centimetres apart, pointing
+  different ways — the product's own "exactly one move" rule broken by the
+  companion against itself.
+- **`xl:self-start` is load-bearing.** A grid item stretches to its row, so the
+  aside stood 4054px tall and a sticky box spanning the whole scroll range has
+  nothing to stick to: it pinned never and left at the first flick. The panel
+  is also capped at `calc(100dvh-6rem)` — a sticky element taller than the
+  viewport has a bottom that cannot be reached, because scrolling moves the page
+  and not the pinned box.
+- **Below `xl` it is a 44px dock, and the shell reserves its height**
+  (`h-16 xl:hidden`). Without that spacer the fixed dock sits on the last
+  control on the page, which on a phone is the one the student was reaching for.
+  `xl` and not `lg`, because a guide subject page already carries its own rail
+  from `lg` and nesting two left 256px of prose at 1024px.
+- **Nothing heavy may reach it.** It renders on every route, so a runtime import
+  of `key-dates`, `careers`, `world`, `study-destinations`, `spine` or `majors`
+  ships that registry everywhere. Everything is resolved in
+  [lib/companion/load.ts](lib/companion/load.ts) and handed down as values and
+  pre-rendered nodes. A unit test fails the build on a violation — **and a
+  second test proves that guard actually matches a real import**, because the
+  first version was written as a template literal, where `\s` is the letter s:
+  it compiled to `imports+(?!type\b)[^;]*froms+…`, matched nothing, and was
+  cited as a guarantee in a PR description.
+
+### The reaction engine ([lib/data/beats.ts](lib/data/beats.ts), migration 0031)
+
+How the product learns who someone is without asking the question they arrived
+unable to answer. Two concrete working days, and which is more like you.
+
+- **Observations, never types.** Never "you are an Investigator" — only "you
+  picked the one where the result lands the same evening, twice". A personality
+  label is a claim we cannot support, and this product does not assert what it
+  does not know.
+- **A beat opens with the ACTION, in the second person, in ≤24 words.** The
+  first version obeyed "no jargon, no profession named" and overshot into
+  riddles: median 29 words, with the verb arriving at word 25. Concrete and
+  PLAIN, not concrete and literary. Both rules are test-enforced, and the length
+  band is tight on purpose — the old one (60–260 characters) never bit once.
+  **Neither did the word count, until 2026-08-19**: it split on `/s+/`, the
+  letter s, so it read a maximum of 9 words where the real maximum is 23 and
+  would have passed a sixty-word beat. Third guard here to lose its backslashes.
+- **A beat is TWO SENTENCES: the situation, then what you do about it** — and
+  that rule exists because the three above all passed on copy a reader called
+  "unclear and philosophical". Measured over all 24: **23 were one sentence
+  averaging 19.2 words**, carrying the situation in a subordinate clause, so
+  nothing resolved until the last word. Add 1.25 undefined definite articles per
+  beat ("the piece", "the room", "the thing you built") and the reader is asked
+  to supply context nobody gave them. The other guards measure length, first
+  word and banned nouns; **a riddle satisfies all three**, which is the lesson
+  worth keeping. The proof that plain was always possible sat in the same file:
+  `plainer` said it in ordinary words, hidden behind a button most readers never
+  press. Words per sentence are 10.5 now, and the guard ships with a bite test
+  built from the exact beat that shipped.
+- **"I don't get it" is a first-class answer.** It swaps that card for
+  `plainer` in place, records `unclear`, contributes **no signal**, and **keeps
+  the pair open** so the student can still answer once they understand.
+  `nextPair` and `pairsAnswered` must agree about that; they did not at first,
+  and the pair was silently thrown away.
+- **The observation speaks on the pair that earned it, then goes quiet**
+  (`SPEAKS_AT`). It is only offered at the first two stations, so `pairsAnswered`
+  freezes the moment we stop asking — without the gate the same paragraph
+  followed a reader across all 88 guide pages.
+- **`beat_reactions` is the ONLY new stored fact.** Everything else — the stage,
+  the observation, the move — is computed. Reaction ids are referenced by
+  production rows: **never rename a beat id.**
 
 ## The planner — ONE route, three lenses (read [docs/PLANNER_PLAN.md](docs/PLANNER_PLAN.md) first)
 
@@ -457,8 +829,18 @@ survives signing in.
 ## Being findable is a feature (`sitemap.ts`, `robots.ts`, canonicals)
 
 The guide is public on purpose — a family choosing between Germany and Korea
-should read it without an account — and for a while nothing told a crawler its
-77 evergreen pages existed. Four things now do, and each has a rule:
+should read it without an account — and for a while nothing told a crawler that
+any of it existed. Four things now do, and each has a rule:
+
+The sitemap is **337 URLs** as of 2026-08-26 — 138 guide pages, 192 opportunity
+pages, and the public marketing and partner routes, `/about` among them. **Do
+not write that number down anywhere it has to be maintained**; it is stated here
+only to give a sense of scale, and it is derived at build time from the
+registries. It was 317 the day before, and moved because the catalog gained 22
+rows — which is the derivation working: nobody edited the sitemap.
+Every URL was fetched on 2026-08-24 and all 317 of them resolved; the 20 new
+opportunity pages have not been fetched, because they do not exist until this
+deploys.
 
 - **[app/sitemap.ts](app/sitemap.ts) is generated from the registries**
   (`GUIDE_SECTIONS`, `allCareerAreas`, `STUDY_DESTINATIONS`, `HUBS`), never
@@ -477,9 +859,106 @@ should read it without an account — and for a while nothing told a crawler its
   is `/guide/compare`, where the query *is* the subject — and there the pair is
   sorted, so `?a=italy&b=germany` and `?a=germany&b=italy` report one canonical
   instead of competing as identical twins.
+- **The link-preview card is a FILE convention, and it runs on the EDGE — the
+  only two edge functions in this repo.** [app/opengraph-image.tsx](app/opengraph-image.tsx)
+  is the site default and [app/opportunities/[id]/opengraph-image.tsx](app/opportunities/%5Bid%5D/opengraph-image.tsx)
+  carries the four facts, resolved through the same `resolveCompetitions` the
+  page uses so the preview and the page cannot disagree. A file convention
+  overrides `openGraph.images`, which is why `pageMeta` sets the card SHAPE
+  (`twitter.card`) and no image path.
+  Three things here are load-bearing and each cost a failed build or a failed
+  deploy. **Edge is not a preference:** `@vercel/og`'s node build does
+  `path.join` on a `file://` URL at module load, which survives on POSIX by
+  accident and throws `ERR_INVALID_URL` on Windows — passing your own `fonts`
+  does not help, the read is unconditional and runs first. **A Vercel Edge
+  Function is capped at 1 MB compressed**, and nothing local enforces it: the
+  first attempt measured 1.06 MB gzip while `next build` passed on Windows and
+  CI passed on Linux, and only the deploy went red. Gzip the non-`.map` files in
+  `.next/server/edge-chunks` before enlarging these routes. **And the fonts are
+  subset** ([lib/data/og-glyphs.ts](lib/data/og-glyphs.ts),
+  regenerated by `scripts/subset-og-fonts.mjs`), so a character outside the set
+  renders as a blank box rather than throwing — a unit test fails the build when
+  the catalog grows one, and it is how the Cyrillic in "Турнир городов" was
+  caught.
+  **KNOWN DIVERGENCE, 2026-08-22: those cards are still set in Inter while the
+  site moved to Source Serif / Source Sans.** The subset TTFs are committed at
+  `lib/og-fonts/` and are not what `next/font` serves, so changing the site's
+  faces does not reach them — a shared link therefore unfurls in a face the page
+  it opens does not use. Closing it means committing subset Source Sans TTFs and
+  re-running `scripts/subset-og-fonts.mjs`, and it must be re-measured against
+  the 1 MB edge cap above, which has already been hit once. Left open
+  deliberately rather than half-done.
 - **An unknown id must be a real 404.** See the loading-boundary note in the
   guide section above: this was a 200 for months and it is the one status a
   crawler must not see for an address that doesn't exist.
+- **Structured data is built by [lib/schema.ts](lib/schema.ts) and written into
+  the page by exactly one component** ([components/seo/JsonLd.tsx](components/seo/JsonLd.tsx)).
+  `Organization` + `WebSite` on the home page only, `FAQPage` on the landing
+  read from the FAQ component's own array, `BreadcrumbList` on the four guide
+  subject kinds via `DetailShell` and on every opportunity page. Four rules:
+  **`serializeJsonLd` escapes rather than trusts** — a script body is raw text
+  until `</script`, and a partner writes their own organisation name and post
+  titles, both of which reach a breadcrumb, so this is the `.ics` injection in a
+  different costume and is tested with a hostile name; **`breadcrumbSchema`
+  strips the query string**, because `crumbHref` routinely carries `?f=` and a
+  trail naming a filtered URL contradicts the canonical on its own page;
+  `DetailShell` therefore takes a required `path`; and **two types are
+  deliberately absent** — no `SearchAction` (the opportunity search is client
+  state, so nothing answers `?q=`) and no `Course`/`EducationEvent` (`Event`
+  needs a `startDate` and the catalog stores an entry *deadline*, so every row
+  would claim a contest begins on the day entry closes). Adding either means
+  adding the fields to the catalog first, not adding a builder.
+- **A title is a budget, and boilerplate never pushes the subject out of it.**
+  `fitTitle` / `fitDescription` in [lib/seo.ts](lib/seo.ts), with
+  `fitDescription` applied inside `pageMeta` so all 17 call sites get it without
+  remembering. Measured before: 250 of 317 titles ran past 60 characters and 205
+  of 317 descriptions past 160, because a fixed explanatory tail was prepended
+  to every page — `who can enter, what it costs, when it closes | Compass` is 56
+  characters before the name is even considered, so a long opportunity produced
+  a 128-character title. `fitTitle` drops the qualifier, then the brand, and
+  **never truncates the subject**: a name cut mid-word reads worse in a result
+  than a long one, and its opening is what someone searched for. The
+  80-character floor in `fitDescription` is measured, not picked — see the note
+  in the file. **The home page does not go through `pageMeta`** (the root layout
+  sets metadata directly), which is exactly why it was the one page left over;
+  a test now pins its length in both directions.
+- **Response headers live in [next.config.mjs](next.config.mjs) `headers()`.**
+  There were none at all, which is not the neutral state it sounds like: without
+  a framing header any site can put the sign-in page in an invisible iframe.
+  `nosniff`, `SAMEORIGIN` (not `DENY` — that also breaks Vercel's preview
+  overlay), a referrer policy that keeps `?ref=` and `?next=` off other origins,
+  and a permissions policy for four APIs nothing here uses. **A CSP is
+  deliberately absent** until it can be done with nonces; a permissive one
+  shipped to look protected is worse than none.
+- **`npm run test:links` fails on two things, and `FAILS_THE_GATE` names them:
+  `broken` (a 4xx that is not a bot wall) and `private` (a 401)** — both are the
+  far end saying the link we ship does not work for the person we ship it to. A
+  5xx, timeout, reset or DNS failure becomes `unreachable`, and 403/406/409/412/429
+  become `blocked`; both are printed in full and fail nothing, because from a
+  datacenter IP they mostly mean the host refused *this caller*. **401 was in
+  the bot-wall set until 2026-08-24 and splitting it out was the point:** the
+  NAO Cup row was a Google Forms `/edit` address carrying an owner-only response
+  token, 401 to every student, and the run reported "170/173 healthy · 0 broken"
+  with it in. "You are a robot" and "this needs credentials you do not have" are
+  different sentences. `classifyStatus` is exported and unit-tested across every
+  band so the rule is asserted rather than described. **The two checkers hold
+  the SAME bot-wall set — `403, 406, 409, 412, 429` — and 412 reached
+  `test-links.ts` on 2026-08-25, a day after the 401 split.** Government portals
+  answer 412 to a caller with no browser fingerprint; until then a catalog URL
+  behind one fell through to `broken` and exited 1, which is the cry-wolf
+  failure that rewrite existed to stop.
+  **The correction this replaces was itself wrong, and the way it was wrong is
+  the point.** This note used to say 412 belonged to the guide's checker alone.
+  That was accurate the day it was written and went stale ONE DAY later; the
+  first attempt to fix it over-corrected into "has carried it since the same
+  pass", which reads as though the original author had been careless. They had
+  not. **A stale note and a wrong note are different failures and the second is
+  worse**, because it also rewrites the history that would have explained the
+  first. Date the claim instead of characterising the person who made it.
+  **Before deleting a
+  catalog URL, reproduce from an ordinary connection** — three links it called
+  dead answer 200 from one, and `globe.gov` really was down for days and came
+  back on its own.
 
 **What is NOT fixed, deliberately: the guide is still `force-dynamic` and
 uncacheable.** Two independent causes, both measured: the layout reads the
@@ -504,17 +983,51 @@ obvious-looking mistake: **a wider container must be answered with more cards
 per row, or a side rail moved up beside the content — never with longer text.**
 Widening alone took the country page to 131 characters per line against a
 readable measure of 60–75. Long-form prose therefore carries its own cap
-(`max-w-[60ch]`) regardless of how wide the shell is.
+(`max-w-[54ch]`) regardless of how wide the shell is.
 
 Two things learned by measuring, worth not rediscovering:
 
-- **`ch` is the width of a zero, not of an average letter.** `68ch` rendered as
-  ~82 real characters in this font; `60ch` lands at ~72. Set the cap by
-  measuring, not by reading the number as characters.
+- **`ch` is the width of a zero, not of an average letter**, and the multiplier
+  **belongs to the typeface, not to the codebase** — which is the part that was
+  learned the expensive way. Under Inter the real count ran about **1.3×** the
+  number you write, so `54ch` measured 68–72 characters and `60ch` measured
+  **79–80**, outside the band; that is why the cap is 54 and not 60. Under
+  **Source Sans 3 the same ratio is 1.14×**, measured 2026-08-22 over 54 full
+  lines on `/guide/places/germany`: `54ch` now renders **61.5** characters
+  (range 52–69). Still inside the 60–75 band, so the cap did not move — but the
+  same number bought nine fewer characters the day the font changed. **Re-measure
+  this ratio whenever the body face changes; never carry it across one.** Set it
+  by measuring, not by reading the number as characters.
+  **Measure the way a reader reads: exclude the ragged last line.** The
+  earlier note here claimed `60ch` landed at ~72 and the cap stood at 60 for
+  several releases on the strength of it. Averaging the final part-line in
+  drags the mean down by roughly a whole tier and makes an over-wide column
+  look compliant. Count characters per *full* line — walk the text node with a
+  `Range` and group by `getBoundingClientRect().top`, which is font-independent
+  and cannot be fooled the way a canvas `measureText` can.
 - **Density has to be applied at the level that actually repeats.** Making the
   city cards 4-up cut the page by 2%, because the list is grouped by country and
   15 of the 19 groups hold a single city. Flowing the *groups* into columns cut
   it from 4487px to 2047px. Look at what repeats before adding `grid-cols`.
+- **A component that renders in two shells needs a CONTAINER query, not a
+  breakpoint.** The opportunity list lives in the student's section AND in the
+  report's panel, and at the same 1024px viewport it is **924px wide in one and
+  652px in the other** — so `lg:grid-cols-2` measured 457px cards in one and
+  321px in the other. It is `.opp-list`/`.opp-grid` in
+  [globals.css](app/globals.css): two columns once the list itself clears
+  800px. State the rule in terms of the thing that actually constrains it.
+- **Find the card's cliff before choosing a column count.** Forced through
+  exact widths in 20px steps, the opportunity card is flat at 272px tall from
+  380px up, jumps to 356px at 340–360 as the title takes a third line, and hits
+  421px at 320. A knee like that decides the grid: two columns everywhere, and
+  never three, because a third is 320px even at 1536. Don't copy the guide's
+  `sm:2 → xl:3 → 2xl:4` onto a denser card — `sm` measured 262px there.
+- **The companion is the spare gutter, so a second rail comes out of the
+  CONTENT.** A filter rail was specced beside the list and deliberately not
+  built: from `xl` the companion takes 20rem, so the student shell's content
+  column *drops* from 966px at 1024 to 854px at 1280, and a 256px rail on top
+  of that leaves 282px cards at the commonest desktop width. Before adding a
+  rail anywhere in the student's section, check what already owns the margin.
 
 `DetailShell`'s `aside` is the same idea at page level: below `lg` the onward
 links follow the content as before, from `lg` they become a sticky rail in the
@@ -524,7 +1037,7 @@ sticky and ~57px tall.
 
 ## The landing page: the front door has to be on the front page
 
-[app/(marketing)/page.tsx](app/(marketing)/page.tsx) was built end-to-end for
+[app/(marketing)/page.tsx](app/%28marketing%29/page.tsx) was built end-to-end for
 the admission report — hero, three pains, "how we score you", a scorecard, a
 campus-mascot gallery, an FAQ about the score. Opportunities appeared on it as a
 button. It now runs in the product's own order: **what you can enter → what the
@@ -574,6 +1087,10 @@ guide) → honest by design → the report, opt-in → organisations → FAQ →
     `text-ink/60`, i.e. **4.53:1 on the bare light page**, AA by three
     hundredths before any background existed. **An alpha modifier on `ink` is a
     colour nobody has checked** — reach for `ink-soft`/`ink-faint`, which are.
+    Fixing the hero paragraph left **19 others** on it, including six of this
+    page's own body paragraphs at `font-light`; they moved to `ink-soft` on
+    2026-08-19 and the landing's faintest text went 4.53 → 4.95:1. Only hover
+    states keep an alpha, because an interaction colour is not resting text.
   - **Vertical anchors are `vh`, never `%` of the section.** That section is
     ~900px on a desktop and **1635px at 375×812**, because below `lg` the
     message and the card stack. Percentage offsets put two of the three lights
@@ -599,6 +1116,54 @@ guide) → honest by design → the report, opt-in → organisations → FAQ →
   for two releases: this page does not describe a feature until it works, and
   until `0028`/`0029` were applied two of the three views returned an error
   naming a migration.
+- **The phone-only call to action** ([StickyCTA](components/marketing/StickyCTA.tsx))
+  covers the stretch of page that has none: it appears once the hero's buttons
+  have scrolled away and is gone again from the closing call downwards, so the
+  product's "one primary call per view" rule still holds. **The decision is a
+  pure function** in [lib/data/sticky-cta.ts](lib/data/sticky-cta.ts) and is
+  unit-tested, because an `IntersectionObserver` does not fire at all in a
+  throttled or backgrounded pane — a rule written inside the effect would be a
+  rule nothing could check. The button is server-rendered and handed down as a
+  node, keeping `cn`'s ~9 kB out of a bundle this page worked hard to shrink.
+
+## `/about` — the page that names the people
+
+[app/about/page.tsx](app/about/page.tsx). A product that advises sixteen-year-olds
+on where to apply had no page naming a human being, and its only contact was an
+address at the bottom of the terms. Compass is built by **Alibek Ussipbayev and
+Kirill Kim**, final-year students at NIS Physics and Mathematics in Shymkent, and
+the section that says so is in their own words — the questions in it are the ones
+they listed, in the order they listed them. **Nothing in that section may be
+inferred or filled in; if a detail is added it comes from them.**
+
+- **Every figure is read from the registries at render**, like the landing page,
+  so the page cannot quote a number the reader will not then see. One of them was
+  rewritten after seeing it render: "12 of 172 entries clear that bar" about
+  confirmed dates reads as a 7% verification rate, when most of the remainder
+  never had a date to verify. It states the true and more useful fact instead —
+  how many are open whenever you are ready. (Those two figures were the values
+  on 2026-08-14 and are quoted as the reasoning, not as the state; the page
+  renders 18 and 58 out of 192 today, and will render something else tomorrow.
+  That is the point of the rule above.)
+- **The eleven parts are ONE array read twice**, by the contents nav and by the
+  sections, same rule as a guide subject page: a part cannot exist in the map and
+  be missing from the page.
+- **Groups are expressed by PROXIMITY, not by labels or cards.** A group opens
+  with 112px and a rule; a section inside one follows at 40px with none. All
+  eleven used to take the identical 48/40, which is proximity switched off. No
+  group headings, because a label above a heading is a kicker; no cards, because
+  same-size boxes would restore the uniformity this removed.
+- **"Who makes this" is second, not tenth.** It sat 4,800px down a 5,988px page,
+  which is the question most people open an About page to answer.
+- Prose is `text-base` and `text-ink` — the strongest ink token, not the softer
+  one the guide uses for secondary copy, because "dim" was the complaint this
+  page answers. Measured on the built page: 99.5% of visible characters at 17px
+  or larger, body prose at 17.14 contrast, 62 real characters per full line.
+- **It is reached from the landing's "Honest by design" band**, 3,366px earlier
+  than the footer. That band is where the question forms: the site has just said
+  it is honest and nothing on the page says who is making the claim. The header
+  was the other candidate and lost on measurement — it already carries three
+  controls beside the logo at 375px.
 
 Four traps that cost real seconds, all of them found by measuring:
 
@@ -707,7 +1272,26 @@ names roles and reads `rgb(var(--token) / <alpha-value>)`.
 
 - **Values are CHANNEL TRIPLETS (`16 25 43`), never hex.** That form is what
   keeps Tailwind's opacity modifiers working, and the product has 256 of them
-  (`bg-accent-soft/25`, `text-ink/60`). Hex here breaks every one silently.
+  (`bg-accent-soft/25`, `border-ink/10`). Hex here breaks every one silently.
+  Note which examples those are: an alpha on a **fill or a border** is fine, an
+  alpha on **text** is a colour nobody has checked — see the `text-ink/60` rule
+  in the landing section.
+- **`opacity-NN` on a control is the same rule arriving from a direction no
+  class-name scan can see, and it had shipped in three places.** Every colour in
+  the filter chips was a checked token; an `opacity-50` laid over the button to
+  mean "no results here" took the label from **8.78:1 to 3.27:1** and the count
+  from **5.48 to 2.41**, measured on the built page at 13px. The existing guards
+  look for `text-ink/60`-style names in a class string, and an element opacity is
+  not one — it composites afterwards, onto colours that individually pass.
+  Everywhere else in this codebase a dimmed control carries **`disabled:`** on
+  the opacity, so it only applies where WCAG 1.4.3 exempts it; those three chips
+  used the look without the semantic and stayed clickable. **Express "nothing
+  here" as a BRANCH of the colour** (`border-line/60 … text-ink-faint`), never as
+  an alpha over it — and never as an appended class either, because two utilities
+  of the same type at the same specificity are resolved by whichever Tailwind
+  emitted last. A test now fails any `<button>` carrying a bare `opacity-` with
+  no `disabled` in the same tag. **Audit contrast at the rendered node, not from
+  the class names**: verified tokens do not compose into a verified pixel.
 - **Anything read outside Tailwind must be `rgb(var(--x))`**, not the bare
   variable — a raw triplet is not a colour. That covers Recharts fills,
   `lib/tiers.ts`, and inline `style`.
@@ -745,24 +1329,84 @@ names roles and reads `rgb(var(--token) / <alpha-value>)`.
 
 ## Type is a system, and one of its axes is the theme
 
+**The faces are `Source_Serif_4` (display) and `Source_Sans_3` (body)**, wired
+once in [app/layout.tsx](app/layout.tsx) and reachable only as `font-display` /
+`font-body`. They are one superfamily on purpose — same designer, shared
+skeletons and vertical metrics — so headings and body agree at the joints. They
+replaced **Space Grotesk + Inter** on 2026-08-22, which is a named tell of a
+site assembled in an afternoon and was on every page.
+
+Three things that swap taught, and they generalise to any future change of face:
+
+- **Both subsets must include `cyrillic`.** The catalog holds "Tournament of
+  Towns (Турнир городов)", an opportunity's name is the `<h1>` of its own page,
+  and `h1..h4` are `font-display` globally. The old pair declared `latin` alone,
+  so that heading had been silently falling back to a system face. Next emits one
+  `@font-face` per subset behind a `unicode-range`, so pages without Cyrillic
+  never fetch the file — there is no reason to leave it out.
+- **The fallback must be the same CLASS of face.** `display` is a serif now, and
+  `ui-sans-serif` under it meant every heading rendered as a grotesque and then
+  changed shape when the webfont landed. `display: "swap"` guarantees that window
+  exists.
+- **Every measured typographic constant belongs to the old face and has to be
+  re-solved.** Two were, both documented where they live: the hero clamp (the
+  binding line moved from the rotating phrase to the fixed one — see the comment
+  in the landing page) and the `ch` multiplier below. Assume any number in this
+  section that came from a measurement is invalid until re-measured.
+
 Colour was already tokenised per theme; type was not, and the gap was the whole
 reason the dark theme read as harder work. **Contrast was never the problem** —
 every text token on `/opportunities` measured 5.48:1 or better while the
-complaint stood. Four rules, all test-enforced:
+complaint stood.
+
+**That has now been true three times.** "The text is small, dark and dim" came
+back on 2026-08-19; measured across three pages in both themes it was again
+**zero WCAG failures** and nothing under 11px, and the real defect was that
+14px was the body size. So: when someone says the text is hard to read, measure
+the SIZE distribution as well as the ratios, and measure it as a share of the
+page's characters rather than a count of elements — a page can be 93% 14px and
+still show a tidy element histogram. Six rules, all test-enforced:
 
 - **`--type-tracking-body` is a theme token** (`app/globals.css`): 0 in light,
   `0.008em` in dark. Light text on a dark ground **blooms** — glyphs spread into
-  the background, counters close, and the space between letters is eaten — and
-  Inter feels it more than most because its default fit is tight. It is applied
+  the background, counters close, and the space between letters is eaten. The
+  value was solved for Inter, whose default fit is tight; the body face is
+  **Source Sans 3** now, which is set more openly, so 0.008em is if anything
+  generous and was left alone rather than re-solved by eye. Anyone with a dark
+  screen in front of them should check it. It is applied
   on `body` so it **inherits**, and so the 73 `tracking-tight` headings and the
   38 tracked labels keep the value they chose. Nothing in the product sets
   tracking on body copy, which is what makes that insertion point clean. Bounded
   at 0.02em by a test: past that it stops being optical compensation and starts
   being letter-spacing a reader can see.
-- **11px is the floor, everywhere.** 69 labels sat at 10px and four at 9px,
-  across 21 files — the report's programme cards, four country breakdowns, the
-  admin tables, the guide's badges, the landing's own hero preview. A floor that
-  holds in some components is not a floor, so the test walks the whole tree.
+- **12px is the floor, everywhere** (was 11 until 2026-08-19). 69 labels sat at
+  10px and four at 9px, across 21 files — the report's programme cards, four
+  country breakdowns, the admin tables, the guide's badges, the landing's own
+  hero preview. A floor that holds in some components is not a floor, so the
+  test walks the whole tree.
+  **That test had never fired.** It was written `/text-[(d+(?:.d+)?)px]/`: the
+  backslashes were eaten, so `[…]` was a character CLASS, nothing was captured,
+  and `NaN < 11` is false. Same failure as the bundle guard written as a
+  template literal where `\s` became the letter s — both fail OPEN and both were
+  quoted as guarantees. It now covers `rem` as well as `px`, and a second test
+  asserts it BITES on `text-[10px]` and `text-[0.7rem]`. Never ship one of these
+  without the test that proves it matches.
+- **The scale is set in `tailwind.config.ts`, and its small end sits one step
+  above Tailwind's stock**: xs 13, sm 15, base 17, lg 19. Measured before the
+  change: 93.5% of a country profile's 9,000 characters were at 14px or below,
+  81% at exactly 14px; `/opportunities` 52%, `/demo` 81%. Repo-wide there were
+  411 `text-sm` and 339 `text-xs` against 100 `text-base`, so **14px was the
+  body size and 12px the second voice** — and 118 labels were pinned at exactly
+  the old floor, which is "not illegal" rather than "readable".
+  One config edit moves everything **because every type test is written against
+  Tailwind CLASS names, not pixel values**. Check that still holds before
+  reaching for it again.
+- **Long-form prose is `text-base`, and `max-w-[54ch]` is what marks it.** A
+  measure cap only ever appears on a column of continuous reading; a card
+  summary is `line-clamp`ed instead. So the cap decides which columns get the
+  step, and a paired heading has to move with its body or the body outgrows its
+  own label. Raising the size does **not** change the measure — `ch` scales with
+  the font — and it was re-measured at 70.5 real characters per full line after.
 - **A card needs a step, and size alone should not carry it.** The two cards
   that carry the product both measured flat: the opportunity card ran title 18 /
   body 15.2 (a step of **1.18**), and the guide card — the navigation for 88
@@ -770,6 +1414,9 @@ complaint stood. Four rules, all test-enforced:
   in size *and* 200 in weight now. No contrast test could ever have caught
   either, which is the point: "everything is nearly the same size, nearly the
   same distance apart" is what a reader means by a wall of text.
+  Those pixel figures are what was measured in 2026-08-14 and are one step
+  smaller than what renders today; the **ratio** is the rule, and it survived
+  the scale change because the test names classes rather than pixels.
 - **Group facts that are the same kind of fact.** The opportunity card had five
   text tiers 4–10px apart and therefore no groups. Eligibility and the deadline
   are both *the terms of entry*; they are one block now, set off from the
@@ -789,6 +1436,84 @@ fix.
 already; the **scrollbar** (the largest of them — Chrome's default on a
 near-black page is a light grey slab that is the brightest vertical object on
 screen) and the **caret** now are too, both from `--ink`.
+
+## Speed: the constant, not the row count (read [docs/PERFORMANCE_2026-08-19.md](docs/PERFORMANCE_2026-08-19.md))
+
+A whole-tree pass on 2026-08-19 measured every hot path. **Not one bottleneck
+was an algorithm.** All of them were a formatter or a parser rebuilding an
+answer that could not change — and they were invisible precisely because this
+file already reasons hard about bundle size and about `O(n)` shape, so nobody
+looked at constant factors. A 172-row catalog makes any loop look free, which is
+exactly what hid a **90 µs** function.
+
+- **Never call a `toLocale*` method with an options object in a loop or a
+  render.** `toLocaleDateString(locale, options)` is specified as constructing
+  an `Intl.DateTimeFormat` and discarding it, and it measured **90.76 µs a
+  call** against 2.08 for a hoisted one. `formatDate` runs once per opportunity
+  card: 3.47 ms for one screen, paid again on every re-render, so it was charged
+  to every keystroke in the search box. Build the formatter once at module level
+  (`DAY_MONTH_YEAR` in [opportunity-format.ts](lib/data/opportunity-format.ts),
+  `MONTH_YEAR` in [roadmap.ts](lib/data/roadmap.ts)).
+- **Six caches exist, and every one is keyed on an OBJECT, not on a string.**
+  `gateFor` and the search haystack are WeakMaps over the row; `SPINES`,
+  `DESTINATION_BY_HUB` and `UNIVERSITIES_BY_HUB` are Maps over closed
+  vocabularies; `STAMPS` in [summarize.ts](lib/traffic/summarize.ts) is a
+  WeakMap over the view. The rule behind that: **the second input to several of
+  these caches is a database.** Keying `gateFor` on the eligibility sentence
+  would grow a table nothing ever empties, one entry per distinct string any
+  partner has ever posted.
+- **A cache that returns the wrong row does not throw — it shows a student
+  someone else's opportunity.** So each guard in
+  [scripts/test-engine.ts](scripts/test-engine.ts) re-derives the answer the
+  SLOW way, with the code that shipped before, and asserts the two agree over
+  the real catalog. Never write one of these tests as "is it fast".
+- **`parseEligibility` stays pure and uncached.** It is the tested contract, and
+  `lib/discovery/screen.ts` calls it on strings that have no row behind them yet.
+  `gateFor` is the cached wrapper, and it honours an explicit `gate` first.
+- **Typing is deferred, never debounced.** `useDeferredValue` in
+  `OpportunitiesView` and `FilterBar` keeps the input exact and immediate while
+  the list and the facet counts render at low priority; a timer would arrive
+  late even when there is time to do the work. **`activeFilterCount` reads the
+  DEFERRED filters too** — it decides whether the shortlist or the browse list
+  is on screen, so taking the live value flashes an empty list on the first
+  character typed.
+- **Before optimising anything here, benchmark the primitives over the real
+  registries** — `Intl.*`, `Date.parse`, `new Date()`, `toISOString()`, regex
+  parses. Reason about the constant. The §4 list in that doc says what was
+  measured and deliberately left alone, so the next pass does not redo it.
+
+## Two sibling functions, one defended and one not
+
+The three defects that pass found were not performance at all, and two of them
+share a shape worth naming: **a rule was enforced in one place and its neighbour
+never got it.**
+
+- **`subtreeHeight` recursed into cycles while `depthOf`, four lines above it,
+  did not.** `buildTree` exists on the stated assumption that
+  `planner_map_nodes` can hold a cycle, so the renderer survived what the server
+  action did not — a `RangeError` from the indent button, and also from a merely
+  long chain. It was fixed **by moving it**: `branchDepth`/`branchHeight` now
+  live in [mindmap.ts](lib/data/mindmap.ts) beside `canIndent`/`canOutdent`,
+  iterative rather than recursive. That is the root cause, not the symptom — the
+  helper had drifted *because* it lived outside the module that owned the
+  discipline, and a private function in a `"use server"` file can never be unit
+  tested.
+- **The `.ics` file escaped `DESCRIPTION` and wrote `URL:` raw.** And
+  `z.string().trim().url()` **accepts a CR/LF inside a URL** — the WHATWG parser
+  tolerates them — and stores it verbatim, so an approved partner could post a
+  link that ends one VEVENT and begins another and write events into the
+  calendar of every student who downloaded the file. Trust here is granted once
+  per organisation and the safety net is removal, which does not reach a file
+  already in someone's calendar. Fixed at **both** ends. Note `URL:` is a URI
+  value, not TEXT: a backslash escapes nothing there, so the treatment is to
+  REMOVE control characters, not to escape them. Writing the test found a second
+  hole — `icsText` escaped newlines and let tabs through — so both value types
+  now share one rule, and `buildIcs` is exported purely so the escaping can be
+  asserted at all.
+- **Write a control-character class as `\u0000`-style escapes, never as literal
+  bytes.** A raw NUL or CR in a `.ts` file does not survive an editor or a patch,
+  and a mangled character class fails OPEN: it strips the wrong things and still
+  looks like a guard. This happened twice while making the fix above.
 
 ## Tailwind classes are linted against the config
 

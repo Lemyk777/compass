@@ -93,7 +93,7 @@ export default async function GuideFromHomePage({
           without leaving" and saw nothing they could do. The rest of the
           argument closes the page, where a reflection belongs; what has to be
           at the top is the part that is actionable. */}
-      <p className="max-w-[60ch] text-pretty text-base leading-relaxed text-ink-soft">
+      <p className="max-w-[54ch] text-pretty text-base leading-relaxed text-ink-soft">
         Every one of these is open to you this month, from where you already
         live.
       </p>
@@ -101,7 +101,7 @@ export default async function GuideFromHomePage({
       <div className="space-y-8">
         {parts.map(({ id, title, route: r }, i) => (
           <GuidePart key={id} id={id} step={i + 1} title={title}>
-            <p className="max-w-[60ch] text-pretty text-base leading-relaxed text-ink-soft">
+            <p className="max-w-[54ch] text-pretty text-base leading-relaxed text-ink-soft">
               {r.what}
             </p>
 
@@ -131,7 +131,7 @@ export default async function GuideFromHomePage({
                 ] as const
               ).map(([label, body]) => (
                 <div key={label} className="min-w-0">
-                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
                     {label}
                   </dt>
                   <dd className="mt-1 text-sm leading-relaxed text-ink-soft">
@@ -166,10 +166,13 @@ export default async function GuideFromHomePage({
           putting it above them pushed the first route back off a phone screen —
           the fold this page was just fixed for. */}
       <section className="rounded-2xl border border-accent/35 bg-accent-soft/25 p-4 sm:p-5">
-        <h2 className="text-sm font-semibold text-ink">
+        {/* This one is not a rail label — it is a real section in the reading
+            column, several paragraphs long, so it takes the h2 step rather than
+            being demoted. It was 15px against the page's other headings. */}
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">
           &ldquo;But I don&rsquo;t know how to do any of this yet&rdquo;
         </h2>
-        <div className="mt-1.5 max-w-[60ch] space-y-2.5 text-sm leading-relaxed text-ink-soft">
+        <div className="mt-1.5 max-w-[54ch] space-y-2.5 text-base leading-relaxed text-ink-soft">
           <p>
             Neither did anyone who does. The honest answer to &ldquo;how did you
             learn this?&rdquo; is almost always the same one: they entered
@@ -182,12 +185,12 @@ export default async function GuideFromHomePage({
             courses and every finished competition leaves the winners&rsquo; own
             notebooks behind, explaining what they did. Open-source projects
             have their whole review history in public. Nobody is waiting for you
-            to qualify first — you get in, you get stuck, you read, and that is
+            to qualify first. You get in, you get stuck, you read, and that is
             the entire loop.
           </p>
           <p>
             So the useful first move is never a course. It is a bad submission,
-            a small pull request, a rough draft — something real and finished
+            a small pull request, a rough draft: something real and finished
             enough to get feedback on. The people whose profiles look
             intimidating got them by doing that repeatedly, not by preparing
             longer.
@@ -195,9 +198,9 @@ export default async function GuideFromHomePage({
         </div>
       </section>
 
-      <p className="max-w-[60ch] text-pretty text-sm leading-relaxed text-ink-faint">
+      <p className="max-w-[54ch] text-pretty text-base leading-relaxed text-ink-faint">
         Leaving is one route. It is not the only one, and for plenty of students
-        it is not the best one — a strong record built from where you are is
+        it is not the best one. A strong record built from where you are is
         what makes leaving possible later, if you still want to.
       </p>
 

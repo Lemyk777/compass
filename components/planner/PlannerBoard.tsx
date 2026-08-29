@@ -97,33 +97,40 @@ export function PlannerBoard({
     <div className="space-y-4">
       {/* Width buys columns: one per column from md, stacked below it, which is
           the only readable form at 375px. */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-3">
         {PLANNER_COLUMNS.map((col) => (
           <section
             key={col}
             aria-labelledby={`planner-col-${col}`}
-            className="space-y-3"
+            className="space-y-3.5 rounded-2xl border border-line/70 bg-card/60 p-4 shadow-card"
           >
-            <h2
-              id={`planner-col-${col}`}
-              className="text-sm font-semibold text-ink"
-            >
-              {HEADINGS[col]}{" "}
-              <span data-num className="font-normal tabular-nums text-ink-faint">
+            <div className="flex items-center justify-between border-b border-line/60 pb-2.5">
+              <h3
+                id={`planner-col-${col}`}
+                className="text-sm font-bold tracking-tight text-ink"
+              >
+                {HEADINGS[col]}
+              </h3>
+              <span
+                data-num
+                className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent-soft/80 px-2 text-xs font-semibold tabular-nums text-accent-ink"
+              >
                 {shown[col].length}
               </span>
-            </h2>
-            {shown[col].map((item) => (
-              <PlannerCard
-                key={item.key}
-                item={item}
-                onOptimisticMove={(to) => apply(item.key, to)}
-                onRevert={() => revert(item.key)}
-              />
-            ))}
-            {/* The one place to add something of your own — at the head of the
-                track, because that is where a new thing actually starts. */}
-            {col === "todo" && <AddTask />}
+            </div>
+            <div className="space-y-3">
+              {shown[col].map((item) => (
+                <PlannerCard
+                  key={item.key}
+                  item={item}
+                  onOptimisticMove={(to) => apply(item.key, to)}
+                  onRevert={() => revert(item.key)}
+                />
+              ))}
+              {/* The one place to add something of your own — at the head of the
+                  track, because that is where a new thing actually starts. */}
+              {col === "todo" && <AddTask />}
+            </div>
           </section>
         ))}
       </div>

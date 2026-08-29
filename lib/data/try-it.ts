@@ -75,7 +75,7 @@ export const JOB_SIMULATIONS: JobSimulation[] = [
   },
   {
     employer: "J.P. Morgan",
-    what: "Set up a repository, wire a live data feed into a dashboard, and fix what breaks — the ordinary week of an engineer inside a bank rather than a coding puzzle.",
+    what: "Set up a repository, wire a live data feed into a dashboard, and fix what breaks. That is the ordinary week of an engineer inside a bank, not a coding puzzle.",
     hours: "about 4 hours",
     areas: ["building-software-and-products"],
   },
@@ -87,7 +87,7 @@ export const JOB_SIMULATIONS: JobSimulation[] = [
   },
   {
     employer: "BCG",
-    what: "Clean a messy client dataset, build a model that predicts something the business cares about, and — the part everyone underestimates — explain it to people who will not read the code.",
+    what: "Clean a messy client dataset, build a model that predicts something the business cares about, then explain it to people who will not read the code. That last part is the one everyone underestimates.",
     hours: "about 5 hours",
     areas: ["data-and-ai"],
   },
@@ -99,7 +99,7 @@ export const JOB_SIMULATIONS: JobSimulation[] = [
   },
   {
     employer: "Tata Consultancy Services",
-    what: "Turn a business question into a set of charts, then defend the choices — which cut of the data, which chart, what you left out.",
+    what: "Turn a business question into a set of charts, then defend the choices: which cut of the data, which chart, what you left out.",
     hours: "about 3 hours",
     areas: ["data-and-ai"],
   },
@@ -117,13 +117,13 @@ export const JOB_SIMULATIONS: JobSimulation[] = [
   },
   {
     employer: "Walmart",
-    what: "Design the data structures and the shape of a system before writing much of it — the part of engineering that decides whether the rest is bearable.",
+    what: "Design the data structures and the shape of a system before writing much of it. This is the part of engineering that decides whether the rest is bearable.",
     hours: "about 4 hours",
     areas: ["building-software-and-products"],
   },
   {
     employer: "Electronic Arts",
-    what: "Propose a feature for a live game, sketch how it would be built, and write the class design — game engineering as a product argument, which is what it mostly is.",
+    what: "Propose a feature for a live game, sketch how it would be built, and write the class design. Game engineering is mostly a product argument.",
     hours: "about 4 hours",
     areas: ["games-and-interactive", "building-software-and-products"],
   },
@@ -141,7 +141,7 @@ export const JOB_SIMULATIONS: JobSimulation[] = [
   },
   {
     employer: "PwC",
-    what: "Build the dashboard a client asked for, discover the question they meant was a different one, and rebuild it — which is most of what analytics work is.",
+    what: "Build the dashboard a client asked for, discover the question they meant was a different one, and rebuild it. That is most of what analytics work is.",
     hours: "about 3 hours",
     areas: ["data-and-ai", "strategy-and-consulting"],
   },
@@ -165,7 +165,3 @@ export function simulationsForArea(slug: string): JobSimulation[] {
   return JOB_SIMULATIONS.filter((s) => s.areas.includes(slug)).slice(0, 3);
 }
 
-/** How many areas we can offer a try at — for anything that wants to say so. */
-export function areasWithSimulations(): Set<string> {
-  return new Set(JOB_SIMULATIONS.flatMap((s) => s.areas));
-}

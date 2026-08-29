@@ -24,12 +24,13 @@ export function LegalPage({
       <SkipLink />
       <header className="border-b border-black/10">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-6">
-          <Link href="/" aria-label="Compass home">
-            <BrandLink transition={false} />
-          </Link>
+          {/* `BrandLink` is already a link home, with its own aria-label.
+              Wrapping it nested an anchor inside an anchor, which is invalid
+              HTML and failed hydration on both legal pages. */}
+          <BrandLink transition={false} />
           <Link
             href="/"
-            className="text-sm font-medium text-ink/60 transition hover:text-ink"
+            className="text-sm font-medium text-ink-soft transition hover:text-ink"
           >
             ← Back to site
           </Link>
@@ -46,7 +47,7 @@ export function LegalPage({
         </h1>
         <p className="mt-3 text-sm text-ink-faint">Last updated: {updated}</p>
 
-        <div className="legal-prose mt-10 space-y-8 text-[0.975rem] leading-relaxed text-ink/80">
+        <div className="legal-prose mt-10 space-y-8 text-[0.975rem] leading-relaxed text-ink">
           {children}
         </div>
       </main>
@@ -55,6 +56,9 @@ export function LegalPage({
         <div className="mx-auto flex max-w-3xl flex-col items-start justify-between gap-3 px-6 py-8 text-sm font-light text-ink-faint sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} Compass. Guidance, not guarantees.</p>
           <nav className="flex items-center gap-5">
+            <Link href="/about" className="transition hover:text-ink/70">
+              About
+            </Link>
             <Link href="/privacy" className="transition hover:text-ink/70">
               Privacy Policy
             </Link>

@@ -11,9 +11,16 @@ import { HowItWorks } from "@/components/marketing/HowItWorks";
 import { FAQ } from "@/components/marketing/FAQ";
 import { FinalCTA } from "@/components/marketing/FinalCTA";
 import {
+  StickyCTA,
+  HERO_CTA_ID,
+  FINAL_CTA_ID,
+} from "@/components/marketing/StickyCTA";
+import {
   OpportunityPreview,
   previewOpportunities,
 } from "@/components/marketing/OpportunityPreview";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { organizationSchema, webSiteSchema } from "@/lib/schema";
 import { getUniversityLogos } from "@/lib/data/logos";
 import { getT } from "@/lib/i18n/server";
 import { getSession } from "@/lib/auth/session";
@@ -24,6 +31,11 @@ import { HUBS } from "@/lib/data/world";
 import { STUDY_DESTINATIONS } from "@/lib/data/study-destinations";
 import { HOME_ROUTES } from "@/lib/data/from-home";
 import { PLANNER_SECTIONS } from "@/lib/data/planner-sections";
+import {
+  GUIDE_SECTIONS,
+  type GuideSectionId,
+} from "@/lib/data/guide-sections";
+import { MAJORS } from "@/lib/data/majors";
 
 // The landing page tells the product's story in the product's own order.
 //
@@ -58,7 +70,7 @@ const PAINS: { n: string; title: React.ReactNode; body: string }[] = [
   {
     n: "01",
     title: "Written for someone older",
-    body: "Most of what gets listed turns out to be for university students, or for one country's nationals. You find that out after reading the rules — if the rules are even linked.",
+    body: "Most of what gets listed turns out to be for university students, or for one country's nationals. You find that out after reading the rules, if the rules are even linked at all.",
   },
   {
     n: "02",
@@ -72,13 +84,59 @@ const PAINS: { n: string; title: React.ReactNode; body: string }[] = [
   },
 ];
 
+/**
+ * What each guide step is SOLD as, keyed by the registry's own id.
+ *
+ * The registry owns the chain — order, step number, href, and the blurb the
+ * guide itself uses. This holds only the two things that are a marketing
+ * decision: the count worth quoting and the one line that earns the click. A
+ * `Record<GuideSectionId, …>` rather than a loose object, so adding a step to
+ * the registry fails the type-check here instead of silently rendering a card
+ * with no copy — the failure mode that let `majors` be missing from this page
+ * for two releases.
+ */
+const GUIDE_CARD_COPY: Record<
+  GuideSectionId,
+  { count: number; title: string; body: string }
+> = {
+  work: {
+    count: allCareerAreas().length,
+    title: "areas of work",
+    body: "Real job titles inside each one, never a single prescribed profession per field.",
+  },
+  majors: {
+    count: MAJORS.length,
+    title: "subjects to apply with",
+    body: "What the first year is really made of, what makes people leave it, and what to read now.",
+  },
+  places: {
+    count: STUDY_DESTINATIONS.length,
+    title: "countries in full",
+    body: "Money, admissions, after-study rules, cities. Trade-offs outnumber strengths, on purpose.",
+  },
+  cities: {
+    // Was "The map does not stop at the countries we profile", which stopped
+    // being true on 2026-08-11: every hub is now claimed by exactly one
+    // destination, and a unit test asserts it. It was also the only line on
+    // this page naming the home region, so the one sentence addressed to the
+    // people we built this for was the one sentence that was wrong.
+    count: HUBS.length,
+    title: "cities to work in",
+    body: "Almaty, Astana and Tbilisi among them, each inside a country profiled here in full.",
+  },
+  "from-home": {
+    count: HOME_ROUTES.length,
+    title: "routes from home",
+    body: "Ways in that need no visa and no move, for when leaving isn't the plan, or isn't possible yet.",
+  },
+};
+
 export default async function LandingPage() {
   const t = getT();
   const universityLogos = getUniversityLogos();
   const session = await getSession();
   const isAdmin = session?.role === "admin";
   const preview = previewOpportunities();
-  const areaCount = allCareerAreas().length;
 
   return (
     // A `div`, not a `main`. The banner and the footer used to live inside the
@@ -86,6 +144,12 @@ export default async function LandingPage() {
     // one shortcut for skipping chrome delivering you into it. Both are siblings
     // now, and the skip link ahead of them is the first thing in the tab order.
     <div className="min-h-screen overflow-x-hidden bg-surface text-ink selection:bg-ink selection:text-surface">
+      {/* Who runs this and what the site is, stated once. On the home page and
+          nowhere else, which is both Google's own instruction and the cheap
+          answer: every HTML response here carries `Set-Cookie` and so is
+          uncacheable, and repeating this on the other 315 URLs would pay for it
+          every single time without adding a claim. */}
+      <JsonLd data={[organizationSchema(), webSiteSchema()]} />
       <SkipLink />
       <header className="absolute inset-x-0 top-0 z-50">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-6 py-6 md:px-12 md:py-8 xl:px-20">
@@ -156,31 +220,50 @@ export default async function LandingPage() {
           <div className="relative mx-auto grid w-full max-w-[1600px] grid-cols-1 items-center gap-12 px-6 py-24 md:px-12 lg:grid-cols-[minmax(0,56fr)_minmax(0,44fr)] lg:gap-14 lg:py-28 xl:px-20">
             {/* Left — the message */}
             <div className="relative z-10 max-w-xl lg:max-w-none">
-              <span className="rise-in inline-flex items-center rounded-full border border-ink/10 bg-card px-3.5 py-1.5 text-xs font-medium text-ink/60">
+              <span className="rise-in inline-flex items-center rounded-full border border-ink/10 bg-card px-3.5 py-1.5 text-xs font-medium text-ink-soft">
                 Free · no account needed · for students anywhere
               </span>
               {/* The size is a clamp, not three breakpoint steps, because it has
                 to agree with the column beside it at every width — and a
-                breakpoint agrees at three. The rule: the longest rotating phrase
-                measures ~10.3× the font-size, so the type must stay under
-                columnWidth / 10.3 or the slot reserves a line it doesn't use.
-                This ramp is 45px at 1024 and reaches the original 60px at 1440,
-                which clears that bound at every width in between (worst case
-                1280, where the wider gutters kick in: 58px allowed, 54px used).
-                Shortening or lengthening a phrase changes that 10.3 — measure
-                before editing the copy below. */}
-              <h1 className="rise-in mt-6 text-balance text-[2.75rem] font-medium leading-[1.04] tracking-tight text-ink sm:text-[3.25rem] lg:text-[clamp(2.8125rem,3.606vw_+_0.5052rem,3.75rem)]">
+                breakpoint agrees at three. The type must stay under
+                columnWidth / (the widest line's ratio) or a line wraps and the
+                whole hero shifts.
+
+                RE-SOLVED for Source Serif, and the interesting part is that the
+                BINDING LINE MOVED. Under the old grotesque the constraint was
+                the longest rotating phrase at ~10.3×; a serif is wider, and the
+                fixed sentence above them now measures **10.62×** against the
+                rotating three at 8.66 / 8.70 / 8.95. So the phrase ceiling
+                below is no longer what decides this — the first line is.
+
+                Measured column widths: 482px at 1024, 554 at 1152, 590 at 1280,
+                680 at 1440. The pinch is 1024 and 1280 (the xl gutters widen
+                there while the column does not keep up), and the old ramp
+                cleared 1024 by **4px**, which is a coincidence rather than a
+                design. This ramp holds ≥5% headroom at every width: 42.3px at
+                1024 against a 43.2 ceiling, 51.8 at 1280 against 52.9, 57.7 at
+                1440, 60 above ~1560.
+
+                Changing the font OR any of these four lines invalidates all of
+                it. Measure the rendered width of every line over the font-size
+                before editing either. */}
+              <h1 className="rise-in mt-6 text-balance text-[2.75rem] font-medium leading-[1.04] tracking-tight text-ink sm:text-[3.25rem] lg:text-[clamp(2.625rem,3.7vw_+_0.275rem,3.75rem)]">
                 See what you can enter.
-                {/* These three are near-identical in RENDERED width — 8.69,
-                  9.04 and 9.05 times the font-size — and that is the whole
-                  point, not a coincidence. The slot reserves the longest
-                  phrase's line count; any phrase shorter than that reserve
-                  leaves a hole. "Then make your move." used to sit here at
-                  10.27, which is why one phrase in three wrapped to two lines
-                  on a 430–500px phone while the other two stayed on one.
+                {/* These three are near-identical in RENDERED width — 8.66,
+                  8.95 and 8.70 times the font-size in Source Serif — and that
+                  is the whole point, not a coincidence. The slot reserves the
+                  longest phrase's line count; any phrase shorter than that
+                  reserve leaves a hole. "Then make your move." used to sit here
+                  at 10.27, which is why one phrase in three wrapped to two
+                  lines on a 430–500px phone while the other two stayed on one.
                   Keep any replacement at or under 9.1× — and measure it,
                   don't count characters: this phrase and the one it replaced
-                  are both 19–20 characters and differ by 95px. */}
+                  are both 19–20 characters and differ by 95px.
+
+                  Note these three are no longer what sizes the heading. The
+                  fixed line above measures 10.62× in this face, so it is the
+                  binding one — but the 9.1 ceiling stays, because a phrase
+                  above it would start reserving a second line again. */}
                 <RotatingHeadline
                   phrases={[
                     "Then go and win it.",
@@ -190,7 +273,7 @@ export default async function LandingPage() {
                 />
               </h1>
               <p
-                // `text-ink-soft`, not `text-ink/60`. This paragraph is the
+                // `text-ink-soft`, not `text-ink-soft`. This paragraph is the
                 // product's promise, it is 18px `font-light`, and it is the
                 // only normal-sized text in the hero sitting directly on the
                 // field rather than on an opaque card. At /60 it measured
@@ -201,12 +284,15 @@ export default async function LandingPage() {
                 style={{ animationDelay: "0.08s" }}
               >
                 Competitions, olympiads, courses and programmes you can actually
-                enter — at your age, from where you live, with the real deadline
+                enter at your age, from where you live, with the real deadline
                 and the real cost. Tell us your year at school and the list is
                 yours.
               </p>
 
               <div
+                // Named so the phone-only bar at the bottom of this file can
+                // wait for it to leave rather than for a scroll offset.
+                id={HERO_CTA_ID}
                 className="rise-in mt-8 flex flex-wrap items-center gap-3"
                 style={{ animationDelay: "0.16s" }}
               >
@@ -230,7 +316,7 @@ export default async function LandingPage() {
 
               {/* The report is the product's second door, and it was the
                 faintest thing in the hero — `text-ink-faint` running into a
-                link at `text-ink/60`, i.e. quieter than the disclaimer it read
+                link at `text-ink-soft`, i.e. quieter than the disclaimer it read
                 like. It is its own affordance now: a strip, not a footnote.
                 Deliberately NOT a third button — one primary CTA per view, and
                 two filled controls competing is how you get neither pressed. A
@@ -240,10 +326,10 @@ export default async function LandingPage() {
                 className="rise-in mt-7 flex w-fit max-w-full flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-line bg-card px-4 py-3"
                 style={{ animationDelay: "0.24s" }}
               >
-                <span className="rounded-full bg-ivy-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ivy-ink">
+                <span className="rounded-full bg-ivy-soft px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-ivy-ink">
                   Also free
                 </span>
-                <span className="text-sm text-ink/70">
+                <span className="text-sm text-ink-soft">
                   Applying to university too?
                 </span>
                 <a
@@ -283,7 +369,7 @@ export default async function LandingPage() {
               <Stat
                 value={COMPETITIONS.length}
                 label="opportunities in the catalog"
-                note="Olympiads, competitions, courses, research and summer programmes — international and national."
+                note="Olympiads, competitions, courses, research and summer programmes, international and national."
               />
               <Stat
                 value={FREE_COUNT}
@@ -293,12 +379,12 @@ export default async function LandingPage() {
               <Stat
                 value={OPEN_NOW_COUNT}
                 label="you can start tonight"
-                note="No deadline to wait for — self-paced courses, rolling submissions, contests that run all year."
+                note="No deadline to wait for: self-paced courses, rolling submissions, contests that run all year."
               />
               <Stat
                 value={5}
                 label="countries in the admission report"
-                note="US, Italy, Hong Kong, the UAE and Korea — if and when you want that part."
+                note="US, Italy, Hong Kong, the UAE and Korea, if and when you want that part."
               />
             </div>
           </Band>
@@ -359,98 +445,89 @@ export default async function LandingPage() {
                 Where it leads
               </p>
               <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
-                &ldquo;And then what?&rdquo; — answered before you enter, not
+                &ldquo;And then what?&rdquo; Answered before you enter, not
                 after.
               </h2>
-              <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink/60">
+              <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
                 The guide runs the whole chain: what you like → the areas of
-                work it opens → the countries and cities that work lives in →
-                and what you can enter from home without moving anywhere. Every
-                one of them states its catch, not just its brochure.
+                work it opens → the subject you would apply with → the countries
+                and cities that work lives in → and what you can enter from home
+                without moving anywhere. Every one of them states its catch, not
+                just its brochure.
               </p>
             </div>
 
-            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <GuideCard
-                href="/guide/work"
-                step="1"
-                count={areaCount}
-                title="areas of work"
-                body="Real job titles inside each one — never a single prescribed profession per field."
-              />
-              <GuideCard
-                href="/guide/places"
-                step="2"
-                count={STUDY_DESTINATIONS.length}
-                title="countries in full"
-                body="Money, admissions, after-study rules, cities. Trade-offs outnumber strengths, on purpose."
-              />
-              <GuideCard
-                href="/guide/cities"
-                step="3"
-                count={HUBS.length}
-                title="cities to work in"
-                body="Including Almaty, Astana and Tbilisi — the map does not stop at the countries we profile."
-              />
-              <GuideCard
-                href="/guide/from-home"
-                step="4"
-                count={HOME_ROUTES.length}
-                title="routes from home"
-                body="Ways in that need no visa and no move — for when leaving isn't the plan, or isn't possible yet."
-              />
+            {/* Read from GUIDE_SECTIONS, exactly as the planner band below
+              reads PLANNER_SECTIONS, and for the reason that band already
+              states: a step would otherwise exist in the product and not on the
+              page that sells it. That is precisely what had happened here. The
+              four cards were hardcoded when the guide had four steps; `majors`
+              was inserted as step 2 in the registry and never here, so this
+              page was advertising 44 subjects as nonexistent and numbering
+              three of the four remaining steps wrongly — a visitor clicking
+              "Step 2 · countries" arrived on a page whose own tab strip calls
+              it step 3.
+
+              Only `count` and `body` stay local, keyed by id: the registry
+              owns the chain, this page owns how it is sold. */}
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+              {GUIDE_SECTIONS.map((s) => {
+                const card = GUIDE_CARD_COPY[s.id];
+                return (
+                  <GuideCard
+                    key={s.id}
+                    href={s.href}
+                    step={String(s.step)}
+                    count={card.count}
+                    title={card.title}
+                    body={card.body}
+                  />
+                );
+              })}
             </div>
           </Band>
         </section>
 
-        {/* ── Then it becomes work ── the planner, the student's third section.
-          Held back for two releases on purpose: this page does not describe a
-          feature until it works, and until 0028/0029 were applied two of the
-          three views returned an error naming a migration. They are applied
-          (`npm run db:check`, 31/31), so it can be said out loud.
-
-          The three cards are read from PLANNER_SECTIONS rather than written
-          here, for the same reason every count on this page is computed: a
-          fourth view would otherwise exist in the product and not on the page
-          that sells it. */}
+        {/* ── Then it becomes a strategy ── the advisory, the student's third section. */}
         <section className="w-full border-y border-line bg-card px-6 py-24 md:px-12 md:py-28 lg:px-20">
           <Band>
             <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-ink">
-                Then it becomes work
+                Then it becomes a strategy
               </p>
               <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
-                A deadline you agreed to is a different thing from one you read.
+                A goal without a timeline is just a wish.
               </h2>
               <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
-                Say you are doing something and it gets a date and a state. The
-                planner keeps both — what you committed to, the cutoffs around
-                it, and the stretch of the year you are in — as one list you can
-                read two ways. Nothing is typed twice, and nothing is invented:
-                a date we have not confirmed is listed without a countdown
-                rather than guessed at.
+                Our Advisory workspace merges your calendar, your backlog, and your next steps into a single, unified view. No more disconnected tools. We recommend the exact micro-experiments you need (like real job simulations) and help you schedule them, turning your profile weaknesses into action plans.
               </p>
             </div>
 
             <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {PLANNER_SECTIONS.map((view, i) => (
-                <PlannerCard
-                  key={view.id}
-                  href={view.href}
-                  step={String(i + 1)}
-                  title={view.label}
-                  body={view.blurb}
-                />
-              ))}
+              <PlannerCard
+                href="/planner"
+                step="1"
+                title="The Consultant"
+                body="Context-aware recommendations. If you're unsure about a career, we suggest a free job simulation to test it out."
+              />
+              <PlannerCard
+                href="/planner"
+                step="2"
+                title="Interactive Timeline"
+                body="A calendar built for students. Drag and drop opportunities directly into your schedule to commit to them."
+              />
+              <PlannerCard
+                href="/planner"
+                step="3"
+                title="Strategic Roadmap"
+                body="No more blank canvases. Your path from high school to university is auto-generated based on your guide picks."
+              />
             </div>
 
             <div className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-3">
-              <ButtonLink href="/planner" shape="pill">
-                Open your planner
+              <ButtonLink href="/planner" shape="pill" variant="subtle">
+                Open your advisory board
               </ButtonLink>
-              {/* Worth saying, because it is a real property of the thing and
-                not a reassurance: /planner is behind a session, robots.ts
-                blocks it and the sitemap does not list it. */}
               <p className="text-sm font-light text-ink-soft">
                 Private. Not indexed, and nobody else can see it.
               </p>
@@ -464,11 +541,36 @@ export default async function LandingPage() {
             <h2 className="max-w-3xl text-balance text-3xl font-medium tracking-tight text-ink md:text-5xl">
               Honest by design
             </h2>
-            <p className="mt-6 max-w-3xl text-pretty text-lg font-light leading-relaxed text-ink/60 md:text-xl">
+            <p className="mt-6 max-w-3xl text-pretty text-lg font-light leading-relaxed text-ink-soft md:text-xl">
               We would rather tell you something is closed, expensive or out of
               reach than let you find out yourself in three months. Unknown
               facts never remove an opportunity from your list; unverified dates
               never get a countdown; and nothing is called free unless it is.
+            </p>
+            {/* The way to /about, and it belongs HERE rather than in the header.
+                This band is where a reader forms the question the About page
+                answers: a site has just told them it is honest, and nothing on
+                the page says who is making the claim. The header was the other
+                candidate and was rejected on measurement, not taste — it
+                already carries three controls beside the logo at 375px, and a
+                fourth would crowd the one primary call this page has. The
+                footer keeps its link for anyone who goes looking. */}
+            {/* A plain anchor, like the other six internal links on this page.
+                `components/ui/Link` is a client component, and this page ships
+                deliberately little JS. */}
+            <p className="mt-8">
+              <a
+                href="/about"
+                className="group inline-flex min-h-11 items-center gap-1.5 text-base font-semibold text-ivy-ink underline-offset-4 transition-colors hover:underline focus-visible:focus-ring"
+              >
+                Who is behind this, and what we refuse to do
+                <span
+                  aria-hidden="true"
+                  className="transition-transform duration-300 group-hover:translate-x-0.5"
+                >
+                  &rarr;
+                </span>
+              </a>
             </p>
           </Band>
         </section>
@@ -487,12 +589,12 @@ export default async function LandingPage() {
                 <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight text-ink md:text-4xl">
                   And an honest read on your university applications.
                 </h2>
-                <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink/60">
+                <p className="mt-4 max-w-xl text-pretty text-lg font-light leading-relaxed text-ink-soft">
                   Optional, free, and separate from everything above. Fill in a
                   profile and you get a competitiveness score out of 100,
                   per-school admission ranges, your grades and tests against
                   each school&rsquo;s admitted middle 50%, and a prioritised
-                  list of what to fix — across the US, Italy, Hong Kong, the UAE
+                  list of what to fix, across the US, Italy, Hong Kong, the UAE
                   and Korea.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
@@ -526,7 +628,7 @@ export default async function LandingPage() {
                 <h3 className="text-balance text-2xl font-medium tracking-tight text-ink">
                   Benchmarked against real, named schools.
                 </h3>
-                <p className="mt-3 max-w-md text-pretty text-base font-light leading-relaxed text-ink/60">
+                <p className="mt-3 max-w-md text-pretty text-base font-light leading-relaxed text-ink-soft">
                   Not a vibe check against &ldquo;top universities&rdquo;. Every
                   range is tied to a specific school&rsquo;s published
                   admitted-student data, in every country the report covers.
@@ -557,11 +659,12 @@ export default async function LandingPage() {
               {/* Its own cap, in `ch`, because the parent’s `max-w-2xl` is a
                 rem measure and does not track the type: at 16px it rendered 89
                 real characters per line once the band widened to 1440. The
-                repo’s idiom is `max-w-[60ch]`, which lands at ~72 — a `ch` is
-                the width of a ZERO, not of an average letter. */}
-              <p className="mt-2 max-w-[60ch] text-pretty text-base font-light leading-relaxed text-ink/60">
+                repo’s idiom is `max-w-[54ch]`, measured at 68–72 real
+                characters — a `ch` is the width of a ZERO, not of an average
+                letter, so the count runs ~1.3x the number you write. */}
+              <p className="mt-2 max-w-[54ch] text-pretty text-base font-light leading-relaxed text-ink-soft">
                 Post it under your own name, logo and verification tick, and it
-                appears on the list students actually read — with your deadline
+                appears on the list students actually read, with your deadline
                 treated as the organiser&rsquo;s own word, not a scrape.
               </p>
             </div>
@@ -579,7 +682,11 @@ export default async function LandingPage() {
 
         <FAQ />
 
-        <FinalCTA signedIn={!!session} />
+        {/* Wrapped rather than given the id inside `FinalCTA`, so the close
+            stays a component about closing and knows nothing about the bar. */}
+        <div id={FINAL_CTA_ID}>
+          <FinalCTA signedIn={!!session} />
+        </div>
       </main>
 
       <footer className="mx-auto max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem] px-6 py-10 text-sm font-light text-ink-faint">
@@ -597,6 +704,9 @@ export default async function LandingPage() {
             <a href="/partners" className="transition hover:text-ink/70">
               For organisations
             </a>
+            <a href="/about" className="transition hover:text-ink/70">
+              About
+            </a>
             <a href="/privacy" className="transition hover:text-ink/70">
               Privacy Policy
             </a>
@@ -607,6 +717,23 @@ export default async function LandingPage() {
           <p>© {new Date().getFullYear()} Compass. Guidance, not guarantees.</p>
         </div>
       </footer>
+
+      {/* The button is rendered HERE, on the server, and handed down as a node.
+          `ButtonLink` pulls in `cn` — clsx plus tailwind-merge, about 9 kB in
+          any client bundle that imports it — and this page ships 107 kB after
+          deliberately removing framer-motion from it. The bar itself is a few
+          hundred bytes of observer. Same arrangement as the planner's window,
+          for the same reason. */}
+      <StickyCTA>
+        <ButtonLink
+          href="/opportunities"
+          size="lg"
+          shape="pill"
+          className="w-full"
+        >
+          See what you can enter
+        </ButtonLink>
+      </StickyCTA>
     </div>
   );
 }
@@ -704,7 +831,7 @@ function GuideCard({
         </span>
         <span className="text-base font-medium text-ink">{title}</span>
       </p>
-      <p className="mt-2 flex-1 text-pretty text-sm font-light leading-relaxed text-ink/60">
+      <p className="mt-2 flex-1 text-pretty text-sm font-light leading-relaxed text-ink-soft">
         {body}
       </p>
       <span className="mt-4 text-sm font-medium text-ivy-ink transition-transform duration-300 group-hover:translate-x-0.5">

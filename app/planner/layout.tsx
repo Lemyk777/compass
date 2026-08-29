@@ -33,6 +33,7 @@ export default async function PlannerLayout({
     <StudentShell
       isAdmin={session.role === "admin"}
       hasReport={Boolean(ctx.analysis)}
+      showMove={false}
     >
       <div className="space-y-6">
         {/* ONE heading for the whole section, and it lives here rather than in

@@ -31,6 +31,43 @@ import {
 } from "@/lib/data/eligibility";
 import { COMPETITIONS } from "./competitions-data";
 
+// The four closed vocabularies — kind, level, tier, cost — moved to a module
+// that imports nothing, so a client bundle, a server action and an edge
+// function can all reach the SAME array. They lived here, and this file cannot
+// be reached at runtime from anything client-side, which is why five separate
+// hand-written copies of `level` and six of `cost` existed. See the header of
+// `opportunity-vocab.ts` for what that cost.
+//
+// Re-exported rather than moved-and-rewired: ~40 files import these names from
+// here, the same way `daysBetween` is still re-exported after moving to
+// `opportunity-format.ts`. New code should import from `opportunity-vocab`
+// directly; nothing breaks either way.
+export {
+  COMPETITION_LEVELS,
+  LEVEL_LABEL,
+  LEVEL_HINT,
+  COMPETITION_TIERS,
+  TIER_LABEL,
+  COMPETITION_CATEGORIES,
+  CATEGORY_LABEL,
+  CATEGORY_LABEL_SHORT,
+  COST_MODELS,
+  COST_LABEL,
+} from "./opportunity-vocab";
+export type {
+  CompetitionLevel,
+  CompetitionTier,
+  CompetitionCategory,
+  CostModel,
+} from "./opportunity-vocab";
+
+import type {
+  CompetitionCategory,
+  CompetitionLevel,
+  CompetitionTier,
+  CostModel,
+} from "./opportunity-vocab";
+
 // ── SAT sittings (digital SAT, international) ─────────────────────────────────
 // test = test day; regDeadline = standard registration deadline.
 // Source: https://satsuite.collegeboard.org/sat/dates-deadlines
@@ -63,50 +100,6 @@ export const SAT_REGISTER_URL =
 //    "one clean win" a strong applicant should chase).
 // Both are optional on the TYPE so live rows from a DB that predates the columns
 // still validate; `competitionTier`/`competitionCategory` supply a sane default.
-export type CompetitionLevel = "international" | "national" | "regional";
-// The Opportunities pool is designed to GROW well beyond competitions: courses,
-// research programs and summer schools/programs are next. The category union is
-// pre-widened so adding them later is data-only (the UI filter derives its tabs
-// from the categories actually present). v1 only populates competition/olympiad.
-/**
- * The kinds of opportunity, as ONE list.
- *
- * It used to be a bare union, and the same five strings were then restated in
- * the partner form's Zod enum, in the admin quick-add's const, and in the
- * form's option list. Nothing made them agree; adding a sixth kind broke three
- * of them, which is how we found out. Server-side validators derive from this
- * array, so a new kind is one edit and the compiler finds the rest.
- */
-export const COMPETITION_CATEGORIES = [
-  "competition",
-  "olympiad",
-  "course",
-  "research_program",
-  "summer_program",
-  // A PLACE rather than an event: a forum, a club network, a citizen-science
-  // platform, an open-source month. The distinguishing fact is that there is
-  // nothing to win and usually nothing to miss — you join, and you keep going —
-  // so almost every row here is `alwaysOpen`.
-  //
-  // It earns its own kind because "where do I find people doing this" is a
-  // different question from "what can I enter", and filing it under
-  // `competition` answered neither. It is also the honest answer for a student
-  // who is twelve, or has no money, or lives somewhere none of the programmes
-  // reach: joining costs nothing and starts today.
-  "community",
-  // A TRY, not an entry. A job simulation is unpaid, ungraded, has no deadline
-  // and nothing to win: you do the actual tasks of a job for a few hours and
-  // find out whether you can stand it. That is a different question from every
-  // other kind here, and it is the best-evidenced answer we have to "what do I
-  // want to study" — the self-efficacy literature names simulations directly,
-  // and the platforms report completers as roughly twice as likely to be hired.
-  //
-  // We LINK OUT and never build these (release 3, PLANNER_PLAN.md §3).
-  "simulation",
-] as const;
-
-export type CompetitionCategory = (typeof COMPETITION_CATEGORIES)[number];
-export type CompetitionTier = "accessible" | "selective" | "elite";
 
 // ── Cost & accessibility ──────────────────────────────────────────────────────
 // The second question after "can I enter this" is "what does it cost me", and
@@ -129,17 +122,6 @@ export type CompetitionTier = "accessible" | "selective" | "elite";
 // `unknown` is the default for a reason: an unverified row must say "check the
 // official page", never imply free. The discovery pipeline deliberately does NOT
 // fill this in — a hallucinated price is worse than no price.
-export type CostModel =
-  | "free"
-  | "free_cert_paid"
-  | "free_then_paid"
-  | "freemium"
-  | "subscription"
-  | "one_time"
-  | "paid_aid"
-  | "funded"
-  | "varies"
-  | "unknown";
 
 export type Competition = {
   id: string;
@@ -286,6 +268,24 @@ export const COMPETITION_BY_ID = new Map(COMPETITIONS.map((c) => [c.id, c]));
 const RETIRED_IDS = new Set([
   "lumiere-research", // duplicate of "lumiere" — same program, same URL
   "nytimes-stem-writing", // one of the contests listed by "nyt-contests"
+  // Removed 2026-08-26 by the date-verification pass, and both for a reason a
+  // link check can never produce: the URL was fine and the CLAIM was not.
+  //
+  // Caribou answers 200 with a live-looking site — the sponsor line still
+  // renders — and the first thing in its body is "we have made the very
+  // difficult decision to cease all contest operations effective immediately".
+  // The contest menu is still there, commented out. This is the Goi Peace case
+  // the README names, met in the wild.
+  "caribou-math",
+  // A generic "Model UN conference" card resolved to one organiser's homepage,
+  // and that organiser describes itself as "the world's largest ... oldest
+  // ongoing UNIVERSITY-level Model UN". We were telling school students they
+  // could enter something they cannot, which is the one failure this product
+  // does not get to make. The row also could not be fixed in place: a generic
+  // name pointing at a specific host means its eligibility sentence and its
+  // URL can never agree. Four real school-level MUNs remain in the catalog —
+  // nhsmun, wimun, harvard-model-congress and mismun-almaty.
+  "mun",
 ]);
 
 /**
@@ -313,16 +313,13 @@ export function resolveCompetitions(live?: Competition[]): Competition[] {
   return merged;
 }
 
-// ── Date helpers (UTC, date-only — no timezone drift) ─────────────────────────
-function toUTC(d: Date | string): number {
-  const x = typeof d === "string" ? new Date(d + "T00:00:00Z") : d;
-  return Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate());
-}
-
-/** Whole days from `from` to `to` (negative if `to` is in the past). */
-export function daysBetween(from: Date | string, to: Date | string): number {
-  return Math.round((toUTC(to) - toUTC(from)) / 86_400_000);
-}
+// ── Date helpers ──────────────────────────────────────────────────────────────
+// `daysBetween` now lives in `opportunity-format.ts` and is re-exported here so
+// existing imports resolve. It moved because it is data-free and this module is
+// not: importing it from here was enough to put the whole catalog in the odds
+// page's client bundle (see the note on it there).
+export { daysBetween } from "./opportunity-format";
+import { daysBetween } from "./opportunity-format";
 
 // ── The engine: build a dated study plan from today + the student's profile ───
 export type StudyPlanInputs = {
@@ -516,6 +513,25 @@ export type Opportunity = Competition & {
   notYetEligible?: string;
   /** Entry runs through a national team rather than a direct application. */
   viaNationalSelection?: boolean;
+  /**
+   * Outside the student's stated fields.
+   *
+   * MARKED rather than hidden. This used to be a filter here, and it removed
+   * roughly a third of the catalog invisibly — a student saw 114 of 172 rows,
+   * had no way to ask why, and no route to the rest at all. It is a fact about
+   * the row now, and `lib/data/opportunity-filter.ts` turns it into an ordinary
+   * filter with a count.
+   *
+   * False when no field is stated: empty faculties means "show me everything",
+   * so there is no field to be outside of.
+   */
+  offField: boolean;
+  /**
+   * A local, region-tagged row belonging to somewhere the student does not
+   * live. Same reasoning as `offField`: a reason to rank something last, not a
+   * reason to pretend it does not exist.
+   */
+  offRegion: boolean;
 };
 
 export type ExtracurricularsPlan = {
@@ -566,6 +582,40 @@ export function reachableFrom(
   return c.region === homeCountry;
 }
 
+/**
+ * The structured gate for one row, parsed at most once per row.
+ *
+ * `parseEligibility` runs eight regexes over an English sentence, and it was
+ * doing that for all 172 rows on every match — 0.201 ms of the 0.583 ms
+ * `buildExtracurriculars` cost, for an answer that cannot change: the sentence
+ * is static catalog text and the parser is pure.
+ *
+ * Keyed on the ROW rather than on the sentence, and a WeakMap rather than a
+ * Map, because the second input to this cache is a database. A curated entry is
+ * a module-level object whose identity survives every request, so it is parsed
+ * once for the life of the process; a row `resolveCompetitions` rebuilt to
+ * overlay a live date is a fresh object that gets parsed once and then
+ * collected with the request. Keying on the string instead would grow a table
+ * that nothing ever empties, one entry per distinct sentence any partner has
+ * ever posted.
+ *
+ * `parseEligibility` itself stays pure and uncached — it is the tested
+ * contract, and `lib/discovery/screen.ts` calls it on strings that have no row
+ * behind them yet.
+ */
+const GATES = new WeakMap<Competition, EligibilityGate>();
+
+export function gateFor(c: Competition): EligibilityGate {
+  // An explicit gate always wins, and there is nothing to parse or cache.
+  if (c.gate) return c.gate;
+  let gate = GATES.get(c);
+  if (!gate) {
+    gate = parseEligibility(c.eligibility);
+    GATES.set(c, gate);
+  }
+  return gate;
+}
+
 export function buildExtracurriculars({
   today,
   faculties,
@@ -594,77 +644,109 @@ export function buildExtracurriculars({
   const fac = new Set(faculties);
   const grade = gradeFromGraduationYear(graduationYear, today);
 
-  const items: Opportunity[] = comps
-    .filter((c) => reachableFrom(c, homeCountry))
-    // An empty field selection means "we don't know yet", not "show almost
-    // nothing". Filtering on it left a profile-less student with 9 of 86
-    // opportunities — the exact dead end that makes people leave.
-    .filter(
-      (c) =>
-        fac.size === 0 ||
-        c.fields === "all" ||
-        c.fields.some((f) => fac.has(f)),
-    )
-    // Drop a CONFIRMED competition once its date has passed. Keep
-    // not-yet-announced ones (the catalog shows them as "Dates not yet
-    // announced") — their stored date is only an estimate, so we don't filter on
-    // it and we never present it as a hard deadline.
-    .filter((c) => !c.dateConfirmed || daysBetween(today, c.deadline) >= 0)
+  // The age band the student's year group plausibly spans. Constant for the
+  // whole call — it depends on `grade` and nothing else — so it is resolved
+  // once here rather than rebuilt for each of the 172 rows.
+  const ageRange = grade == null ? null : plausibleAgeForGrade(grade);
+
+  // ONE pass, where there used to be five chained map/filter stages.
+  //
+  // Each stage allocated its own array and, for the first three, a wrapper
+  // object per row to carry values forward — so a 172-row catalog cost five
+  // arrays and several hundred short-lived objects before a single card was
+  // drawn, and `daysBetween` was computed twice for every surviving row. The
+  // stages are kept below as the comments they always were; the ORDER of the
+  // work is unchanged, which is what keeps the output identical.
+  const items: Opportunity[] = [];
+  for (const c of comps) {
+    // NEITHER of these removes a row. They RECORD why a row would have been
+    // removed, and the filter panel turns that into two ordinary controls with
+    // counts — so a student can see that a third of the catalog is off-field
+    // and switch the narrowing off in one press.
+    //
+    // As filters they were invisible: they ran before the panel saw anything,
+    // so the product quietly showed a smaller catalog than it has and the only
+    // control that looked like a way to the rest said "Show everything we track
+    // for you (114)", where "everything" was false.
+    //
+    // An empty field selection still means "we don't know yet", not "show almost
+    // nothing" — so nothing is off-field when nothing was stated.
+    const offRegion = !reachableFrom(c, homeCountry);
+    const offField =
+      fac.size > 0 && c.fields !== "all" && !c.fields.some((f) => fac.has(f));
+
+    // Drop a CONFIRMED competition once its date has passed, and this one stays
+    // a hard filter: a closed date is a fact about the world rather than a
+    // narrowing of the catalog, and offering to "show expired" would be
+    // offering rubbish. Keep not-yet-announced ones (the catalog shows them as
+    // "Dates not yet announced") — their stored date is only an estimate, so we
+    // don't filter on it and never present it as a hard deadline.
+    const daysToDeadline = daysBetween(today, c.deadline);
+    if (c.dateConfirmed && daysToDeadline < 0) continue;
+
     // Eligibility gate. A student in Kazakhstan was being recommended
     // "Grades 9–12 at a US school" competitions, and a 9th grader was being
     // recommended final-year-only programmes. Unknown facts never exclude.
-    .map((c) => {
-      const gate = c.gate ?? parseEligibility(c.eligibility);
-      // Age rules were being ignored entirely — we only ever passed the school
-      // year, so every "Ages 13–18" entry counted as open to a 12-year-old and
-      // the count we showed them was wrong. We still never ask for a birth
-      // date, so age comes from the year group as a RANGE and only excludes
-      // when the whole group is outside the rule.
-      const verdict = checkEligibility(gate, {
-        country: homeCountry,
-        grade,
-        ageRange: grade == null ? null : plausibleAgeForGrade(grade),
-      });
-      return { c, gate, verdict };
-    })
-    // Can never enter: wrong country, or already past the age/grade ceiling.
-    .filter(({ verdict }) => verdict.ok || verdict.reason === "too_young")
-    .map(({ c, gate, verdict }) => {
-      const tierResolved = competitionTier(c);
-      const notYetEligible = verdict.ok ? undefined : verdict.detail;
-      // Not yet eligible is always aspirational, never "do this now".
-      const fit: OpportunityFit = notYetEligible
-        ? "stretch"
-        : targetTiers.includes(tierResolved)
-          ? "recommended"
-          : TIER_RANK[tierResolved] > targetMax
-            ? "stretch"
-            : "foundational";
-      return {
-        ...c,
-        daysToDeadline: daysBetween(today, c.deadline),
-        tierResolved,
-        categoryResolved: competitionCategory(c),
-        fit,
-        notYetEligible,
-        viaNationalSelection: gate.viaNationalSelection,
-      };
-    })
-    .sort((a, b) => {
-      // The one editorial override, ahead of fit. Everything below this line is
-      // derived from the student's own profile; this line is us saying "look at
-      // this first". It only reorders what already passed eligibility.
-      const ap = a.pinned ? 0 : 1;
-      const bp = b.pinned ? 0 : 1;
-      if (ap !== bp) return ap - bp;
-      if (FIT_ORDER[a.fit] !== FIT_ORDER[b.fit])
-        return FIT_ORDER[a.fit] - FIT_ORDER[b.fit];
-      // Confirmed-date items first (actionable now), then "dates TBA".
-      const ac = a.dateConfirmed ? 0 : 1;
-      const bc = b.dateConfirmed ? 0 : 1;
-      if (ac !== bc) return ac - bc;
-      return a.daysToDeadline - b.daysToDeadline;
+    const gate = gateFor(c);
+    // Age rules were being ignored entirely — we only ever passed the school
+    // year, so every "Ages 13–18" entry counted as open to a 12-year-old and
+    // the count we showed them was wrong. We still never ask for a birth
+    // date, so age comes from the year group as a RANGE and only excludes
+    // when the whole group is outside the rule.
+    const verdict = checkEligibility(gate, {
+      country: homeCountry,
+      grade,
+      ageRange,
     });
+    // Can never enter: wrong country, or already past the age/grade ceiling.
+    if (!verdict.ok && verdict.reason !== "too_young") continue;
+
+    const tierResolved = competitionTier(c);
+    const notYetEligible = verdict.ok ? undefined : verdict.detail;
+    // Not yet eligible is always aspirational, never "do this now".
+    const fit: OpportunityFit = notYetEligible
+      ? "stretch"
+      : targetTiers.includes(tierResolved)
+        ? "recommended"
+        : TIER_RANK[tierResolved] > targetMax
+          ? "stretch"
+          : "foundational";
+
+    items.push({
+      ...c,
+      offField,
+      offRegion,
+      daysToDeadline,
+      tierResolved,
+      categoryResolved: competitionCategory(c),
+      fit,
+      notYetEligible,
+      viaNationalSelection: gate.viaNationalSelection,
+    });
+  }
+
+  items.sort((a, b) => {
+    // The one editorial override, ahead of fit. Everything below this line is
+    // derived from the student's own profile; this line is us saying "look at
+    // this first". It only reorders what already passed eligibility.
+    const ap = a.pinned ? 0 : 1;
+    const bp = b.pinned ? 0 : 1;
+    if (ap !== bp) return ap - bp;
+    // Rows the student does not match sink below every row they do — above
+    // fit, because fit has no meaning across that line. They are VISIBLE, not
+    // promoted: the list still opens on what fits, and widening stays a thing
+    // the student chooses rather than a thing that happens to them.
+    const am = a.offField || a.offRegion ? 1 : 0;
+    const bm = b.offField || b.offRegion ? 1 : 0;
+    if (am !== bm) return am - bm;
+    if (FIT_ORDER[a.fit] !== FIT_ORDER[b.fit])
+      return FIT_ORDER[a.fit] - FIT_ORDER[b.fit];
+    // Confirmed-date items first (actionable now), then "dates TBA".
+    const ac = a.dateConfirmed ? 0 : 1;
+    const bc = b.dateConfirmed ? 0 : 1;
+    if (ac !== bc) return ac - bc;
+    return a.daysToDeadline - b.daysToDeadline;
+  });
 
   return { strength, band, targetTiers, items };
 }

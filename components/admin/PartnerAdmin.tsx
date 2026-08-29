@@ -120,7 +120,7 @@ export function PartnerAdmin({
                 disabled={pending}
                 onClick={() => run(() => approvePartner(partner.id, note))}
               >
-                Approve — they can post
+                Approve: they can post
               </Button>
               <Button
                 size="sm"
@@ -146,7 +146,7 @@ export function PartnerAdmin({
             >
               {partner.verifiedAt
                 ? "Remove the tick"
-                : "Verify — the account is theirs"}
+                : "Verify: the account is theirs"}
             </Button>
             {partner.status === "active" ? (
               <Button
@@ -155,7 +155,7 @@ export function PartnerAdmin({
                 disabled={pending}
                 onClick={() => run(() => suspendPartner(partner.id, note))}
               >
-                Suspend — hide everything they posted
+                Suspend: hide everything they posted
               </Button>
             ) : (
               <Button
@@ -271,7 +271,7 @@ function EditPanel({ partner }: { partner: Partner }) {
         <Field label="Name">
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
-        <Field label="Country" hint="Free text — normalised to an ISO-2 code.">
+        <Field label="Country" hint="Free text, normalised to an ISO-2 code.">
           <Input
             value={country}
             onChange={(e) => setCountry(e.target.value)}
@@ -348,7 +348,7 @@ function StatusPill({ status }: { status: Partner["status"] }) {
         : "bg-reach-soft text-reach-ink";
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${tone}`}
+      className={`rounded-full px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide ${tone}`}
     >
       {status}
     </span>

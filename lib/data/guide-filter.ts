@@ -1,4 +1,3 @@
-import type { RegionKey } from "@/lib/data/world";
 
 // Filtering the guide's two lists — 17 countries and 34 cities.
 //
@@ -23,11 +22,20 @@ import type { RegionKey } from "@/lib/data/world";
 // It lives in the URL, not in state — same as `?f=`. A filtered list is a thing
 // a student sends to a parent or a teacher, and state cannot be sent.
 //
-// **Type-only imports on purpose.** This module is reached from a client
-// component, and `world.ts` and `study-destinations.ts` are ~180kB between
+// **No runtime import may reach a registry.** This module is pulled into a
+// client bundle, and `world.ts` and `study-destinations.ts` are ~180kB between
 // them. Nothing here touches either dataset: the caller maps its rows into
 // `GuideRow` on the server and passes the results down, the same rule
-// `WorkList` follows for career areas.
+// `WorkList` follows for career areas. The one runtime import below is
+// `regions.ts`, which exists for this exact purpose and imports nothing at
+// all — the same shape as `opportunity-vocab.ts` on the other filter.
+
+// From `regions`, not from `world`, and the reason is written at the top of
+// that file: it exists precisely so a client island can name a region without
+// reaching into the 822-line registry. `world` re-exports it, so a runtime
+// import through there would resolve — and would drag a heavy registry into
+// every client bundle this module touches.
+import { REGION_ORDER, type RegionKey } from "@/lib/data/regions";
 
 /**
  * The shape both lists are reduced to before filtering. Deliberately minimal:
@@ -61,13 +69,17 @@ export const NO_GUIDE_FILTERS: GuideFilters = {
 /** The query keys. Short, because they sit next to `?f=` in a shared link. */
 export const GUIDE_FILTER_KEYS = { q: "q", regions: "r", modelled: "m" } as const;
 
-const ALL_REGIONS: RegionKey[] = [
-  "central_asia",
-  "europe",
-  "asia_pacific",
-  "middle_east",
-  "north_america",
-];
+// `REGION_ORDER` from the registry, not a second list — and this one had already
+// drifted rather than merely being at risk of it. The copy that lived here ran
+// central_asia · europe · **asia_pacific · middle_east** · north_america, while
+// the canonical order is central_asia · europe · **middle_east · asia_pacific** ·
+// north_america. So the guide's own region filter rendered the five regions in a
+// different order from the chain sitting beside it on the same page, and a
+// region added to the registry would never have appeared here at all.
+//
+// It is both the facet order AND the validator for `?r=`, which is exactly the
+// dual role that made the opportunity vocabularies worth centralising.
+const ALL_REGIONS: RegionKey[] = REGION_ORDER;
 
 function one(v: string | string[] | undefined): string {
   return (Array.isArray(v) ? v[0] : v) ?? "";

@@ -1,29 +1,393 @@
 # The backlog — state, findings, and what to do next
 
 The founder gave a 23-item fix/redesign list on 2026-08-10; items #24, #26 and
-#27 were added after. **Last updated 2026-08-14.** This file carries everything
+#27 were added after. **Last updated 2026-08-22.** This file carries everything
 a fresh session needs to continue without re-deriving it.
 
 Read [CLAUDE.md](../CLAUDE.md) first — it holds the product rules. This file
 holds only what is **specific to this backlog** and not already written there.
 The planner's own design of record is [PLANNER_PLAN.md](PLANNER_PLAN.md).
 
+**Where to look, by question:** §1 what is deployed · §4 what is left, in detail
+· §5 findings worth not re-discovering · §6 how to verify · §7 the method · §8
+**the ordered next list**, ending in the **problems that are nobody's work
+item** · §9 **the direction** — what the next build is for · §10 a session log
+kept for the order things happened in.
+
+**Every count in this file is a claim, not a fact.** It said `main` was two
+releases behind reality while being the file that exists to prevent exactly
+that. Re-derive before trusting: `git fetch`, `npm run test:unit`, and the
+scripts in §6 take under a minute between them.
+
 ---
 
 ## 1. Where the repository stands — READ THIS FIRST
 
-**As of 2026-08-14 the branch is AHEAD of production. Check this before
-assuming anything is live.**
+**As of 2026-08-25 there is ONE thing not in production: the Kazakhstan catalog
+rows.** Everything before them is released. The state re-derived on 2026-08-25,
+before that work began: `origin/main` = `3df0458`, `origin/develop` = `5b2caab`,
+both pointing at the same tree `b67feba`. (The two SHAs written here on
+2026-08-24 — `d541c7b` and `1cefa19` — were already stale by the next day, which
+is problem 5 below happening in the file that warns about it. **Re-derive.**)
+
+**Not yet released — A8, the local rows (2026-08-25).** The catalog went 172 →
+192 and now holds **20 `region: "KZ"` rows** where it held none: the state
+calendar from Дарын, the Kazakh programmes of Yandex and Samsung, a leadership
+prize, an open online debate tournament and its free practice league, a Model UN
+in Almaty, a university tournament carrying a scholarship, FLEX, SDU's SPT olympiad and NU Summer Camp. It also
+corrected a wrong claim on the shipped `wro` row (world final December, not
+November) and a stale rule in CLAUDE.md about which link checker treats 412 as a
+bot wall — both checkers do.
+
+Gate at the time of writing: `npm run build` clean, **321** unit tests (from
+318), **61** session checks, `npm run test:links` **191/192 healthy · 0 private ·
+0 broken**. Both new guards were seen FAILING against a deliberately seeded
+defect before being trusted — the seed was the pre-annotate hard filter, one
+line, and it turned three tests red. Full write-up in
+[AUDIT_2026-08-14.md](AUDIT_2026-08-14.md) §A8, which is now closed.
+
+The release before that, and everything below it, IS in production:
+
+### The root-cause pass, released 2026-08-24 ([#152](https://github.com/Lemyk777/compass/pull/152))
+
+Four defects that turned out to be **one cause plus three neighbours of it**,
+found by asking why the same mistake appeared in many places written by people
+who plainly knew better.
+
+1. **The vocabularies are one list, enforced by the compiler.** A5, A6, A9 and
+   A4's root cause, all closed together — see item 3 of §8. New:
+   `lib/data/opportunity-vocab.ts`. `school` is a real level; `funded` is
+   postable; the admin console stopped printing database spellings
+   (`free cert paid`) and shows the partner form's human labels.
+2. **The catalog load starts on mount, not a render later.** Five components
+   each wrote the same `useState<Date|null>` + gated-`import()` pair; the
+   import depended on `today` in no way at all, so the largest chunk on the
+   route (31.6 kB gzipped) waited a full render cycle, and on the public
+   checker it waited for the visitor's ANSWER. New:
+   `lib/data/use-opportunity-plan.ts`. **An idle callback was tried and
+   measured out** — it fired at its 2000 ms ceiling, 2.2s after the initial
+   bundle, slower than the waterfall it was meant to fix.
+3. **A measured contrast failure the existing guards could not see.** A filter
+   chip with no results rendered at `opacity-50`: label **3.27:1**, count
+   **2.41:1**, against 8.78 and 5.48 with results. Every token inside was
+   checked; the alpha over the top was not. Three chips had it. Fixed as a
+   branch of the colour in both themes (5.48:1), guard added.
+4. **401 is no longer read as a bot wall** — A2, item 4 of §8.
+
+Verification: `npm run build` clean, **316** unit tests (from 301), **61**
+session checks, `npm run test:links` **168/172 healthy · 0 broken**, and the
+browser measurements above taken against `next start` rather than assumed. Every
+one of the ten commits was type-checked and full-suite green BEFORE it landed,
+so the history bisects rather than only the tip. Re-verified on the live site
+after the release: the `School` facet renders at 5.48:1 against the 3.27:1 it
+measured before, and the catalog chunk loads with no interaction at all.
+
+The values this line held before the release (`a29a828` and `87e6354`) were both
+stale, which is problem 5 of §8 happening again in the file that warns about it.
+**Re-derive rather than read**, and compare TREE hashes: after #152 the two
+branches are byte-identical at `e792ae4` despite different commit hashes.
+
+**Compare TREE hashes, never commit counts** — `git rev-list --count origin/develop..origin/main`
+reads 10+ while the two are byte-identical, because every release leaves a merge
+commit on `main` that `develop` never gets back. That count nearly sent a session
+branching off the wrong place; see CONTRIBUTING.
+
+Six releases shipped on 2026-08-22 and 2026-08-24, PRs
+[#137](https://github.com/Lemyk777/compass/pull/137)–[#149](https://github.com/Lemyk777/compass/pull/149):
+
+1. **Structured data on every public page**, where there had been none at all —
+   Organization + WebSite on the home page, FAQPage on the landing,
+   BreadcrumbList on 138 guide and 172 opportunity pages. Plus Search Console
+   verification from an env var, a phone-only sticky CTA, and a stated partner
+   reply window.
+2. **A new typeface pair**, Source Serif 4 + Source Sans 3. It also fixed
+   Cyrillic headings falling back to a system face, since the old pair declared
+   `latin` only. Two measured constants had to be re-solved with it: the hero
+   clamp (the binding line moved from the rotating phrase to the fixed one, and
+   the old ramp cleared 1024px by four pixels) and the `ch` multiplier, which is
+   a property of the TYPEFACE and not of this codebase — 1.3× under Inter, 1.14×
+   under Source Sans.
+3. **`/about`**, naming the founders, and the country list no longer leading
+   with the home region — it leads with the five destinations that have an odds
+   engine, derived from the existing `modelled` flag.
+4. **The hero field's three hard edges**, all of which landed on the headline,
+   plus an `<a>`-inside-`<a>` hydration failure on three public pages.
+5. **The companion's beats rewritten** to two sentences each after a reader
+   called them philosophical; words per sentence 19.2 → 10.5.
+6. **Security headers** (there were none), two dead dependencies, and the search
+   result budgets — 250 of 317 titles ran past 60 characters and 205 of 317
+   descriptions past 160. Then **a link gate that can pass**: the weekly
+   workflow had failed on all four runs of its life while naming links that were
+   alive.
+
+Verified live rather than assumed: all 317 sitemap URLs resolve, six unknown ids
+return a real 404, the security headers are served on root and deep routes, the
+breadcrumb trail on `/guide/places/germany?f=law` reports the bare canonical, and
+the light theme passes AA. `npm run db:check` is 33/33.
+
+**One thing here is new in kind and worth reading before touching it: this
+repository now has EDGE functions**, the two Open Graph routes. They exist
+because `@vercel/og`'s node build crashes on Windows (`path.join` on a `file://`
+URL at module load), and they carry a constraint nothing else here does — a
+Vercel Edge Function is capped at **1 MB compressed**. The first attempt
+measured 1.06 MB gzip and the deploy failed while `next build` passed locally
+AND in CI, because neither enforces that limit. Before pushing anything that
+enlarges those routes, gzip the non-`.map` files in `.next/server/edge-chunks`
+and compare against 1 MB. The fonts they carry are subset for this reason
+(`scripts/subset-og-fonts.mjs`), and a unit test fails the build if the catalog
+grows a character the subset cannot draw.
+
+Release 9 — the copy and readability pass, [#123](https://github.com/Lemyk777/compass/pull/123)
+and [#124](https://github.com/Lemyk777/compass/pull/124) — shipped 2026-08-19
+and is the release before this one.
+
+The habit of this file is to warn that the branch is ahead of `main`; right now
+it is not. Verify anyway — it takes ten seconds, and a stale note here has cost
+a release twice, most recently this one: the table below said `main` was
+`4c87cc0` when it had been `6be95e8` for two releases:
+
+```bash
+git fetch origin && git log --oneline origin/main..HEAD
+```
 
 | | |
 |---|---|
-| On `main` (deployed) | everything up to and including the **spine** (#16). PR [#106](https://github.com/Lemyk777/compass/pull/106) merged 2026-08-13 20:04 UTC at `7e9bec5` |
-| **NOT deployed** | 10 commits in PR [#107](https://github.com/Lemyk777/compass/pull/107) — community + catalog 173, the planner's release 3, and the brand-link fix |
-| Branch | `feat/guide-spine` (misnamed by now — it carries three releases' worth) |
-| Progress | **20 of 23 done**, 1 half-done (#23 animation), 2 untouched (**#11**, **#14**), plus **#24**, **#26**, **#27** done, plus the planner's **release 4** |
-| Unit tests | **192** (`npm run test:unit`) |
-| Catalog | **173 entries · 0 broken links** (`npm run test:links`) |
-| Migrations | **All applied**, `0030_planner_path.sql` included — `npm run db:check` reports 32/32 as of 2026-08-14. |
+| On `main` (deployed) | everything through **the audit release**. `origin/main` = `9694dde`, released via [#132](https://github.com/Lemyk777/compass/pull/132) and [#134](https://github.com/Lemyk777/compass/pull/134). `origin/main` and `origin/develop` are identical |
+| Open PRs | none |
+| Branch | `develop` |
+| Unit tests | **316** (`npm run test:unit`), re-derived 2026-08-24 after the release. This line has read 289 since release 9 and the real number was 301 before this pass, so treat it as a claim: run the command. The fifteen added here are the vocabulary, validator, catalog-load and dimmed-control guards plus their bite tests, and six were watched failing on a deliberate break before being kept |
+| Session checks | **61** (`node --import tsx scripts/test-session-checks.ts`) |
+| Catalog | **172 entries · 0 broken links locally** (1 unverifiable — a bot wall, reported without failing). **The weekly job on `main` reads differently and has failed since at least 2026-08-03** — see below |
+| Migrations | **All applied through `0031_beat_reactions.sql`** — `npm run db:check` reports 33/33 |
+
+**The `Link health` workflow — RESOLVED 2026-08-24.** It had been red on every
+run of its life (08-03, 08-10, 08-17, 08-24), always naming links that were
+alive: the runners sit in datacenter ranges a dozen of these hosts refuse, so
+anything they could not reach was reported as dead. Checked by hand on the last
+red morning — the three it called broken all answer **200** from an ordinary
+connection, and one of them renders in full in a browser while resetting the
+connection to a script.
+
+The decision this waited on turned out not to be a trade-off. **Both the
+workflow header and the checker's own docstring already stated the correct
+rule** — "read a failure as go-and-look, not a verdict"; "only a 4xx proves the
+URL is wrong" — and neither was implemented: every non-2xx and every thrown
+error returned `broken`, which exits 1. The code now does what its comments
+said. A fourth verdict, `unreachable`, takes 5xx, timeouts, resets and DNS
+failures; `broken` is exactly a 4xx that is not a bot wall. Everything else is
+still printed in full every run. `classifyStatus` is exported and unit-tested
+across all four bands, so the rule is asserted rather than described.
+
+It passed for the first time on 2026-08-24: **162/172 healthy, 0 broken**,
+against `160/172 · 3 broken` that same morning.
+
+**The trap it leaves behind: before deleting a catalog URL, reproduce from an
+ordinary connection.** `globe.gov` really was down for several days — 504 to a
+real browser, on every path — and came back on its own.
+
+### What shipped in release 9 — the copy and readability pass, 2026-08-19
+
+138 files. Two jobs, and both began by measuring, because both had been "fixed"
+before and the complaint came back anyway.
+
+**The catalog had never had a copy pass.** Release 7 took the five prose
+registries to zero em dashes; the 172-entry catalog — the front door, and the
+text on every card, every `/opportunities/[id]` page and every shared link's
+preview — was not in that sweep. Vocabulary was clean again (3 "not just", 2
+"prestigious", 1 "gateway" in the whole file). The tells were structural:
+
+| | before | after |
+| --- | --- | --- |
+| sentence dashes across the catalog's five text fields | 451 | 33 |
+| blurbs that were one sentence split by a dash | 149 / 172 | 40 / 172 |
+| short sentences (≤6 words) in blurbs | 5.6% | **27.2%** |
+| long sentences (≥15 words) in blurbs | 40.3% | **10.8%** |
+| sentence-length CV in blurbs | 0.30 | **0.42** |
+
+Also out: ~15 superlatives the catalog was never held to ("the most prestigious",
+"pinnacle", "legendary", "premier", "elite") though the guide is test-banned from
+them, and the `[Fully Funded]` bracket on 30+ blurbs, which restated the
+`CostPill` two lines above it. **The voice was not invented** — entries ~110–172
+were already written well, so the file supplied its own target.
+
+**Three traps, all hit and all worth knowing.** `eligibility` is PARSED, so a
+range dash in "Grades 9–12" is load-bearing and a sentence dash is not — the
+change was only safe because `{gate, parsed}` was dumped for all 172 rows before
+and after and diffed to nothing. A dash can be a **join key**
+(`country-views.tsx` builds `${university} — ${program}` and
+`findItalianProgram` matches that exact string), so both sides have to move
+together. And **`prettier --write` must not be run over the changed files**: this
+repo is not uniformly prettier-formatted, and it reformatted
+`lib/data/universities.ts` by 835 lines for a 7-string edit, forcing a full reset
+and re-apply.
+
+**The readability half: contrast was innocent for the third time.** Measured on
+three pages in both themes before touching anything — **zero WCAG failures**
+(worst 4.53:1) and nothing under 11px. Every test that existed passed while the
+complaint stood. The defect was **size**: 93.5% of a country profile's 9,000
+characters sat at ≤14px (81% at exactly 14px), `/opportunities` 52%, `/demo`
+81%. Repo-wide, 411 `text-sm` + 339 `text-xs` against 100 `text-base`, plus 118
+labels pinned at exactly `text-[11px]` — "at the floor" is not "readable", it is
+"not illegal". The scale's small end moved one step (xs 13 / sm 15 / base 17 /
+lg 19) in `tailwind.config.ts`, the 118 hardcoded floors went to 12px, and
+long-form prose took a second step to `text-base`, chosen by `max-w-[54ch]`
+because a measure cap only ever appears on a column of continuous reading.
+Re-measured after: 0 contrast failures, nothing under 12px, no horizontal
+overflow at 375px, and the measure still 70.5 real characters per full line.
+
+Also: 19 `text-ink/60`-style alphas moved to `ink-soft`. CLAUDE.md already named
+4.53:1 as the number and the hero paragraph had been moved off it; nineteen
+others, including six landing-page body paragraphs at `font-light`, had not.
+
+**And the 11px floor guard had never fired** — see the correction in §5.22.
+
+### What shipped in release 8 — the performance pass, 2026-08-19
+
+Every measured bottleneck was a **formatter or a parser**, never an algorithm —
+`formatDate` alone cost 90.76 µs a call and ran once per card. Eight
+optimisations, and **three defects nobody had reported**: a mind map's indent
+button could overflow the stack (`subtreeHeight` recursed into cycles while its
+neighbour `depthOf` was explicitly cycle-safe), a partner's link could inject
+events into a student's `.ics` download (`z.string().url()` accepts a CR/LF and
+`URL:` was written unescaped), and `visitDurationMs` had an argument-count
+ceiling held back only by a constant in another file. 268 → 281 unit tests.
+Full account in [PERFORMANCE_2026-08-19.md](PERFORMANCE_2026-08-19.md), §4 for
+what was deliberately left alone and §5 for the two things left to the owner.
+
+Two catalog facts that surprise people, both deliberate and both currently zero:
+**nothing is `pinned`** and **nothing is `region`-tagged**. The NAO Cup row was
+the only instance of each, and it was removed on the owner's instruction — see
+the audit's A1, and A8, which is now the highest-value data work available. A
+unit test pins each zero, so the first row that changes either will fail and
+make somebody read why.
+
+### What shipped in release 7 — the copy pass, 2026-08-16
+
+The complaint was that the text reads as machine-written. It was measured rather
+than argued about, and **the usual suspect was innocent**: across 48,000 words of
+student-facing prose the AI vocabulary was already absent — one "comprehensive",
+five "landscape", and no "delve", "leverage", "utilize" or "robust" anywhere.
+
+The tell was **rhythm**, not vocabulary. Almost every sentence had one shape:
+claim, em dash, qualifier. Across the five prose registries, words per sentence
+went 22.4 → 16.9, sentences over 30 words 21.7% → 6.6%, and em dashes per
+sentence ~0.27 → 0.00. Contractions went from 4 against 514 long forms to 337
+against 193 — the earlier ratio of 1:128 was not "few" but effectively none, and
+that absolute uniformity is itself the tell, because real writing mixes them.
+
+**Why a regex cannot do this job**, and it is worth not rediscovering: every
+individual sentence was defensible. Only the distribution was wrong, and a
+distribution is invisible one line at a time.
+
+> **This pass covered the five prose registries and NOT the catalog** — the
+> 172 entries behind every card, every `/opportunities/[id]` page and every
+> shared link's preview, which is the most-read prose in the product. That was
+> found and fixed on 2026-08-19; see the release-9 block in §1. The lesson is
+> about scope rather than method: "all the product's text" was measured as "the
+> files I thought of", and `competitions-data.ts` is a data file, so it did not
+> look like prose. Enumerate the surfaces from what a student reads, not from
+> what is shaped like an article.
+
+The pass also corrected a measurement this repo had recorded wrongly for several
+releases: the guide's lead paragraph carried `max-w-[60ch]`, honoured it, and
+still ran 79–80 characters a line. The old note claimed 60ch "lands at ~72". It
+does not, and the reason is that the earlier measurement averaged in the ragged
+final line of each paragraph, which drags the mean down by roughly a whole tier.
+**Count characters per _full_ line** — walk the text node with a `Range` and
+group by `getBoundingClientRect().top`. The cap is `54ch` now.
+
+### What shipped in release 6 — the rest of the one list, and an audit, 2026-08-16
+
+Two halves, merged through [#116](https://github.com/Lemyk777/compass/pull/116)
+and released via [#117](https://github.com/Lemyk777/compass/pull/117).
+
+**The half that was specified.** Tasks 4 and 5 of the one-list spec, and neither
+landed as written:
+
+- **The filter rail was DECLINED, on measurement.** From `xl` the companion
+  already takes 20rem, so the student shell's content column *drops* from 966px
+  at 1024 to 854px at 1280. A 256px rail on top of that measured 282px cards at
+  the commonest desktop width. **Check what already owns the margin before
+  specifying a rail.**
+- **Columns shipped as a CONTAINER QUERY, not a breakpoint.** The opportunity
+  list renders in the student's section *and* in the report's panel, and at the
+  same 1024px viewport it is 924px wide in one and 652px in the other. A
+  viewport breakpoint measured 457px cards in one shell and 321px in the other.
+  `.opp-list` / `.opp-grid` go two-up once the list itself clears 800px.
+- **Typography was measured and left alone.** The reported problem was not there.
+- **The "I'm doing this" flow was restored.** [#114](https://github.com/Lemyk777/compass/pull/114)
+  deleted the five-row shortlist, which was `CommitRow`'s only caller — so
+  `saveOpportunityIntent`, the product's single behavioural signal, was
+  **unreachable from the UI for a whole release** while still compiling, still
+  exported, still type-checked.
+
+**The half that was not.** A whole-tree audit, nine findings, all fixed:
+
+- **The catalog was reaching eight client bundles** through two chains of one
+  hop each: `RoadmapView → roadmap.ts → key-dates`, and `LikelihoodGauge →
+  app-deadlines.ts → key-dates` — the second for a two-line date helper.
+  plan/timeline went 164 → 121 kB, odds/college-list 171/173 → 138/140.
+- **`deleteMap` was dead code while `createMap` told users to use it.**
+- **Five vocabularies existed twice**, which is the soil three separate bugs
+  grew in. One list each now, so the compiler can help.
+- **163 of 393 dictionary keys were dead.**
+
+**The durable lesson, and it is the reason release 6 is worth reading about at
+all: in five of the nine findings the root cause was the DETECTOR, not the
+defect.** The bundle guard scanned for a *direct* import edge from a client
+component, so one hop of indirection was invisible to it — and it had been cited
+as a guarantee. It walks the module graph now, stopping at `"use server"` files
+(a server action is an RPC stub, not a dependency). Dead exports and unread
+dictionary keys are scanned in CI.
+
+**Fix the root, then fix the detector that missed it.** A guard that has never
+failed on a known-bad input is a belief, not a test.
+
+### What shipped in release 5 — the guided thread, 2026-08-15/16
+
+Design of record: `docs/superpowers/specs/2026-08-15-guided-thread-design.md`.
+The one-line diagnosis it answers: **we built an excellent library and called it
+accompaniment.** A library answers a question that is already formed; our
+student cannot form the question, which is the reason they came.
+
+Three things a fresh session needs to know exist:
+
+- **The majors layer** — 44 subjects, each with a page, as **step 2 of the
+  guide**, between the work and the country, because the major is what you apply
+  *with*. It needed no migration: `planner_path` has no `kind` column, so
+  `major:computer-science` was storable the day the registry existed.
+- **The companion** — a rail from `xl`, a 44px dock below it, on every page of
+  the student's section. Its stage is DERIVED (`lib/data/thread.ts`), never
+  stored.
+- **The reaction engine** — two concrete working days, "which is more like you",
+  and **"I don't get it" is a first-class answer** that rephrases and keeps the
+  pair open. `0031_beat_reactions` is the only new stored fact in the release.
+
+### Four lessons from release 5, each of which cost something
+
+1. **PR #111 was merged while its review was still running.** All three fix
+   commits stranded on the branch, and `develop` briefly carried a version whose
+   centrepiece did not work. **This is the third time.** The rule is not "check
+   the PR state before pushing" — it is **run the whole-branch review BEFORE
+   asking for the merge**, because this owner merges fast and that is fine.
+2. **A test asserted nothing for its whole life.** The companion's bundle guard
+   was built as a template literal, where `\s` is the letter s and `\b` is a
+   backspace: it compiled to `imports+(?!type\b)[^;]*froms+…`, matched nothing,
+   and was cited as a guarantee in a PR description. Any hand-built regex now
+   needs a second test proving it BITES on a known-bad input. Assemble from
+   RegExp literals via `.source` so the parser owns the escaping.
+3. **Three code reviews found six criticals and missed the three that mattered
+   most.** The companion was never sticky (a grid item stretches to its row, so
+   a 4054px "sticky" box has nothing to stick to), its bottom sat 96px below the
+   fold, and it asked two things at once. Those are visible only by OPENING THE
+   PAGE. Reading code cannot find them — see §7 for how to look when a surface
+   is session-gated.
+4. **`develop` was 75 commits behind `main` with none of its own.** Branching
+   from it per CONTRIBUTING produced a tree with no planner, no spine and no
+   plan-picks, which surfaced as "weird type errors". Fast-forwarded. Check
+   `git rev-list --count origin/develop..origin/main` before trusting the branch
+   model. **Resolved as of release 7** — the last two releases went `develop` →
+   `main`, so the documented model and the practice now agree.
 
 ### Release 4 — the planner, 2026-08-14 (read PLANNER_PLAN.md § "Release 4")
 
@@ -66,21 +430,24 @@ git fetch origin && git log --oneline origin/main..HEAD
 
 Empty means everything is deployed. Anything listed is not.
 
-### The migrations are applied — verified 2026-08-13
+### The migrations are applied — verified 2026-08-17
 
-`npm run db:check` reports **all 31 checks pass**, which includes
-`planner_items` (0028) and `planner_map_nodes` (0029). The warning that used
-to stand here is gone: the agenda, the board, the student's own tasks, "In
-progress" and the mind maps are all live against a real schema.
+`npm run db:check` reports **all 33 checks pass**, which includes
+`planner_items` (0028), `planner_map_nodes` (0029), `planner_path` (0030) and
+`beat_reactions` (0031). The warning that used to stand here is gone: the
+agenda, the board, the student's own tasks, "In progress", the mind maps, the
+guide→plan join and the companion's reactions are all live against a real
+schema.
 
 That is what unblocked the planner being **advertised** on the landing page —
 this product's own rule is that a feature is not described until it works, and
-until today two of the three planner surfaces would have returned a readable
-error naming a migration.
+there was a period when two of the three planner surfaces would have returned a
+readable error naming a migration.
 
 Re-run `npm run db:check` before believing any note about what is applied,
 including this one. It is read-only, takes a couple of seconds, and it is the
 only thing here that cannot go stale silently — a note can.
+
 
 ### The one trap that will waste an hour
 
@@ -141,7 +508,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 | 24 | **The hero background.** Two bugs, neither of them the one reported. See §5.14. |
 | 16 | **The spine.** The parts were all there; nothing was joined. See §5.17. |
 | 27 | **Community, and 157 → 172.** A kind of opportunity the catalog had no shape for. See §5.18. |
-| 25 | **Readability.** The dark theme was not lower-contrast, it was under-engineered: no type step, a 10px floor, and one theme's optics served by the other's settings. See §5.16. |
+| 25 | **Readability.** The dark theme was not lower-contrast, it was under-engineered: no type step, a 10px floor, and one theme's optics served by the other's settings. See §5.16. **Reopened and passed again on 2026-08-19**: the same complaint recurred, contrast was again innocent, and the cause was the body size itself (14px) plus a floor guard that had never fired. See §1's release-9 block and §5.22. |
 | 22 | **CLOSED.** The planner is advertised now that it works; the bands below the hero ramp with the window. See §5.15. |
 | 17 | **The planner, COMPLETE** — one route, `/planner?view=next\|board\|map`, with the guide join and one next move. Delivered over four releases. See §5.12, §5.19, §5.23, §5.24 and [PLANNER_PLAN.md](PLANNER_PLAN.md). |
 
@@ -149,7 +516,7 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 | | |
 |---|---|
-| NAO Cup | First **pinned** entry — a debate tournament in Shymkent, region-scoped to KZ, auto-expiring the day after the event. |
+| NAO Cup | First **pinned** entry — a debate tournament in Shymkent, region-scoped to KZ, auto-expiring the day after the event. **Removed 2026-08-15** on the owner's instruction once its date passed; it was the catalog's only `pinned` row and its only `region`-tagged one, so both mechanisms now apply to nothing. See the audit's A1 and A8. |
 | Pinning | `Competition.pinned` — the one editorial override in an otherwise derived ordering. Reorders only; never bypasses eligibility. See §5.10. |
 | Admin quick-add | Post an opportunity from the top of the Opportunities list, writing the same live row a partner post writes. See §5.10. |
 | Georgia's sources | `npm run test:links`' sibling gate was **red and nobody knew**. See §5.11. |
@@ -158,34 +525,33 @@ anyway, build into a throwaway directory rather than clobbering theirs — but s
 
 ## 4. What is left, in detail
 
-**Two untouched (#11, #14), one half-done (#23), and #15 is verification.**
-#22 closed 2026-08-13, **#16 closed 2026-08-14** — the big structural work is
-done. By item count that is ~87% complete; by effort it is nearer two thirds, because **#16** (the
-coherent spine) is now the largest thing left, and it could not have been started
-earlier because it depends on #9 and #14.
+**One and a half untouched (#14, half of #11), and #15 is verification.**
+Everything else on the founder's list is closed: #22 and #24 on 2026-08-13, #16
+and #27 on 2026-08-14, #17 over four releases ending 2026-08-14, #23's animation
+half with release 4, and #25 (readability) twice — once on 2026-08-14 and again
+in release 9, because the complaint recurred and the second cause was different.
 
-Suggested order, and the reason for it:
+**#11 is now half done, and that was found by reading the file rather than the
+note.** The founder named three areas as wrong: games, consulting and investment
+banking. Games has since been rewritten — its `catch` states plainly that pay is
+below equivalent software work, that studios staff up and lay off around project
+cycles, and that crunch is still common, and its `study` stage warns against
+courses that teach one engine and little computer science. **Consulting has
+not**: `Strategy & consulting` names travel, hours and up-or-out, and says
+nothing about school prestige being the dominant hiring factor or about
+recruiting being geographically concentrated — which for a student in Central
+Asia is the single most decisive fact about that career. There is no investment
+banking area at all.
 
-**#24 is done** — it was taken first because the founder asked for it directly
-on 2026-08-13, and it turned out to be the natural way in to the animation half
-of #23: the open question there was always *which* moment had earned an authored
-one, and the answer arrived as a complaint. What is left:
+By item count that is ~93% complete; by effort the remainder is larger than it
+looks, because every survivor is **content and verification work** rather than
+code — the kind that cannot be finished by anyone who does not know the answer.
 
-1. **#14** — Malaysia and Australia. Self-contained. #16 shipped without it;
-   two more countries now simply widen a chain that already works.
-2. **#15** — verify the unconfirmed dates. Pure verification, no design decisions,
-   and it protects the product's central promise. It is also worth more than it
-   was: an unconfirmed date now costs a row its place in the planner's calendar
-   as well as its countdown, so every one verified moves a card onto the agenda.
-3. **#11** — careers depth and the quiz. Two separable halves: re-tune the weights,
-   rewrite the content in the direct tone already chosen.
-5. The rest of the animation half of **#23**, and then the progress-tracker copy in **#22** —
-   **no longer blocked**, because #17 now exists and can honestly be advertised.
-6. The planner's **release 2**: mind maps, and the drag-and-drop enhancement over
-   the existing move action. See [PLANNER_PLAN.md](PLANNER_PLAN.md) §10.
+**The ordered list of what to do next lives in §8, not here**, and it now
+interleaves these with the audit's open findings, which are cheaper. This
+section is the detail behind each item: the ask, what is already known, the
+files, and the decision needed.
 
-Each entry below states the ask, what is already known, the files, and the
-decision needed.
 
 ### #24 — the hero background — DONE 2026-08-13
 
@@ -276,7 +642,8 @@ the questions it already answers well. Two candidates already visible:
 
 - **Local (KZ / Central Asia) rows.** The catalog is overwhelmingly
   international, and `region` exists precisely so a Shymkent row can be shown
-  only to students who can reach it. NAO Cup is currently the only one.
+  only to students who can reach it. NAO Cup was the only one, and it was
+  removed on 2026-08-15 — the count is now zero. See A8.
 - **Job simulations and "try the work" rows.** Named directly by the founder
   (Forage's JP Morgan simulation is the example). They belong to the spine's
   "test it this month" step and would give the guide's career layer something
@@ -951,7 +1318,8 @@ never see. `next/dynamic` fixed it: `/dashboard/opportunities` went 187 → **18
 kB**, a kilobyte below where it started. Same trap as importing the catalog or
 `careers.ts` into a client component, in a new place.
 
-**NAO Cup is the first pinned entry** and shows the shape: region-scoped to `KZ`
+**NAO Cup was the first pinned entry** (removed 2026-08-15; nothing is pinned
+today) and shows the shape: region-scoped to `KZ`
 with `city: "Shymkent"` so it reaches students who can physically turn up and
 never lands on a student in Rome, `dateConfirmed: true` on the organiser's own
 announcement (the same trust a partner-set date gets), and no `cost` — the
@@ -1208,6 +1576,12 @@ of entry — so they are one group now rather than two rows 4px apart.
 real information. Raised to 11px in one pass, because a floor that holds in some
 components is not a floor.
 
+> **Superseded on 2026-08-19 (release 9).** Raising 118 labels *to* the floor and
+> stopping there is what this pass got wrong: "at the floor" is not "readable",
+> it is "not illegal", and the complaint came back. The floor is **12px** now and
+> the scale's small end moved with it. Worse, the test written to hold this line
+> **had never fired** — see §5.22.
+
 **3. One typographic setting for two themes with opposite optical needs.**
 This is the finding worth keeping. Light text on a dark ground **blooms**: the
 glyphs spread into the background, strokes thicken, counters close and the space
@@ -1410,6 +1784,27 @@ floor sweep that the test existed to enforce.
 It was found by accident: prettier happened to split that line, and the second
 class became visible.
 
+> **Correction, 2026-08-19 (release 9). The `matchAll` fix landed on a regex
+> that could never match anything, so this test has never once fired.** It read
+> `/text-[(d+(?:.d+)?)px]/` — the backslashes had been eaten somewhere between
+> being written and being committed, which turns `[…]` into a character CLASS
+> matching one character from `{( d + : ? . ) p x}`. Nothing was captured,
+> `m[1]` was `undefined`, `Number(undefined)` is `NaN`, and `NaN < 11` is
+> **false**. It matched a real class name on every line it scanned and reported
+> zero offenders, for every release it existed.
+>
+> **This is the same failure as the bundle guard** written as a template
+> literal, where `\s` became the letter s (§5 of the release-6 audit). Both were
+> quoted as guarantees in a PR description. The shared shape is that **a broken
+> pattern fails OPEN**: it does not throw, it does not report, it just goes
+> green — which is indistinguishable from working, and is read as proof.
+>
+> So the rule this section states is right but not sufficient. `match` vs
+> `matchAll` only matters if the pattern matches at all. **Every scan-over-source
+> guard needs a second test asserting it BITES on a line it must catch**, and
+> the floor guard now has one: `text-[10px]`, `text-[0.7rem]` (a `rem` value a
+> px-only pattern waves through), and a ternary carrying three sizes.
+
 **The general form, and it is the more useful half:** a scan over source text
 must ask what it does when the pattern occurs more than once in a unit. `match`
 vs `matchAll`, `find` vs `filter`, `indexOf` vs a loop. A gate that reports
@@ -1493,10 +1888,10 @@ Two things worth carrying:
 
 ```bash
 npm run build            # the gate — never while `npm run dev` is running
-npm run test:unit        # 192 tests
+npm run test:unit        # 282 tests
 npx tsc --noEmit
 npm run lint
-npm run db:check         # read-only: is the DB what the code assumes? 32/32
+npm run db:check         # read-only: is the DB what the code assumes? 33/33
 node --import tsx scripts/test-session-checks.ts   # 61 checks
 npm run test:guide-links # 27/27 official sources — NOT in CI, run it anyway
 npm run db:check         # after applying a migration, and before believing any note about one
@@ -1505,6 +1900,13 @@ npm run db:check         # after applying a migration, and before believing any 
 **CI runs three of these**: `npm run build`, the session checks, then
 `npm run test:unit`, without secrets. `npm run test:analyze` is the only one
 needing a real `ANTHROPIC_API_KEY`.
+
+**A green test is not the same as an enforcing test.** The 11px floor guard ran
+in CI on every push for several releases and could not have failed: its regex
+had lost its backslashes, so it captured nothing and compared `NaN`. §5.22 has
+the full shape. When a guard scans source text, write the second test that
+asserts it BITES on a line it must catch — otherwise CI is reporting that the
+pattern executed, not that the rule holds.
 
 **The two that CI does not run are the two that rot.** `test:guide-links` and
 `test:links` need the network and would make CI flaky, so they only fail when a
@@ -1635,6 +2037,16 @@ founder is reporting a feeling accurately; the cause is usually one layer down
 and usually worse. Fixing the reported thing without measuring means fixing the
 symptom and shipping the cause.
 
+**"The text is hard to read" came back on 2026-08-19, and measuring found a
+different cause again.** Contrast was clean for the third time — zero WCAG
+failures on three pages in both themes — and the defect was the body size
+itself: 93.5% of a country profile was set at 14px or below. The row above is
+therefore not the answer to that complaint, it is the answer to that complaint
+*in release 3*. **Re-measure every time; do not look up what it was last
+time.** The corollary is uncomfortable and worth stating: a complaint that
+recurs after a measured fix usually means the measurement was of the wrong
+quantity, not that the reader is wrong.
+
 ### One list, or the compiler cannot help you
 
 The kinds of opportunity existed **five times** — the type union, the partner
@@ -1718,113 +2130,410 @@ this, or it will "fix" it back.
 
 ---
 
-## 8. What to do next — the ordered list, 2026-08-14
+## 8. What to do next — the ordered list, 2026-08-19
 
-**Before anything: merge PR [#107](https://github.com/Lemyk777/compass/pull/107)
-or the next session builds on ten commits that are not in production.**
+**Nothing is waiting to be merged.** `develop` and `origin/main` hold the same
+content and every PR is closed, so a session starting here begins from a clean
+production state rather than from someone else's unshipped branch. Confirm it
+anyway with the ten-second check in §1.
 
-### The two gaps release 3 left open, and they are the top of the list
+**#25 (readability) was reopened and passed a second time in release 9** — see
+§1 and the correction in §5.22. It is shipped, not outstanding.
 
-> **There is a second list now: [AUDIT_2026-08-14.md](AUDIT_2026-08-14.md).**
-> Nine findings turned up while answering one question from the founder ("why
-> does the site say 114 when the docs say 173?"). None of them is fixed. They
-> are kept in their own file rather than folded in here because this backlog is
-> the founder's 23-item list and its history is worth keeping legible — but the
-> audit is the more urgent read of the two, and **A1 carries an explicit
-> do-not-touch instruction** that a later session must not override.
+> **There is a second list: [AUDIT_2026-08-14.md](AUDIT_2026-08-14.md).** Nine
+> findings turned up while answering one question from the founder ("why does
+> the site say 114 when the docs say 173?"). **Two are now closed — A1 and A3 —
+> and seven are still open.** They are kept in their own file rather than folded
+> in here because this backlog is the founder's 23-item list and its history is
+> worth keeping legible, but the audit is the more urgent read of the two, and
+> its open items are cheaper than anything left on this list.
 
-**8.0 — DONE.** `0030_planner_path.sql` applied 2026-08-14, `db:check` 32/32.
+### What the founder's own list still has open
 
-**8.1 — DONE.** A student can put a country, a city, a kind of work or a route
-from home onto their plan from the guide page they read it on (`planner_path`);
-a first map can be seeded from those picks with the cities nested inside the
-right country (`createMapFromPlan`); and a subject can now be added to an
-**existing** map from the guide, writing a `planner_map_nodes` row whose
-`link_href` is the page you are on — which is all `mapNodeKind` needs to type
-it. No migration was needed for the last part.
+**Two untouched (#11, #14) and one verification pass (#15).** Everything
+structural is done: #16 (the spine) closed 2026-08-14, #17 (the planner) over
+four releases, #22 and #24 (the landing page and its hero) on 2026-08-13, #25
+(readability) and #27 (the catalog's community kind) on 2026-08-14. #23's
+animation half closed with release 4.
 
-The restraint problem this entry warned about was real, and the answer was
-**progressive disclosure rather than a second control**: the map option only
-unfolds once the reader has claimed the subject, and only if they already keep
-maps. A guide page still has exactly one call to action on it, and nobody is
-invited to start a map they have no use for.
-
-**8.2 — Majors do not exist as a layer, and the founder asked for them twice.**
-The chain today is: area of work → **field** (`FacultyValue`, 8 of them) →
-country → city → university-`knownFor`-that-field. There is no per-university
-programme list, and `knownFor` is field-level.
-
-This is the biggest remaining *content* decision, and it needs one answer before
-any code:
-
-> Is a "major" a **named degree programme at a named university** ("BSc
-> Mechanical Engineering, TUM"), or a **field of study one level finer than our
-> eight** ("mechanical engineering" under "engineering")?
-
-They imply completely different work. The first is a large, fast-rotting dataset
-per institution and would need a yearly verification pass we do not have
-capacity for — the same class of claim as `englishTaught`, but a hundred times
-larger. The second is a taxonomy edit: one more level under `FacultyValue`,
-which every registry already keys on, and it would sharpen matching, the spine
-and the guide's filters at once **without any per-university promise**.
-
-**The second is almost certainly right** and should be proposed as such. It also
-composes with everything already built, whereas the first would need a new
-verification gate before a single row could ship.
+**#8.2 — majors — is DONE and the decision it was waiting on was taken.** The
+question was whether a "major" is a named degree programme at a named
+university or a field of study one level finer than our eight. The second was
+proposed and chosen, for the reason recorded here at the time: the first is a
+large, fast-rotting per-institution dataset needing a yearly verification pass
+we do not have capacity for, while the second composes with every registry that
+already keys on `FacultyValue`. It shipped in release 5 as `lib/data/majors.ts`
+— 44 subjects, guide step 2 — and needed no migration.
 
 ### Then, in order
 
-1. **#14 — Malaysia and Australia.** Two country profiles. Self-contained, and
-   it widens the spine's chain immediately. Rules are test-enforced: trade-offs
+The order below is by value per hour, and the first two are both data work that
+needs no code and no migration.
+
+1. ~~**A8 — local (KZ / Central Asia) catalog rows. The catalog now has
+   ZERO.**~~ **DONE 2026-08-25 — 20 rows carry `region: "KZ"`, catalog 172 →
+   192.** The state calendar from Дарын, the Kazakh programmes of Yandex and
+   Samsung, a leadership prize, two debate surfaces, an Almaty Model UN, a
+   university tournament carrying a scholarship, FLEX, SDU's SPT olympiad and
+   NU Summer Camp. Every eligibility
+   sentence is quoted from the organiser's own page; `test:links` reads
+   **191/192 healthy · 0 broken**. The level split moved from 16 national to
+   **36 national and 1 regional**, and the KZ rows between them touch all eight
+   faculties, which matters because the local gap was worst in law, humanities
+   and the arts.
+
+   **Five things it taught, and the second and fourth are the durable ones.**
+
+   - **Not one of the 20 carries a confirmed date, and that is the calendar
+     rather than the sourcing.** Дарын fixes each cycle by ministerial order in
+     mid-September, so every one of its pages still showed the closed 2025-26
+     cycle. Re-fetch the rural-school and science-project rows **by 8 September** (their windows open and close in the first half of the month) and the rest **after 20 September** — this is the cheapest
+     confirmed-date work available and it feeds item 2 directly.
+   - **Adding real data found a guard that had been vacuously green**, which is
+     a new way into the problem this file has been circling for a month. The
+     reference implementation in the one-pass matcher test hard-filtered
+     off-region rows — the behaviour from before the one-list release — and had
+     passed for six days only because the catalog held nothing that could reach
+     the line. **Five of the six known fail-open modes were found by reading;
+     this one could only be found by giving the code something to chew on.**
+     Where a guard's subject is a data shape the catalog does not currently
+     contain, it is not passing, it is abstaining.
+   - **The Open Graph card cannot draw the Kazakh alphabet**, nor ₸. Worked
+     around by using the Russian names Дарын publishes; see problem 7 below.
+     Still open, deliberately — but **cheaper than it looks**: the edge bundle
+     was re-measured at **865,764 bytes gzipped, 0.826 MB**, so there is 183 kB
+     of headroom under the 1 MB cap. What made that task look risky was the
+     memory of hitting 1.06 MB, not a current number.
+   - **The public detail page never drew the local badge, and only LOOKING
+     found it.** `/opportunities/[id]` is the third renderer of an opportunity
+     and the only one nobody had thought of as one. Of five Kazakhstan-only
+     pages, two named no country anywhere on them; the other three were saved
+     by their eligibility sentence happening to mention Kazakhstan, which is a
+     coincidence rather than a mechanism. This is the same lesson as the
+     companion's sticky panel — the defect was a property of what renders, not
+     of what the diff says — and it is the reason the measurement step is not
+     optional. Fixed and guarded, with the guard seen failing on the real
+     defect. **A component's justification does not travel with its markup:**
+     the card's comment says the badge "reads as *near you*", which is true on
+     a card only ever shown to someone in that country and false on a public
+     page that arrives from anywhere.
+   - **An owner's question the data now raises, and it is not ours to settle.**
+     Measured in the guest checker at year 11 with Law selected: **35 rows open
+     to that student, and none of the local ones in the top five.** The
+     ordering runs fit → confirmed date → days left, and a local row is neither
+     lifted nor sunk — it just has no confirmed date, so it loses to rows that
+     do. The mechanism works and the shelf is stocked; whether *local* should
+     outrank *global* for a student in that country is a product decision.
+     Note it interacts with item 2: confirming those dates would move them up
+     on their own, without touching the ordering at all.
+2. **#15 / A7 — verify the unconfirmed dates, but measure production first.**
+   **18 of 192** committed rows carry `dateConfirmed: true`; 58 are `alwaysOpen`
+   and correctly have no date to confirm. That leaves **116** rows
+   reading "Dates not announced". **The repository figure is not the live one** —
+   production overlays dates from the `sync-dates` cron, which an audit of a
+   checkout cannot see. Read the real number off `/admin/opportunities`, which
+   already has a date-health panel, and scope the verification against that
+   rather than against 7%. Each date verified also moves a card onto the
+   planner's agenda, so this is worth more than when it was written.
+
+   **First pass done 2026-08-26 — 32 rows, 12 → 18 confirmed — and the headline
+   is that the dates were the least of it.** Six rows were carrying a claim that
+   was wrong, and none of it is reachable by a link check, a type-check or a
+   reading of the diff. Two rows were REMOVED, both answering HTTP 200:
+   `caribou-math` has ceased operations in its own words, and `mun` pointed
+   school students at an organiser that calls itself university-level. Four were
+   lying about money or timing — `conrad-challenge` gave students eleven days
+   they did not have, `ippf` shipped "free" over a stated $25 fee, `scholastic`
+   understated a fee by half, `hacktoberfest` described a programme its
+   organiser has ended. Full write-up in [AUDIT_2026-08-14.md](AUDIT_2026-08-14.md) §A7.
+
+   **Two things to carry into the next pass, both cheap and both learned the
+   hard way:**
+
+   - **Strip HTML comments before believing a page.** It changed the answer
+     three times in one batch, and two of the three would have produced a FALSE
+     CONFIRM — prepared-but-unpublished registration banners sitting in pages
+     that otherwise read as current.
+   - **Ask what KIND of date you found before shipping it.** Three near-misses
+     were correctly refused: a price-tier boundary (`nhsmun`), a practice
+     deadline standing in front of the real gate (`future-problem-solving`), and
+     a team's payment date rather than a student's (`first-robotics`, shipped
+     anyway with the distinction written down). The field means the point after
+     which entry is impossible, and the sooner date always makes the livelier
+     countdown, which is exactly why it is the tempting wrong answer.
+
+   **116 rows still undated.** The next batches are the ones between three and
+   seven months out; the Kazakh block is the highest-value slice of it and has
+   its own two dates — the rural-school and science-project rows by 8 September,
+   the rest of Дарын after the 20th.
+3. ~~**A5 + A6 — close the last two vocabulary splits.**~~ **DONE 2026-08-24,
+   and at the root rather than at the two symptoms.** The split was never two
+   missing entries: the canonical arrays were bare unions living inside
+   `key-dates`, which nothing client-reachable may import at runtime, so every
+   option list had to hand-write its own copy and the compiler could check
+   none of them for completeness. `level` was declared in FIVE places and
+   `cost` in SEVEN — one more than the audit had counted, and the seventh was
+   found by the guard written for the other six. All four vocabularies now
+   live in [lib/data/opportunity-vocab.ts](../lib/data/opportunity-vocab.ts),
+   which imports nothing at all, and every label map is a `Record<Union, …>`,
+   so **a member added without its label does not compile**. `school` is a real
+   level with its own facet, hint and count; `funded` is postable. Four new
+   guards, and three of them were proved to bite by deliberate breakage.
+
+   **The generalisable half:** when the same mistake appears in many places
+   written by people who plainly knew better — the tell here was one Zod object
+   whose first field derived from a canonical array and whose next three were
+   written out by hand — stop looking for carelessness and look for a SECOND
+   rule that made the first one impossible to obey at those sites. The
+   violations cluster on one side of a line; the fix is to dissolve the
+   conflict, after which the instances stop being written rather than being
+   corrected one at a time.
+4. ~~**A2 — 401 must fail the link gate.**~~ **DONE 2026-08-24.** 401 has its
+   own verdict, `private`, which fails the run and names the likely cause: a
+   private document, an expired share link, or an `/edit` URL pasted in place
+   of the public one. `BOT_WALL` is 403/406/409/429, exactly as the audit said.
+   Verified against the live catalog — **168/172 healthy · 0 private · 0
+   broken** — so the trap is armed without anything newly red.
+5. **#14 — Malaysia and Australia.** Two country profiles, self-contained, and
+   they widen the spine's chain immediately. Rules are test-enforced: trade-offs
    must outnumber strengths, `notForYou` is mandatory, no prices or rankings,
-   `sources` must be official bodies over https and must answer
+   and `sources` must be official bodies over https that actually answer
    (`npm run test:guide-links`). Each new country needs its cities in `hubs` or
    the containment test fails.
-2. **#15 — verify the unconfirmed dates.** Pure verification, no design calls,
-   and it protects the product's central promise. Worth more than it was: an
-   unconfirmed date now also costs a row its place on the planner's agenda, so
-   each one verified moves a card into a period.
-3. **#11 — careers depth and the interest quiz.** Two separable halves. The
-   content half is the direct tone already agreed. **The quiz half now has a
+6. **#11 — careers depth and the interest quiz. Half of this is already done;
+   re-read the file before planning it.** Games was rewritten at some point and
+   now states the bargain plainly (pay below equivalent software work, staffing
+   around project cycles, crunch, and a warning about one-engine courses).
+   **What is left is narrower and sharper than the item's title suggests:**
+   `Strategy & consulting` still does not say that school prestige is the
+   dominant hiring factor or that recruiting is concentrated in particular
+   countries, and there is no investment-banking area at all. For a student in
+   Central Asia that omission is not a nuance — it is the fact that decides
+   whether the path is open to them, and leaving it out is the brochure
+   behaviour this whole layer exists to avoid. **The quiz half carries a
    constraint from §7:** it may inform an offer, it may never be the answer, and
    it must not become a RIASEC clone.
-4. **DONE — a job simulation is named where the work is**
-   (`lib/data/try-it.ts` → `TryTheWork`, inside "Test it this month"). Money &
-   markets gets J.P. Morgan, Data & AI gets three, treating patients gets
-   nothing. **We build none of these and we link to none of them directly:** the
-   file holds zero URLs, and the one link goes through the catalog row the gate
-   can actually keep alive. Two decisions worth keeping: the entry names the
-   EMPLOYER and describes the task in our own words, because a company outlives
-   its course listing and is also the search term; and an area with no honest
-   answer renders nothing, because a near-miss costs a reader an evening and
-   teaches them the wrong thing about a career.
-5. **DONE — the rest of #23's animation half.** The period steps in from the
-   direction of travel, the lens panel replays on switch, and a board card now
-   morphs between columns. The last one needed a design change, not an
-   animation: the move is applied in the CLIENT first, so the transition has
-   nothing to wait on. See §5.23.
-6. **Local (KZ / Central Asia) catalog rows.** `region` exists exactly for this
-   and NAO Cup is still the only one. The highest-value widening we can do for
-   the students the product is actually for.
+7. **A9 — three copies of `CATEGORY_LABEL`.** Not a bug today and last on
+   purpose. All three are `Record<CompetitionCategory, string>`, so the compiler
+   keeps them complete; the risk is only that a fourth gets added. If they are
+   ever merged, the right shape is one map plus an override for the long form,
+   because the difference between them ("Research" on a badge, "Research
+   program" on a page heading) is deliberate.
 
 ### Standing debts worth knowing about
 
-- **The branch name lies.** `feat/guide-spine` carries the spine, the catalog
-  work, release 3 and the nav fix. Cut a fresh branch after #107 merges.
 - **The guide is still `force-dynamic` and uncacheable**, deliberately — two
   measured causes, both owner calls, written up in CLAUDE.md.
-- **`ijso` was broken before anyone noticed**, which means the link gate is only
-  as good as the frequency it is run at. It is not in CI (it makes ~173 network
-  calls); run it after any catalog edit.
+- **The link gate is only as good as how often it is run.** `ijso` was broken
+  before anyone noticed. It is not in CI, because it makes ~172 network calls;
+  run it after any catalog edit.
 - **Nothing in the planner can be verified in a browser by an agent** — it is
   behind a session and entering credentials is not permitted. That is *why* the
   planner's logic keeps being pushed into pure functions in `lib/data/planner.ts`
   and `lib/data/planner-start.ts`. Keep doing that: it is the only verification
   available.
+- **Three fields rot on a yearly cycle and are written to be re-checked, not
+  trusted:** post-study work rules on every country profile, `englishTaught` in
+  `place-universities.ts`, and the employer simulations in `try-it.ts`. They are
+  phrased as "current rule, check it" for that reason.
 
----
+### Problems, as distinct from work items — added 2026-08-19
 
-## 9. Session log — 2026-08-13 / 14
+The list above is things to build. These are things that are **wrong right now**
+and that no item on any list will fix, because nobody has owned them.
+
+1. **THREE guards in this repo have failed OPEN, and the third was found by
+   grepping for the signature.** The bundle guard matched nothing because it was
+   written as a template literal where `\s` became the letter s. The 11px floor
+   guard matched nothing because its backslashes were eaten, so it compared
+   `NaN`. On 2026-08-19 a scan of all **433 regex literals across the 19 test
+   scripts** found one more: `test-engine.ts` split beat text on `/s+/` — runs
+   of the letter s — instead of `/\s+/`. It reported a maximum of **9 words**
+   across the 24 beats when the real maximum is **23**, so the "≤24 words" rule
+   CLAUDE.md calls test-enforced would have passed a sixty-word beat. No bad
+   content had shipped, which is luck rather than coverage. Fixed.
+
+   **The scan is cheap and worth keeping**: flag any regex literal containing a
+   bare `d+`/`s+`/`w+` not preceded by a backslash. It ran clean otherwise — the
+   only other hits were correctly-escaped `\[(\d…` patterns.
+
+   **CLOSED 2026-08-19 for the eleven ban patterns.** They now live in one
+   `BAN` table in `test-engine.ts`, the guards reference it instead of holding
+   their own literal, and one test asserts every entry catches lines it must
+   catch and ignores the near-misses. `BAN_FIXTURES` is typed as a
+   `Record<keyof typeof BAN, …>`, so **a new ban pattern without its fixture
+   does not compile** — which is the part that survives somebody in a hurry.
+   All eleven were already correct; the value is that they cannot silently stop
+   being correct.
+
+   **Two things that came out of doing it, and both generalise:**
+
+   - **A bite test written against a COPY of a regex proves only that the copy
+     works.** The indirection through `BAN` is the whole guarantee; without it
+     the test and the guard drift apart and the test keeps passing.
+   - **The first version of the bite test did not work, and a deliberate break
+     proved it.** `tierAsText` was changed from `(?![-\w])` to `(?![-w])` — one
+     backslash, exactly the real failure — and both fixtures still behaved,
+     because `text-reach` and `text-reach-ink` cannot tell `\w` from the letter
+     w. Only a third word character can. **Every `ignores` list therefore has to
+     contain the boundary case**, the near-miss the pattern excludes by a single
+     character of lookahead, not merely a line that is obviously different. Both
+     failure directions were then verified by breaking a pattern on purpose and
+     watching the suite go red: the loosened boundary, and the one that matches
+     nothing at all.
+
+   **A FIFTH way for a guard to be useless, found 2026-08-24, and it is not a
+   broken regex.** CLAUDE.md lists four. The fifth is that the defect arrives
+   through a channel the guard cannot see at all. Alongside it, one lesson that
+   is not a fail-open at all but a different disease — a guard so imprecise it
+   gets exempted to death:
+
+   - **A guard aimed at the vocabulary instead of the SHAPE.** The first
+     version of the private-copy guard counted how many literals of a
+     vocabulary appeared anywhere in a file, threshold three. It flagged nine
+     files and eight were false: the cost vocabulary's generic members
+     (`"unknown"`, `"free"`, `"varies"`) belong to half a dozen unrelated
+     unions here, and three uses of one fallback counted as three. Every real
+     instance had one shape — an ARRAY LITERAL with three or more DISTINCT
+     members. Rewriting it that way went from 9 findings (1 real) to 1 finding
+     (1 real), and the one was a seventh copy nobody had counted. **Words are
+     shared across unrelated concepts; shape is not.**
+   - **A guard that cannot see the mechanism.** The contrast guards scan class
+     names for alpha colour utilities (`text-ink/60`). The failure arrived as
+     an `opacity-50` on the element — one level up, compositing afterwards onto
+     colours that individually pass. No class-name scan could ever have caught
+     it. **Verified tokens do not compose into a verified pixel: audit contrast
+     at the rendered node.** The source-level guard that IS possible guards the
+     mechanism instead — an opacity reduction on an interactive element must be
+     `disabled:`-prefixed, so it can only apply where WCAG exempts it.
+
+   **And the near-miss rule got a second confirmation.** Every `ignores` list
+   in a bite test has to contain the boundary case — the line the pattern
+   excludes by a single character. Here that was `opacity-100` against
+   `opacity-10`, which differ by one trailing character and would otherwise
+   have made the guard fire on every full-opacity override in the tree.
+
+   **Still open, and smaller than it was:** the guards that are not simple bans —
+   the ones that parse structure (`walk` + `matchAll` over JSX, the import-graph
+   reachability walk) — are not in the table because they are extractors rather
+   than patterns. The reachability one already has its own bite test. The rest
+   are read-and-assert shapes that fail CLOSED, so a broken regex there makes
+   the test fail rather than pass.
+2. ~~**The product's stated mission and its data disagree.**~~ **Mostly closed
+   2026-08-25.** It read: 155 international, 16 national, 1 regional, 0
+   school-level, 0 `region`-tagged, and nothing a student in Shymkent could turn
+   up to in person. It is now **155 international, 36 national, 1 regional, 20
+   `region`-tagged** — and still **0 school-level**. That last zero is the part
+   that survives, and it is smaller than it looks: `school` became a real level
+   with its own facet on 2026-08-24, so the filter now offers a rung that
+   nothing occupies. A school-run competition is the kind most likely to
+   actually exist in Shymkent and the least likely to have a website, which is
+   why none of the five verification passes found one. **The honest route to it
+   is probably the admin quick-add or a partner account, not a catalog row** —
+   somebody standing in the building can post what they know is happening.
+3. **The countdown is the product's central promise and 93% of rows cannot make
+   it.** 18 of 192 carry a confirmed date. 58 are legitimately `alwaysOpen`,
+   which leaves 116 rows showing "dates not announced" — honest, and also the
+   thing a student came for. Every date verified moves a card onto the planner's
+   agenda, so this compounds with the section we just spent four releases
+   building.
+4. ~~**`Link health` has been red since at least 2026-08-03** and is waiting on
+   an owner decision.~~ **CLOSED 2026-08-24** — see §1. It needed no decision:
+   the workflow header and the checker's docstring both already described the
+   right rule and neither implemented it. It fails on a 4xx that is not a bot
+   wall and on nothing else, and it passes. The durable half of this entry is
+   still true and now has a fourth instance behind it: **a permanently red check
+   is a check nobody reads**, and it also hides the day something is real.
+5. **The docs drift, including the file whose job is preventing drift.** §1
+   carried a `main` SHA two releases stale while telling the reader that a stale
+   note here has cost a release twice. It is corrected, but the mechanism that
+   let it happen is unchanged: these numbers are maintained by hand. Anything in
+   this file that is a *count* should be treated as a claim to re-derive, not a
+   fact — `git fetch`, `npm run test:unit`, and the scripts in §6 take under a
+   minute between them.
+6. **We still cannot tell whether any of this works.** `opportunity_intents` is
+   the only behavioural signal the product collects, `/admin/intents` renders
+   the funnel, and no one has reported a number off it in this file. Every
+   release since #17 has been justified by reasoning rather than by evidence
+   that a student did something differently.
+7. **The share card cannot draw the Kazakh alphabet — added 2026-08-25.**
+   `OG_GLYPHS` covers Cyrillic А-я plus Ёё, which is the Russian alphabet. Every
+   Kazakh-specific letter — ә, қ, ғ, ң, ө, ұ, ү, һ, і — is outside it, and so is
+   ₸. A glyph outside a subset does not throw; it renders as a blank box, on a
+   public card, in someone else's chat. So a product built for students in
+   Kazakhstan cannot put a Kazakh name on the one surface designed to be sent to
+   a friend, and the two `.kz` rows in the old catalog never exposed it because
+   both were named in English.
+
+   It was worked around rather than fixed: the 20 new rows use the Russian names
+   Дарын itself publishes, and a rule in the catalog block says why. **The fix
+   is small and the measurement is not** — widen the ranges, re-run
+   `scripts/subset-og-fonts.mjs`, then gzip the non-`.map` files in
+   `.next/server/edge-chunks` and compare against the **1 MB** Vercel edge cap,
+   which has already been hit once at 1.06 MB while `next build` passed locally
+   AND in CI. Nothing enforces that limit before a deploy, which is why this is
+   a task rather than a one-line change. It also has a **second half worth
+   deciding at the same time**: the OG cards are still set in Inter while the
+   site moved to Source Serif / Source Sans, so a shared link already unfurls in
+   a face the page it opens does not use. One re-subset could close both.
+
+## 9. Where this can go next — direction, 2026-08-19
+
+Not a task list. The four items above are what to *build*; this is what the
+build is for, and each one is grounded in something already measured rather than
+in taste.
+
+**1. Finish the data before adding surfaces.** The last four releases added
+structure — the spine, the planner, the companion, one list — and the structure
+is now ahead of what fills it. A8 (local rows) and A7/#15 (confirmed dates) are
+worth more per hour than any new feature, because both make existing screens
+say something they currently cannot. A student who opens Opportunities and sees
+one thing happening in their own city, with a real date, has had the product
+work as advertised; today that student cannot exist.
+
+**Updated 2026-08-25, and the update is the more useful half.** A8 shipped, so
+that sentence is now exactly half true and the remaining half is sharper than
+the original. A student in Shymkent opens Opportunities and sees twenty things
+in their own COUNTRY — but **not one carries a date**, and **nineteen of the
+twenty are national rather than local to any city**. So:
+
+- **The date half is now the whole of it**, and A8 made it cheaper rather than
+  harder. Дарын publishes each cycle by ministerial order in mid-September;
+  fetching ten pages — two of them by 8 September, the rest after the 20th — would put ten dated Kazakh rows on
+  the planner's agenda, which is the single most visible thing available.
+- **The city half is a different problem and probably not a catalog problem.**
+  `level: "school"` is a real rung with a facet since 2026-08-24 and holds zero
+  rows, because the competitions most likely to be running in Shymkent are the
+  ones least likely to have a website. Five verification passes found none. The
+  route in is somebody standing in the building — the admin quick-add, or a
+  partner account for a school or an oblast education department. That is a
+  distribution question, not a data-entry one.
+
+**2. Make the guards trustworthy, once.** See problem 1. This is the cheapest
+possible insurance against the class of bug this repo keeps shipping, and it is
+the only item here that protects every future release rather than improving one.
+
+**3. Then close the honesty gaps in the guide's prose.** #11's consulting half,
+and whatever the same read finds in the other 32 areas. The rule the layer was
+built on is that an appeal without its catch beside it is an advert; the games
+area now honours that and consulting does not, which means the layer is
+inconsistent rather than wrong — the worse of the two states, because a reader
+cannot tell which pages to trust.
+
+**4. Look at `/admin/intents` and write the number down here.** Problem 6. If
+students are committing, that says which kinds of opportunity to add more of and
+the data work above gets a target. If they are not, that is the most important
+fact in the project and every plan in this file is built on an assumption.
+
+**Deliberately NOT next, and why:** new countries (#14) widen a chain that
+already works; a second analysis country adds a pipeline before we know the
+first one changes behaviour; and any redesign of a screen shipped in the last
+month is answering a complaint nobody has made yet. The pattern this file
+records over and over is that measuring first changed what got built — the
+filter rail was declined that way, and readability was rediagnosed twice.
+
+
+## 10. Session log — 2026-08-13 / 14
 
 Kept because the ORDER things happened in is itself information: three of these
 were found only because the previous one was done first.
@@ -1843,7 +2552,8 @@ were found only because the previous one was done first.
 trusted. Three of those deliberate failures found real bugs rather than
 confirming the test: the spine's region ordering, the 11px floor's
 one-match-per-line hole, and the two assertions that failed on their own
-comments.
+comments. (The floor one is half a success: the hole was real, and the fix for
+it was written into a regex that could not match — see the correction in §5.22.)
 
 **Catalog: 156 → 173, and 0 broken links** — including `ijso`, which had been
 broken before this session started.

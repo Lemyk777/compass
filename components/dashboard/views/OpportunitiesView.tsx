@@ -1,7 +1,13 @@
 "use client";
 import dynamic from "next/dynamic";
+import { NO_FACTORS, useOpportunityPlan, useToday } from "@/lib/data/use-opportunity-plan";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useDeferredValue,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 // Opportunities is the one view whose cards reflow on tab switch, so it uses the
 // framer-backed MotionCard (position animation) instead of the plain Card.
 import { MotionCard as Card } from "@/components/report/MotionCard";
@@ -39,6 +45,7 @@ import {
   NO_FILTERS,
   activeFilterCount,
   filterOpportunities,
+  matchedCount,
   type CategoryFilter,
   type OpportunityFilters,
 } from "@/lib/data/opportunity-filter";
@@ -46,7 +53,6 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { MotionSafe } from "@/components/ui/MotionSafe";
 import type {
-  ExtracurricularsPlan,
   Opportunity,
   OpportunityFit,
   StrengthBand,
@@ -70,17 +76,17 @@ const BAND_COPY: Record<
   developing: {
     label: "Gaining traction",
     tone: "bg-target-soft text-target-ink",
-    line: "You have a base — now step up to national-calibre competitions while keeping a couple of accessible wins for breadth.",
+    line: "You have a base. Step up to national-calibre competitions now, and keep a couple of accessible wins for breadth.",
   },
   competitive: {
     label: "Sharpening your spike",
     tone: "bg-likely-soft text-likely-ink",
-    line: "You're competitive. Focus on selective and elite events that produce a standout, verifiable result — depth over volume.",
+    line: "You're competitive. Focus on selective and elite events that produce a standout, verifiable result. Depth over volume.",
   },
   elite: {
     label: "Chasing the headline win",
     tone: "bg-accent-soft text-accent-ink",
-    line: "Your record is already strong. You don't need more entries — you need one elite, international-calibre win. Go all-in on the top tier.",
+    line: "Your record is already strong. You don't need more entries. You need one elite, international-calibre win, so go all-in on the top tier.",
   },
 };
 
@@ -88,17 +94,17 @@ const FIT_GROUPS: { fit: OpportunityFit; title: string; hint: string }[] = [
   {
     fit: "recommended",
     title: "Recommended for you",
-    hint: "Matched to where you are now — prioritize these.",
+    hint: "Matched to where you are now, so prioritize these.",
   },
   {
     fit: "stretch",
     title: "Stretch goals",
-    hint: "A level above — aim here once you've landed the recommended ones.",
+    hint: "A level above. Aim here once you've landed the recommended ones.",
   },
   {
     fit: "foundational",
     title: "Foundational",
-    hint: "Easier entry points — useful for breadth, but likely below your level.",
+    hint: "Easier entry points, useful for breadth but likely below your level.",
   },
 ];
 
@@ -118,7 +124,17 @@ const SHOWN = 5;
 /** Rows a fit group opens with, and adds per "show more". */
 const PAGE = 8;
 
-export function OpportunitiesView() {
+export function OpportunitiesView({
+  /**
+   * The tab to open on, from `?kind=` — resolved on the server so an unknown
+   * value is already null by the time it arrives. The thread's "try it for an
+   * afternoon" move links to `?kind=simulation`, and without this it landed on
+   * "All".
+   */
+  initialCategory = null,
+}: {
+  initialCategory?: CategoryFilter | null;
+} = {}) {
   const { analysis, hasProfile, profileMeta, liveDates, basePath, isAdmin } =
     useDashboard();
   // Derived, not configured: this view is the dedicated section when it IS the
@@ -126,18 +142,19 @@ export function OpportunitiesView() {
   // to wire correctly at every call site, and one more way to be wrong.
   const standalone = usePathname() === "/opportunities";
 
-  // "today" depends on the visitor's clock — resolve on the client to avoid a
-  // hydration mismatch (same pattern as the Timeline view).
-  const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => setToday(new Date()), []);
+  // "today" depends on the visitor's clock, so it resolves on the client. The
+  // hook also starts fetching the catalog from mount, in the same tick,
+  // which is the fix: this used to set a piece of state, re-render, and only
+  // then begin the download — see use-opportunity-plan.ts.
+  const today = useToday();
 
-  const [category, setCategory] = useState<CategoryFilter>("all");
+  const [category, setCategory] = useState<CategoryFilter>(
+    initialCategory ?? "all",
+  );
   // Everything the filter panel owns (search text, money, timing, level,
   // eligibility). Kind stays its own state above because the sticky tabs are
   // its control — one criterion, one place to set it.
   const [filters, setFilters] = useState<OpportunityFilters>(NO_FILTERS);
-  // The full grouped catalog is now opt-in. See SHOWN below for why.
-  const [showAll, setShowAll] = useState(false);
   // A year answered inline this session, before the server round-trip lands.
   const [yearOverride, setYearOverride] = useState<number | null>(null);
   const graduationYear = yearOverride ?? profileMeta.graduationYear;
@@ -181,41 +198,22 @@ export function OpportunitiesView() {
   // that's the "grow with us" mode for younger students with thin portfolios.
   // Without factors the strength is 0 → "emerging" → accessible events first,
   // exactly the right starting point for someone building a record.
-  const [plan, setPlan] = useState<ExtracurricularsPlan | null>(null);
-  useEffect(() => {
-    if (!today) {
-      setPlan(null);
-      return;
-    }
-    let cancelled = false;
-    // Lazy-load the matching engine (and the ~2,700-entry catalog it pulls in)
-    // so the dataset is a separate async chunk instead of this route's initial
-    // JS. The client filter stays instant once the chunk has loaded — the plan
-    // is null for one paint (the skeleton already handles that).
-    import("@/lib/data/key-dates").then((m) => {
-      if (cancelled) return;
-      setPlan(
-        m.buildExtracurriculars({
-          today,
-          faculties,
-          factors: analysis?.factors ?? [],
-          liveCompetitions: liveDates.competitions,
-          homeCountry: profileMeta.homeCountry,
-          graduationYear,
-        }),
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [
+  // Memoised on the analysis object, not rebuilt per render: this array is a
+  // dependency of the plan, and `analysis?.factors ?? []` would be a new
+  // reference every time — an effect that always re-runs and a 172-row match
+  // recomputed to reach the same answer.
+  const factors = useMemo(
+    () => analysis?.factors ?? NO_FACTORS,
+    [analysis],
+  );
+  const plan = useOpportunityPlan({
     today,
-    analysis,
     faculties,
-    profileMeta.homeCountry,
+    factors,
     graduationYear,
-    liveDates.competitions,
-  ]);
+    homeCountry: profileMeta.homeCountry,
+    liveCompetitions: liveDates.competitions,
+  });
 
   // Two half-filtered sets, on purpose — each control's counts have to be
   // honest about what the OTHER controls have already done:
@@ -226,9 +224,24 @@ export function OpportunitiesView() {
   // would invalidate every memo below it, including the facet counts the
   // filter panel recomputes.
   const items = useMemo(() => plan?.items ?? [], [plan]);
+  // The list follows the filters one beat behind, and the input never does.
+  //
+  // Every keystroke in the search box used to re-filter the catalog, recompute
+  // the facet counts and reconcile up to 161 cards SYNCHRONOUSLY, between the
+  // key going down and the character appearing — so the box got heavier the
+  // more of the catalog a student had widened it to. `useDeferredValue` keeps
+  // the controlled input on `filters` (it stays exactly as responsive as an
+  // empty one) and lets React render the expensive half at low priority,
+  // showing the previous list until the new one is ready rather than blocking
+  // on it.
+  //
+  // NOT a debounce: a timer would make the list arrive late even when there is
+  // time to do the work, and would need tuning per device. This yields to real
+  // input and to nothing else.
+  const deferredFilters = useDeferredValue(filters);
   const filtered = useMemo(
-    () => filterOpportunities(items, filters),
-    [items, filters],
+    () => filterOpportunities(items, deferredFilters),
+    [items, deferredFilters],
   );
   const inCategory = useMemo(
     () =>
@@ -248,8 +261,13 @@ export function OpportunitiesView() {
   // Any active filter is an explicit request to browse, so it opens the full
   // list on its own: a student who searches "robotics" and gets the same five
   // recommendations back would reasonably conclude the search is broken.
-  const filtering = activeFilterCount(filters) > 0;
-  const browsing = showAll || filtering;
+  //
+  // Read off the DEFERRED filters, not the live ones, and that is not a detail:
+  // this flag decides whether the shortlist or the full list is on screen, and
+  // `filtered` below it is deferred. Taking the live value would flip the page
+  // to the browse list one frame before the rows for it existed — an empty
+  // "no matches" flash on the first character typed.
+  const filtering = activeFilterCount(deferredFilters) > 0;
 
   // How many sit behind each tab. Showing the number turns the filter from a
   // guess ("is there anything under Courses?") into a decision.
@@ -261,17 +279,41 @@ export function OpportunitiesView() {
     return counts;
   }, [filtered]);
 
+  // `items` now holds the WHOLE catalog, annotated — matching stopped hiding
+  // rows so the panel could own the narrowing. So anything that means "yours"
+  // has to say so, or it silently counts other people's opportunities.
+  const mine = useMemo(
+    () => items.filter((o) => !o.offField && !o.offRegion),
+    [items],
+  );
   // What to act on now: eligible today, in the order buildExtracurriculars
   // already put them (matched to strength first, then datable, then soonest).
-  const openNow = items.filter((o) => !o.notYetEligible);
-  const shortlist = openNow.slice(0, SHOWN);
-  const nearest = shortlist
-    .filter((o) => o.dateConfirmed)
-    .reduce<Opportunity | null>(
-      (best, o) =>
-        best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
-      null,
-    );
+  //
+  // Memoised on `mine` like everything else derived from the catalog. These
+  // three depend on the student's own facts and on nothing the filter panel
+  // touches, yet they were recomputed on every render — so typing a character
+  // walked the matched list twice and rebuilt the shortlist's headline, to
+  // arrive at the same answer each time.
+  const openNow = useMemo(
+    () => mine.filter((o) => !o.notYetEligible),
+    [mine],
+  );
+  const nearest = useMemo(
+    () =>
+      openNow
+        .slice(0, SHOWN)
+        .filter((o) => o.dateConfirmed)
+        .reduce<Opportunity | null>(
+          (best, o) =>
+            best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
+          null,
+        ),
+    [openNow],
+  );
+  // How much of the catalog this student is being shown, and out of how much.
+  // Computed, never written down — the control that used to sit here said
+  // "Show everything we track for you (114)", where "everything" was false.
+  const { shown, total } = useMemo(() => matchedCount(items), [items]);
 
   return (
     // Three zones, and the rules between them are the whole change.
@@ -297,7 +339,7 @@ export function OpportunitiesView() {
       {isAdmin && <QuickAddOpportunity />}
       <PageHeader
         title="Opportunities"
-        hint="Competitions and olympiads we recommend for you — matched to your field and strength. These are our suggestions to enter next, not your own activities."
+        hint="Competitions and olympiads we recommend for you, matched to your field and strength. These are our suggestions to enter next, not your own activities."
       />
 
       {/* Inside the report, this panel is a summary of a section that is bigger
@@ -396,97 +438,86 @@ export function OpportunitiesView() {
                   resultCount={visible.length}
                 />
 
-                {/* The shortlist is the answer to "what should I do next", which
-                  a filtered list is not — so it steps aside while filtering
-                  rather than sitting above unrelated results. */}
-                {!filtering && (
-                  <Shortlist
-                    rows={shortlist}
-                    total={openNow.length}
-                    nearestDays={nearest?.daysToDeadline}
-                  />
-                )}
-
-                {!browsing ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowAll(true)}
-                    className="w-full rounded-2xl border border-dashed border-line bg-card py-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-ink/25 hover:text-ink focus-visible:focus-ring"
-                  >
-                    Show everything we track for you{" "}
-                    <span data-num className="text-ink-faint">
-                      ({plan.items.length})
-                    </span>
-                  </button>
-                ) : (
-                  <>
-                    {/* The tabs stay reachable while you scroll a hundred cards —
+                {/* ONE LIST from here down.
+                    The shortlist and the "Show everything we track for you"
+                    button are gone. They were two objects stacked on a third,
+                    the middle one vanished while filtering, and the button's
+                    word "everything" was false — it was everything we MATCHED,
+                    and it was the only route to the rest. The order is still
+                    the one buildExtracurriculars returns, so what fits comes
+                    first without a section heading saying so. */}
+                <>
+                  {/* The tabs stay reachable while you scroll a hundred cards —
                       having to scroll back up to change filter is the thing
                       that makes a long list feel like work. */}
-                    <div className="sticky top-2 z-20 -mx-1 px-1 py-1">
-                      <CategoryTabs
-                        active={category}
-                        onChange={setCategory}
-                        counts={categoryCounts}
-                      />
-                    </div>
-                    {/* What "All" counts, said once.
-                      The landing page counts the whole catalog and this row
-                      counts what survived the age and field gates, so the two
-                      numbers on the site disagreed with nothing to explain
-                      them — which reads as broken data rather than as a filter
-                      doing its job. The number itself stays out of here on
-                      purpose: importing the catalog to say "of 156" would drag
-                      all ~2,700 entries into this client bundle, the trap the
-                      dynamic import above exists to avoid. */}
-                    <p className="-mt-1 px-1 text-xs leading-relaxed text-ink-faint">
-                      These counts are what you can enter — the catalog is
-                      larger, and the rest is for other ages or other subjects.
-                    </p>
-                    {FIT_GROUPS.map((g) => {
-                      const rows = visible.filter((o) => o.fit === g.fit);
-                      if (rows.length === 0) return null;
-                      return (
-                        <FitSection
-                          key={`${g.fit}-${category}`}
-                          title={g.title}
-                          hint={g.hint}
-                          count={rows.length}
-                          rows={rows}
-                        />
-                      );
-                    })}
-                    {visible.length === 0 && (
-                      <Card>
-                        {filtering ? (
-                          <>
-                            <p className="text-sm text-ink-soft">
-                              Nothing matches all of that. The narrowest filter
-                              is usually the money one — try dropping a
-                              criterion rather than starting over.
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => setFilters(NO_FILTERS)}
-                              className="mt-3 inline-flex h-9 items-center rounded-lg border border-line px-3 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
-                            >
-                              Clear the filters
-                            </button>
-                          </>
-                        ) : (
-                          <p className="text-sm text-ink-soft">
-                            Nothing in this category matches your profile yet.
-                            Try another tab — everything we track for you is
-                            still in &ldquo;All&rdquo;.
-                          </p>
-                        )}
-                      </Card>
+                  <div className="sticky top-[calc(var(--shell-sticky-top,0px)+0.5rem)] z-20 -mx-1 px-1 py-1">
+                    <CategoryTabs
+                      active={category}
+                      onChange={setCategory}
+                      counts={categoryCounts}
+                    />
+                  </div>
+                  {/* The honest line, and it replaces a sentence that told the
+                      truth and offered nothing to do about it: "the catalog is
+                      larger, and the rest is for other ages or other subjects".
+                      Both numbers are computed here rather than written down,
+                      and the filters named in it are real controls with their
+                      own counts. It renders only when the two differ — saying
+                      "113 of 113" would be noise. */}
+                  {shown !== total &&
+                    filters.matched.length === NO_FILTERS.matched.length && (
+                      <p className="-mt-1 px-1 text-xs leading-relaxed text-ink-faint">
+                        Showing{" "}
+                        <span data-num className="font-semibold text-ink-soft">
+                          {shown}
+                        </span>{" "}
+                        of {total}. The rest are in other subjects or other
+                        countries. Open the filters to put them back.
+                      </p>
                     )}
-                  </>
-                )}
+                  {FIT_GROUPS.map((g) => {
+                    const rows = visible.filter((o) => o.fit === g.fit);
+                    if (rows.length === 0) return null;
+                    return (
+                      <FitSection
+                        key={`${g.fit}-${category}`}
+                        title={g.title}
+                        hint={g.hint}
+                        count={rows.length}
+                        rows={rows}
+                      />
+                    );
+                  })}
+                  {visible.length === 0 && (
+                    <Card>
+                      {filtering ? (
+                        <>
+                          <p className="text-sm text-ink-soft">
+                            Nothing matches all of that. The narrowest filter is
+                            usually the money one, so try dropping a criterion
+                            rather than starting over.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setFilters(NO_FILTERS)}
+                            className="mt-3 inline-flex h-9 items-center rounded-lg border border-line px-3 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring"
+                          >
+                            Clear the filters
+                          </button>
+                        </>
+                      ) : (
+                        <p className="text-sm text-ink-soft">
+                          Nothing in this category matches your profile yet. Try
+                          another tab. Everything we track for you is still in
+                          &ldquo;All&rdquo;.
+                        </p>
+                      )}
+                    </Card>
+                  )}
+                </>
 
                 <p className="text-center text-xs text-ink-faint">
-                  Dates are indicative — always confirm on the official site
+                  Dates are indicative, so always confirm on the official site
                   before you rely on them.
                 </p>
               </>
@@ -541,7 +572,7 @@ function SectionDoor() {
             Its own space, built around this instead of around your profile
             score: the short questions that sharpen the match, the interest
             quiz, what each field leads to, and the cities where that work
-            actually is. This panel stays here — nothing moves out of your
+            actually is. This panel stays here, and nothing moves out of your
             report.
           </p>
         </div>
@@ -569,7 +600,7 @@ function GuideLink({ faculties }: { faculties: FacultyValue[] }) {
         </span>
         <span className="mt-0.5 block text-xs text-ink-soft">
           Kinds of work, the jobs inside each, and the cities where that work
-          actually is — with the catch and the way in
+          actually is, with the catch and the way in
         </span>
       </span>
       <span className="shrink-0 text-ink-faint" aria-hidden>
@@ -642,7 +673,7 @@ function StarterBanner({
           {cta} &rarr;
         </a>
         <p className="mt-2 text-xs text-ink-faint">
-          Optional — your Opportunities stay free whether or not you do this.
+          Optional. Your Opportunities stay free whether or not you do this.
         </p>
       </div>
     </Card>
@@ -665,7 +696,7 @@ function StrengthBanner({
           <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
             {copy.label}
             <span
-              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${copy.tone}`}
+              className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${copy.tone}`}
             >
               Extracurricular strength{" "}
               <span data-num className="tabular-nums">
@@ -679,69 +710,6 @@ function StrengthBanner({
           </p>
         </div>
       </div>
-    </Card>
-  );
-}
-
-/**
- * The five to act on, stated as a verdict rather than offered as a list. The
- * count is of what is on screen; the size of the matched set stays visible
- * underneath so nothing is being hidden, just de-emphasised.
- */
-function Shortlist({
-  rows,
-  total,
-  nearestDays,
-}: {
-  rows: Opportunity[];
-  total: number;
-  nearestDays?: number;
-}) {
-  if (rows.length === 0) return null;
-  return (
-    <Card>
-      <div className="border-l-2 border-ivy pl-4">
-        <h2 className="text-xl font-semibold leading-tight tracking-tight text-ink">
-          <span data-num className="text-ivy-ink">
-            {rows.length}
-          </span>{" "}
-          to enter next.
-        </h2>
-        <p className="mt-1 text-sm text-ink-soft">
-          Matched to where you are now
-          {nearestDays != null && (
-            <>
-              {" · "}the nearest closes in{" "}
-              <span data-num className="font-semibold text-ink">
-                {nearestDays} days
-              </span>
-            </>
-          )}
-          .
-        </p>
-        {total > rows.length && (
-          <p className="mt-1 text-xs text-ink-faint">
-            You can enter <span data-num>{total}</span> in total — these are the
-            ones to start with.
-          </p>
-        )}
-      </div>
-      <ul className="mt-4 grid gap-2.5 2xl:grid-cols-2">
-        {rows.map((o, i) => (
-          <li
-            key={o.id}
-            className="animate-fade-up"
-            // Same 45ms stagger as the public page — the two lists should feel
-            // like the same product.
-            style={{
-              animationDelay: `${i * 45}ms`,
-              animationFillMode: "backwards",
-            }}
-          >
-            <OpportunityRow o={o} commit />
-          </li>
-        ))}
-      </ul>
     </Card>
   );
 }
@@ -774,7 +742,7 @@ function YearPrompt({ onPick }: { onPick: (year: number) => void }) {
         What year are you in at school?
       </p>
       <p className="mt-1 text-sm text-ink-soft">
-        Everything below is unfiltered until we know — some of it has age limits
+        Everything below is unfiltered until we know, and some of it has age limits
         you may not have reached yet.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -836,7 +804,7 @@ function FieldPrompt({
       </p>
       <p className="mt-1 text-sm text-ink-soft">
         Pick the fields you care about and we&rsquo;ll match competitions and
-        programs to them — or see everything.
+        programs to them, or see everything.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {FACULTIES.map((f) => {
@@ -905,7 +873,7 @@ function CategoryTabs({
   const tabs = CATEGORY_TABS;
   return (
     // Scrollable on a phone rather than wrapping into two ragged rows.
-    <div className="flex gap-1 overflow-x-auto rounded-xl border border-line bg-card/95 p-1 shadow-card backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex gap-1.5 overflow-x-auto rounded-2xl border border-line/70 bg-card/95 p-1.5 shadow-card backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {tabs.map((t) => {
         const on = t.key === active;
         const n = counts[t.key] ?? 0;
@@ -920,10 +888,10 @@ function CategoryTabs({
             type="button"
             aria-pressed={on}
             onClick={() => onChange(t.key)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-200 focus-visible:focus-ring ${
+            className={`flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 focus-visible:focus-ring ${
               on
-                ? "bg-accent text-on-fill"
-                : "text-ink-soft hover:bg-surface hover:text-ink"
+                ? "bg-accent text-on-fill shadow-sm"
+                : "text-ink-soft hover:bg-surface/80 hover:text-ink"
             }`}
           >
             {t.label}
@@ -933,7 +901,7 @@ function CategoryTabs({
               // with `accent`, which gets LIGHTER in dark mode — so white at
               // 70% on it sat near 1.9:1 and the count on the tab you were
               // standing on was the one you could not read.
-              className={`tabular-nums text-xs ${on ? "text-on-fill/75" : "text-ink-faint"}`}
+              className={`tabular-nums text-xs ${on ? "text-on-fill/75 font-semibold" : "text-ink-faint"}`}
             >
               {n}
             </span>
@@ -973,20 +941,54 @@ function FitSection({
         </h2>
         <p className="text-xs text-ink-faint">{hint}</p>
       </div>
-      <ul className="mt-3 grid gap-2.5 2xl:grid-cols-2">
-        {page.map((o, i) => (
-          <li
-            key={o.id}
-            // Only the newly revealed rows animate in — re-animating the whole
-            // group on every "show more" would read as a flicker.
-            className={
-              i >= limit - PAGE && limit > PAGE ? "animate-fade-up" : undefined
-            }
-          >
-            <OpportunityRow o={o} />
-          </li>
-        ))}
-      </ul>
+      {/* Width buys COLUMNS, never line length — and this list was the one
+          place in the product still spending it as height. It was
+          `2xl:grid-cols-2`: one column until 1536px, so the product's MAIN
+          list was its least dense, while the guide's have run `sm:2 → xl:3 →
+          2xl:4` for three releases.
+
+          Two columns, never three, and the number is measured rather than
+          copied from the guide — this card has a cliff, not a curve. Stepped
+          through exact widths it is flat at 272px tall from 380px up, jumps to
+          356px at 340–360 as the title takes a third line, and reaches 421px
+          at 320. 380px a card is the knee; a third column would be 320px even
+          at 1536, which is precisely the width that breaks.
+
+          It is a CONTAINER query (`.opp-list`/`.opp-grid` in globals.css)
+          rather than a `lg:grid-cols-2`, because this list renders in two
+          shells that leave it different room: 924px in the student's section
+          at 1024 against 652px in the report's, whose sidebar spends the width
+          instead. One viewport breakpoint cannot be right in both — `lg`
+          measured 457px cards in one and 321px in the other.
+
+          The companion is why the student's numbers dip in the middle: from
+          `xl` it takes a 20rem column, so that list goes 924 → 812 → 822 →
+          982px as the window grows from 1024 to 1536. It is also why the
+          specced filter rail is NOT built — the companion already owns the one
+          spare column, and a 256px rail measured out at 282px cards at 1280.
+          The numbers are in the design doc so nobody re-derives them. */}
+      <div className="opp-list mt-3">
+        <ul className="opp-grid grid gap-2.5">
+          {page.map((o, i) => (
+            <li
+              key={o.id}
+              // `grid` so the card stretches to the tallest in its row. Cards
+              // only ever sat alone in a row before, so ragged bottoms could
+              // not happen; in columns they are the default.
+              //
+              // Only the newly revealed rows animate in — re-animating the
+              // whole group on every "show more" would read as a flicker.
+              className={
+                i >= limit - PAGE && limit > PAGE
+                  ? "grid animate-fade-up"
+                  : "grid"
+              }
+            >
+              <OpportunityRow o={o} />
+            </li>
+          ))}
+        </ul>
+      </div>
       {rest > 0 && (
         <button
           type="button"

@@ -22,14 +22,14 @@ export function SignupsOverTime({
       <BarChart data={data} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
         <XAxis
           dataKey="day"
-          tick={{ fill: "rgb(var(--ink-faint))", fontSize: 10 }}
+          tick={{ fill: "rgb(var(--ink-faint))", fontSize: 12 }}
           tickLine={false}
           axisLine={false}
           interval="preserveStartEnd"
         />
         <YAxis
           allowDecimals={false}
-          tick={{ fill: "rgb(var(--ink-faint))", fontSize: 10 }}
+          tick={{ fill: "rgb(var(--ink-faint))", fontSize: 12 }}
           tickLine={false}
           axisLine={false}
           width={28}
@@ -72,7 +72,7 @@ export function SignupsByCountry({
         <XAxis
           type="number"
           allowDecimals={false}
-          tick={{ fill: "rgb(var(--ink-faint))", fontSize: 10 }}
+          tick={{ fill: "rgb(var(--ink-faint))", fontSize: 12 }}
           tickLine={false}
           axisLine={false}
         />
@@ -80,7 +80,7 @@ export function SignupsByCountry({
           type="category"
           dataKey="country"
           width={110}
-          tick={{ fill: "rgb(var(--ink-soft))", fontSize: 11 }}
+          tick={{ fill: "rgb(var(--ink-soft))", fontSize: 12 }}
           tickLine={false}
           axisLine={false}
         />

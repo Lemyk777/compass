@@ -1,5 +1,7 @@
 import Link from "@/components/ui/Link";
 import { DetailExit } from "@/components/guide/DetailExit";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbSchema } from "@/lib/schema";
 import type { FacultyValue } from "@/lib/data/faculties";
 import { withFields } from "@/lib/data/guide-fields";
 import {
@@ -174,7 +176,7 @@ export function GuideCard({
       )}
       {badge && (
         <span
-          className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+          className={`mt-1.5 inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${
             emphasis
               ? "bg-accent text-on-fill"
               : "bg-accent-soft text-accent-ink"
@@ -220,6 +222,15 @@ export function DetailShell({
    * and about 57px tall — a rail pinned higher slides underneath it.
    */
   aside,
+  /**
+   * This page's own address, for the `BreadcrumbList` below — required rather
+   * than optional so a subject page added later cannot quietly ship without
+   * one. It is the CANONICAL path: `breadcrumbSchema` strips a query string,
+   * because `crumbHref` beside it routinely carries the guide's `?f=` filter
+   * and a trail naming a filtered URL contradicts the canonical on this very
+   * page.
+   */
+  path,
   children,
 }: {
   crumb: string;
@@ -229,10 +240,23 @@ export function DetailShell({
   lead?: string;
   transitionName?: string;
   aside?: React.ReactNode;
+  path: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-6">
+      {/* Read from the same three props the visible trail below is built from.
+          The guide is three levels deep across 138 pages that people reach from
+          a search or from a link somebody sent them, and without this a result
+          shows a bare URL where it could show `Compass › Countries › Germany`.
+          Stated once, so the markup cannot drift from the navigation. */}
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "The guide", path: "/guide" },
+          { name: crumb, path: crumbHref },
+          { name: title, path },
+        ])}
+      />
       <div>
         {/* Where you are on the left, the way out on the right. Both, because
             they answer different questions: at three levels deep a student
@@ -275,7 +299,7 @@ export function DetailShell({
         </h1>
         {sub && <p className="mt-1 text-sm text-ink-faint">{sub}</p>}
         {lead && (
-          <p className="mt-3 max-w-[60ch] text-pretty text-base leading-relaxed text-ink-soft">
+          <p className="mt-3 max-w-[54ch] text-pretty text-base leading-relaxed text-ink-soft">
             {lead}
           </p>
         )}
@@ -335,7 +359,7 @@ export function GuidePart({
     // here". Now: a hairline the full width of the column, 32px before the
     // heading, the number the contents list promised, and 22px of type.
     <section id={id} className="scroll-mt-24 border-t border-line pt-8">
-      <h2 className="flex items-center gap-2.5 text-xl font-semibold tracking-tight text-ink sm:text-[1.375rem]">
+      <h2 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-ink">
         {step != null && (
           <span
             data-num
@@ -373,9 +397,19 @@ export function PageContents({
       aria-label="On this page"
       className="rounded-2xl border border-line bg-card px-4 py-3 sm:px-5"
     >
-      <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+      {/* A `p`, not an `h2`. This is the label on a navigation widget, and the
+          `nav` around it is already named "On this page" for assistive tech —
+          so the heading added nothing to the outline except a defect: an h2
+          rendering at 12px, five pixels SMALLER than the body text it sat
+          above, and eight below the h3s further down. A reader chunks a long
+          page by size, and a level that can be the largest heading on the page
+          in one place and the smallest in another gives them nothing to chunk
+          by. Heading level and visual step now move together in this section:
+          h1 → h2 → h3, strictly descending, and labels like this one are not
+          headings at all. */}
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
         On this page
-      </h2>
+      </p>
       {/* One scrolling row on a phone, wrapping from `sm`.
           Wrapping, these chips carry long titles ("Research and writing that
           publishes you"), so each one took a row of its own: six parts made a
@@ -430,16 +464,26 @@ export function ForYou({
 }) {
   return (
     <section className={`grid gap-3 ${avoid ? "sm:grid-cols-2" : ""}`}>
+      {/* Sized like a `GuidePart` heading, because that is what these are: the
+          page's first section, and deliberately its answer. They used to render
+          at 17px against the numbered sections' 22px — so the one part of the
+          page written directly TO the reader was quieter than every part
+          written about the subject, and a reader scanning for structure met an
+          h2 that looked like an h3. Same level, same step. */}
       <div className="rounded-2xl border border-accent/40 bg-accent-soft/25 p-4 sm:p-5">
-        <h2 className="text-sm font-semibold text-ink">{suitsLabel}</h2>
-        <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">
+          {suitsLabel}
+        </h2>
+        <p className="mt-2 max-w-[54ch] text-base leading-relaxed text-ink-soft">
           {suits}
         </p>
       </div>
       {avoid && (
         <div className="rounded-2xl border border-reach/40 bg-reach-soft/25 p-4 sm:p-5">
-          <h2 className="text-sm font-semibold text-ink">{avoidLabel}</h2>
-          <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+          <h2 className="text-2xl font-semibold tracking-tight text-ink">
+            {avoidLabel}
+          </h2>
+          <p className="mt-2 max-w-[54ch] text-base leading-relaxed text-ink-soft">
             {avoid}
           </p>
         </div>
@@ -464,8 +508,14 @@ export function ForYou({
  * a tint, which is what makes the catch visible at a glance instead of uniform.
  *
  * Hierarchy inside a bare block therefore comes from weight and colour rather
- * than size — 14px/600 on `ink` over 14px/400 on `ink-soft`. Size is spent one
- * level up, where `GuidePart` now has 22px, a number and a rule to itself.
+ * than size — the label and its prose share one size, and only weight and ink
+ * separate them. Size is spent one level up, where `GuidePart` has a number
+ * and a rule to itself.
+ *
+ * Both sit at `text-base`, not `text-sm`: a country profile is ~9,000
+ * characters of continuous reading, and 81% of it was set one step below the
+ * product's body size. `max-w-[54ch]` is what marks a column as reading rather
+ * than a card summary, so it is also what decides which columns get this step.
  */
 export function GuideBlock({
   label,
@@ -476,12 +526,12 @@ export function GuideBlock({
   tone?: "plain" | "warn" | "good";
   children: React.ReactNode;
 }) {
-  const heading = <h3 className="text-sm font-semibold text-ink">{label}</h3>;
+  const heading = <h3 className="text-lg font-semibold text-ink">{label}</h3>;
   // Capped independently of the container: widening the shell must buy more
   // columns, never longer lines. Unbounded, these ran to 131 characters on a
   // 1900px screen — nearly double the readable measure.
   const body = (
-    <div className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+    <div className="mt-1.5 max-w-[54ch] text-base leading-relaxed text-ink-soft">
       {children}
     </div>
   );

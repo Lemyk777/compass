@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { matchedOnly } from "@/lib/data/opportunity-filter";
+import { NO_FACTORS, useOpportunityPlan, useToday } from "@/lib/data/use-opportunity-plan";
+import { useRef, useState, useMemo } from "react";
+import { Container } from "@/components/ui/Container";
 import type {
   Competition,
-  ExtracurricularsPlan,
   Opportunity,
 } from "@/lib/data/key-dates";
 import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
@@ -13,6 +15,7 @@ import {
   FACULTY_LABEL,
   type FacultyValue,
 } from "@/lib/data/faculties";
+import { closesInPhrase } from "@/lib/data/opportunity-format";
 import { downloadIcs } from "@/lib/calendar/ics";
 
 // The public eligibility checker.
@@ -49,9 +52,11 @@ export function EligibilityChecker({
   live?: Competition[];
 } = {}) {
   // `today` resolves on the client — the countdown depends on the visitor's
-  // clock, and a server-rendered one would hydrate wrong.
-  const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => setToday(new Date()), []);
+  // clock, and a server-rendered one would hydrate wrong. The hook also warms
+  // the catalog from mount, which matters most here: the
+  // load used to be gated on the grade answer as well as on the date, so the
+  // fetch began at the moment of highest intent instead of before it.
+  const today = useToday();
 
   const [grade, setGrade] = useState<number | null>(null);
   const [fields, setFields] = useState<FacultyValue[]>([]);
@@ -62,50 +67,52 @@ export function EligibilityChecker({
   // Lazy-load the matching engine so the ~2,700-entry catalog is a separate
   // async chunk, not part of this public page's initial JS. Everyone starts at
   // "emerging" (factors: []), exactly right for a beginner: accessible first.
-  const [plan, setPlan] = useState<ExtracurricularsPlan | null>(null);
-  useEffect(() => {
-    if (!today || grade == null) {
-      setPlan(null);
-      return;
-    }
-    let cancelled = false;
-    import("@/lib/data/key-dates").then((m) => {
-      if (cancelled) return;
-      setPlan(
-        m.buildExtracurriculars({
-          today,
-          faculties: fields,
-          factors: [],
-          graduationYear: graduationYearFromGrade(grade, today),
-          liveCompetitions: live,
-        }),
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [today, grade, fields, live]);
+  // `ready` gates the PLAN and never the load. Everyone starts at "emerging"
+  // (no factors), which is exactly right for a beginner: accessible things
+  // first.
+  const plan = useOpportunityPlan({
+    today,
+    faculties: fields,
+    factors: NO_FACTORS,
+    graduationYear:
+      today && grade != null
+        ? graduationYearFromGrade(grade, today)
+        : undefined,
+    liveCompetitions: live,
+    ready: grade != null,
+  });
 
   // Open now vs later. The "later" ones stay knowable — a younger student
   // should be able to see what they are aiming at — but they never compete for
   // attention with what is actionable today.
-  const openNow = plan?.items.filter((o) => !o.notYetEligible) ?? [];
-  const later = plan?.items.filter((o) => o.notYetEligible) ?? [];
-  // Actionable first. A real deadline earns the top spot (the promise on this
-  // page is "and when they close"), then the ones with no deadline at all —
-  // which a student can start tonight — and only then the "dates TBA" rows we
-  // cannot say anything useful about yet.
-  const rank = (o: Opportunity) => (o.dateConfirmed ? 0 : o.alwaysOpen ? 1 : 2);
-  const shown = [...openNow].sort((a, b) => rank(a) - rank(b)).slice(0, SHOWN);
-  // The soonest real deadline on screen — the minimum, not the first one we
-  // happen to render.
-  const nearest = shown
-    .filter((o) => o.dateConfirmed)
-    .reduce<Opportunity | null>(
-      (best, o) =>
-        best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
-      null,
-    );
+  // `matchedOnly` because this page has NO filter panel: matching stopped
+  // hiding rows so the panel could own the narrowing, and a surface without one
+  // narrows nothing unless it asks. Without it a visitor in Uzbekistan is shown
+  // a competition that only runs in Kazakhstan.
+  const { openNow, later, shown, nearest } = useMemo(() => {
+    const mine = matchedOnly(plan?.items ?? []);
+    const openNow = mine.filter((o) => !o.notYetEligible);
+    const later = mine.filter((o) => o.notYetEligible);
+    
+    // Actionable first. A real deadline earns the top spot (the promise on this
+    // page is "and when they close"), then the ones with no deadline at all —
+    // which a student can start tonight — and only then the "dates TBA" rows we
+    // cannot say anything useful about yet.
+    const rank = (o: Opportunity) => (o.dateConfirmed ? 0 : o.alwaysOpen ? 1 : 2);
+    const shown = [...openNow].sort((a, b) => rank(a) - rank(b)).slice(0, SHOWN);
+    
+    // The soonest real deadline on screen — the minimum, not the first one we
+    // happen to render.
+    const nearest = shown
+      .filter((o) => o.dateConfirmed)
+      .reduce<Opportunity | null>(
+        (best, o) =>
+          best == null || o.daysToDeadline < best.daysToDeadline ? o : best,
+        null,
+      );
+      
+    return { openNow, later, shown, nearest };
+  }, [plan?.items]);
 
   function pickGrade(g: number) {
     setGrade(g);
@@ -130,7 +137,7 @@ export function EligibilityChecker({
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-6">
+    <Container size="dashboard" className="pb-24">
       {/* ── The question ───────────────────────────────────────────────────
           One question, eight taps, no account, no email. Everything the
           research says about hassle points at making the first answer free. */}
@@ -142,7 +149,7 @@ export function EligibilityChecker({
           What can you actually enter this year?
         </h1>
         <p className="mt-4 max-w-xl text-pretty text-base leading-relaxed text-ink-soft sm:text-lg">
-          Real competitions with real judges — some of them have been won by
+          Real competitions with real judges, and some of them have been won by
           twelve-year-olds. Tell us one thing and we&rsquo;ll tell you which
           ones are open to you, and when they close.
         </p>
@@ -194,7 +201,7 @@ export function EligibilityChecker({
                 got something; this only sharpens it. */}
             <PageSection
               title="Into something in particular?"
-              hint="Optional — it only sharpens the list above."
+              hint="Optional. It only sharpens the list above."
             >
               <FieldFilter value={fields} onChange={setFields} />
             </PageSection>
@@ -238,7 +245,7 @@ export function EligibilityChecker({
                   <span data-num className="font-semibold text-ink">
                     {later.length}
                   </span>{" "}
-                  more become available as you move up the school — we&rsquo;ll
+                  more become available as you move up the school, and we&rsquo;ll
                   put them on this list the year you can enter them.
                 </p>
               </PageSection>
@@ -248,18 +255,36 @@ export function EligibilityChecker({
           </section>
         )}
       </div>
-    </div>
+    </Container>
   );
 }
 
 /**
  * The one line that is the whole product: you, specifically, can enter these.
  *
- * The headline counts what is ON SCREEN, not everything that matched. An
- * earlier draft said "you can enter 79 of these" — technically the size of the
- * eligible set, but it is the choice-overload number, and it puts the work back
- * on a twelve-year-old. The full figure stays visible underneath, quietly, so
- * nothing is hidden.
+ * TWO numbers, and which one leads is the whole design of this line.
+ *
+ * The headline used to be `shown` alone — "5 you can enter right now." — for a
+ * stated reason that is still right: an earlier draft led with the size of the
+ * eligible set, and 156 is the choice-overload number, which puts the work back
+ * on a twelve-year-old. What that draft missed is that `shown` is the PAGE
+ * SIZE. It is 5 for a year-5 student with 113 open to them and 5 for a year-12
+ * student with 162, so the largest, greenest, most personal-sounding thing on
+ * the front door was a constant, and it read as "we checked you and found five"
+ * — a claim about the reader that was not true. The real figure was underneath
+ * at 15px in the faintest ink the palette has.
+ *
+ * So: the small number still leads, because the anti-overload argument holds —
+ * but it now says what it is ("to start with"), and the personal figure arrives
+ * in the same breath rather than three tiers down. Nothing is being hidden and
+ * nothing is being claimed.
+ *
+ * Three shapes, because one sentence cannot carry all three honestly:
+ *   eligible === 0            nothing is open — say so plainly, in plain ink
+ *   shown === 0 < eligible    the SUBJECT filter emptied it, not the world
+ *   otherwise                 "5 to start with, out of 156 open to you."
+ * The middle one matters most: a student who has narrowed themselves to nothing
+ * must be told which of the two happened, or they conclude it was them.
  */
 function Verdict({
   shown,
@@ -272,32 +297,46 @@ function Verdict({
   grade: number;
   nearestDays?: number;
 }) {
+  // The green rail and the green numeral are the product's success colour.
+  // A zero painted in it is worse than no answer, so they come off together.
+  const positive = eligible > 0;
+  const num = (n: number) => (
+    <span data-num className={positive ? "text-ivy-ink" : "text-ink"}>
+      {n}
+    </span>
+  );
+
   return (
-    <div className="border-l-2 border-ivy pl-5">
+    <div
+      className={`border-l-2 pl-5 ${positive ? "border-ivy" : "border-line"}`}
+    >
       <h2 className="text-balance text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-3xl">
-        <span data-num className="text-ivy-ink">
-          {shown}
-        </span>{" "}
-        you can enter right now.
+        {eligible === 0 ? (
+          <>Nothing is open to year {num(grade)} in those subjects yet.</>
+        ) : shown === 0 ? (
+          <>
+            {num(eligible)} are open to you, but none in those subjects.
+          </>
+        ) : eligible <= shown ? (
+          <>{num(eligible)} you can enter right now.</>
+        ) : (
+          <>
+            {num(shown)} to start with, out of {num(eligible)} open to you.
+          </>
+        )}
       </h2>
       <p className="mt-2 text-base text-ink-soft">
         Open to year <span data-num>{grade}</span>, worldwide
         {nearestDays != null && (
           <>
-            {" · "}the nearest closes in{" "}
+            {" · "}the nearest{" "}
             <span data-num className="font-semibold text-ink">
-              {nearestDays} days
+              {closesInPhrase(nearestDays)}
             </span>
           </>
         )}
         .
       </p>
-      {eligible > shown && (
-        <p className="mt-1.5 text-sm text-ink-faint">
-          There are <span data-num>{eligible}</span> you can enter in total.
-          These are the ones to start with.
-        </p>
-      )}
     </div>
   );
 }

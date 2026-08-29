@@ -5,8 +5,8 @@ order.
 
 1. **Opportunities** — the front door, and the thing a student arrives for. A
    curated, link-checked registry of competitions, olympiads, courses,
-   programmes, communities and job simulations — **173 entries as of
-   2026-08-14** — matched to their field, country, school year and age, with
+   programmes, communities and job simulations — **192 entries as of
+   2026-08-25** — matched to their field, country, school year and age, with
    honest dates and honest costs. Works signed out, with no analysis: see
    `/opportunities`.
 
@@ -17,11 +17,13 @@ order.
    true and mean different things** — the catalog's size, and how much of it
    *this* student can actually enter once age, school year, field and country
    have been applied. The tab strip shows the second and says so underneath.
-2. **The guide** — where those things lead. Kinds of work → the countries that
-   host them → the cities inside those → what you can enter from home without
-   moving at all. 33 areas of work, 17 country profiles, 38 cities, every one
-   stating its catch as well as its appeal. Public on purpose: a family choosing
-   between Germany and Korea should be able to read it without an account.
+2. **The guide** — where those things lead, in five steps that zoom in. Kinds of
+   work → the subject you would apply with → the countries that host that work →
+   the cities inside those → what you can enter from home without moving at all.
+   33 areas of work, 44 majors, 17 country profiles, 38 cities, 6 routes from
+   home, every one stating its catch as well as its appeal. Public on purpose: a
+   family choosing between Germany and Korea should be able to read it without
+   an account.
 3. **The plan** — where what you decided becomes dated work. One private screen
    with three lenses over one list (`/planner?view=next|board|map`): a stepped
    calendar, a board, and mind maps. It is built out of what you took from the
@@ -47,8 +49,10 @@ npm run dev
 
 The app runs at http://localhost:3000. Without environment variables it still
 builds, and `/demo` renders a full sample report; auth and analysis need the
-five vars in [.env.example](.env.example). Setup, including the Supabase
-project and role assignment, is in [docs/SETUP.md](docs/SETUP.md).
+variables in [.env.example](.env.example). Five of the six are needed to run the
+app at all; the sixth, `CRON_SECRET`, gates the scheduled jobs and they refuse
+to run without it. Setup, including the Supabase project and role assignment, is
+in [docs/SETUP.md](docs/SETUP.md).
 
 ## Commands
 
@@ -58,7 +62,8 @@ project and role assignment, is in [docs/SETUP.md](docs/SETUP.md).
 | `npm run build` | Production build — **also the lint + type-check gate** |
 | `npm run lint` | ESLint only |
 | `npx tsc --noEmit` | Type-check only |
-| `npm run test:unit` | **192 unit tests** over the deterministic core (node:test — no key, no network, no database) |
+| `npm run test:unit` | **321 unit tests** over the deterministic core (node:test — no key, no network, no database) |
+| `npm run test:onboarding` | **126 tests** over the intake schema and its server action, with the database and auth mocked. Not in CI — it needs `--experimental-test-module-mocks` |
 | `npm run db:check` | Read-only: is the database actually what this code assumes? |
 | `npm run test:links` | Every catalog URL; fails on a dead link |
 | `npm run test:guide-links` | The guide's official sources — ministries, portals, recognition databases |
@@ -67,13 +72,20 @@ project and role assignment, is in [docs/SETUP.md](docs/SETUP.md).
 The verification path is `npm run build` (which is also the lint and type-check
 gate), `npm run test:unit`, and the logic checks in
 `scripts/test-session-checks.ts`. [CI](.github/workflows/ci.yml) runs those
-three on every push and pull request without secrets; the link checks are run by
-hand after touching the catalog or the guide's sources, because they make ~200
-network calls. `test:analyze` is the only command needing a real API key.
+three on every push and pull request without secrets. `test:analyze` is the only
+command needing a real API key.
+
+The link checks are deliberately **not** in that gate — they hit ~200 third-party
+sites, and from shared runners the answers differ from what a student gets.
+[A weekly job](.github/workflows/link-health.yml) runs `test:links` on Mondays
+instead, and **its failures are a "go and look", not a verdict**: reproduce
+locally before touching a catalog entry, because two "dead" links have recovered
+on their own within the hour. Run them by hand after touching the catalog or the
+guide's sources.
 
 Migrations are applied by hand and nothing here runs them for you — after
 applying one, `npm run db:check` is how you find out whether it landed. It
-reports **32/32** as of 2026-08-14.
+reports **33/33** as of 2026-08-17, everything through `0031_beat_reactions.sql`.
 
 > **Never run `npm run build` while `npm run dev` is running.** They share
 > `.next/` and the build removes chunks the dev server still holds, producing a

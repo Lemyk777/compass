@@ -90,7 +90,7 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
     merit_scholarship_note:
       "Selected admits receive the SNU Global Talent Scholarship (tuition + partial living costs), announced with the admission decision.",
     notes:
-      "Korea's top-ranked university; the most competitive document screen in the country. TOPIK 3 gets you in the door, but plan for TOPIK 4+ — most instruction is in Korean.",
+      "Korea's top-ranked university; the most competitive document screen in the country. TOPIK 3 gets you in the door, but plan for TOPIK 4+. Most instruction is in Korean.",
   },
   {
     id: "snu-business",
@@ -110,7 +110,7 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
     merit_scholarship_note:
       "Global Talent Scholarship for selected admits; extremely competitive.",
     notes:
-      "SNU Business requires TOPIK level 6 at application — there is NO English-proficiency substitute for this college. The hardest language bar in this dataset.",
+      "SNU Business requires TOPIK level 6 at application, and there is NO English-proficiency substitute for this college. The hardest language bar in this dataset.",
   },
   {
     id: "snu-eng",
@@ -192,7 +192,7 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
     scholarship_gpa_cutoff: 90,
     annual_fee_usd: 10200,
     merit_scholarship_note:
-      "Every admitted international undergraduate receives the KAIST Scholarship: full tuition for 8 semesters plus a monthly living allowance — no separate application.",
+      "Every admitted international undergraduate receives the KAIST Scholarship: full tuition for 8 semesters plus a monthly living allowance, and no separate application.",
     notes:
       "Korea's MIT. All-English instruction, no TOPIK required. Admission is document-based (≈7–10% international admit rate); strong Maths/Physics evidence is decisive. Students pick their major after year one.",
   },
@@ -246,7 +246,7 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
     id: "yonsei-uic-humanities",
     university: "Yonsei University (UIC)",
     city: "Seoul",
-    program_name: "Underwood Division — Humanities & Social Sciences (BA)",
+    program_name: "Underwood Division, Humanities & Social Sciences (BA)",
     field: "social_science",
     language_track: "EN",
     topik_required: null,
@@ -258,7 +258,7 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
     scholarship_gpa_cutoff: 93,
     annual_fee_usd: 12500,
     merit_scholarship_note:
-      "Admitted internationals are automatically considered for UIC merit scholarships — the strongest admits receive up to full tuition for four years.",
+      "Admitted internationals are automatically considered for UIC merit scholarships. The strongest admits receive up to full tuition for four years.",
     notes:
       "US-style, essay-driven admission entirely in English (applications via Common App accepted). SAT is optional but recommended; the personal essays carry real weight.",
   },
@@ -266,7 +266,7 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
     id: "yonsei-uic-econ",
     university: "Yonsei University (UIC)",
     city: "Seoul",
-    program_name: "Underwood Division — Economics / International Studies (BA)",
+    program_name: "Underwood Division, Economics / International Studies (BA)",
     field: "business",
     language_track: "EN",
     topik_required: null,
@@ -300,7 +300,7 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
     merit_scholarship_note:
       "Merit scholarships tied to the document screen and TOPIK level; a higher TOPIK raises the award.",
     notes:
-      "Main-campus Korean-taught track — cheaper than UIC and less essay-driven, but TOPIK 4+ is expected and instruction is in Korean.",
+      "Main-campus Korean-taught track, cheaper than UIC and less essay-driven, but TOPIK 4+ is expected and instruction is in Korean.",
   },
 
   // ── Korea University (Seoul) ────────────────────────────────────────────────
@@ -325,7 +325,7 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
     merit_scholarship_note:
       "Admission scholarships (25–100% tuition) from the document evaluation; renewable on GPA.",
     notes:
-      "KU's flagship English-taught track — SKY-tier prestige without the TOPIK gate. Popular, so the effective bar runs above the Korean-track floor.",
+      "KU's flagship English-taught track, with SKY-tier prestige and no TOPIK gate. Popular, so the effective bar runs above the Korean-track floor.",
   },
   {
     id: "ku-business",
@@ -473,7 +473,7 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
     merit_scholarship_note:
       "Admission scholarships of 30–70% tuition from the document evaluation.",
     notes:
-      "The classic Hanyang entry — accessible for a solid transcript, respected by employers.",
+      "The classic Hanyang entry, accessible for a solid transcript and respected by employers.",
   },
   {
     id: "hanyang-business",
@@ -516,7 +516,7 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
     merit_scholarship_note:
       "Admission scholarships from half to full first-semester tuition; higher TOPIK levels unlock larger, renewable awards.",
     notes:
-      "Korea's best-known hospitality school and one of the most international campuses — a realistic entry point with a real brand.",
+      "Korea's best-known hospitality school and one of the most international campuses, and a realistic entry point with a real brand.",
   },
   {
     id: "khu-humanities",
@@ -542,9 +542,4 @@ export const KOREA_PROGRAMS: KoreaProgram[] = [
 
 export function findKoreaProgram(id: string): KoreaProgram | undefined {
   return KOREA_PROGRAMS.find((p) => p.id === id);
-}
-
-/** Display label for a program (used in intake + report). */
-export function koreaProgramLabel(p: KoreaProgram): string {
-  return `${p.university} — ${p.program_name}`;
 }

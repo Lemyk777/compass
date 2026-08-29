@@ -102,21 +102,21 @@ export const Scorecard = forwardRef<
   return (
     <div
       ref={ref}
-      className="overflow-hidden rounded-2xl border border-line bg-card shadow-lift"
+      className="overflow-hidden rounded-2xl border border-line/70 bg-card shadow-lift"
     >
-      <div className="flex items-center justify-between border-b border-line px-5 py-3">
+      <div className="flex items-center justify-between border-b border-line/60 bg-surface/50 px-6 py-3.5">
         <Logo className="text-ink" />
-        <span className="text-xs text-ink-faint">{standingLabel}</span>
+        <span className="text-xs font-semibold text-ink-faint tracking-wide">{standingLabel}</span>
       </div>
 
-      <div className="grid gap-2 p-5 sm:grid-cols-[200px_1fr] sm:gap-4">
+      <div className="grid gap-4 p-6 sm:grid-cols-[220px_1fr] sm:gap-6 sm:p-7">
         <div className="flex flex-col items-center justify-center">
           <OverallGauge score={overall} />
-          <p className="mt-2 text-center text-xs text-ink-faint">
+          <p className="mt-2 text-center text-xs font-medium text-ink-faint">
             {t("report.overall")}
           </p>
           {country && (
-            <p className="mt-0.5 text-center text-[0.7rem] font-medium text-accent-ink">
+            <p className="mt-0.5 text-center text-[0.75rem] font-semibold text-accent-ink">
               {t("report.weightedFor")} {countryLabel}
             </p>
           )}
@@ -131,7 +131,7 @@ export const Scorecard = forwardRef<
         </div>
       </div>
 
-      <div className="border-t border-line px-5 py-5">
+      <div className="border-t border-line/60 bg-surface/20 px-6 py-6 sm:px-7">
         <FactorBars factors={orderedFactors} mutedKeys={mutedKeys} />
       </div>
     </div>

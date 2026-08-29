@@ -6,7 +6,13 @@ import {
   type Competition,
   type CompetitionCategory,
 } from "@/lib/data/key-dates";
-import { formatDate } from "@/lib/data/opportunity-format";
+import { daysLeftLabel, formatDate } from "@/lib/data/opportunity-format";
+// The chip's short names, shared with the opportunity card this preview is a
+// copy of. It held a third private copy of the map — undocumented, unlike the
+// card's, and so the front page printed "Research" while the page a click away
+// printed "Research program". The visual claims to be the product rather than a
+// picture of it; that only holds while it says the same words.
+import { CATEGORY_LABEL_SHORT } from "@/lib/data/opportunity-vocab";
 
 // The hero's visual: four REAL rows out of the catalog, rendered on the server.
 //
@@ -19,16 +25,6 @@ import { formatDate } from "@/lib/data/opportunity-format";
 //
 // Server component on purpose. It ships as HTML, so it is on screen in the first
 // paint with no hydration, no images and no JS at all.
-
-const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
-  olympiad: "Olympiad",
-  competition: "Competition",
-  course: "Course",
-  research_program: "Research",
-  summer_program: "Summer program",
-  community: "Community",
-  simulation: "Try the work",
-};
 
 /**
  * Picks the rows to show, deterministically from today's date.
@@ -44,13 +40,32 @@ export function previewOpportunities(
   const picked: Competition[] = [];
   const seen = new Set<CompetitionCategory>();
 
-  const dated = COMPETITIONS.filter(
-    (c) => c.dateConfirmed && daysBetween(today, c.deadline) >= 0,
-  ).sort(
-    (a, b) => daysBetween(today, a.deadline) - daysBetween(today, b.deadline),
-  );
+  // GLOBAL rows only, and this is the one surface where that is a rule rather
+  // than a filter.
+  //
+  // Everywhere else a local row is either shown to someone we know is in that
+  // country, or marked `offRegion` and narrowed away by the panel. The front
+  // page is neither: it renders before anyone has told us anything, to every
+  // visitor on earth, and it does not go through `buildExtracurriculars` at
+  // all — so `matchedOnly` never sees these rows and `reachableFrom` is never
+  // consulted. A `region`-tagged row here would be a Kazakhstan-only olympiad
+  // shown to a reader in Lagos as the product's opening example.
+  //
+  // It reads as latent today and it is one date-verification pass from being
+  // live: `dated` sorts by NEAREST confirmed deadline, and the Kazakh rows are
+  // the nearest estimates in the catalog. Confirm two of them in September —
+  // which is the next item on the backlog — and they take the top of this list
+  // by construction, in the component whose own comment says it "is the
+  // product, not a picture of it".
+  const global = COMPETITIONS.filter((c) => !c.region);
 
-  const open = COMPETITIONS.filter(
+  const dated = global
+    .filter((c) => c.dateConfirmed && daysBetween(today, c.deadline) >= 0)
+    .sort(
+      (a, b) => daysBetween(today, a.deadline) - daysBetween(today, b.deadline),
+    );
+
+  const open = global.filter(
     (c) => c.alwaysOpen && opportunityCost(c).tone === "free",
   );
 
@@ -92,7 +107,7 @@ export function OpportunityPreview({
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
           Open right now
         </p>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-ivy-soft px-2.5 py-1 text-[11px] font-semibold text-ivy-ink">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-ivy-soft px-2.5 py-1 text-[12px] font-semibold text-ivy-ink">
           {/* The only thing on this card that moves on its own, and it earns it:
               the claim beside it is that these rows are live. `animate-pulse` is
               opacity-only, so it composites, and the global reduced-motion guard
@@ -164,7 +179,7 @@ function Row({
             </p>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <CostChip tone={cost.tone} label={cost.short} />
-              <Chip>{CATEGORY_LABEL[competitionCategory(o)]}</Chip>
+              <Chip>{CATEGORY_LABEL_SHORT[competitionCategory(o)]}</Chip>
             </div>
           </div>
           <div className="shrink-0">
@@ -183,11 +198,7 @@ function Row({
                       : "bg-likely-soft text-ivy-ink"
                 }`}
               >
-                {days === 0
-                  ? "closes today"
-                  : days === 1
-                    ? "1 day left"
-                    : `${days} days left`}
+                {daysLeftLabel(days)}
               </span>
             )}
           </div>
@@ -216,7 +227,7 @@ function Row({
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="whitespace-nowrap rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">
+    <span className="whitespace-nowrap rounded-full bg-card px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-ink-soft">
       {children}
     </span>
   );
@@ -233,7 +244,7 @@ function CostChip({ tone, label }: { tone: string; label: string }) {
           : "bg-card text-ink-faint";
   return (
     <span
-      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${cls}`}
+      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide ${cls}`}
     >
       {label}
     </span>

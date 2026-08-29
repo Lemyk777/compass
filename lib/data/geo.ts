@@ -203,7 +203,36 @@ export const LOCAL_TARGETS: Record<CountryCode, LocalTarget> = {
   },
 };
 
+/**
+ * Names for the countries `normalizeCountry` can produce but `LOCAL_TARGETS`
+ * does not cover.
+ *
+ * Separate from `LOCAL_TARGETS` on purpose: that table is the DISCOVERY target
+ * list — `lib/discovery/run.ts` iterates it to decide where to search — so
+ * adding a country there to fix a label would start a weekly search run in a
+ * place nobody asked about. This map is display only.
+ *
+ * It exists because a partner's country goes through `normalizeCountry`, whose
+ * alias table resolves ten codes with no name here, and `regionLabel` fell
+ * through to the raw code. An Azerbaijani partner posting a local opportunity
+ * rendered "Local · AZ" — on the card, in the panel, and now on the public
+ * detail page and its share card. A chip printing a two-letter code is a chip
+ * showing a reader our database.
+ */
+const COUNTRY_NAMES: Record<CountryCode, string> = {
+  TJ: "Tajikistan",
+  TM: "Turkmenistan",
+  AZ: "Azerbaijan",
+  AM: "Armenia",
+  GE: "Georgia",
+  BY: "Belarus",
+  UA: "Ukraine",
+  MD: "Moldova",
+  TR: "Türkiye",
+  MN: "Mongolia",
+};
+
 /** Display label for a region badge: "Kazakhstan" / raw code fallback. */
 export function regionLabel(code: string): string {
-  return LOCAL_TARGETS[code]?.name ?? code;
+  return LOCAL_TARGETS[code]?.name ?? COUNTRY_NAMES[code] ?? code;
 }

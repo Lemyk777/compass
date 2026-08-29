@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useDeferredValue, useId, useMemo, useState } from "react";
 import {
   COST_OPTIONS,
   LEVEL_OPTIONS,
+  MATCH_OPTIONS,
   NO_FILTERS,
   TIMING_OPTIONS,
   activeChips,
@@ -42,7 +43,11 @@ export function FilterBar({
   onChange,
   resultCount,
 }: {
-  /** The student's matched set — the pool the counts are computed over. */
+  /**
+   * The pool the counts are computed over — the WHOLE annotated catalog, not
+   * the student's own slice. It has to be, or the "Matched to you" group could
+   * not say how many rows it is removing.
+   */
   items: Opportunity[];
   value: OpportunityFilters;
   onChange: (next: OpportunityFilters) => void;
@@ -54,7 +59,16 @@ export function FilterBar({
 
   const active = activeFilterCount(value);
   const chips = activeChips(value);
-  const facets = useMemo(() => opportunityFacets(items, value), [items, value]);
+  // The counts are the expensive half of this component — six faceting passes
+  // over the whole annotated catalog — and they are the half nobody is looking
+  // at while they type. Deferring them keeps the search field's own keystrokes
+  // off that work; the controls, the chips and the badge all still read `value`
+  // directly, so everything the student is actually touching stays exact.
+  const deferred = useDeferredValue(value);
+  const facets = useMemo(
+    () => opportunityFacets(items, deferred),
+    [items, deferred],
+  );
 
   return (
     <div className="rounded-2xl border border-line bg-card p-2.5 shadow-sm">
@@ -96,7 +110,7 @@ export function FilterBar({
           {active > 0 && (
             <span
               data-num
-              className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold tabular-nums text-on-fill"
+              className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1 text-[12px] font-semibold tabular-nums text-on-fill"
             >
               {active}
             </span>
@@ -111,8 +125,11 @@ export function FilterBar({
           <span data-num className="font-semibold text-ink">
             {resultCount}
           </span>{" "}
-          {resultCount === 1 ? "matches" : "match"} your filters — of{" "}
-          <span data-num>{items.length}</span> matched to you.
+          {resultCount === 1 ? "matches" : "match"} your filters, of{" "}
+          {/* `items` is the whole annotated catalog now, not the student's own
+              slice, so "matched to you" would be a lie by one word. Matching
+              stopped hiding rows; this panel is what narrows them. */}
+          <span data-num>{items.length}</span> we track.
         </p>
       )}
 
@@ -164,7 +181,7 @@ export function FilterBar({
           // load-bearing piece of honesty ("free" never covers a cost we have
           // not verified) was legible to a mouse and invisible to everyone else,
           // on the surface most likely to be opened on a phone.
-          note="“Free” means free the whole way through. Anything whose cost we have not verified is in no money bucket at all — so widening this filter is how you see those."
+          note="“Free” means free the whole way through. Anything whose cost we have not verified is in no money bucket at all, so widening this filter is how you see those."
         >
           {COST_OPTIONS.map((o) => (
             <Toggle
@@ -193,12 +210,25 @@ export function FilterBar({
           ))}
         </Group>
 
-        <Group label="Level">
+        <Group
+          label="Level"
+          // Money and When each explained themselves and this group did not, so
+          // a reader met four adjectives and had to infer the boundaries. It
+          // needed saying most once "School" arrived: on its own that word
+          // reads as a kind of institution rather than as the narrowest rung.
+          //
+          // The second sentence is the one worth having. This product exists
+          // for students outside the first tier, and "fewer entrants" is the
+          // fact that makes the bottom of this list the useful end of it — not
+          // a consolation prize.
+          note="How wide the field is. The narrower ones have far fewer entrants, and that is usually where a first real result comes from."
+        >
           {LEVEL_OPTIONS.map((o) => (
             <Toggle
               key={o.id}
               on={value.levels.includes(o.id)}
               count={facets.levels[o.id]}
+              title={o.hint}
               onClick={() => onChange(toggleFilter(value, "levels", o.id))}
             >
               {o.label}
@@ -211,7 +241,7 @@ export function FilterBar({
               switch for the other mood: only what I can act on today. */}
         <Group
           label="Entry"
-          note="Off, the list also shows what you are not old enough for yet — on purpose, so you can see what you are aiming at."
+          note="Off: the list also shows what you are not old enough for yet. That is on purpose, so you can see what you are aiming at."
         >
           <Toggle
             on={value.openOnly}
@@ -221,6 +251,49 @@ export function FilterBar({
           >
             Only what I can enter now
           </Toggle>
+        </Group>
+
+        {/* The two narrowings that used to be invisible. They ran inside
+            matching, before this panel saw a row, so a student was shown a
+            smaller catalog than we have with no way to ask why and no route to
+            the rest — the one control that looked like the way there said "Show
+            everything we track for you", where "everything" was false.
+
+            Both are ON by default, which is the one place in this panel where a
+            switched-on toggle is the neutral state: the honest default is still
+            the student's own list. Turning one off widens, and the count says
+            by how much. */}
+        <Group
+          label="Matched to you"
+          note="On: you see your own list. Off: the ones in other subjects or other countries come back. The count says how many."
+        >
+          {MATCH_OPTIONS.map((o) => (
+            <Toggle
+              key={o.id}
+              on={value.matched.includes(o.id)}
+              count={facets.matched[o.id]}
+              title={
+                o.id === "field"
+                  ? "Off, the list also shows opportunities outside the fields you picked."
+                  : "Off, the list also shows local opportunities run in other countries."
+              }
+              onClick={() =>
+                onChange({
+                  ...value,
+                  // Rebuilt in MATCH_OPTIONS order rather than pushed, so this
+                  // set-shaped field keeps one canonical order and two equal
+                  // states never compare unequal.
+                  matched: MATCH_OPTIONS.map((x) => x.id).filter((id) =>
+                    id === o.id
+                      ? !value.matched.includes(o.id)
+                      : value.matched.includes(id),
+                  ),
+                })
+              }
+            >
+              {o.label}
+            </Toggle>
+          ))}
         </Group>
       </div>
     </div>
@@ -247,13 +320,13 @@ function Group({
 }) {
   return (
     <div className="flex flex-col gap-1.5 py-2.5 sm:flex-row sm:items-baseline sm:gap-3">
-      <p className="w-16 shrink-0 pt-1 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-ink-faint">
+      <p className="w-16 shrink-0 pt-1 text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-ink-faint">
         {label}
       </p>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap gap-1.5">{children}</div>
         {note && (
-          <p className="mt-1.5 max-w-[60ch] text-xs leading-relaxed text-ink-faint">
+          <p className="mt-1.5 max-w-[54ch] text-xs leading-relaxed text-ink-faint">
             {note}
           </p>
         )}
@@ -288,11 +361,29 @@ function Toggle({
       aria-pressed={on}
       title={title}
       onClick={onClick}
+      // "Nothing here" is a BRANCH of the colour, not an alpha laid over it,
+      // and both halves of that matter.
+      //
+      // Measured on the built page: at `opacity-50` this chip's label ran
+      // **3.27:1** and its count **2.41:1**, against 8.78 and 5.48 for the same
+      // chip with results in it. 13px text needs 4.5. Every token in here had
+      // been checked; the opacity over the top had not — the exact trap
+      // CLAUDE.md names as "an alpha modifier on text is a colour nobody has
+      // checked", arriving from a direction no class-name scan could see.
+      // Everywhere else in this codebase a dimmed control is a genuinely
+      // `disabled` one, which WCAG exempts. This one stays clickable.
+      //
+      // And a branch rather than an appended class, because two utilities of
+      // the same type at the same specificity are resolved by whichever
+      // Tailwind emitted last — appending `text-ink-faint` after `text-ink-soft`
+      // is the merge bug the button system exists to prevent.
       className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:focus-ring ${
         on
           ? "border-accent bg-accent-soft text-accent-ink"
-          : "border-line bg-card text-ink-soft hover:border-ink/30 hover:text-ink"
-      } ${count === 0 && !on ? "opacity-50" : ""}`}
+          : count === 0
+            ? "border-line/60 bg-card text-ink-faint"
+            : "border-line bg-card text-ink-soft hover:border-ink/30 hover:text-ink"
+      }`}
     >
       {children}
       <span

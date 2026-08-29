@@ -26,8 +26,22 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPartnerForUser } from "@/lib/partners/queries";
-import { slugify, type Partner } from "@/lib/data/partners";
-import { COMPETITION_CATEGORIES } from "@/lib/data/key-dates";
+import {
+  PARTNER_COST_VALUES,
+  slugify,
+  type Partner,
+} from "@/lib/data/partners";
+// The vocabularies, from the module that owns them. Four consecutive fields of
+// the schema below used to read: one derived from a canonical array, three
+// hand-written. The author knew the pattern — they used it a line above. What
+// they did not have was an array they were allowed to point at, because the
+// canonical ones lived inside key-dates and this file is one import away from a
+// client bundle.
+import {
+  COMPETITION_CATEGORIES,
+  COMPETITION_LEVELS,
+  COMPETITION_TIERS,
+} from "@/lib/data/opportunity-vocab";
 import { FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
 import { currentCycle, cycleEndPlaceholder } from "@/lib/data/cycle";
 
@@ -44,13 +58,35 @@ const DETAIL_MAX = 300;
 // says its dates are not announced.
 const TIMING = ["deadline", "always_open", "tba"] as const;
 
+/**
+ * A link, with the characters that are not part of any URL refused.
+ *
+ * `.url()` alone is NOT enough, and that is a measured fact rather than
+ * caution: it calls the WHATWG parser, which TOLERATES a tab, a CR or an LF
+ * inside the input — so `https://example.com/a\r\nX-EVIL:1` passes validation
+ * and is stored exactly as typed. That string later goes onto a line of a
+ * generated `.ics` file, where a newline ends one calendar property and starts
+ * another, so a partner could write events straight into the calendar of every
+ * student who downloaded it. `lib/calendar/ics.ts` strips them at the other end
+ * too — this end is where the row stops being wrong in the database.
+ */
+const httpUrl = z
+  .string()
+  .trim()
+  .url()
+  .startsWith("http")
+    // eslint-disable-next-line no-control-regex -- refusing them is the point
+  .refine((v) => !/[\u0000-\u001F\u007F]/.test(v), {
+    message: "That link contains characters a URL cannot have.",
+  });
+
 const opportunitySchema = z.object({
   name: z.string().trim().min(3).max(NAME_MAX),
-  url: z.string().trim().url().startsWith("http"),
+  url: httpUrl,
   blurb: z.string().trim().min(10).max(BLURB_MAX),
   category: z.enum(COMPETITION_CATEGORIES),
-  tier: z.enum(["accessible", "selective", "elite"]),
-  level: z.enum(["international", "national", "regional"]),
+  tier: z.enum(COMPETITION_TIERS),
+  level: z.enum(COMPETITION_LEVELS),
   // Empty = relevant to any field. Same meaning as "all" in the catalog:
   // unknown facts never exclude.
   fields: z
@@ -60,17 +96,10 @@ const opportunitySchema = z.object({
   timing: z.enum(TIMING),
   deadline: z.string().trim(),
   eventWindow: z.string().trim().max(160),
-  cost: z.enum([
-    "free",
-    "funded",
-    "free_then_paid",
-    "free_cert_paid",
-    "freemium",
-    "one_time",
-    "subscription",
-    "paid_aid",
-    "varies",
-  ]),
+  // Exactly what the form offers, derived from it rather than restated beside
+  // it: the two used to be independent nine-member lists that happened to
+  // agree, and nothing would have said so had they stopped.
+  cost: z.enum(PARTNER_COST_VALUES),
   costDetail: z.string().trim().max(DETAIL_MAX),
   // local → shown only to students in the partner's own country. That is the
   // whole point of a city hub's post, and it is also what keeps a Shymkent
@@ -173,7 +202,7 @@ function rowFrom(
     event_window:
       input.eventWindow ||
       (timing.alwaysOpen
-        ? "Runs continuously — start whenever you like"
+        ? "Runs continuously. Start whenever you like"
         : "See the official page"),
     level: input.level,
     url: input.url,

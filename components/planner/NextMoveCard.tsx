@@ -2,6 +2,8 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Link } from "@/components/ui/Link";
 import type { NextMove } from "@/lib/data/next-move";
 
+import type { JobSimulation } from "@/lib/data/simulations";
+
 // THE ONE LOUD THING ON THE PAGE.
 //
 // The plan's whole guidance is a single move, so a single object carries it,
@@ -19,46 +21,40 @@ import type { NextMove } from "@/lib/data/next-move";
 //
 // A server component. It renders a value computed by a pure function, so there
 // is nothing here to hydrate.
-export function NextMoveCard({ move }: { move: NextMove }) {
+export function NextMoveCard({ move, simulation }: { move: NextMove; simulation?: JobSimulation | null }) {
   const urgent = move.tone === "urgent";
 
   return (
     <section
       aria-labelledby="next-move"
-      // The border carries the tone, not a fill: a tinted panel this large
-      // would compete with every card underneath it, and `reach-soft` behind
-      // body copy is the sort of thing that passes a contrast test on the light
-      // theme and fails on the dark one.
-      // NO entrance animation, deliberately. A fade-up holds its content at
-      // opacity 0 until the animation runs, and this is the most important
-      // thing on the page — the section's whole guidance. The guide learned
-      // this once already with its card list.
-      className={`rounded-2xl border bg-card p-5 shadow-card sm:p-6 ${
-        urgent ? "border-reach/45" : "border-accent/40"
+      className={`rounded-2xl border bg-gradient-to-br from-card via-card to-accent-soft/20 p-6 shadow-card hover:shadow-lift transition-all duration-300 sm:p-7 ${
+        urgent ? "border-reach/50" : "border-accent/40"
       }`}
     >
-      <p
-        className={`flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide ${
-          urgent ? "text-reach-ink" : "text-accent-ink"
-        }`}
-      >
-        <Needle />
-        {urgent ? "Deal with this first" : "Your next move"}
-      </p>
+      <div className="flex items-center">
+        <span
+          className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[12px] font-semibold uppercase tracking-wider ${
+            urgent ? "bg-reach-soft text-reach-ink" : "bg-accent-soft text-accent-ink"
+          }`}
+        >
+          <Needle />
+          {urgent ? "Deal with this first" : "Your strategic move"}
+        </span>
+      </div>
 
       <h2
         id="next-move"
-        className="mt-2.5 max-w-[34ch] text-balance text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl"
+        className="mt-3.5 max-w-[34ch] text-balance text-xl font-bold leading-snug tracking-tight text-ink sm:text-2xl"
       >
         {move.headline}
       </h2>
 
-      <p className="mt-2.5 max-w-[60ch] text-pretty text-[0.95rem] leading-relaxed text-ink-soft">
+      <p className="mt-2.5 max-w-[58ch] text-pretty text-[0.95rem] leading-relaxed text-ink-soft">
         {move.why}
       </p>
 
-      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
-        <ButtonLink href={move.action.href} size="md">
+      <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+        <ButtonLink href={move.action.href} size="md" className="shadow-sm">
           {move.action.label}
         </ButtonLink>
         {/* At most one alternative, ever. Two beside a recommendation is a
@@ -72,6 +68,26 @@ export function NextMoveCard({ move }: { move: NextMove }) {
           </Link>
         )}
       </div>
+
+      {simulation && (
+        <div className="mt-6 rounded-2xl bg-gradient-to-r from-accent-soft/80 via-accent-soft/50 to-transparent p-5 shadow-sm border border-accent/25">
+          <p className="text-sm font-semibold text-accent-ink mb-1 flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            Recommended Simulation
+          </p>
+          <p className="text-sm text-ink-soft mb-3">
+            Based on your interests, we recommend trying the <strong>{simulation.title}</strong> by {simulation.provider}.
+          </p>
+          <a
+            href={simulation.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-sm font-medium text-accent-ink hover:underline underline-offset-4 focus-visible:focus-ring"
+          >
+            Try it for free &rarr;
+          </a>
+        </div>
+      )}
     </section>
   );
 }

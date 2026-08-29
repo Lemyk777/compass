@@ -6,7 +6,105 @@
 // here keeps those routes' initial JS free of the catalog, which now loads only
 // via the dynamic import in the matching views.
 
-import type { Competition, CostInfo, CostModel, CostTone } from "./key-dates";
+import type {
+  Competition,
+  CompetitionCategory,
+  CostInfo,
+  CostModel,
+  CostTone,
+} from "./key-dates";
+
+// ── Date helpers (UTC, date-only — no timezone drift) ─────────────────────────
+//
+// `daysBetween` lived in key-dates until it was found to be the reason the odds
+// page shipped the catalog: `app-deadlines.ts` imported this two-line function,
+// and that one edge pulled key-dates — which builds a lookup map at module load
+// and so cannot be tree-shaken — into `LikelihoodGauge`'s client bundle. The
+// header above already claimed this module held every key-dates runtime value
+// the client card, roadmap and odds components need; this is the one that was
+// left behind. key-dates re-exports it, so every existing import still resolves.
+/**
+ * A plain `YYYY-MM-DD`, which is the only shape the catalog ever stores.
+ *
+ * Anything else falls through to the `Date` path below, so a malformed string
+ * still produces exactly what it produced before — including the NaN that a
+ * caller passing a full timestamp has always got out of this function.
+ */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function toUTC(d: Date | string): number {
+  if (typeof d !== "string") {
+    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  }
+  // The parse is the whole cost here, and for a date-only string there is
+  // nothing to parse: the three fields are at fixed offsets. `daysBetween` runs
+  // two to three times per catalog row on every match, so building a Date to
+  // read three getters off it and throw it away was the arithmetic paying for
+  // an allocation it never needed.
+  if (ISO_DATE.test(d)) {
+    return Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10));
+  }
+  const x = new Date(d + "T00:00:00Z");
+  return Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate());
+}
+
+/** Whole days from `from` to `to` (negative if `to` is in the past). */
+export function daysBetween(from: Date | string, to: Date | string): number {
+  return Math.round((toUTC(to) - toUTC(from)) / 86_400_000);
+}
+
+// ── How long is left ─────────────────────────────────────────────────────────
+//
+// Four surfaces render this and three of them disagreed: the card and the
+// landing preview were right, `OpportunityDetail` printed "1 days left", and
+// the public checker's verdict printed "the nearest closes in 0 days" on the
+// day something closed. Both wrong spellings read as a bug rather than as a
+// deadline, which is expensive on the one screen whose whole job is to be
+// believed.
+//
+// It lives beside `daysBetween` rather than in a component because it is the
+// same class of thing: a pure formatter over a number, needed by clients, and
+// carrying no catalog data. Two shapes, because English needs two — a badge is
+// a noun phrase and the verdict line is a clause — and a caller that had to
+// bend one into the other would start spelling it itself again.
+//
+// Zero and below collapse to "today" on purpose. A past confirmed date never
+// reaches a card, but the clock can tick over between render and read, and
+// "-1 days left" is the worst possible way to learn that.
+
+/** Badge form: `closes today` · `1 day left` · `12 days left`. */
+export function daysLeftLabel(days: number): string {
+  if (days <= 0) return "closes today";
+  if (days === 1) return "1 day left";
+  return `${days} days left`;
+}
+
+/** Clause form, for a sentence: `closes today` · `closes tomorrow` · `closes in 12 days`. */
+export function closesInPhrase(days: number): string {
+  if (days <= 0) return "closes today";
+  if (days === 1) return "closes tomorrow";
+  return `closes in ${days} days`;
+}
+
+/**
+ * What a student calls each kind of thing.
+ *
+ * The union's own values are database spellings — `research_program` — and any
+ * surface that prints one raw shows a reader an enum. This lived twice, in
+ * `OpportunityCard` and `OpportunityDetail`, and the two had already drifted
+ * ("Research" against "Research program"). The card's copy is deliberately the
+ * short one because it sits in a chip on a dense card; it stays where it is and
+ * says why. Everything that wants the full name reads this.
+ */
+export const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
+  olympiad: "Olympiad",
+  competition: "Competition",
+  course: "Course",
+  research_program: "Research program",
+  summer_program: "Summer program",
+  community: "Community",
+  simulation: "Try the work",
+};
 
 const COST_COPY: Record<
   CostModel,
@@ -16,21 +114,21 @@ const COST_COPY: Record<
     label: "Free",
     short: "Free",
     tone: "free",
-    fallback: "Free to take part — no fee at any stage.",
+    fallback: "Free to take part. No fee at any stage.",
   },
   free_cert_paid: {
     label: "Free to learn · the certificate costs money",
     short: "Free · paid certificate",
     tone: "partial",
     fallback:
-      "Free to learn, but the certificate is a paid extra. You can do the whole course without paying — you just won't get the certificate at the end.",
+      "Free to learn, but the certificate is a paid extra. You can do the whole course without paying. You just won't get the certificate at the end.",
   },
   free_then_paid: {
     label: "Free to enter · you pay only if you get through",
     short: "Free to enter",
     tone: "partial",
     fallback:
-      "The first round costs nothing. A fee appears only if you progress — so you can find out how far you get before any money is involved.",
+      "The first round costs nothing. A fee appears only if you progress, so you can find out how far you get before any money is involved.",
   },
   freemium: {
     label: "Free tier · paid plan optional",
@@ -44,10 +142,10 @@ const COST_COPY: Record<
     short: "Subscription",
     tone: "paid",
     fallback:
-      "This one is a subscription — you pay every month for as long as you use it. Check the current price before you start.",
+      "This one is a subscription: you pay every month for as long as you use it. Check the current price before you start.",
   },
   one_time: {
-    label: "Costs money — a one-off fee",
+    label: "Costs money, a one-off fee",
     short: "Costs money",
     tone: "paid",
     fallback: "There is a single up-front fee to take part.",
@@ -57,10 +155,10 @@ const COST_COPY: Record<
     short: "Paid · aid available",
     tone: "paid",
     fallback:
-      "This costs money, but need-based financial aid is available — ask for it inside the application, not after you are admitted.",
+      "This costs money, but need-based financial aid is available. Ask for it inside the application, not after you are admitted.",
   },
   funded: {
-    label: "Free — and it pays you",
+    label: "Free, and it pays you",
     short: "Free · funded",
     tone: "free",
     fallback:
@@ -71,7 +169,7 @@ const COST_COPY: Record<
     short: "Fee varies",
     tone: "unknown",
     fallback:
-      "The fee is set by your school, team or national organiser rather than centrally, so it varies — ask them what entry actually costs you.",
+      "The fee is set by your school, team or national organiser rather than centrally, so it varies. Ask them what entry actually costs you.",
   },
   unknown: {
     label: "We haven't verified the cost",
@@ -94,11 +192,27 @@ export function opportunityCost(c: Competition): CostInfo {
   };
 }
 
+/**
+ * ONE formatter, built once.
+ *
+ * `toLocaleDateString(locale, options)` is specified as
+ * `new Intl.DateTimeFormat(locale, options).format(this)` — so calling it with
+ * an options object constructs a formatter, resolves the locale and throws the
+ * whole thing away, every single time. Measured at **90.76 µs a call**, which
+ * is roughly a thousand times what the rest of a card costs to compute.
+ *
+ * That would be an academic number if this ran once a page. It runs once per
+ * opportunity card: 3.47 ms for the forty on one screen, and again on every
+ * re-render — so every keystroke in the search box paid it. Hoisting the
+ * formatter is the entire fix, and the output is identical by definition.
+ */
+const DAY_MONTH_YEAR = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
 export function formatDate(iso: string): string {
-  return new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  return DAY_MONTH_YEAR.format(new Date(iso + "T00:00:00Z"));
 }

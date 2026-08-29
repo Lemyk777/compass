@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { formatDate, opportunityCost } from "@/lib/data/opportunity-format";
+import {
+  CATEGORY_LABEL,
+  daysLeftLabel,
+  formatDate,
+  opportunityCost,
+} from "@/lib/data/opportunity-format";
 import type {
   CompetitionCategory,
   CompetitionTier,
@@ -54,15 +59,9 @@ const TONE: Record<CostTone, { panel: string; pill: string; icon: string }> = {
   },
 };
 
-const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
-  olympiad: "Olympiad",
-  competition: "Competition",
-  course: "Course",
-  research_program: "Research program",
-  summer_program: "Summer program",
-  community: "Community",
-  simulation: "Try the work",
-};
+// The full names live in opportunity-format beside the other formatters, so the
+// link-preview card and this panel cannot drift the way this map and the card's
+// had already drifted ("Research" against "Research program").
 
 /**
  * Why this kind of thing is worth doing — derived from category and tier rather
@@ -72,15 +71,15 @@ const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
  */
 const CATEGORY_WHY: Record<CompetitionCategory, string> = {
   simulation:
-    "The cheapest way to find out that you do not want something. You do the real tasks of a job for a few hours — the actual spreadsheet, the actual brief — and the answer you get is your own reaction to it, which no amount of reading produces. Employers built these to recruit, so they are honest about what the work is; that they are free and take an afternoon is the reason to do one before committing years to the subject behind it.",
+    "The cheapest way to find out that you do not want something. You do the real tasks of a job for a few hours, the actual spreadsheet and the actual brief, and the answer you get is your own reaction to it, which no amount of reading produces. Employers built these to recruit, so they are honest about what the work is; that they are free and take an afternoon is the reason to do one before committing years to the subject behind it.",
   community:
-    "This is the one kind here that will not show up on an application by itself — nobody is impressed that you joined a forum. What it does is put you next to people already doing the thing: they tell you which competition is worth entering, read your draft, and answer the question you would otherwise have quietly given up on. It costs nothing, there is no deadline to miss, and most students who get somewhere had one of these long before they had a result.",
+    "This is the one kind here that will not show up on an application by itself. Nobody is impressed that you joined a forum. What it does is put you next to people already doing the thing: they tell you which competition is worth entering, read your draft, and answer the question you would otherwise have quietly given up on. It costs nothing, there is no deadline to miss, and most students who get somewhere had one of these long before they had a result.",
   course:
-    "Finishing a real course from a name a university recognises shows you can teach yourself — which is most of what studying abroad actually demands. What carries weight is not the enrolment but what you build with it afterwards: a project, a club you start, a younger student you teach.",
+    "Finishing a real course from a name a university recognises shows you can teach yourself, which is most of what studying abroad actually demands. What carries weight is not the enrolment but what you build with it afterwards: a project, a club you start, a younger student you teach.",
   olympiad:
     "Olympiads are the clearest evidence there is: a ranked result against a known field, verifiable by anyone. One good placing says more about your subject ability than any number of listed activities.",
   competition:
-    "A competition gives you something admissions can check — a placing, a published entry, a judged project — and something to write about, which is often the harder half of an application.",
+    "A competition gives you something admissions can check: a placing, a published entry, a judged project. It also gives you something to write about, which is often the harder half of an application.",
   research_program:
     "Research is the one activity that shows you can work on a question nobody has answered yet. A finished paper, mentor and result is a rare thing to hold at eighteen.",
   summer_program:
@@ -91,16 +90,23 @@ const TIER_WHY: Record<CompetitionTier, string> = {
   accessible:
     "This one is an entry point: the value is in starting and finishing something, not in the prestige.",
   selective:
-    "National-calibre — a result here is a genuine differentiator on an application.",
+    "National-calibre. A result here is a genuine differentiator on an application.",
   elite:
     "One of the flagship names in its field. A result here is the kind of single line that changes how an application reads.",
 };
 
 export function OpportunityDetail({
   o,
+  commit,
   onClose,
 }: {
   o: Opportunity;
+  /**
+   * The commitment step, when the surface that opened this panel has one — see
+   * `OpportunityCard`. A NODE, not an import: this panel also serves the public
+   * checker, which has no `DashboardProvider` for `CommitRow` to read from.
+   */
+  commit?: React.ReactNode;
   onClose: () => void;
 }) {
   const cost = opportunityCost(o);
@@ -137,7 +143,7 @@ export function OpportunityDetail({
 
   const subjects =
     o.fields === "all"
-      ? "Any subject — useful whatever you end up studying"
+      ? "Any subject, useful whatever you end up studying"
       : (o.fields as FacultyValue[])
           .map((f) => FACULTY_LABEL[f] ?? f)
           .join(" · ");
@@ -220,8 +226,8 @@ export function OpportunityDetail({
             </p>
             <p className="mt-2 text-xs text-ink-faint">
               {cost.tone === "free"
-                ? "Free as of our last check — if that ever changes, the official page is the truth."
-                : "Prices change between cycles — always confirm on the official page before you pay for anything."}
+                ? "Free as of our last check. If that ever changes, the official page is the truth."
+                : "Prices change between cycles, so always confirm on the official page before you pay for anything."}
             </p>
           </section>
 
@@ -250,12 +256,12 @@ export function OpportunityDetail({
           <Section title="Who it's for">
             <p>
               {o.eligibility ??
-                "The organiser's age and grade rules are on the official page — check them before you apply."}
+                "The organiser's age and grade rules are on the official page. Check them before you apply."}
             </p>
             <p className="mt-1.5 text-ink-faint">{subjects}</p>
             {o.notYetEligible && (
               <p className="mt-2 rounded-lg bg-surface px-3 py-2 text-ink-soft">
-                You are not old enough for this one yet — you become eligible{" "}
+                You are not old enough for this one yet. You become eligible{" "}
                 <span className="font-medium text-ink">{o.notYetEligible}</span>
                 . It is here so you know what to aim at.
               </p>
@@ -272,7 +278,7 @@ export function OpportunityDetail({
                 announced" line below would be nonsense for one. */}
             {!o.dateConfirmed && o.alwaysOpen ? (
               <p>
-                You can start today — {o.window.charAt(0).toLowerCase()}
+                You can start today. {o.window.charAt(0).toUpperCase()}
                 {o.window.slice(1)}. There is no deadline to miss, which is
                 exactly why these are the ones people never get round to. Pick
                 the day you start and the slot you keep each week.
@@ -284,10 +290,7 @@ export function OpportunityDetail({
                   {formatDate(o.deadline)}
                 </span>{" "}
                 ·{" "}
-                {o.daysToDeadline <= 0
-                  ? "closes today"
-                  : `${o.daysToDeadline} days left`}
-                . {o.window}.
+                {daysLeftLabel(o.daysToDeadline)}. {o.window}.
                 {o.partner && (
                   // Why this countdown is trustworthy: it is not a date we
                   // extracted from a page, it is the organiser stating it.
@@ -298,13 +301,28 @@ export function OpportunityDetail({
               </p>
             ) : (
               <p>
-                Dates for the next cycle are not announced yet — it typically
+                Dates for the next cycle are not announced yet. It typically
                 runs: {o.window}. We only show a countdown for a date we can
                 stand behind.
               </p>
             )}
           </Section>
         </div>
+
+        {/* ── The decision ───────────────────────────────────────────────
+            "I'm doing this" → when will you start? It sits OUTSIDE the
+            scrolling body, directly above the links out, for the reason the
+            whole step exists: it is the only action on this panel that we can
+            observe, and one that scrolls away is one a reader meets by luck.
+
+            Above the actions rather than among them, because those two are
+            doors OUT — the organiser's page, a calendar file, a shareable
+            address — and this is the one thing that happens here. */}
+        {commit && (
+          <div className="border-t border-line bg-surface/60 px-5 py-4 sm:px-6">
+            {commit}
+          </div>
+        )}
 
         {/* ── Actions ────────────────────────────────────────────────────── */}
         <div className="flex flex-wrap items-center gap-2.5 border-t border-line px-5 py-4 sm:px-6">
@@ -363,7 +381,7 @@ export function CostPill({
   const cost = opportunityCost(o);
   return (
     <span
-      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide ${
         TONE[cost.tone].pill
       } ${className}`}
     >
@@ -400,7 +418,7 @@ function Badge({
 }) {
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${className}`}
+      className={`rounded-full px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide ${className}`}
     >
       {children}
     </span>

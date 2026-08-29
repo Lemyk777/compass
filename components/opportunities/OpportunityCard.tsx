@@ -1,12 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { formatDate } from "@/lib/data/opportunity-format";
-import type {
-  CompetitionCategory,
-  CompetitionTier,
-  Opportunity,
-} from "@/lib/data/key-dates";
+import { daysLeftLabel, formatDate } from "@/lib/data/opportunity-format";
+// The chip's SHORT names and the tier words, from the module that owns them.
+// This file held private copies of both. The short form is a real distinction —
+// "Research" fits a chip on a dense card and "Research program" does not — but
+// it had been expressed by duplicating the whole map rather than by naming the
+// two forms, so the landing page's hero ended up holding a third copy and the
+// front page said "Research" while the page it opened said "Research program".
+import {
+  CATEGORY_LABEL_SHORT,
+  TIER_LABEL,
+} from "@/lib/data/opportunity-vocab";
+import type { Opportunity } from "@/lib/data/key-dates";
 import { regionLabel } from "@/lib/data/geo";
 import { downloadIcs } from "@/lib/calendar/ics";
 import { PartnerBadge } from "@/components/partners/PartnerBadge";
@@ -28,31 +34,28 @@ import { CostPill, OpportunityDetail } from "./OpportunityDetail";
 
 export type CardDensity = "comfortable" | "compact";
 
-const TIER_LABEL: Record<CompetitionTier, string> = {
-  accessible: "Good first one",
-  selective: "Step up",
-  elite: "The big one",
-};
-
-const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
-  olympiad: "Olympiad",
-  competition: "Competition",
-  course: "Course",
-  research_program: "Research",
-  summer_program: "Summer program",
-  community: "Community",
-  simulation: "Try the work",
-};
 
 export function OpportunityCard({
   o,
   density = "comfortable",
-  footer,
+  commit,
 }: {
   o: Opportunity;
   density?: CardDensity;
-  /** Extra row under the card — the dashboard's commitment step lives here. */
-  footer?: React.ReactNode;
+  /**
+   * The dashboard's commitment step ("I'm doing this" → when will you start?),
+   * rendered inside the DETAIL PANEL rather than on the card.
+   *
+   * Passed in rather than imported, because this card is also the public
+   * checker's card and that page has no `DashboardProvider` for `CommitRow` to
+   * read. Same reason the companion takes pre-rendered nodes.
+   *
+   * On the card itself it would be a commitment control on every row of a
+   * hundred-row list, which is the checklist the original design ruled out;
+   * one tap in, on the opportunity the reader actually opened, it is a
+   * decision.
+   */
+  commit?: React.ReactNode;
 }) {
   const [detail, setDetail] = useState(false);
   const compact = density === "compact";
@@ -69,7 +72,13 @@ export function OpportunityCard({
             "rounded-2xl border border-line bg-card p-6 shadow-card transition-shadow duration-200 hover:shadow-lift sm:p-7"
       }
     >
-      {detail && <OpportunityDetail o={o} onClose={() => setDetail(false)} />}
+      {detail && (
+        <OpportunityDetail
+          o={o}
+          commit={commit}
+          onClose={() => setDetail(false)}
+        />
+      )}
 
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1">
@@ -113,7 +122,7 @@ export function OpportunityCard({
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <CostPill o={o} />
             <Chip>{TIER_LABEL[o.tierResolved]}</Chip>
-            <Chip>{CATEGORY_LABEL[o.categoryResolved]}</Chip>
+            <Chip>{CATEGORY_LABEL_SHORT[o.categoryResolved]}</Chip>
             {o.region && (
               // Local opportunity — only ever shown to students from that
               // country, so this reads as "near you", not as a restriction.
@@ -151,7 +160,7 @@ export function OpportunityCard({
               <span>
                 <span className="font-medium text-ink">Eligibility:</span>{" "}
                 {o.eligibility ??
-                  "varies — check the age and grade rules on the official page"}
+                  "varies. Check the age and grade rules on the official page"}
               </span>
             </p>
 
@@ -177,7 +186,7 @@ export function OpportunityCard({
                 // We never show a countdown for a date we cannot stand behind:
                 // a wrong one could make a student miss a real deadline.
                 <>
-                  Dates for the next cycle not announced — typically {o.window}
+                  Dates for the next cycle not announced. Typically {o.window}
                 </>
               )}
             </p>
@@ -236,8 +245,6 @@ export function OpportunityCard({
           </button>
         )}
       </div>
-
-      {footer}
     </article>
   );
 }
@@ -261,7 +268,7 @@ function Chip({
       // letter-spacing is the smallest type in the product and it is carrying
       // the two facts people get burned by — what it costs, and whether they
       // can enter.
-      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold uppercase tracking-wide ${
         tone === "accent"
           ? "bg-accent-soft text-accent-ink"
           : "bg-surface text-ink-soft"
@@ -286,12 +293,7 @@ export function Countdown({
       : days <= 30
         ? "bg-target-soft text-target-ink"
         : "bg-likely-soft text-likely-ink";
-  const text =
-    days <= 0
-      ? "closes today"
-      : days === 1
-        ? "1 day left"
-        : `${days} days left`;
+  const text = daysLeftLabel(days);
   return (
     <span
       data-num

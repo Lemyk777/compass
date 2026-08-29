@@ -8,6 +8,7 @@ import { getSession } from "@/lib/auth/session";
 import { getPartnerForUser } from "@/lib/partners/queries";
 import { ApplyForm } from "@/components/partners/ApplyForm";
 import { pageMeta } from "@/lib/seo";
+import { REPLY_WINDOW } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,7 @@ export default async function PartnerApplyPage() {
           <p className="mt-4 text-pretty text-base leading-relaxed text-ink-soft">
             You write it, you publish it, and it appears immediately with your
             logo on it. It reaches the students whose school year and subjects
-            actually fit — not everyone, and not nobody. There is nothing to
+            actually fit, not everyone and not nobody. There is nothing to
             pay, and you can take anything down yourself.
           </p>
 
@@ -60,10 +61,11 @@ export default async function PartnerApplyPage() {
             </Point>
             <Point>
               Once we&rsquo;ve confirmed the account belongs to your
-              organisation, everything you post carries a verification mark.
+              organisation, everything you post carries a verification mark. We
+              reply within {REPLY_WINDOW}.
             </Point>
             <Point>
-              You get a public page listing everything you have open — a link
+              You get a public page listing everything you have open, a link
               you can send to your own audience.
             </Point>
           </ul>
@@ -74,7 +76,7 @@ export default async function PartnerApplyPage() {
             ) : (
               <div className="rounded-2xl border border-line bg-card p-6 shadow-card">
                 <p className="text-base font-semibold text-ink">
-                  Sign in first — the account you use becomes the account you
+                  Sign in first. The account you use becomes the account you
                   post from.
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-ink-soft">

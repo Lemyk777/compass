@@ -1,9 +1,10 @@
 # Compass — Setup & Run Guide
 
-Everything is built (M0–M6). This guide covers the credentials and one-time
-setup needed to run it for real. Until you add keys, the app builds and the
-**`/demo`** route renders the full results dashboard with sample data so you can
-see the design.
+All three student sections are built and in production — Opportunities, the
+guide and the plan — along with the admission analysis behind them. This guide
+covers the credentials and one-time setup needed to run it for real. Until you
+add keys, the app builds and the **`/demo`** route renders the full results
+dashboard with sample data so you can see the design.
 
 ## 1. Prerequisites
 
@@ -21,10 +22,10 @@ npm install
 
 1. Create a project at supabase.com.
 2. **Run the migrations, all of them, in order.** Open the SQL editor and paste
-   [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql)
+   [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql)
    first — it creates the core tables, RLS policies and the
    `signup_count_for_code` helper — then every numbered file after it, up to and
-   including `0030_planner_path.sql`. There is **no migration runner**: nothing
+   including `0031_beat_reactions.sql`. There is **no migration runner**: nothing
    here applies itself, and a missing one usually shows up as a feature that
    silently does not persist rather than as an error.
 
@@ -34,7 +35,7 @@ npm install
    npm run db:check
    ```
 
-   Read-only, a couple of seconds, one probe per table. It should report **32/32
+   Read-only, a couple of seconds, one probe per table. It should report **33/33
    pass**. This exists because an audit once found a migration that had never
    been applied while everything around it had — see
    [ARCHITECTURE.md](ARCHITECTURE.md) § `supabase/migrations/`.
@@ -58,8 +59,18 @@ NEXT_PUBLIC_SUPABASE_URL=        # Supabase project URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=   # anon/public key
 SUPABASE_SERVICE_ROLE_KEY=       # service_role key (server-only)
 ANTHROPIC_API_KEY=               # server-only
+CRON_SECRET=                     # server-only, gates /api/cron/* (see below)
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
+
+> **`CRON_SECRET` is not optional in production, and leaving it out fails
+> CLOSED.** Both cron endpoints answer **503** when it is unset, so the date
+> sync and the discovery run simply never happen — quietly, and with nothing
+> broken-looking to notice. It is that way round on purpose: those routes fetch
+> pages, call the model and write with the service-role key, so an unprotected
+> one is a direct route to an unbounded bill. Vercel sends the header
+> automatically once the variable exists. Locally you can leave it empty unless
+> you are testing the cron routes.
 
 > **FOUNDER:** set a hard spend limit in the Anthropic console — code rate-limits
 > per user (5/hour) and caps `max_tokens`, but the billing cap can only be set there.
@@ -114,7 +125,8 @@ if you later read it from the DB.
 ## 9. Deploy (Vercel)
 
 1. Push to GitHub and import the repo in Vercel.
-2. Add all five env vars in the Vercel project settings; set
+2. Add all six env vars in the Vercel project settings — `CRON_SECRET`
+   included, or the scheduled jobs will 503 forever; set
    `NEXT_PUBLIC_SITE_URL` to your production URL (`https://applycompass.app`).
 3. Add `applycompass.app` (and `www.applycompass.app`) as project domains and
    set `applycompass.app` as the primary. Any other/retired domain pointed at

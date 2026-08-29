@@ -8,9 +8,12 @@ import { ShareLink } from "@/components/opportunities/ShareLink";
 import { resolveCompetitions, type Competition } from "@/lib/data/key-dates";
 import { formatDate, opportunityCost } from "@/lib/data/opportunity-format";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
+import { regionLabel } from "@/lib/data/geo";
 import { fetchLivePool } from "@/lib/partners/queries";
 import { getSession } from "@/lib/auth/session";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbSchema } from "@/lib/schema";
 
 // One opportunity, at its own address.
 //
@@ -42,9 +45,22 @@ function previewLine(c: Competition): string {
     ? c.dateConfirmed
       ? `Closes ${formatDate(c.deadline)}`
       : "Dates to be confirmed"
-    : "Open now — no deadline";
+    : "Open now, no deadline";
   const who = c.eligibility ?? "Open to school students";
-  return `${who} · ${cost.short} · ${when}. ${c.blurb}`;
+  // Where it is comes FIRST, and only when the row is local.
+  //
+  // This is the same fix as the badge in the page body below, on the surface
+  // that actually travels: a shared link unfurls into this string, and three
+  // Kazakhstan-only rows produced a description naming no country at all. The
+  // page underneath was corrected first and the card that decides whether
+  // anybody clicks was not, which is worse than either — it puts the honest
+  // sentence one tap PAST the moment the reader forms an impression.
+  //
+  // It leads rather than trails because `fitDescription` cuts this to ~160
+  // characters and several eligibility sentences are longer than that on their
+  // own, so a trailing fact is a fact that does not survive.
+  const place = c.region ? `In ${c.city ?? regionLabel(c.region)} · ` : "";
+  return `${place}${who} · ${cost.short} · ${when}. ${c.blurb}`;
 }
 
 export async function generateMetadata({
@@ -60,7 +76,10 @@ export async function generateMetadata({
       path: `/opportunities/${params.id}`,
     });
   return pageMeta({
-    title: `${o.name} — who can enter, what it costs, when it closes | Compass`,
+    // The old tail was 56 characters before the name was considered, so a long
+    // opportunity produced a 128-character title whose visible half was all
+    // name and no product. The name is what someone searched for; it leads.
+    title: fitTitle(o.name, "cost, dates and who can enter"),
     description: previewLine(o),
     path: `/opportunities/${o.id}`,
     type: "article",
@@ -94,9 +113,9 @@ export default async function OpportunityPage({
       label: "When it closes",
       body: o.deadline
         ? o.dateConfirmed
-          ? `${formatDate(o.deadline)}${o.window ? ` — ${o.window}` : ""}`
+          ? `${formatDate(o.deadline)}${o.window ? ` · ${o.window}` : ""}`
           : `We could not confirm this year's date against the organiser's own page, so we are not showing a countdown for it.${o.window ? ` Last published: ${o.window}.` : ""}`
-        : "No deadline — this one is open whenever you are ready to start.",
+        : "No deadline. This one is open whenever you are ready to start.",
       tone: o.deadline && !o.dateConfirmed ? "warn" : undefined,
     },
   ];
@@ -105,6 +124,18 @@ export default async function OpportunityPage({
     <StudentShell isAdmin={session?.role === "admin"}>
       <Shell>
         <main id={SKIP_TARGET} className="space-y-6 py-6">
+          {/* The same two steps the visible trail below shows, in the form a
+              search result can render. These are the pages students send each
+              other, so they are also the pages most likely to be someone's
+              first arrival from a search — and `o.name` here can be a partner's
+              own wording, which is why `serializeJsonLd` escapes rather than
+              trusts it. */}
+          <JsonLd
+            data={breadcrumbSchema([
+              { name: "Everything you can enter", path: "/opportunities" },
+              { name: o.name, path: `/opportunities/${o.id}` },
+            ])}
+          />
           <nav aria-label="Breadcrumb" className="text-sm">
             <Link
               href="/opportunities"
@@ -118,7 +149,7 @@ export default async function OpportunityPage({
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
               {o.name}
             </h1>
-            <p className="mt-3 max-w-[60ch] text-pretty text-base leading-relaxed text-ink-soft">
+            <p className="mt-3 max-w-[54ch] text-pretty text-base leading-relaxed text-ink-soft">
               {o.blurb}
             </p>
             {/* `fields: "all"` is a real value and means every subject — the
@@ -140,6 +171,27 @@ export default async function OpportunityPage({
                 ))
               )}
             </ul>
+            {/* WHERE it is, and this page has to say so itself.
+                On a card the same chip reads as "near you", because a local
+                row is only ever shown to a student from that country or one
+                whose country we do not know. THIS page is public and arrives
+                from anywhere — a shared link, a search result — so for most of
+                its readers the fact is the opposite one, and the card's
+                reasoning does not transfer.
+                It was missing because this route is the THIRD renderer of an
+                opportunity and only the other two ever got the badge. Measured
+                on 2026-08-25, right after the first local rows landed: of five
+                Kazakhstan-only pages, two named no country anywhere on them —
+                a free online debate league and a residential summer camp — so
+                a reader in Rome met a row they cannot enter with nothing on
+                the page saying which country it belongs to. The others were
+                saved only by their eligibility sentence happening to mention
+                Kazakhstan, which is not a mechanism. */}
+            {o.region && (
+              <p className="mt-3 inline-flex items-center rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent-ink">
+                Local · {o.city ?? regionLabel(o.region)}
+              </p>
+            )}
           </header>
 
           {/* The three facts a student decides on, level with each other. Only
@@ -155,7 +207,7 @@ export default async function OpportunityPage({
                     : "border-line bg-card"
                 }`}
               >
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+                <dt className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
                   {f.label}
                 </dt>
                 <dd className="mt-1.5 text-sm leading-relaxed text-ink-soft">
@@ -177,9 +229,9 @@ export default async function OpportunityPage({
             <ShareLink path={`/opportunities/${o.id}`} />
           </div>
 
-          <p className="max-w-[60ch] text-sm leading-relaxed text-ink-faint">
-            Sending this to someone sends the four facts above, not just a name
-            — they will see who can enter and what it costs before they decide.
+          <p className="max-w-[54ch] text-sm leading-relaxed text-ink-faint">
+            Sending this to someone sends the four facts above, not just a name.
+            They will see who can enter and what it costs before they decide.
           </p>
         </main>
       </Shell>

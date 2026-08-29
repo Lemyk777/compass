@@ -26,7 +26,7 @@ import { guidePickState, type PlanPickState } from "@/lib/guide/plan-state";
 import { AddToPlan } from "@/components/guide/AddToPlan";
 import { WorkFromHere } from "@/components/guide/Spine";
 import { areasForDestination } from "@/lib/data/spine";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
 
 // One destination, in full: what it uniquely gives, what it costs you, what
 // admissions weighs, what happens after you graduate, and who should not come.
@@ -47,7 +47,7 @@ export async function generateMetadata({
   const d = destinationById(params.place);
   if (!d) return { title: "Not found — Compass" };
   return pageMeta({
-    title: `Studying in ${d.name} — the honest picture | Compass`,
+    title: fitTitle(`Studying in ${d.name}`, "the honest picture"),
     description: d.oneLine,
     path: `/guide/places/${d.id}`,
     type: "article",
@@ -103,10 +103,10 @@ function DestinationBody({
       body: (
         <>
           <section className="rounded-2xl border border-ivy/25 bg-ivy-soft/40 p-5 sm:p-6">
-            <h3 className="text-sm font-semibold text-ivy-ink">
+            <h3 className="text-lg font-semibold text-ivy-ink">
               What only this place gives you
             </h3>
-            <p className="mt-2 max-w-[60ch] text-base leading-relaxed text-ink">
+            <p className="mt-2 max-w-[54ch] text-base leading-relaxed text-ink">
               {d.unique}
             </p>
           </section>
@@ -134,7 +134,7 @@ function DestinationBody({
           <GuideBlock label="What they weigh">{d.admissions}</GuideBlock>
           {/* Timing is the way a strong applicant most often loses a place, and
               unlike merit it is entirely preventable by knowing it early. */}
-          <GuideBlock label="The cycle — when things actually happen">
+          <GuideBlock label="The cycle: when things actually happen">
             {d.applicationCycle}
           </GuideBlock>
           <GuideBlock label="How an application is actually read here">
@@ -155,8 +155,8 @@ function DestinationBody({
       title: "Who is named here",
       body: (
         <>
-          <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
-            Not a ranking, and deliberately not in any order of merit — these
+          <p className="max-w-[54ch] text-base leading-relaxed text-ink-soft">
+            Not a ranking, and deliberately not in any order of merit. These
             are the places a subject is actually studied and taught at here, so
             you have something to search for. A position in a league table is
             stale within a year, differs between the four tables that publish
@@ -191,7 +191,7 @@ function DestinationBody({
                   {u.knownFor.map((f) => (
                     <li
                       key={f}
-                      className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-soft"
+                      className="rounded-full bg-surface px-2 py-0.5 text-[12px] font-medium text-ink-soft"
                     >
                       {FACULTY_LABEL[f]}
                     </li>
@@ -203,11 +203,11 @@ function DestinationBody({
               </li>
             ))}
           </ul>
-          <p className="text-xs text-ink-faint">
-            Language of teaching is the one thing here that moves within a cycle
-            — a country can widen or cut its English-taught intake in a single
-            year. Check it on the university&rsquo;s own page for your own entry
-            year.
+          <p className="max-w-[54ch] text-xs text-ink-faint">
+            Language of teaching is the one thing here that moves within a
+            cycle. A country can widen or cut its English-taught intake in a
+            single year. Check it on the university&rsquo;s own page, for your
+            own entry year.
           </p>
         </>
       ),
@@ -241,7 +241,7 @@ function DestinationBody({
     title: "Check it yourself",
     body: (
       <>
-        <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+        <p className="max-w-[54ch] text-base leading-relaxed text-ink-soft">
           The rules on this page are set by these bodies, not by us. Immigration
           and fee rules in particular change between the year you read this and
           the year you graduate, so open the one that decides your case and read
@@ -284,7 +284,7 @@ function DestinationBody({
       title: "The cities inside it",
       body: (
         <>
-          <p className="max-w-[60ch] text-sm text-ink-soft">
+          <p className="max-w-[54ch] text-base text-ink-soft">
             Each one opens its own page: what clusters there, the catch, and the
             door in for someone who is not from there.
           </p>
@@ -332,6 +332,7 @@ function DestinationBody({
       crumb="Countries"
       crumbHref={withFields("/guide/places", stated)}
       title={d.name}
+      path={`/guide/places/${d.id}`}
       transitionName={guideMorph("place", d.id)}
       sub={d.where}
       lead={d.oneLine}
@@ -345,13 +346,23 @@ function DestinationBody({
             label={d.name}
             signedIn={pick.signedIn}
             saved={pick.saved}
-            maps={pick.maps}
+            
             returnTo={`/guide/places/${d.id}`}
           />
-          <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-ink">
+          {/* A `p` under an `aria-label`, not an `h2` — the same call as
+              `PageContents`. A rail panel is a labelled widget, not a section of
+              the page, and as an h2 it rendered at 15px against the reading
+              column's 22px: below `lg` the rail follows the content in flow, so
+              a phone reader met that inverted h2 immediately after a run of
+              real ones. The `aria-label` keeps the panel announced as a named
+              region, so nothing is lost from the outline that was worth having. */}
+          <section
+            aria-label="Strongest fields here"
+            className="rounded-2xl border border-line bg-card p-4 sm:p-5"
+          >
+            <p className="text-sm font-semibold text-ink">
               Strongest fields here
-            </h2>
+            </p>
             <ul className="mt-2 flex flex-wrap gap-1.5">
               {d.fields.map((f) => (
                 <li
@@ -369,13 +380,16 @@ function DestinationBody({
               reading. It promised the guide's whole premise — nobody chooses a
               country in isolation — and then threw away one of the two sides. Each
               chip now opens both countries next to each other on the same axes. */}
-          <section className="rounded-2xl border border-line bg-card p-5 sm:p-6">
-            <h2 className="text-sm font-semibold text-ink">
+          <section
+            aria-label={`Compare ${d.name} with another country`}
+            className="rounded-2xl border border-line bg-card p-5 sm:p-6"
+          >
+            <p className="text-sm font-semibold text-ink">
               Compare {d.name} with&hellip;
-            </h2>
+            </p>
             <p className="mt-1 text-sm text-ink-soft">
               Nobody chooses a country in isolation. Pick one and the two are
-              laid out side by side — money, admissions, what happens after you
+              laid out side by side: money, admissions, what happens after you
               graduate, and who each one is wrong for.
             </p>
             <ul className="mt-3 flex flex-wrap gap-2">
@@ -450,8 +464,8 @@ function Column({
           : "border-reach/30 bg-reach-soft/30"
       }`}
     >
-      <h3 className="text-sm font-semibold text-ink">{title}</h3>
-      <ul className="mt-3 max-w-[60ch] space-y-2.5">
+      <h3 className="text-lg font-semibold text-ink">{title}</h3>
+      <ul className="mt-3 max-w-[54ch] space-y-2.5">
         {items.map((item) => (
           <li
             key={item}

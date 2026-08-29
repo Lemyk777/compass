@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { REGION_LABEL, type RegionKey } from "@/lib/data/world";
+import { REGION_LABEL, type RegionKey } from "@/lib/data/regions";
 import {
   GUIDE_FILTER_KEYS,
   parseGuideFilters,
@@ -22,9 +22,12 @@ import {
 // regions should not cost four presses of Back, and narrowing a list you are
 // halfway down should not throw you to the top.
 //
-// `REGION_LABEL` is a five-entry constant, the only runtime import here. The
-// datasets it sits next to in `world.ts` never enter this bundle — the rows and
-// their counts are computed on the server and arrive as props.
+// `REGION_LABEL` comes from `lib/data/regions.ts`, a leaf module, and NOT from
+// `world.ts` where the taxonomy used to live beside the 822-line registry. That
+// import was measured and did shake clean — but it read as a violation to every
+// reviewer, and the identical-looking one in `RoadmapView` shipped the whole
+// catalog to eight routes because `key-dates.ts` cannot be shaken. The rows and
+// their counts still arrive as props, computed on the server.
 
 /** Debounce for the search box. */
 const TYPING_MS = 250;
@@ -109,12 +112,11 @@ export function GuideFilterBar({
       className="rounded-2xl border border-line bg-card px-4 py-3.5 sm:px-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h2
-          id="guide-filter-heading"
-          className="text-sm font-semibold text-ink"
-        >
+        {/* Same call as `FieldFilter`: a control's label, not a page section.
+            `aria-labelledby` above keeps the region named. */}
+        <p id="guide-filter-heading" className="text-sm font-semibold text-ink">
           Narrow the list
-        </h2>
+        </p>
         {active > 0 && (
           <button
             type="button"
@@ -141,7 +143,7 @@ export function GuideFilterBar({
             typed.current = true;
             setDraft(e.target.value);
           }}
-          placeholder={`Search ${noun} — a name, or what you want to do there`}
+          placeholder={`Search ${noun} by name, or by what you want to do there`}
           className="h-11 w-full rounded-xl border border-line bg-surface px-3.5 text-sm text-ink placeholder:text-ink-faint focus-visible:focus-ring"
         />
       </label>
@@ -156,13 +158,23 @@ export function GuideFilterBar({
                 type="button"
                 aria-pressed={on}
                 onClick={() => toggleRegion(r)}
-                // A zero stays clickable and only dims. Removing it would make
-                // the row change shape while you type, which reads as a bug.
+                // A zero stays clickable and only quietens. Removing it would
+                // make the row change shape while you type, which reads as a bug.
+                //
+                // Quietened by a BRANCH of the colour, never by an alpha over
+                // it: measured on the sibling filter, `opacity-50` took a 8.78:1
+                // label to 3.27:1 and a 5.48:1 count to 2.41:1, both under the
+                // 4.5 this text size needs. Every token here is checked; an
+                // opacity laid over them is not, and no class-name scan can see
+                // it. Elsewhere in this codebase a dimmed control is a genuinely
+                // disabled one, which WCAG exempts. This one is not.
                 className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-out active:scale-[0.96] active:duration-75 focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none ${
                   on
                     ? "border-accent bg-accent-soft text-accent-ink"
-                    : "border-line bg-surface text-ink-soft hover:border-ink/30 hover:text-ink"
-                } ${n === 0 && !on ? "opacity-50" : ""}`}
+                    : n === 0
+                      ? "border-line/60 bg-surface text-ink-faint"
+                      : "border-line bg-surface text-ink-soft hover:border-ink/30 hover:text-ink"
+                }`}
               >
                 {REGION_LABEL[r]}
                 <span data-num className="tabular-nums text-xs text-ink-faint">
@@ -187,8 +199,10 @@ export function GuideFilterBar({
               className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 ease-out active:scale-[0.96] active:duration-75 focus-visible:focus-ring motion-reduce:transform-none motion-reduce:transition-none ${
                 filters.modelledOnly
                   ? "border-accent bg-accent-soft text-accent-ink"
-                  : "border-line bg-surface text-ink-soft hover:border-ink/30 hover:text-ink"
-              } ${facets.modelled === 0 && !filters.modelledOnly ? "opacity-50" : ""}`}
+                  : facets.modelled === 0
+                    ? "border-line/60 bg-surface text-ink-faint"
+                    : "border-line bg-surface text-ink-soft hover:border-ink/30 hover:text-ink"
+              }`}
             >
               We model your odds
               <span data-num className="tabular-nums text-xs text-ink-faint">

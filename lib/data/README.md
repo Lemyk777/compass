@@ -13,16 +13,46 @@ every run.
 | `universities.ts` | The US dataset (also shipped in the cached system prompt) |
 | `italian-universities.ts`, `hk-universities.ts`, `uae-universities.ts`, `korea-universities.ts` | Per-country programme datasets |
 | `branch-campuses.ts` | US-parent campuses abroad, scored through the US pipeline |
-| `key-dates.ts` | **The opportunity registry** — competitions, olympiads, summer and research programmes — plus the matching engine |
+| `competitions-data.ts` | **The catalog itself** — 192 curated competitions, olympiads, courses, programmes, communities and job simulations, 20 of them `region`-tagged to Kazakhstan. Entries only; no logic |
+| `key-dates.ts` | The **types and the matching engine** over that catalog, which it re-exports so existing imports still work. It builds a lookup map over the whole catalog at module load, so it cannot be tree-shaken — see the bundle rule below |
+| `opportunity-filter.ts` | The filter panel's rules, pure: groups ANDed, options inside a group ORed, every option carrying its own count. Also `matchedOnly`, which is **mandatory on any surface without a filter panel** |
+| `opportunity-format.ts` | `formatDate` / `opportunityCost` / `daysBetween`. **Client components import these from here, never from key-dates** |
 | `eligibility.ts` | Who can actually enter: parses the curated sentence into a gate |
 | `intents.ts` | "I'm doing this" — statuses, the start-moment vocabulary |
 | `geo.ts` | Free-text country → ISO-2, and local-discovery targets |
 | `roadmap.ts` | The dated, runway-aware plan |
 | `app-deadlines.ts`, `intl-deadlines.ts` | Application deadlines per school |
 | `country-content.ts`, `deterministic-countries.ts` | Per-country registries — adding a destination is an entry here, not edits across the app |
-| `faculties.ts`, `destinations.ts`, `countries.ts` | Shared vocabularies |
+| `faculties.ts`, `destinations.ts`, `countries.ts`, `regions.ts` | Shared vocabularies. **One list each** — five of these existed twice and that duplication was the soil three shipped bugs grew in |
 
-## Adding an opportunity to `key-dates.ts`
+### The guide (public, ~4,000 lines of prose across five registries)
+
+| File | |
+| --- | --- |
+| `careers.ts` | 33 **areas** of work per field, with the real job titles inside them. Never one prescribed profession — we cannot know which job a student wants, so we widen. Server-only in practice |
+| `career-titles.ts` | The area titles alone, duplicated and pinned to the registry by a test. **Import labels from here in anything that runs in the browser** |
+| `majors.ts` | 44 subjects — guide step 2, what you apply *with*. `alsoCalled`, `firstYear` and `schoolSubjects` are the three fields nobody else writes down |
+| `study-destinations.ts` | 17 full country profiles. Trade-offs must outnumber strengths, `notForYou` is mandatory, no prices or rankings |
+| `world.ts` | 38 city hubs, each with a catch and a real route in. One hub is one city |
+| `from-home.ts` | 6 routes that need no move. No URLs — the catalog owns links, because `test:links` keeps those alive |
+| `place-universities.ts` | 79 named institutions, **never ranked**. Positions and superlatives are both banned; `englishTaught` is the field that rots |
+| `spine.ts` | The join across all of the above, **derived and never stored**. A stop's identity is its destination id, never its printed name |
+| `try-it.ts` | How to try a kind of work. Names the employer, describes the task, **no URLs**, and renders nothing where there is no honest answer |
+| `guide-sections.ts`, `guide-fields.ts`, `guide-filter.ts`, `legacy-guide-urls.ts` | The five steps as one registry, the `?f=` field filter, and the enumerated legacy redirects |
+
+### The companion and the plan
+
+| File | |
+| --- | --- |
+| `thread.ts` | Seven stations, **derived** from facts already stored. Where the student IS, not the furthest thing they have touched, and nothing moves it backwards |
+| `beats.ts` | Two concrete working days, fixed weights, pure scoring. Observations, never types. **Never rename a beat id** — production rows reference them |
+| `planner.ts`, `planner-start.ts`, `planner-sections.ts` | The pure planner core. Takes a structural subset of `Competition`, so it imports no dataset at all |
+| `next-move.ts` | Exactly ONE move, ordered, with a mandatory `why`, and it never invents a number |
+| `plan-picks.ts` | What the student claimed out of the guide. **Type-only imports**, tested — it travels into two client bundles |
+| `mindmap.ts` | Stores structure, computes the picture. `buildTree` is defensive about three states the database can hold and a renderer cannot survive |
+| `interest-quiz.ts`, `values.ts`, `readiness.ts` | Optional self-knowledge. Values may only **reorder** areas, never filter them |
+
+## Adding an opportunity to `competitions-data.ts`
 
 1. **Open the page and read it.** A discontinued contest can still answer
    HTTP 200 — the Goi Peace essay contest does exactly that.
@@ -30,10 +60,47 @@ every run.
    **two** ranges ("AMC 10: grade ≤10 … AMC 12: grade ≤12", "Junior under 15 and
    Senior 15+"), add an explicit `gate` — the parser takes the first match and
    will silently hide the entry from everyone it should reach.
+   **The dash between two numbers is load-bearing** ("Grades 9–12", "Ages
+   13–18"): `parseEligibility` reads the range off it. A dash separating two
+   whole facts is not, and should be a comma or a full stop instead.
+   **So write any SECOND number in words.** `mismun-almaty` says "a school
+   delegation of five to seven" rather than "5–7", because that dash beside
+   "Grades 9–12" is one edit away from silently becoming the grade rule. The
+   same trap in a different costume: the phrase **"final-year"** is matched by
+   the parser and pinned to grade 12 alone, which is the last year of a 12-year
+   programme and not of an 11-year one — `kimep-debate-tournament` carries an
+   explicit `gate` for exactly that reason.
+   After adding a row, print what it actually parsed to rather than assuming:
+   `parseEligibility(c.eligibility)` beside `c.gate`, over the rows you touched.
+   Every trap above was found that way and none of them is visible in a diff.
 3. Set `dateConfirmed: true` **only** for a sourced date in the current cycle.
    Otherwise the UI says "dates not yet announced" instead of a countdown we
    cannot stand behind.
-4. Run the checks:
+4. **Write the `blurb` like the rest of the file, which means reading a few
+   first.** Four rules, and all four were swept through the whole catalog on
+   2026-08-19 rather than being invented here:
+   - **Two sentences of different lengths, not one split by a dash.** 149 of 172
+     blurbs were a single "claim — qualifier" sentence, which is what makes a
+     list of cards read as machine-written: a reader cannot name the pattern, so
+     they call the result dry. Short sentences are now 27% of the file; keep it
+     that way by varying, not by hitting a target length.
+   - **No superlatives.** Not "the most prestigious", "premier", "elite",
+     "legendary", "world-class". The guide's registries are test-banned from
+     these and the catalog is held to the same rule by hand. If the thing really
+     is the hardest one to get into, say *that* — it is checkable, and a ranking
+     word is not.
+   - **Never restate the cost.** `cost` renders as a pill directly above the
+     blurb, so `[Fully Funded]` and `[Financial aid available]` on the end of a
+     sentence are the same fact twice. Money detail belongs in `costDetail`.
+   - **Say what the student gets, in words a 16-year-old reading English as a
+     third language will not have to stop on.** "Signal", "spike" and
+     "credential" are admissions jargon; the file used them 24 times and now
+     mostly does not.
+5. `costDetail` carries every number and every condition, and it may be long.
+   Its job is to make "free" honest: name the fee, who sets it, who waives it,
+   and what is still on the student (travel, an application fee). Say "we could
+   not confirm" rather than guessing — several entries do.
+6. Run the checks:
 
    ```bash
    node --import tsx scripts/test-session-checks.ts
@@ -59,3 +126,30 @@ student**.
   what to aim for is the point for a younger student.
 - **A retired id goes in `RETIRED_IDS`.** Deleting an entry is not enough — a
   live database row with that id would be re-added as a live-only row.
+- **Matching ANNOTATES; it does not hide.** `buildExtracurriculars` returns every
+  row, carrying `offField` / `offRegion`, and the filter panel narrows. **So any
+  surface without a filter panel must call `matchedOnly`** — the guest checker,
+  onboarding's `FirstWin`, and `lib/planner/load.ts`. Without it a student in
+  Uzbekistan is shown a competition that only runs in Kazakhstan, and nothing
+  looks wrong; there are simply more rows than there should be. A unit test pins
+  all three files by name.
+- **Nothing heavy may reach a client bundle, and the test is REACHABILITY.**
+  `key-dates.ts` builds a lookup map over the whole catalog at module load, so it
+  cannot be tree-shaken and any runtime import — including one reached through an
+  intermediate module — drags the dataset into that route. Two such chains once
+  cost eight routes 27–41 kB each. The guard walks the module graph, stopping at
+  `"use server"` files. Size is not the test: `world.ts` is 822 lines and shakes
+  clean, because it is plain consts.
+- **The catalog has ZERO `pinned` rows, and a unit test pins that zero.**
+- **It has 20 `region: "KZ"` rows, and a unit test now fails if that goes back
+  to zero.** It held none for ten days — the last local entry was removed on the
+  owner's instruction, and the mechanism that exists so a student in Shymkent
+  meets something they can attend applied to nothing curated at all. That was
+  audit finding A8, closed on 2026-08-25. The test used to pin the zero and say
+  the first local row would trip it; it points the other way now, for the same
+  reason it existed. **Adding a local row means reading the `── Kazakhstan
+  (local) ──` block first** — it carries four rules, including why the grade
+  ceilings are written as 12 and why no Kazakh script may appear in these fields.
+- **Prose registries carry rules a test enforces**: a mandatory `catch` and
+  `notForYou`, trade-offs outnumbering strengths, and **no prices, salaries or
+  rankings** — figures rot within a year and shape does not.

@@ -1,15 +1,17 @@
 # Opportunities — status & next steps
 
 Working notes for the Opportunities feature (catalog, discovery, matching).
-Last updated: 2026-08-05.
+Last updated: 2026-08-17.
 
-**Direction of the whole project is changing.** We are moving the centre of
-Compass off *scoring a portfolio* and onto *giving a student opportunities*. The
-admission analysis stops being the product and becomes one input; Opportunities
-becomes the product a student comes for. A student should get real value here
-before, or entirely instead of, running an admission analysis — the scoring
-engine keeps working, but it is no longer the thing we build the front door
-around. This is the plan of record for now.
+**The direction has changed, and the change is complete.** The centre of Compass
+moved off *scoring a portfolio* and onto *giving a student opportunities*. The
+admission analysis is one opt-in input now, not the product: new signups land on
+`/dashboard/opportunities` rather than on a questionnaire, the landing page runs
+in the product's own order, and the report keeps its Opportunities tab only for
+students who actually have an analysis. The scoring engine still works and is
+still the deepest thing here. A student should get real value before, or
+entirely instead of, running an analysis. **Do not re-add a mandatory intake
+gate.**
 
 **Read [OPPORTUNITIES_RESEARCH.md](OPPORTUNITIES_RESEARCH.md) before designing
 any of it.** Short version: every large trial of "tell students about their
@@ -21,6 +23,86 @@ catalog — and the catalog's growth belongs in the matching, not on the screen.
 ---
 
 ## Where it stands
+
+**Current state, 2026-08-17.** Everything below this block is a dated snapshot
+kept for its reasoning; **this block is the part that is true today.** Where the
+two disagree, this one wins.
+
+| | |
+|---|---|
+| Deployed | everything through 2026-08-24. **The Kazakhstan local rows (2026-08-25) are NOT deployed** — see §1 of [BACKLOG_2026-08.md](BACKLOG_2026-08.md) |
+| Catalog | **192 entries · 0 broken links** · **18 confirmed dates** · **58 always-open** · **20 `region: "KZ"`** |
+| `pinned` rows | **0** — the NAO Cup row was the only one and was removed 2026-08-15 |
+| `region`-tagged rows | **20**, all Kazakhstan, added 2026-08-25. Audit A8 closed. None carries a confirmed date — Дарын fixes each cycle by ministerial order in mid-September, so re-fetch the block after 20 Sept 2026 |
+| The guide | **five** steps: 33 areas of work → 44 majors → 17 countries → 38 cities → 6 routes from home |
+| Named institutions | 79, never ranked |
+| Tests | 321 unit · 61 session checks |
+
+**The catalog's prose was rewritten on 2026-08-19, and the rules for writing a
+new entry now live in [lib/data/README.md](../lib/data/README.md)** under
+"Adding an opportunity". The 2026-08-16 copy pass covered the five guide
+registries and missed this file entirely, because a data file does not look like
+prose — and it holds the most-read text in the product. 451 sentence dashes → 33,
+149 of 172 blurbs stopped being one dash-split sentence, and ~15 superlatives
+came out. Two things not to undo: the numeric dash in `eligibility` is parsed,
+and the acronym dash in a `name` ("IMO — International Mathematical Olympiad")
+is a naming convention.
+
+**The front door is one list now, and that was the last structural change.**
+Matching used to *hide*: `buildExtracurriculars` dropped rows outside the
+student's field or country, so a student saw 114 of 172 with no way to ask why
+and no route to the rest — and the control that looked like the way there read
+"Show everything we track for you (114)", where "everything" was false. It
+returns every row now, carrying `offField` / `offRegion`, and the filter panel
+owns the narrowing.
+
+Three consequences that are easy to undo by accident:
+
+- **`matchedOnly` is now mandatory** on every surface without a filter panel —
+  the guest checker, onboarding's `FirstWin`, and `lib/planner/load.ts`. Without
+  it a student in Uzbekistan is shown a competition that only runs in
+  Kazakhstan, and **nothing looks wrong**; there are simply more rows than there
+  should be. A unit test pins all three files by name.
+- **Two things are still hard filters, deliberately:** a past confirmed date (a
+  closed date is a fact about the world, not a narrowing) and rows the student
+  can never enter. `too_young` stays visible.
+- **The "matched to you" filter group is inverted from every other group** — its
+  default is both options ON, because the honest default is still the student's
+  own list. That killed a shortcut which had been correct for years:
+  `filterOpportunities` returned the array untouched when no filter was active,
+  which now returns all 172.
+
+**Two things specified for this section did not ship as written, and both
+decisions were made by measuring:**
+
+- **The filter rail was declined.** From `xl` the companion already takes 20rem,
+  so the student shell's content column *drops* from 966px at 1024 to 854px at
+  1280; a 256px rail on top of that measured 282px cards. Check what already
+  owns the margin before specifying a rail.
+- **Columns shipped as a container query, not a breakpoint.** This list renders
+  in the student's section *and* in the report's panel, and at the same 1024px
+  viewport it is 924px wide in one and 652px in the other. `.opp-list` /
+  `.opp-grid` go two-up once the list itself clears 800px.
+
+**What to do next in this section** is item 1 and item 2 of
+[BACKLOG_2026-08.md](BACKLOG_2026-08.md) §8: local (KZ / Central Asia) rows,
+then the date verification — and for the second, **measure production before
+scoping it.** The 12-of-172 figure counts the repository only; production
+overlays live dates from the `sync-dates` cron, which a checkout cannot see.
+`/admin/opportunities` has the date-health panel that knows the real number.
+
+---
+
+**The snapshots below are dated and were true when written.** Two corrections
+worth carrying, because the numbers in them are quoted a lot:
+
+- **The guide is 17 countries and 38 cities, not 19 and 37.** Uzbekistan and
+  India were removed on the founder's instruction (backlog #1), and four paired
+  hubs were later split so that one hub is one city.
+- **The guide has five steps, not four.** Majors became step 2 in release 5,
+  between the work and the country, because you apply *with* a subject. The
+  index counters read 33 → 44 → 17 → 38 → 6.
+
 
 **Latest (2026-08-08, later) — the map closed, and the guide started citing its
 sources.**
@@ -103,11 +185,12 @@ finally says 404.**
 Goal A below, shipped bar the caching item (which turned out to be an owner
 call — see the end of A):
 
-- **`app/sitemap.ts` + `app/robots.ts`.** 77 public URLs, generated from the same
-  registries the pages are, so a twelfth country appears in the sitemap the
-  moment it exists. No `lastModified` — we don't record when a profile was
-  revised, and stamping the deploy date on all 77 would be a claim we can't
-  stand behind. robots.txt blocks preview deploys outright and every private
+- **`app/sitemap.ts` + `app/robots.ts`.** 77 public URLs at the time (**316 as of
+  2026-08-17** — the guide grew and every opportunity gained its own address),
+  generated from the same registries the pages are, so a new country appears in
+  the sitemap the moment it exists. No `lastModified` — we don't record when a
+  profile was revised, and stamping the deploy date on all of them would be a
+  claim we can't stand behind. robots.txt blocks preview deploys outright and every private
   tree; a unit test asserts it blocks nothing the sitemap advertises (the
   `/partner` vs `/partners` prefix trap, caught before it shipped).
 - **Unknown ids are real 404s.** `/guide/places/whatever` answered **200** with a
@@ -266,12 +349,16 @@ fixed, structurally rather than by copy:
   cycles ("dates TBA"). Candidate fee/date research notes live in
   [OPPORTUNITIES_CANDIDATES.md](OPPORTUNITIES_CANDIDATES.md).
 
-**Catalog** — 156 curated opportunities in `lib/data/competitions-data.ts` (the
-array moved out of `key-dates.ts`, which now holds the matching logic and
-re-exports the data). Every link
-verified: `npm run test:links` reports 155/156 healthy (only `ijso` down — an SSL
-failure on its official domain, left in place per the "don't delete on a same-day
-outage" trap).
+**Catalog** — **192 curated opportunities as of 2026-08-26** in
+`lib/data/competitions-data.ts` (the array moved out of `key-dates.ts`, which now
+holds the matching logic and re-exports the data). The figure is asserted against
+`COMPETITIONS.length` by a unit test where the README states it, because this
+paragraph said 156 for a fortnight after it stopped being true.
+
+Link health was last measured at 156 entries (155/156, `ijso` down on an SSL
+failure, left in place per the "don't delete on a same-day outage" trap).
+`npm run test:links` is not in CI — it makes ~172 network calls — so **run it
+after any catalog edit** and re-date this line when you do.
 
 **Age is eligibility, so it is verified, not assumed.** The +8 free industry
 certificates people share as "free and valuable" were added only after each
@@ -348,7 +435,7 @@ students without approval at `/admin/opportunities`.
 
 **Dates** — `/api/cron/sync-dates` runs daily over a rotating batch of 8. It
 reads the landing page *and* the linked "key dates"/"apply" page, because
-landing pages carry no deadlines. **12 of 156 entries have a confirmed date**
+landing pages carry no deadlines. **18 of 192 entries have a confirmed date** (re-measured 2026-08-25; the 20 Kazakh rows added that day are all unconfirmed, because Дарын fixes each cycle by ministerial order in mid-September)
 plus SAT sittings — see step (3), date coverage is still the constraint on
 everything in the "remove the work" direction.
 
@@ -382,12 +469,12 @@ competition; the admin page lists broken links first.
 ## Verification (no API key needed)
 
 ```bash
-npm run test:unit       # 192 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner
+npm run test:unit       # 321 unit tests — scoring, eligibility, quiz, careers, matching, the guide's chain, the planner, the bundle guards, structured data, SERP budgets
 npm run test:links      # every catalog URL; non-zero exit if any is DEAD
 npm run test:scrape     # which linked page each competition resolves to
 npm run diag:dates      # deterministic date-confirm ceiling over the WHOLE catalog
 npm run build           # lint + type-check gate
-node --import tsx scripts/test-session-checks.ts   # 60 logic checks
+node --import tsx scripts/test-session-checks.ts   # 61 logic checks
 ```
 
 `test:links` separates *dead* from *blocked*: a 403/429 from a bot wall is
@@ -642,8 +729,9 @@ the repeated headings are fixed, the body prose is not.
 
 ## Next steps, in order
 
-1. **Keep expanding the catalog.** Now **156 entries** across 5 types
-   (competition, olympiad, course, summer_program, research_program). The
+1. **Keep expanding the catalog.** Now **192 entries as of 2026-08-25**, across
+   7 kinds (competition, olympiad, course, summer_program, research_program,
+   community, simulation). The
    guiding filter for new entries is the mission: would a student in Kazakhstan
    or Uzbekistan, with no first-tier network, actually be able to do this? Prefer
    global + online + free/aided over anything US-school-bound. Per-field coverage
@@ -800,8 +888,9 @@ the repeated headings are fixed, the body prose is not.
    materials checklist, scheduled reminder. This is the largest effect size in
    the college-access literature (information alone ≈ 0; information plus
    someone doing the form with you ≈ +25–30% enrollment). The calendar file
-   ships already — but it is **blocked on date coverage**: 8 confirmed dates in
-   100 entries covers three cards out of five. See (3).
+   ships already — but it is **blocked on date coverage**: 12 confirmed dates in
+   192 entries (9%, re-measured 2026-08-26) covers a fraction of the cards.
+   See (3).
 
 8. **Run discovery for real and review what it finds.** The whole local
    (Kazakhstan) path is untested against reality. A few cents per run, and it
@@ -858,11 +947,17 @@ the repeated headings are fixed, the body prose is not.
   next-cycle deadlines aren't posted in August, so the model honestly declines)
   plus a few rolling/no-deadline entries. The action is now patience + a monthly
   re-measure, not a fix — see step (3).
-- **`CRON_SECRET` in Vercel** — both cron endpoints are STILL callable by anyone
-  (that is how the manual trigger above worked without auth). Now that the cron
-  is confirmed healthy, set the secret to close the endpoint; the code enforces
-  it the moment the variable exists, and Vercel's scheduled run sends the header
-  automatically.
+- **`CRON_SECRET` in Vercel — the code now fails CLOSED, so this is urgent in
+  the opposite direction.** The note here used to say both endpoints were
+  "callable by anyone", and that was true of the old gate
+  (`if (secret && header !== secret) 401`, which let everything through while the
+  variable was unset — and it was unset in production). [lib/cron/auth.ts](../lib/cron/auth.ts)
+  replaced it: **no secret configured ⇒ 503, nobody runs them, us included.**
+  So the exposure is gone and the new risk is silence — if `CRON_SECRET` is not
+  set in Vercel, the date sync and the discovery run simply never happen, with
+  nothing broken-looking to notice. Vercel sends the header automatically once
+  the variable exists. **Confirm it is set**, then confirm a scheduled run
+  actually lands.
 - **`ANTHROPIC_API_KEY` in `.env.local`** — the local key is invalid, so local
   discovery/analysis scripts (and any local `sync-dates` run) fail. Production's
   key is healthy and unaffected — which is why the prod cron confirmed dates

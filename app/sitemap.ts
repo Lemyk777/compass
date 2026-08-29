@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { CANONICAL_URL } from "@/lib/site";
 import { allCareerAreas, areaSlug } from "@/lib/data/careers";
 import { GUIDE_SECTIONS } from "@/lib/data/guide-sections";
+import { MAJORS } from "@/lib/data/majors";
 import { STUDY_DESTINATIONS } from "@/lib/data/study-destinations";
 import { HUBS } from "@/lib/data/world";
 import { COMPETITIONS } from "@/lib/data/competitions-data";
@@ -58,12 +59,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // linked from the list and from the partner's own profile.
     ...COMPETITIONS.map((c) => `/opportunities/${c.id}`),
 
-    // The guide: its index, its four steps, then every subject inside them.
+    // The guide: its index, its five steps, then every subject inside them.
     "/guide",
     ...GUIDE_SECTIONS.map((s) => s.href),
     ...allCareerAreas().map(
       ({ area }) => `/guide/work/${areaSlug(area.title)}`,
     ),
+    ...MAJORS.map((m) => `/guide/majors/${m.id}`),
     ...STUDY_DESTINATIONS.map((d) => `/guide/places/${d.id}`),
     ...HUBS.map((h) => `/guide/cities/${h.id}`),
 
@@ -71,6 +73,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/partners",
     "/partners/apply",
 
+    // Who runs this and what it refuses to do. Public on purpose: a family
+    // deciding whether to trust a site that advises their child should be able
+    // to read it before making an account, and a crawler should be able to find
+    // it without following a footer link.
+    "/about",
     "/privacy",
     "/terms",
   ];

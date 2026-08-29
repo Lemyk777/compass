@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage, LegalSection } from "@/components/legal/LegalPage";
+import { CONTACT_EMAIL } from "@/lib/site";
 
-const CONTACT_EMAIL = "alibek196u@gmail.com";
 const UPDATED = "June 25, 2026";
 
 export const metadata: Metadata = {
@@ -152,7 +152,7 @@ export default function PrivacyPage() {
         <p>
           The Service is offered to internationally-based students, and your
           information may be processed in the Republic of Kazakhstan and in
-          other countries — including by the service providers described above —
+          other countries, including by the service providers described above,
           which may have data-protection laws different from those of your own
           country. By using the Service, you consent to this processing.
         </p>

@@ -19,14 +19,16 @@ import type { GuideSectionId } from "@/lib/data/guide-sections";
 // pick from its stored label and href, which is all a chip needs.
 
 /**
- * The four things a student can claim, and they are the guide's four steps.
+ * The five things a student can claim, and they are the guide's five steps.
  *
  * The kinds ARE the sections, deliberately: the join is only legible if the
- * plan groups what you picked the way the guide grouped what you read. A fifth
+ * plan groups what you picked the way the guide grouped what you read. A sixth
  * kind added here without a step in `GUIDE_SECTIONS` would be a thing the plan
- * can hold and the guide cannot produce.
+ * can hold and the guide cannot produce. ("major" was the fifth, and it arrived
+ * with a step, which is why it needed no migration: a pick's kind is its ref
+ * prefix, so there is no column to widen.)
  */
-export type PickKind = "work" | "place" | "hub" | "route";
+export type PickKind = "work" | "major" | "place" | "hub" | "route";
 
 export type PickKindMeta = {
   kind: PickKind;
@@ -60,9 +62,21 @@ export const PICK_KINDS: PickKindMeta[] = [
     listHref: "/guide/work",
   },
   {
+    // No migration was needed for this one, and that is the no-`kind`-column
+    // decision paying for itself: a pick's kind is the prefix of its `ref`, so
+    // `major:computer-science` was storable the day the registry existed.
+    kind: "major",
+    section: "majors",
+    step: 2,
+    heading: "Subjects you’d study",
+    noun: "subject",
+    nounPlural: "subjects",
+    listHref: "/guide/majors",
+  },
+  {
     kind: "place",
     section: "places",
-    step: 2,
+    step: 3,
     heading: "Countries you're weighing",
     noun: "country",
     nounPlural: "countries",
@@ -71,7 +85,7 @@ export const PICK_KINDS: PickKindMeta[] = [
   {
     kind: "hub",
     section: "cities",
-    step: 3,
+    step: 4,
     heading: "Cities inside them",
     noun: "city",
     nounPlural: "cities",
@@ -80,7 +94,7 @@ export const PICK_KINDS: PickKindMeta[] = [
   {
     kind: "route",
     section: "from-home",
-    step: 4,
+    step: 5,
     heading: "Ways in from where you are",
     noun: "route",
     nounPlural: "routes",
@@ -90,10 +104,6 @@ export const PICK_KINDS: PickKindMeta[] = [
 
 const KIND_SET = new Set<string>(PICK_KINDS.map((k) => k.kind));
 
-export function pickKindMeta(kind: PickKind): PickKindMeta {
-  // Non-null: the ids are a closed union and the array covers all of them.
-  return PICK_KINDS.find((k) => k.kind === kind)!;
-}
 
 /** One thing the student claimed, as stored. */
 export type PlanPick = {
@@ -152,6 +162,8 @@ export function pickHref(kind: PickKind, id: string): string {
   switch (kind) {
     case "work":
       return `/guide/work/${id}`;
+    case "major":
+      return `/guide/majors/${id}`;
     case "place":
       return `/guide/places/${id}`;
     case "hub":
@@ -211,7 +223,7 @@ export function groupPicks(picks: PlanPick[]): PickGroup[] {
 export type PickCounts = Record<PickKind, number>;
 
 export function countPicks(picks: PlanPick[]): PickCounts {
-  const counts: PickCounts = { work: 0, place: 0, hub: 0, route: 0 };
+  const counts: PickCounts = { work: 0, major: 0, place: 0, hub: 0, route: 0 };
   for (const p of picks) {
     const parsed = parsePickRef(p.ref);
     if (parsed) counts[parsed.kind] += 1;

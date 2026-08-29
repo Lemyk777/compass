@@ -227,7 +227,7 @@ export function MultiSelectField({
                   type="button"
                   disabled={dis}
                   onClick={() => toggle(o.value)}
-                  className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus-visible:focus-ring ${
                     on
                       ? "bg-accent-soft text-accent-ink"
                       : dis

@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
         results.sat = `synced ${sittings.length} sittings`;
       }
     } else {
-      results.sat = `no dates (${note}) — kept existing`;
+      results.sat = `no dates (${note}), kept existing`;
     }
   } catch (e) {
     console.error("SAT sync failed:", e);

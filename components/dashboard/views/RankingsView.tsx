@@ -129,7 +129,7 @@ function CountryToggle({
 }) {
   if (countries.length < 2) return null;
   return (
-    <div className="inline-flex rounded-xl border border-line bg-card p-1 shadow-card">
+    <div className="inline-flex rounded-2xl border border-line/70 bg-card p-1.5 shadow-card">
       {countries.map((code) => {
         const on = code === active;
         return (
@@ -138,8 +138,10 @@ function CountryToggle({
             type="button"
             aria-pressed={on}
             onClick={() => onChange(code)}
-            className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus-visible:focus-ring ${
-              on ? "bg-accent text-on-fill" : "text-ink-soft hover:text-ink"
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all focus-visible:focus-ring ${
+              on
+                ? "bg-accent text-on-fill shadow-sm"
+                : "text-ink-soft hover:bg-surface/80 hover:text-ink"
             }`}
           >
             <Flag code={code} />
@@ -158,20 +160,20 @@ function FocusCallout({
 }) {
   if (!focus) return null;
   return (
-    <div className="flex flex-1 items-start gap-3 rounded-xl border border-accent/25 bg-accent-soft/60 px-4 py-3">
+    <div className="flex flex-1 items-start gap-3.5 rounded-2xl border border-accent/30 bg-gradient-to-r from-accent-soft/80 via-accent-soft/50 to-transparent px-5 py-4 shadow-card">
       <TargetIcon />
       <p className="text-pretty text-sm leading-relaxed text-ink">
-        <span className="font-semibold">{focus.label}</span> is your weakest
+        <span className="font-bold">{focus.label}</span> is your weakest
         dimension here at{" "}
-        <span data-num className="font-semibold text-accent-ink">
+        <span data-num className="font-bold text-accent-ink">
           {focus.score}/10
         </span>
         . The top {focus.topK}{" "}
         {focus.topK === 1 ? "student averages" : "students average"}{" "}
-        <span data-num className="font-semibold text-accent-ink">
+        <span data-num className="font-bold text-accent-ink">
           {focus.topAvg}/10
-        </span>{" "}
-        — closing this gap is the fastest path up the board.
+        </span>
+        . Closing this gap is the fastest path up the board.
       </p>
     </div>
   );
@@ -211,11 +213,11 @@ function Board({
     : rows;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-line bg-card shadow-card">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-5 py-4">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
+    <section className="overflow-hidden rounded-2xl border border-line/70 bg-card shadow-card">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line/60 px-6 py-4 bg-surface/30">
+        <h2 className="flex items-center gap-2 text-base font-bold text-ink">
           {icon} {title}
-          <span data-num className="text-xs font-normal text-ink-faint">
+          <span data-num className="text-xs font-semibold text-ink-faint">
             ({rows.length})
           </span>
         </h2>
@@ -225,14 +227,14 @@ function Board({
       {/* Shared color legend — the collapsed rows show colors only, so this is
           what maps each hue back to a factor (works for any 3–7 set). */}
       {legend && legend.length > 0 && (
-        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-line bg-surface/60 px-5 py-2.5">
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-line/60 bg-surface/50 px-6 py-3">
           {legend.map((f) => (
             <li key={f.key} className="flex items-center gap-1.5">
               <span
-                className="h-2 w-2 shrink-0 rounded-full"
+                className="h-2 w-2 shrink-0 rounded-full shadow-sm"
                 style={{ backgroundColor: factorColor(f.key) }}
               />
-              <span className="text-[11px] font-medium text-ink-soft">
+              <span className="text-[12px] font-semibold text-ink-soft">
                 {f.label}
               </span>
             </li>
@@ -240,7 +242,7 @@ function Board({
         </ul>
       )}
 
-      <ul className="max-h-[64vh] divide-y divide-line overflow-y-auto">
+      <ul className="max-h-[64vh] divide-y divide-line/60 overflow-y-auto">
         {visible.map((r) => {
           const rank = rows.findIndex((x) => x.userId === r.userId) + 1;
           return (
@@ -289,7 +291,7 @@ function RowItem({
           <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink">
             {r.name}
             {me && (
-              <span className="rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-on-fill">
+              <span className="rounded-full bg-accent px-1.5 py-0.5 text-[12px] font-semibold text-on-fill">
                 You
               </span>
             )}
@@ -307,7 +309,7 @@ function RowItem({
           >
             {r.overall}
           </span>
-          <span className="text-[11px] text-ink-faint">/100</span>
+          <span className="text-[12px] text-ink-faint">/100</span>
         </div>
 
         <Chevron open={isOpen} />
@@ -335,29 +337,29 @@ function StandingBadge({
   country: CountryCode;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-line bg-card px-4 py-2.5 shadow-card">
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+    <div className="flex flex-wrap items-center gap-4 sm:gap-5 rounded-2xl border border-line/70 bg-card px-5 py-4 shadow-card">
+      <div className="min-w-0">
+        <p className="text-xs font-bold uppercase tracking-wider text-ink-faint">
           Your standing · {countryLabel(country)}
         </p>
-        <p className="leading-tight">
+        <p className="leading-tight mt-0.5">
           <span
             data-num
-            className="font-display text-2xl font-semibold tabular-nums text-ink"
+            className="font-display text-2xl font-bold tabular-nums text-ink"
           >
             #{standing.rank}
           </span>{" "}
-          <span className="text-xs text-ink-soft">of {standing.total}</span>
+          <span className="text-xs font-semibold text-ink-soft">of {standing.total}</span>
         </p>
       </div>
-      <div className="h-9 w-px bg-line" />
-      <div className="text-right">
-        <span className="inline-block rounded-full bg-likely-soft px-2 py-0.5 text-[11px] font-semibold text-likely-ink">
+      <div className="hidden h-10 w-px bg-line/60 sm:block" />
+      <div className="text-left sm:text-right">
+        <span className="inline-block rounded-full bg-likely-soft px-2.5 py-0.5 text-xs font-bold text-likely-ink shadow-sm">
           Top {standing.topPct}%
         </span>
         <p className="mt-1 text-xs text-ink-soft">
           Overall{" "}
-          <span data-num className="font-semibold tabular-nums text-ink">
+          <span data-num className="font-bold tabular-nums text-ink">
             {standing.current.overall}
           </span>
           /100

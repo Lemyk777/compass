@@ -15,6 +15,7 @@ import {
 } from "@/lib/data/mindmap";
 import {
   addNode,
+  deleteMap,
   deleteNode,
   moveNode,
   promoteNodeToTask,
@@ -71,6 +72,7 @@ export function MapWorkspace({
   const [where, setWhere] = useState<"inside" | "after">("inside");
   const [draft, setDraft] = useState("");
   const [renaming, setRenaming] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const layout = layoutTree(root);
@@ -127,14 +129,14 @@ export function MapWorkspace({
         {/* THE SUBJECT. Everything under it acts on this branch, and before
             this line existed nothing on screen said so. */}
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-b border-line px-3.5 py-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+          <span className="text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
             Working on
           </span>
           <span className="min-w-0 truncate text-sm font-semibold text-ink">
             {current?.label ?? "—"}
           </span>
           {kindLabel && (
-            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
+            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-accent-ink">
               {kindLabel}
             </span>
           )}
@@ -312,9 +314,9 @@ export function MapWorkspace({
         <div className="order-2 lg:order-1">
           <MapOutline root={root} currentId={currentId} onPick={setCurrentId} />
           {root.children.length === 0 && (
-            <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+            <p className="mt-3 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
               One question so far. Pick a branch above, then{" "}
-              <span className="font-medium text-ink">Add a branch</span> — an
+              <span className="font-medium text-ink">Add a branch</span>: an
               option, a place, or a thing you would have to do.
             </p>
           )}
@@ -326,6 +328,50 @@ export function MapWorkspace({
             onPick={setCurrentId}
           />
         </div>
+      </div>
+
+      {/* Deleting the WHOLE map, which the product promised and did not provide.
+          `createMap` refuses the thirteenth with "That's 12 maps — delete one
+          before starting another", and `deleteMap` had been written, validated
+          and left wired to nothing: a student who filled their quota was told
+          to do something the interface offered no way to do.
+
+          At the foot, away from the branch bar, and behind a confirm — the bar
+          above already has a Delete that means one branch, and two controls
+          with the same word and different objects is the "verb with an
+          invisible subject" problem that bar was rebuilt to fix. */}
+      <div className="border-t border-line pt-4">
+        {confirmingDelete ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-ink">
+              Delete <span className="font-medium">{root.label}</span> and every
+              branch on it?
+            </p>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => run(() => deleteMap(mapId))}
+              className="inline-flex h-9 items-center rounded-lg border border-reach px-3 text-xs font-medium text-reach-ink transition-colors hover:bg-reach-soft focus-visible:focus-ring disabled:opacity-50"
+            >
+              Yes, delete this map
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              className="text-xs font-medium text-ink-faint underline-offset-2 hover:text-ink hover:underline focus-visible:focus-ring"
+            >
+              Keep it
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            className="inline-flex min-h-11 items-center text-xs font-medium text-ink-faint underline-offset-2 transition-colors hover:text-ink hover:underline focus-visible:focus-ring"
+          >
+            Delete this whole map
+          </button>
+        )}
       </div>
     </div>
   );

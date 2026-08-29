@@ -3,6 +3,7 @@
 // geo normalization, region gating, the pre-analysis (growth-mode) plan,
 // discovery slug/dedup helpers, and the cron batch rotation math.
 
+import { matchedOnly } from "@/lib/data/opportunity-filter";
 import assert from "node:assert";
 import { FACULTY_VALUES } from "../lib/data/faculties";
 import { normalizeCountry, LOCAL_TARGETS, regionLabel } from "../lib/data/geo";
@@ -143,19 +144,32 @@ ok("buildExtracurriculars: KZ student sees the local row", () => {
   });
   assert.ok(plan.items.some((o) => o.id === "kz-test-olympiad"));
 });
-ok("buildExtracurriculars: a KNOWN, different country does NOT see it", () => {
-  const plan = buildExtracurriculars({
-    today,
-    faculties: ["law"],
-    factors,
-    liveCompetitions: [localRow],
-    homeCountry: "UZ",
-  });
-  assert.ok(
-    !plan.items.some((o) => o.id === "kz-test-olympiad"),
-    "leaked to UZ",
-  );
-});
+ok(
+  "a KNOWN, different country gets it MARKED, and every panel-less surface drops it",
+  () => {
+    // This used to assert the row was absent. Matching stopped hiding rows so the
+    // filter panel could own the narrowing and a student could finally see that
+    // 58 rows had been removed and put them back. The guarantee did not change,
+    // it MOVED: the row is marked, and `matchedOnly` is what the surfaces without
+    // a panel — the guest checker, onboarding's first win, the planner loader —
+    // must call. So both halves are pinned here, because the first without the
+    // second is exactly the leak this check exists to catch.
+    const plan = buildExtracurriculars({
+      today,
+      faculties: ["law"],
+      factors,
+      liveCompetitions: [localRow],
+      homeCountry: "UZ",
+    });
+    const row = plan.items.find((o) => o.id === "kz-test-olympiad");
+    assert.ok(row, "the row vanished — it should be marked, not hidden");
+    assert.ok(row!.offRegion, "a KZ-only row was not marked off-region for UZ");
+    assert.ok(
+      !matchedOnly(plan.items).some((o) => o.id === "kz-test-olympiad"),
+      "leaked to UZ",
+    );
+  },
+);
 // Deliberately the opposite of what this asserted until 2026-08-12, and the
 // change is the product's own rule finally applied to country: an UNKNOWN fact
 // must not remove something from the list. Hiding local rows from a visitor
@@ -598,7 +612,7 @@ ok("the intention is reflected back as a first-person plan", () => {
       startWhen: "tonight",
       startDetail: "  at the  library ",
     }),
-    "You're starting tonight — at the library.",
+    "You're starting tonight, at the library.",
   );
   assert.equal(intentSentence(base), "You're doing this.");
   assert.equal(

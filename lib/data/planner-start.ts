@@ -74,7 +74,7 @@ export function plannerStarts(input: PlannerStartInput): PlannerStart[] {
       id: "enter",
       label: "See what I can enter right now",
       tells: stated
-        ? "Real deadlines, at your age, in your fields — and what each one costs."
+        ? "Real deadlines, at your age, in your fields, and what each one costs."
         : "Real deadlines you can meet at your age, and what each one costs.",
       href: "/opportunities",
       count: input.openCount || null,

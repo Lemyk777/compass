@@ -60,7 +60,7 @@ function warnOnce(where: string, error: unknown) {
   if (warned) return;
   warned = true;
   console.error(
-    `traffic: ${where} failed — is migration 0025_traffic.sql applied? ` +
+    `traffic: ${where} failed. Is migration 0025_traffic.sql applied? ` +
       `(npm run db:check)`,
     error,
   );

@@ -162,7 +162,7 @@ export default async function GuideCitiesPage({
                     g.country
                   )}
                 </h2>
-                <span className="text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+                <span className="text-[12px] uppercase tracking-[0.1em] text-ink-faint">
                   {REGION_LABEL[g.region]}
                 </span>
               </div>

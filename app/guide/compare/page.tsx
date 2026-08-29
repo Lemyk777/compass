@@ -9,7 +9,7 @@ import {
   type StudyDestination,
 } from "@/lib/data/study-destinations";
 import { statedGuideFields } from "@/lib/guide/student-fields";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
 
 // Two countries, side by side, on the same axes.
 //
@@ -57,7 +57,7 @@ export async function generateMetadata({
 
   const [first, second] = [a.id, b.id].sort();
   return pageMeta({
-    title: `${a.name} or ${b.name}? — the honest comparison | Compass`,
+    title: fitTitle(`${a.name} or ${b.name}?`, "on the same axes"),
     description: `${a.name} and ${b.name} side by side on the same axes: money, admissions, what happens after you graduate, and who each one is wrong for.`,
     path: `/guide/compare?a=${first}&b=${second}`,
     type: "article",
@@ -123,7 +123,7 @@ export default function GuideComparePage({
         <p className="mt-3 max-w-2xl text-pretty text-base leading-relaxed text-ink-soft">
           The same questions asked of both, in the same order, with what each
           one costs you level with what it gives you. Neither column is a
-          recommendation — the last row is the one to read twice.
+          recommendation. The last row is the one to read twice.
         </p>
       </header>
 
@@ -190,14 +190,14 @@ export default function GuideComparePage({
             b={b.tradeoffs}
           />
           <Row
-            label="Money — how paying for it works"
+            label="Money: how paying for it works"
             aName={a.name}
             bName={b.name}
             a={a.money}
             b={b.money}
           />
           <Row
-            label="Getting in — what they weigh"
+            label="Getting in: what they weigh"
             aName={a.name}
             bName={b.name}
             a={a.admissions}
@@ -345,19 +345,19 @@ function Row({
         : "border-line bg-card";
   return (
     <section className={`rounded-2xl border p-4 sm:p-5 ${cls}`}>
-      <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
         {label}
       </h2>
       <div className="mt-2 grid gap-3 sm:grid-cols-2">
         <div>
           <Side name={aName} />
-          <p className="max-w-[58ch] text-sm leading-relaxed text-ink-soft">
+          <p className="max-w-[58ch] text-base leading-relaxed text-ink-soft">
             {a}
           </p>
         </div>
         <div>
           <Side name={bName} />
-          <p className="max-w-[58ch] text-sm leading-relaxed text-ink-soft">
+          <p className="max-w-[58ch] text-base leading-relaxed text-ink-soft">
             {b}
           </p>
         </div>
@@ -425,7 +425,7 @@ function ListRow({
 
   return (
     <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-      <h2 className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
         {label}
       </h2>
       <div className="mt-2 grid gap-3 sm:grid-cols-2">

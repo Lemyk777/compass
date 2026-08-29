@@ -20,7 +20,7 @@ import { guidePickState } from "@/lib/guide/plan-state";
 import { AddToPlan } from "@/components/guide/AddToPlan";
 import { TryTheWork } from "@/components/guide/TryTheWork";
 import { simulationsForArea } from "@/lib/data/try-it";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
 
 // One area of work, in full. This was a modal sheet, which meant it had no URL:
 // a student could not send it to a parent, could not bookmark it, and pressing
@@ -34,7 +34,7 @@ export async function generateMetadata({
   const found = areaBySlug(params.area);
   if (!found) return { title: "Not found — Compass" };
   return pageMeta({
-    title: `${found.area.title} — what the work is, and how you get in | Compass`,
+    title: fitTitle(found.area.title, "what it is and how you get in"),
     description: found.area.what,
     path: `/guide/work/${params.area}`,
     type: "article",
@@ -110,7 +110,7 @@ export default async function GuideAreaPage({
               ))}
             </ul>
             <p className="mt-2 text-xs text-ink-faint">
-              A list, not a recommendation — you narrow it, we don&rsquo;t.
+              A list, not a recommendation. You narrow it, we don&rsquo;t.
             </p>
           </GuideBlock>
 
@@ -135,7 +135,7 @@ export default async function GuideAreaPage({
               hides every decision that actually matters — when to specialise,
               what the degree is like, and what the first job is really doing. */}
           <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-            <h3 className="text-sm font-semibold text-ink">Stage by stage</h3>
+            <h3 className="text-lg font-semibold text-ink">Stage by stage</h3>
             <ol className="mt-3 space-y-3">
               {(
                 [
@@ -148,13 +148,13 @@ export default async function GuideAreaPage({
                   <span
                     data-num
                     aria-hidden
-                    className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-surface"
+                    className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-[12px] font-semibold text-surface"
                   >
                     {i + 1}
                   </span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-ink">{label}</p>
-                    <p className="mt-0.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+                    <p className="mt-0.5 max-w-[54ch] text-base leading-relaxed text-ink-soft">
                       {body}
                     </p>
                   </div>
@@ -206,6 +206,7 @@ export default async function GuideAreaPage({
       crumb="Kinds of work"
       crumbHref={withFields("/guide/work", stated)}
       title={area.title}
+      path={`/guide/work/${params.area}`}
       transitionName={guideMorph("area", params.area)}
       sub={FACULTY_LABEL[faculty]}
       lead={area.what}
@@ -219,17 +220,20 @@ export default async function GuideAreaPage({
             label={area.title}
             signedIn={pick.signedIn}
             saved={pick.saved}
-            maps={pick.maps}
+            
             returnTo={`/guide/work/${params.area}`}
           />
           {/* Nearby areas, for the student who is close but not quite. The
               guide's rule is that we widen rather than guess, and this is that
               rule made clickable. */}
           {neighbours.length > 0 && (
-            <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-              <h2 className="text-sm font-semibold text-ink">
+            <section
+              aria-label="Areas of work close to this one"
+              className="rounded-2xl border border-line bg-card p-4 sm:p-5"
+            >
+              <p className="text-sm font-semibold text-ink">
                 Close to this, if it is not quite right
-              </h2>
+              </p>
               <ul className="mt-3 space-y-2">
                 {neighbours.map((n) => (
                   <li key={n.slug}>

@@ -419,6 +419,47 @@
   }
 }
 
+/* ---- THE OPPORTUNITY LIST GOES TWO-UP ON ITS OWN WIDTH -------------------
+   Not on the viewport's, and that distinction is the whole reason this is CSS
+   rather than a `lg:grid-cols-2`.
+
+   One list renders in two shells with different room in them. The student's
+   section gives it the full column below `xl` and then hands 20rem to the
+   companion, so its width goes 924 → 812 → 822 → 982px as the window grows
+   from 1024 to 1536. The report's shell spends its width on a sidebar instead,
+   so the SAME list is 652px at 1024 where the student's is 924. Any viewport
+   breakpoint is therefore right in one shell and wrong in the other: `lg`
+   measured 457px cards in the student's section and 321px in the report's.
+
+   The threshold is measured, and the card has a cliff rather than a curve.
+   Forced to exact widths in 20px steps it is flat at 272px tall from 380px up;
+   at 340–360px the title takes a third line and it jumps to 356px; at 320px
+   the title wraps to FOUR lines, the blurb to three at 23 characters, and it
+   stands 421px. 380px per card is therefore the knee, and 800px of container
+   is the narrowest that clears it with room to spare (395px a card).
+
+   Never three columns: a third would be 320px even at 1536 — the exact width
+   that breaks. `min-width` is on the CONTAINER, so both shells get the right
+   answer without either of them knowing about the other. */
+.opp-list {
+  container-type: inline-size;
+}
+@container (min-width: 800px) {
+  .opp-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (min-width: 1320px) {
+  .opp-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@container (min-width: 1760px) {
+  .opp-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 /* ---- Reliable entrance: CSS-only, ends visible, runs without JS ----------- */
 @keyframes rise-in {
   from {
@@ -849,10 +890,18 @@ summary::-webkit-details-marker {
 .field-glow {
   position: absolute;
   border-radius: 9999px;
+  /* `closest-side` puts the zero stop on a circle, and for the blob behind the
+     copy that circle passes straight through the headline. With a constant
+     slope running into it, the kink read as a faint ring across the words. The
+     45% stop keeps its old value, so the blob is unchanged where it is doing
+     the work and only the tail flattens. */
   background-image: radial-gradient(
     closest-side,
     rgb(var(--field-hue) / var(--field-glow-alpha)) 0%,
     rgb(var(--field-hue) / calc(var(--field-glow-alpha) * 0.42)) 45%,
+    rgb(var(--field-hue) / calc(var(--field-glow-alpha) * 0.2)) 68%,
+    rgb(var(--field-hue) / calc(var(--field-glow-alpha) * 0.08)) 82%,
+    rgb(var(--field-hue) / calc(var(--field-glow-alpha) * 0.025)) 92%,
     rgb(var(--field-hue) / 0) 100%
   );
 }
@@ -917,12 +966,69 @@ summary::-webkit-details-marker {
    exact rectangle that got reported. A wash that fades out downward, plus a
    sheen that crosses it slowly, so the top of the page has a light source
    rather than an absence. */
+/* EVERY LAYER REACHES ZERO WITH ALMOST NO SLOPE. That is one rule and it
+   replaced three separate hard edges, all of which landed on the headline.
+
+   A linear ramp to zero is continuous in VALUE and discontinuous in its
+   DERIVATIVE, and the eye amplifies precisely that: Mach banding draws a soft
+   line at the kink, across whatever happens to sit there. The beam ends at
+   42vh, the blob behind the copy has its zero stop on a circle that crosses the
+   words, and the sweep did something worse than kink — it stopped at full
+   strength. Reported as "the background lightness changes too sharply, as if
+   the words were being cut", which is exactly what a derivative discontinuity
+   looks like when you are reading through it.
+
+   So each curve below is CONVEX: every segment is flatter than the one above
+   it, and the last stretch approaches zero almost horizontally. No stop is
+   above its old linear value, so the field can only get gentler, which is the
+   safe direction for the contrast bound at the top of this block. The softness
+   is still in the paint: no filter, nothing new animates. */
 .field-beam {
   background-image: linear-gradient(
     180deg,
     rgb(var(--accent) / var(--field-beam-alpha)) 0%,
+    rgb(var(--accent) / calc(var(--field-beam-alpha) * 0.62)) 30%,
+    rgb(var(--accent) / calc(var(--field-beam-alpha) * 0.34)) 55%,
+    rgb(var(--accent) / calc(var(--field-beam-alpha) * 0.15)) 74%,
+    rgb(var(--accent) / calc(var(--field-beam-alpha) * 0.05)) 88%,
     rgb(var(--accent) / 0) 100%
   );
+}
+
+/* The sweep was the sharpest edge in the field, and for a different reason than
+   the other two: its gradient runs ACROSS the box at 74deg, so the band is
+   close to vertical and the box's own bottom cuts it at full strength. Not a
+   kink, a cut.
+
+   The fade therefore has to be vertical and it has to be a mask, because the
+   band's own gradient cannot express it. It sits on a STATIC parent, the same
+   arrangement the lattice uses one rule up: the band translates underneath it,
+   so the fade stays put relative to the page rather than sliding with the
+   light. `no-repeat` is explicit because the child is wider than the parent and
+   a mask defaults to tiling. */
+.field-sweep-mask {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    rgba(0, 0, 0, 0.86) 32%,
+    rgba(0, 0, 0, 0.55) 56%,
+    rgba(0, 0, 0, 0.26) 76%,
+    rgba(0, 0, 0, 0.08) 90%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    rgba(0, 0, 0, 0.86) 32%,
+    rgba(0, 0, 0, 0.55) 56%,
+    rgba(0, 0, 0, 0.26) 76%,
+    rgba(0, 0, 0, 0.08) 90%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
 }
 
 .field-sweep {

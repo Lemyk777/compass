@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { matchedOnly } from "@/lib/data/opportunity-filter";
 import { FACULTY_VALUES, type FacultyValue } from "@/lib/data/faculties";
 import { loadStudentContext } from "@/lib/dashboard/load";
 import { createClient } from "@/lib/supabase/server";
@@ -8,6 +9,7 @@ import { loadPicks } from "@/lib/planner/picks";
 import { loadMaps, type MapSummary } from "@/lib/planner/maps-load";
 import { countPicks, type PlanPick } from "@/lib/data/plan-picks";
 import { nextMove, type NextMove } from "@/lib/data/next-move";
+import { majorsForFaculties } from "@/lib/data/majors";
 import {
   buildPlanner,
   tallyPlanner,
@@ -16,6 +18,7 @@ import {
   type PlannerStatus,
   type PlannerView,
 } from "@/lib/data/planner";
+import { recommendSimulation, type JobSimulation } from "@/lib/data/simulations";
 
 // Everything the planner's ONE page needs, fetched once.
 //
@@ -63,6 +66,10 @@ export type PlannerData = PlannerView & {
   move: NextMove;
   /** The maps, for the third lens. Cheap — one flat select, counted in memory. */
   maps: MapSummary[];
+  /** Recommended external simulation, if any, based on picks. */
+  simulation: JobSimulation | null;
+  /** The full auto-generated roadmap. */
+  roadmap: import("@/lib/data/roadmap").Roadmap;
 };
 
 const load = cache(
@@ -188,7 +195,10 @@ async function loadUncached(
     homeCountry: ctx.profileMeta.homeCountry,
     graduationYear: ctx.profileMeta.graduationYear,
   });
-  const enterable = plan.items.filter((o) => !o.notYetEligible);
+  // Same reason as the guest checker: the planner has no filter panel, so it
+  // must narrow to the student's own list itself or its counts and its
+  // suggestions quietly include other people's opportunities.
+  const enterable = matchedOnly(plan.items).filter((o) => !o.notYetEligible);
 
   // THE BRIDGE. The spine is dynamically imported for the same reason key-dates
   // is: it reaches five prose registries and must not join this module's static
@@ -237,6 +247,12 @@ async function loadUncached(
     overdue: tally.overdue,
     openToYou: enterable.length,
     reachableAreas: areasForFields(fields).length,
+    // A try is a commitment to something try-shaped, counted the same way as
+    // any other intent — that is where the fact already lives, and a second
+    // table for "did they try" would be the snapshot this product refuses
+    // everywhere else.
+    tried: tally.started,
+    reachableMajors: majorsForFaculties(fields).length,
     reachableCountries: countries.size,
     citiesInPicked,
     nextDeadline: tally.nextDeadline,
@@ -266,5 +282,8 @@ async function loadUncached(
     });
   }
 
-  return { ...view, todayISO, suggestions, starts, picks, move, maps };
+  const pickIds = picks.map((p) => p.href.split('/').pop() || "");
+  const simulation = recommendSimulation(pickIds);
+
+  return { ...view, todayISO, suggestions, starts, picks, move, maps, simulation, roadmap };
 }

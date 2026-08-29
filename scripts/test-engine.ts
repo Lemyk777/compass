@@ -27,7 +27,29 @@ import {
   universitiesForPlace,
 } from "@/lib/data/place-universities";
 
+import {
+  foldEdge,
+  stickyCtaVisible,
+  NO_EDGES,
+  type CtaEdges,
+} from "@/lib/data/sticky-cta";
+import { classifyStatus, FAILS_THE_GATE } from "./test-links";
+import {
+  fitTitle,
+  fitDescription,
+  SERP_TITLE_MAX,
+  SERP_DESCRIPTION_MAX,
+} from "@/lib/seo";
+import {
+  serializeJsonLd,
+  canonicalPath,
+  breadcrumbSchema,
+  faqSchema,
+  webSiteSchema,
+  organizationSchema,
+} from "@/lib/schema";
 import { RUBRIC, computeOverall, type FactorKey } from "@/lib/rubric";
+import { FACTOR_ORDER } from "@/lib/data/leaderboard";
 import {
   computeOverallFromFactors,
   computeBenchmarks,
@@ -48,21 +70,55 @@ import {
   reachableFrom,
   COMPETITIONS,
   COMPETITION_CATEGORIES,
+  COMPETITION_LEVELS,
+  COMPETITION_TIERS,
+  gateFor,
 } from "@/lib/data/key-dates";
-import type { CompetitionLevel, Opportunity } from "@/lib/data/key-dates";
+import type {
+  Competition,
+  CompetitionLevel,
+  Opportunity,
+} from "@/lib/data/key-dates";
 import {
   CATEGORY_ORDER,
   CATEGORY_TABS,
   CATEGORY_TAB_LABEL,
+  COST_OPTIONS,
+  COST_MODELS_WITHOUT_A_BUCKET,
+  LEVEL_OPTIONS,
+  MATCH_OPTIONS,
+  TIMING_OPTIONS,
   NO_FILTERS,
   activeChips,
+  categoryFromParam,
+  matchedCount,
+  matchedOnly,
   activeFilterCount,
   filterOpportunities,
+  matchesQuery,
   opportunityFacets,
   withoutChip,
   type CostBucket,
+  type OpportunityFilters,
   type TimingBucket,
 } from "@/lib/data/opportunity-filter";
+import {
+  CATEGORY_LABEL,
+  CATEGORY_LABEL_SHORT,
+  COST_LABEL,
+  COST_MODELS,
+  LEVEL_HINT,
+  LEVEL_LABEL,
+  TIER_LABEL,
+  isOpportunityId,
+} from "@/lib/data/opportunity-vocab";
+import {
+  PARTNER_CATEGORY_OPTIONS,
+  PARTNER_COST_OPTIONS,
+  PARTNER_COST_VALUES,
+  PARTNER_LEVEL_OPTIONS,
+  PARTNER_TIER_OPTIONS,
+} from "@/lib/data/partners";
 import { emptyProfile } from "@/lib/types";
 import {
   CAREER_AREAS_BY_FACULTY,
@@ -79,6 +135,13 @@ import {
   simulationsForArea,
 } from "@/lib/data/try-it";
 import { HOME_ROUTES, homeRoutesForFaculties } from "@/lib/data/from-home";
+import {
+  MAJORS,
+  majorById,
+  majorsByField,
+  majorsForArea,
+  majorsForFaculties,
+} from "@/lib/data/majors";
 import {
   LEGACY_GUIDE_PLACE_IDS,
   RENAMED_HUB_IDS,
@@ -114,6 +177,8 @@ import {
   MAP_NODE_KIND_LABEL,
   mapNodeKind,
   MINDMAP_MAX_DEPTH,
+  branchDepth,
+  branchHeight,
   buildTree,
   canIndent,
   canMoveDown,
@@ -122,6 +187,7 @@ import {
   layoutTree,
   type MapNode,
   type MapNodeRow,
+  type TreeRow,
 } from "@/lib/data/mindmap";
 import {
   PLANNER_COLUMNS,
@@ -134,6 +200,7 @@ import {
   plannerStatusFromIntent,
   stepStatus,
   tallyPlanner,
+  PLANNER_STATUSES,
   type PlannerInputs,
   type PlannerItem,
   type PlannerStatus,
@@ -168,6 +235,15 @@ import {
   destinationsForFaculties,
 } from "@/lib/data/study-destinations";
 import { FACULTY_VALUES } from "@/lib/data/faculties";
+import { buildIcs } from "@/lib/calendar/ics";
+import {
+  closesInPhrase,
+  daysBetween,
+  daysLeftLabel,
+  formatDate,
+} from "@/lib/data/opportunity-format";
+import { OG_GLYPHS } from "@/lib/data/og-glyphs";
+import { parseEligibility } from "@/lib/data/eligibility";
 import { plannerStarts } from "@/lib/data/planner-start";
 import {
   areasForDestination,
@@ -175,6 +251,23 @@ import {
   facultyOfArea,
   spineForFaculty,
 } from "@/lib/data/spine";
+import {
+  BEATS,
+  BEAT_PAIRS,
+  isBeatReaction,
+  isKnownBeat,
+  nextPair,
+  observationFromBeats,
+  pairsAnswered,
+  scoreBeats,
+  topFieldsFromBeats,
+  type BeatAnswers,
+} from "@/lib/data/beats";
+import {
+  STATIONS,
+  station,
+  type StationFacts,
+} from "@/lib/data/thread";
 import { competitionsFromRows } from "@/lib/partners/live";
 import sitemapRoutes from "@/app/sitemap";
 import robotsFile from "@/app/robots";
@@ -203,6 +296,7 @@ import {
   screenPage,
   shouldDrop,
 } from "@/lib/discovery/screen";
+import { previewOpportunities } from "@/components/marketing/OpportunityPreview";
 
 // A fixed "today" in the second half of the year → academic year end rolls to
 // the next year (June rollover), so a Class of 2027 student is in grade 12.
@@ -401,6 +495,10 @@ function opp(over: Partial<Opportunity> & { id: string }): Opportunity {
     tierResolved: "selective",
     categoryResolved: "competition",
     fit: "recommended",
+    // Defaults, so a case that is not about the two match gates does not have
+    // to mention them. The cases that ARE about them set them explicitly.
+    offField: false,
+    offRegion: false,
     ...over,
   };
 }
@@ -444,9 +542,25 @@ const FILTER_POOL: Opportunity[] = [
 
 const ids = (items: Opportunity[]) => items.map((o) => o.id).sort();
 
-test("no filters is the identity — the default render pays nothing", () => {
-  assert.equal(filterOpportunities(FILTER_POOL, NO_FILTERS), FILTER_POOL);
+test("the neutral state still narrows to the student's own list", () => {
+  // This used to assert reference identity — "no active filters, same array
+  // back". That stopped being true and, more importantly, stopped being RIGHT:
+  // the neutral state now keeps both match narrowings on, so a student who has
+  // touched nothing gets their own list rather than all 172. Returning the
+  // array untouched would have been the exact bug this group was added to fix.
+  //
+  // Nothing in the pool is off-field or off-region, so the CONTENT is
+  // unchanged, and the badge still reads zero: narrowing the student never
+  // asked for is not a choice they made.
+  assert.deepEqual(filterOpportunities(FILTER_POOL, NO_FILTERS), FILTER_POOL);
   assert.equal(activeFilterCount(NO_FILTERS), 0);
+
+  const withOutsiders = [...FILTER_POOL, opp({ id: "elsewhere", offField: true })];
+  assert.equal(
+    filterOpportunities(withOutsiders, NO_FILTERS).length,
+    FILTER_POOL.length,
+    "the default let an off-field row through",
+  );
 });
 
 test("filtering to free never includes a cost we haven't verified", () => {
@@ -565,12 +679,16 @@ test("facet counts lift their own group and keep the others", () => {
 });
 
 test("the chips and the badge can never disagree", () => {
-  const f = {
+  const f: OpportunityFilters = {
+    ...NO_FILTERS,
     query: "robotics",
     cost: ["free", "paid"] as CostBucket[],
     timing: ["closing"] as TimingBucket[],
     levels: ["national"] as CompetitionLevel[],
     openOnly: true,
+    // Widened too, so the invariant is checked across the one group that is
+    // counted by what is MISSING rather than by what is set.
+    matched: ["region" as const],
   };
   const chips = activeChips(f);
   assert.equal(chips.length, activeFilterCount(f));
@@ -1026,7 +1144,7 @@ test("every guide morph name is a valid, unique custom-ident", () => {
 test("the guide's steps are a chain that ends", () => {
   assert.deepEqual(
     GUIDE_SECTIONS.map((s) => s.step),
-    [1, 2, 3, 4],
+    [1, 2, 3, 4, 5],
   );
   const hrefs = new Set(GUIDE_SECTIONS.map((s) => s.href));
   assert.equal(hrefs.size, GUIDE_SECTIONS.length, "two steps share a route");
@@ -1037,11 +1155,14 @@ test("the guide's steps are a chain that ends", () => {
   // The zoom goes IN: a country contains cities, so it comes first. The guide
   // shipped with these the other way round, which asked a student to weigh
   // Berlin and then zoomed out to Germany a step later.
+  // The subject you apply WITH sits between the work and the country: knowing
+  // the work comes first, and the country is chosen with a subject in hand.
   assert.deepEqual(
     GUIDE_SECTIONS.map((s) => s.id),
-    ["work", "places", "cities", "from-home"],
+    ["work", "majors", "places", "cities", "from-home"],
   );
-  assert.equal(nextGuideSection("work")?.id, "places");
+  assert.equal(nextGuideSection("work")?.id, "majors");
+  assert.equal(nextGuideSection("majors")?.id, "places");
   assert.equal(nextGuideSection("places")?.id, "cities");
   // The last step must not point onwards — that footer becomes the CTA into the
   // catalog instead, which is the whole point of ending on "from home".
@@ -1329,6 +1450,109 @@ test("no destination is a brochure: trade-offs >= strengths, and all filled", ()
   }
 });
 
+// ── The register a country profile is written in ─────────────────────────────
+// `world.ts`, `place-universities.ts` and `majors.ts` each ban superlatives.
+// STUDY_DESTINATIONS — 17 profiles, the deepest prose in the product and the
+// only one of the four that reaches a page a stranger can land on from a search
+// result — had no such guard at all, and on 2026-08-27 two of its pages were
+// live with one: `/guide/places/switzerland` opened on "World-class research"
+// and called ETH and EPFL "top-tier"; `/guide/places/poland` opened on "The
+// best ratio of cost to opportunity in the European Union".
+//
+// TWO TIERS, because one list of words was measured and was the wrong tool.
+// Running the majors pattern over these registries returned SEVEN hits of which
+// ONE was real: `\bbest\b` fires on "the students who do best here", "many of
+// the best reporters", "the best technical solution frequently loses" — all
+// ordinary comparative English, and all of it in the fields that exist to be
+// honest. Meanwhile it missed BOTH live defects, because "world-class" and
+// "top-tier" were in nobody's list. Words are shared across unrelated concepts;
+// shape is not.
+//
+//   MARKETING_REGISTER  — never ordinary English here. Every string field.
+//   SELLING_SUPERLATIVE — ambiguous, so only the three fields that make the
+//                         case FOR the country: oneLine, unique, strengths.
+//
+// Split that way it returns three findings and three are real.
+//
+// DELIBERATELY NOT BANNED: a superlative pointed at the READER rather than at
+// the country. "The hardest admission in Europe" is a catch, and a catch stated
+// strongly is still a catch — the rule exists because an appeal without its
+// catch is an advert, so the catch is the half we are protecting.
+const MARKETING_REGISTER =
+  /(\bworld[- ]class\b|\btop[- ]tier\b|\bworld[- ]leading\b|\bworld[- ]famous\b|\bcutting[- ]edge\b|\bstate[- ]of[- ]the[- ]art\b|\brenowned\b|\bprestigious\b|\bpremier\b|\bunrivall?ed\b|\bfinest\b|\belite\b|\bbest[- ]in[- ]class\b|\bleading\b(?!\s+to\b)|\bno\.? ?1\b|\btop \d+\b|\brank(ed|ing)? (?:#|no\.?\s?)\d)/i;
+const SELLING_SUPERLATIVE = /\bbest\b/i;
+/** The fields that argue FOR a destination. The rest are allowed comparatives. */
+const DEST_SELLING_FIELD = /^[a-z-]+\.(oneLine|unique|strengths)(\[\d+\])?$/;
+
+/** Every string in a destination, as `id.path` → text. Skips `url` — a link is
+ *  not prose, and a host name is not a claim we wrote. */
+function destinationStrings(d: unknown, path: string): [string, string][] {
+  if (typeof d === "string") return path.endsWith(".url") ? [] : [[path, d]];
+  if (Array.isArray(d))
+    return d.flatMap((v, i) => destinationStrings(v, `${path}[${i}]`));
+  if (d && typeof d === "object")
+    return Object.entries(d).flatMap(([k, v]) =>
+      destinationStrings(v, `${path}.${k}`),
+    );
+  return [];
+}
+
+test("no country profile is written in the marketing register", () => {
+  for (const d of STUDY_DESTINATIONS) {
+    for (const [path, text] of destinationStrings(d, d.id)) {
+      const sold = text.match(MARKETING_REGISTER);
+      assert.ok(
+        !sold,
+        `${path} is written like an advert ("${sold?.[0]}"): ${text.slice(0, 90)}`,
+      );
+      if (!DEST_SELLING_FIELD.test(path)) continue;
+      const boast = text.match(SELLING_SUPERLATIVE);
+      assert.ok(
+        !boast,
+        `${path} makes a superlative claim for the country ("${boast?.[0]}"): ${text.slice(0, 90)}`,
+      );
+    }
+  }
+});
+
+test("that register guard bites on the two shapes that shipped", () => {
+  // Built from the lines that were live, not from a paraphrase of them.
+  const shippedSwitzerlandOneLine =
+    "World-class research at low tuition, gated by the hardest admission and the highest cost of living in Europe.";
+  const shippedSwitzerlandUnique =
+    "ETH Zurich and EPFL charge among the lowest tuition of any top-tier research university on earth.";
+  const shippedPolandOneLine =
+    "The best ratio of cost to opportunity in the European Union for a student from this region.";
+
+  assert.match(shippedSwitzerlandOneLine, MARKETING_REGISTER);
+  assert.match(shippedSwitzerlandUnique, MARKETING_REGISTER);
+  assert.match(shippedPolandOneLine, SELLING_SUPERLATIVE);
+  assert.ok(
+    DEST_SELLING_FIELD.test("poland.oneLine"),
+    "the selling-field test stopped recognising oneLine",
+  );
+
+  // And the near-misses, which are the half that decides whether this guard
+  // survives a month or gets exempted. Every one of these is real prose from
+  // this repository or one word away from it.
+  for (const honest of [
+    "Treating staying as failure. The students who do best here choose the local degree deliberately.",
+    "Many of the best reporters bring expertise in economics, science or law to a beat.",
+    "The best technical solution frequently loses to the one that fits the existing workflow.",
+    "A bachelor's here is three years, leading to a master's that most employers expect.",
+  ]) {
+    assert.doesNotMatch(
+      honest,
+      MARKETING_REGISTER,
+      `the marketing ban fires on honest prose: ${honest.slice(0, 60)}`,
+    );
+  }
+  // `best` in an honest field is allowed, and the field test is what allows it.
+  assert.ok(!DEST_SELLING_FIELD.test("kazakhstan.commonMistake"));
+  assert.ok(!DEST_SELLING_FIELD.test("poland.tradeoffs[0]"));
+  assert.ok(DEST_SELLING_FIELD.test("switzerland.strengths[2]"));
+});
+
 // The depth layer on countries. A student picks a country on admissions and
 // then lives inside its teaching culture and its calendar for years, so those
 // are stated too — and timing especially, because missing a deadline is the one
@@ -1505,6 +1729,201 @@ test("both themes clear AA — every ink on every surface it lands on", () => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// The ban patterns, in ONE place, because three of them have shipped broken.
+//
+// Every guard below is the same shape: walk the tree, collect offenders, assert
+// the list is empty. **That shape fails OPEN.** A regex that matches nothing
+// collects nothing, the list is empty, and CI goes green — which is
+// indistinguishable from the rule holding. It has happened three times here:
+//
+//   • the bundle guard, written as a template literal, where `\s` became the
+//     letter s;
+//   • the type floor, `/text-[(d+(?:.d+)?)px]/`, whose backslashes were eaten,
+//     so `[…]` was a character CLASS and the comparison was against `NaN`;
+//   • the beat word count, `split(/s+/)`, which split on runs of the letter s
+//     and read 9 words where the real maximum was 23.
+//
+// All three were quoted as guarantees while enforcing nothing.
+//
+// So the patterns live here and the guards reference them, and one test at the
+// end of this block proves each one catches a line it must catch and ignores a
+// line it must not. **The indirection is the point**: a bite test written
+// against a COPY of a regex proves only that the copy works, and a copy drifts.
+//
+// `BAN_FIXTURES` is typed as a Record over `keyof typeof BAN`, so adding a
+// pattern without a fixture does not compile. That is the part that survives
+// somebody in a hurry.
+const BAN = {
+  /** A literal hex freezes a colour to one theme. */
+  frozenHex: /#[0-9A-Fa-f]{6}\b/g,
+  /** `reach`/`target`/`likely` DEFAULT is a fill (3:1); text needs `-ink`. */
+  tierAsText: /text-(reach|target|likely)(?![-\w])/,
+  /** `accent` DEFAULT measures 4.28:1 on the page — a fill, not a foreground. */
+  accentAsText: /(?<![-\w:])text-accent(?![-\w])/,
+  /** A `!` escape at a call site is a merge bug being forced, not a style. */
+  bangEscape: /(?<=[\s"'`{])!(?:[a-z-]+:)*[a-z][a-z0-9]*-[a-z0-9./[\]%-]+/g,
+  /** A hardcoded offset paints a white halo on the dark theme. */
+  ringOffset: /ring-offset-(white|black)\b/,
+  /** The directive disables the NEXT line, so a comment under it disables nothing. */
+  eslintDisable: /^\s*(\/\/|\/\*|\{\s*\/\*)\s*eslint-disable-next-line\b/,
+  /** The landing page ships no framer-motion; decoration does not buy hydration. */
+  framerMotion: /framer-motion/,
+  /** An animated blur re-rasterises every frame and cannot be composited. */
+  animatedBlur: /\bblur-(sm|md|lg|xl|2xl|3xl)\b/,
+  /** A band that caps at 6xl does not ramp with the shell. */
+  ungrampedBand: /className="([^"]*\bmax-w-6xl\b[^"]*)"/g,
+  /** Hardcoded type, in px or rem, checked against the floor. */
+  hardcodedType: /text-\[(\d+(?:\.\d+)?)(px|rem)\]/g,
+  /**
+   * The same floor arriving as a NUMBER on a JSX prop, which no class-string
+   * scan can see. CLAUDE.md names this exact case — `fontSize: 10` passed as a
+   * prop — as the third way a guard is useless: correct, biting, reading the
+   * right string, and pointed at an input surface narrower than its own rule.
+   * Nine chart labels sat below the floor behind it, in four files, each of
+   * which already set 12 for its own tooltip a few lines away.
+   *
+   * Unitless, because that is what Recharts and SVG take; the capture is the
+   * bare number and the consumer treats it as px.
+   */
+  hardcodedFontSizeProp: /\bfontSize:\s*(\d+(?:\.\d+)?)\b/g,
+  /** A client component reading the clock disagrees with the server's `todayISO`. */
+  clockInClient: /new Date\(\s*\)/,
+} as const;
+
+/**
+ * For each ban: lines it MUST catch, and lines it must leave alone.
+ *
+ * **`ignores` is a list, and it is the half that does the work.** The first
+ * version of this test had one `ignores` line per pattern and it did not catch
+ * a deliberate break: `tierAsText` was changed from `(?![-\w])` to `(?![-w])`,
+ * losing a backslash exactly the way the three real failures did, and both
+ * fixtures still behaved — because `text-reach` and `text-reach-ink` do not
+ * distinguish `\w` from the letter w. Only a third word character does.
+ *
+ * So each `ignores` list must contain a **boundary** case, not just an obviously
+ * different line: the near-miss that the pattern is supposed to exclude by a
+ * single character of lookahead or lookbehind. A fixture that is far away from
+ * the boundary proves nothing about where the boundary is.
+ */
+const BAN_FIXTURES: Record<
+  keyof typeof BAN,
+  { catches: string[]; ignores: string[] }
+> = {
+  frozenHex: {
+    catches: ['const c = "#1A2B3C";', 'border: "#fff000"'],
+    // Five digits is not a colour, and the token form is the correct one.
+    ignores: ["rgb(var(--ink))", 'const c = "#1A2B3";'],
+  },
+  tierAsText: {
+    catches: ['<p className="text-reach">', 'className="md:text-target"'],
+    // `-ink` is the correct token; `text-targeted` is the word-character
+    // boundary that a lost backslash in `\w` stops excluding.
+    ignores: [
+      '<p className="text-reach-ink">',
+      'className="text-targeted"',
+      'className="text-likely2"',
+    ],
+  },
+  accentAsText: {
+    catches: ['<span className="text-accent">', 'className="text-accent "'],
+    // `-ink` is correct; `hover:` is the lookbehind; `accented` is the
+    // word-character boundary on the other side.
+    ignores: [
+      '<span className="text-accent-ink">',
+      'className="hover:text-accent"',
+      'className="text-accented"',
+    ],
+  },
+  bangEscape: {
+    // The `!` has to open the class: the lookbehind is a quote, a space, a
+    // backtick or `{`.
+    catches: ['className="!px-7 py-4"', 'className="p-2 !mt-0"'],
+    // `!==` and a bare `!flag` are not Tailwind escapes.
+    //
+    // KNOWN GAP, found by writing this fixture and left deliberately: Tailwind
+    // also accepts the important modifier AFTER a variant (`sm:!mt-0`), and
+    // this pattern cannot see that form, because it expects `!` first and the
+    // variants after it. The tree has zero of them today (grep
+    // `[a-z-]+:![a-z]`), so widening the regex here would be changing what is
+    // enforced on the strength of a fixture rather than a defect. If one ever
+    // appears, the fix is to allow variants on both sides of the `!`.
+    ignores: ['className="px-7 py-4"', "if (a !== b) return;", "const x = !ok;"],
+  },
+  ringOffset: {
+    catches: ["focus:ring-offset-white", 'className="ring-offset-black"'],
+    // The themed token is the fix, and it starts with the same eleven letters.
+    ignores: ["focus-visible:focus-ring", 'className="ring-offset-surface"'],
+  },
+  eslintDisable: {
+    catches: [
+      "  // eslint-disable-next-line no-explicit-any",
+      "  {/* eslint-disable-next-line react/no-x */}",
+    ],
+    // The file-wide form disables a file, not the next line, and is not this rule.
+    ignores: ["  const a = 1;", "  /* eslint-disable no-explicit-any */"],
+  },
+  framerMotion: {
+    catches: ['import { motion } from "framer-motion";'],
+    ignores: ['import Link from "next/link";', "// no framer here"],
+  },
+  animatedBlur: {
+    catches: ['<div className="blur-3xl" />', 'className="md:blur-sm"'],
+    // `backdrop-blur` composites; `blur-none` is the off switch.
+    ignores: ['<div className="backdrop-blur" />', 'className="blur-none"'],
+  },
+  ungrampedBand: {
+    catches: ['<div className="mx-auto max-w-6xl px-6">'],
+    // 7xl ramps; `xl:max-w-6xl` as part of a ramp is caught deliberately, so the
+    // near-miss here is the next size up rather than a prefixed 6xl.
+    ignores: ['<div className="mx-auto max-w-7xl px-6">', 'className="max-w-60"'],
+  },
+  hardcodedType: {
+    catches: ['<span className="text-[10px]">', 'className="text-[0.7rem]"'],
+    // A scale class carries no bracket; `text-[color:…]` is not a size.
+    ignores: ['<span className="text-sm">', 'className="text-[#fff]"'],
+  },
+  hardcodedFontSizeProp: {
+    catches: [
+      'tick={{ fill: "rgb(var(--ink-faint))", fontSize: 10 }}',
+      "wrapperStyle={{ fontSize: 11, color: \"rgb(var(--ink-soft))\" }}",
+    ],
+    // The near-misses. A CSS string value is the class-string guard's business
+    // and carries a unit; a name that merely ends in the word is not the prop.
+    ignores: ['style={{ fontSize: "0.8rem" }}', "const baseFontSize = 10;"],
+  },
+  clockInClient: {
+    catches: ["const t = new Date();", "const t = new Date(  );"],
+    // Any argument makes it deterministic, which is the whole rule.
+    ignores: ["const t = new Date(todayISO);", "const t = new Date(0);"],
+  },
+};
+
+test("every ban pattern bites, and leaves the near-misses alone", () => {
+  // A fresh regex from the same SOURCE, so a /g pattern's `lastIndex` is never
+  // carried into or out of this test and the guards keep their exact semantics.
+  // It has to be the same source and not a copied literal: a bite test written
+  // against its own copy of a regex proves the copy works, which is nothing.
+  const fresh = (re: RegExp) => new RegExp(re.source, re.flags.replace("g", ""));
+
+  for (const key of Object.keys(BAN) as (keyof typeof BAN)[]) {
+    const { catches, ignores } = BAN_FIXTURES[key];
+    assert.ok(catches.length > 0 && ignores.length > 1, `BAN.${key} needs a boundary fixture`);
+    for (const line of catches) {
+      assert.ok(
+        fresh(BAN[key]).test(line),
+        `BAN.${key} does not match what it bans, so it is enforcing nothing: ${line}`,
+      );
+    }
+    for (const line of ignores) {
+      assert.ok(
+        !fresh(BAN[key]).test(line),
+        `BAN.${key} matches a correct line, so somebody will disable it: ${line}`,
+      );
+    }
+  }
+});
+
 // Nothing may freeze a colour: a literal hex in a component or a data file stays
 // light-mode red on a dark page. The two files that used to hold the palette are
 // the ones most likely to grow one back.
@@ -1512,7 +1931,7 @@ test("the shared colour modules hold no frozen hex", () => {
   for (const f of ["lib/tiers.ts", "tailwind.config.ts"]) {
     const text = readFileSync(path.join(process.cwd(), f), "utf8");
     const code = text.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
-    const frozen = code.match(/#[0-9A-Fa-f]{6}\b/g) ?? [];
+    const frozen = code.match(BAN.frozenHex) ?? [];
     assert.deepEqual(
       frozen,
       [],
@@ -1546,7 +1965,7 @@ test("no component paints text with a tier fill instead of its ink", () => {
       readFileSync(file, "utf8")
         .split("\n")
         .forEach((line, i) => {
-          if (/text-(reach|target|likely)(?![-\w])/.test(line)) {
+          if (BAN.tierAsText.test(line)) {
             offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
           }
         });
@@ -1766,21 +2185,29 @@ test("partner rows join the student pool as ordinary opportunities", () => {
   assert.equal(found?.partner?.verified, true);
 });
 
-test("a local partner post reaches its own country and nobody else", () => {
+test("a local partner post is for its own country, and says so elsewhere", () => {
+  // This used to assert the row VANISHED outside its country. It is marked
+  // `offRegion` now and the filter panel hides it by default, which keeps the
+  // student's list the same while giving them a way to see it and a count
+  // saying how many rows the narrowing removed — the gate used to be invisible
+  // and had no route past it at all.
   const live = competitionsFromRows(
     [postRow({ region: "KZ" })],
     [partnerRow()],
   );
-  const seen = (homeCountry: string | null) =>
+  const row = (homeCountry: string | null) =>
     buildExtracurriculars({
       today: TODAY,
       faculties: [],
       factors: [],
       liveCompetitions: live,
       homeCountry,
-    }).items.some((o) => o.id === "astana-hub-hackathon");
-  assert.equal(seen("KZ"), true);
-  assert.equal(seen("UZ"), false);
+    }).items.find((o) => o.id === "astana-hub-hackathon");
+
+  assert.equal(row("KZ")?.offRegion, false, "hidden from the country it is for");
+  assert.equal(row("UZ")?.offRegion, true, "not marked as belonging elsewhere");
+  // And with no country stated, a local row is nobody's outsider.
+  assert.equal(row(null)?.offRegion, false);
 });
 
 // ---------------------------------------------------------------------------
@@ -1952,6 +2379,30 @@ test("the chart has one bucket per calendar slot, including the empty ones", () 
   assert.equal(s.granularity, "day");
   assert.equal(summarize([], T0, 1).buckets.length, 24);
   assert.equal(summarize([], T0, 1).granularity, "hour");
+
+  // The bucket key IS the UTC calendar slot, and it is built from the date's
+  // UTC fields rather than by slicing `toISOString()` — that method formats the
+  // milliseconds and the zone as well, only for the slice to discard them, and
+  // it runs once per row per pass. Same characters, and this is what says so.
+  // A whole day and a whole 24 hours are walked, so a month or hour that pads
+  // differently at either end cannot slip through.
+  const DAY = 24 * 60 * 60 * 1000;
+  for (let i = 0; i < 30; i++) {
+    const t = T0 - i * DAY;
+    assert.equal(
+      summarize([], t, 30).buckets[29].key,
+      new Date(t).toISOString().slice(0, 10),
+      `day key drift at ${new Date(t).toISOString()}`,
+    );
+  }
+  for (let h = 0; h < 24; h++) {
+    const t = Date.parse("2026-12-31T00:00:00.000Z") + h * 60 * 60 * 1000;
+    assert.equal(
+      summarize([], t, 1).buckets[23].key,
+      new Date(t).toISOString().slice(0, 13),
+      `hour key drift at ${new Date(t).toISOString()}`,
+    );
+  }
 });
 
 test("a visit has one source — its first external referrer", () => {
@@ -2478,10 +2929,71 @@ const sourceFiles = (): string[] => {
     walk(path.join(process.cwd(), r)),
   );
 };
+/** Every .ts/.tsx under app/, components/ AND lib/ — the whole authored tree. */
+const allRepoSources = (): string[] => {
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return e.name === "node_modules" ? [] : walk(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+  return ["app", "components", "lib"].flatMap((r) =>
+    walk(path.join(process.cwd(), r)),
+  );
+};
 const rel = (f: string) =>
   path.relative(process.cwd(), f).split(path.sep).join("/");
 const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/[^\n]*$/gm, "");
+
+/**
+ * A JSX opening tag, with its attribute list COMPLETE.
+ *
+ * This exists because two guards below bounded a tag with the next `>` —
+ * `/<(a|button|Link)\s([^>]*?)>/` and `/<button\b[\s\S]{0,1200}?>/` — and
+ * `onClick={() =>` contains a `>`. Both therefore stopped before `className`
+ * on every tag carrying an arrow function, which is most of them. Measured
+ * 2026-08-25: the focus guard matched 227 tags, 80 truncated, and **78 were
+ * then dropped by its own `if (!/className/.test(attrs)) continue`** — 34% of
+ * the surface, never inspected. The dimmed-control guard was worse: run
+ * against the pre-fix `GuideFilterBar.tsx`, the file its own comment names, it
+ * flagged **0 of the 2** `opacity-50` chips it was written to catch.
+ *
+ * Both bite tests passed the whole time, because both fixtures used
+ * `onClick={onClick}` — the one attribute shape with no arrow in it.
+ *
+ * So: a tag ends at a `>` that sits at brace depth 0 and outside any string.
+ * The scan is bounded because a runaway (an unbalanced `{` in a template) would
+ * otherwise walk to end-of-file once per tag, which is quadratic over the tree.
+ */
+type JsxTag = { text: string; name: string; index: number };
+const JSX_TAG_LIMIT = 4000;
+const jsxOpenTags = (src: string, names: readonly string[]): JsxTag[] => {
+  const out: JsxTag[] = [];
+  const opener = new RegExp(`<(${names.join("|")})(?=[\\s/>])`, "g");
+  for (const m of src.matchAll(opener)) {
+    const from = m.index + m[0].length;
+    const limit = Math.min(src.length, from + JSX_TAG_LIMIT);
+    let depth = 0;
+    let end = -1;
+    for (let i = from; i < limit; i++) {
+      const c = src[i];
+      if (c === "{") depth++;
+      else if (c === "}") depth = Math.max(0, depth - 1);
+      else if (c === '"' || c === "'" || c === "`") {
+        const quote = c;
+        i += 1;
+        while (i < limit && src[i] !== quote) i += src[i] === "\\" ? 2 : 1;
+      } else if (c === ">" && depth === 0) {
+        end = i;
+        break;
+      }
+    }
+    if (end < 0) continue;
+    out.push({ text: src.slice(m.index, end + 1), name: m[1], index: m.index });
+  }
+  return out;
+};
 
 // A Tailwind `!` escape is never a style decision — it is an author discovering
 // that a component concatenated its classes with theirs, so the framework's
@@ -2496,9 +3008,7 @@ test("no `!important` Tailwind escapes — they mark a component that won't let 
       .forEach((line, i) => {
         // `!` directly before a utility-shaped token (needs the dash, so `!isOpen`
         // and `!==` are not matches).
-        const hits = line.match(
-          /(?<=[\s"'`{])!(?:[a-z-]+:)*[a-z][a-z0-9]*-[a-z0-9./[\]%-]+/g,
-        );
+        const hits = line.match(BAN.bangEscape);
         for (const h of hits ?? [])
           offenders.push(`${rel(file)}:${i + 1} ${h}`);
       });
@@ -2520,7 +3030,7 @@ test("focus rings theme — no hardcoded ring offset", () => {
     stripComments(readFileSync(file, "utf8"))
       .split("\n")
       .forEach((line, i) => {
-        if (/ring-offset-(white|black)\b/.test(line))
+        if (BAN.ringOffset.test(line))
           offenders.push(`${rel(file)}:${i + 1}`);
       });
   }
@@ -2539,8 +3049,26 @@ test("every self-styled interactive element has a focus treatment", () => {
   const offenders: string[] = [];
   for (const file of sourceFiles()) {
     const src = readFileSync(file, "utf8");
-    for (const m of src.matchAll(/<(a|button|Link)\s([^>]*?)>/gs)) {
-      const attrs = m[2];
+    // A className assembled from a module-level constant says nothing about
+    // focus until the constant is put back: `fields.tsx` reported as an
+    // offender on `className={`${inputCls} flex …`}` while `inputCls` carries
+    // `focus-visible:focus-ring` three lines up the file. Expanding one level
+    // of `${NAME}` against this file's own string consts is what makes the
+    // reading true. Same lesson as the tag bounds — the guard was right and
+    // its INPUT was not the thing the rule is about.
+    const consts = new Map<string, string>();
+    for (const c of src.matchAll(/^const\s+([A-Za-z_$][\w$]*)\s*=\s*"([^"]*)";/gm)) {
+      consts.set(c[1], c[2]);
+    }
+    const expand = (s: string) =>
+      s.replace(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g, (whole, id: string) =>
+        consts.get(id) ?? whole,
+      );
+    // `jsxOpenTags`, never `[^>]` — see the helper's note. Bounding the tag
+    // with the next `>` hid 78 of these 227 tags behind an arrow function.
+    for (const tag of jsxOpenTags(src, ["a", "button", "Link"])) {
+      const { name, index } = tag;
+      const attrs = expand(tag.text);
       if (!/className/.test(attrs)) continue;
       // Only elements that paint themselves. A bare inline link inherits the
       // browser's own outline and is not the problem.
@@ -2548,7 +3076,7 @@ test("every self-styled interactive element has a focus treatment", () => {
       if (/focus-visible|focus-ring|focus:/.test(attrs)) continue;
       if (/sr-only/.test(attrs)) continue;
       offenders.push(
-        `${rel(file)}:${src.slice(0, m.index).split("\n").length} <${m[1]}>`,
+        `${rel(file)}:${src.slice(0, index).split("\n").length} <${name}>`,
       );
     }
   }
@@ -2556,6 +3084,170 @@ test("every self-styled interactive element has a focus treatment", () => {
     offenders,
     [],
     `interactive but unfocusable:\n  ${offenders.join("\n  ")}\nAdd \`focus-visible:focus-ring\`, or render it through <Button>/<ButtonLink>.`,
+  );
+});
+
+test("the focus guard actually bites — through an arrow, and not through a const", () => {
+  // This guard shipped for months reading `/<(a|button|Link)\s([^>]*?)>/`, and
+  // had no bite test at all. Both halves below are failures it really had:
+  //
+  //   1. `onClick={() =>` contains a `>`, so the tag ended 60 characters in and
+  //      `className` fell past the cut. Measured 2026-08-25: of 227 tags, 80
+  //      truncated and 78 were then dropped by the `className` filter — 34% of
+  //      the surface, silently unchecked. Five controls with no focus style
+  //      were sitting in that blind spot.
+  //   2. Once it could see them, `fields.tsx` reported a FALSE positive: its
+  //      className is `${inputCls} …` and the constant carries the focus ring.
+  //
+  // A guard that cannot see the common shape and cries wolf on the correct one
+  // is two bugs, not one. Both are asserted here against the shipped helpers.
+  const painted = "rounded-full border px-4 py-2";
+
+  const arrowNoFocus =
+    `<button type="button" onClick={() => go(1)} className="${painted}">`;
+  const [arrowTag] = jsxOpenTags(arrowNoFocus, ["a", "button", "Link"]);
+  assert.ok(arrowTag, "an arrow handler must not end the tag");
+  assert.ok(
+    /className/.test(arrowTag.text),
+    "className must survive the arrow — this is the 78-tag blind spot",
+  );
+  assert.ok(
+    !/focus-visible|focus-ring|focus:/.test(arrowTag.text),
+    "and the guard must see that this one has no focus treatment",
+  );
+
+  // The near-miss: same tag, focus ring present. It must NOT be reported.
+  const arrowWithFocus =
+    `<button type="button" onClick={() => go(1)} className="${painted} focus-visible:focus-ring">`;
+  const [okTag] = jsxOpenTags(arrowWithFocus, ["a", "button", "Link"]);
+  assert.ok(
+    /focus-visible/.test(okTag.text),
+    "a correct control must not be reported",
+  );
+
+  // And the const expansion, which is what stops the false positive. The
+  // shapes here are `fields.tsx` exactly: a multi-line `const NAME = "…";`
+  // and a className that interpolates it.
+  const src =
+    'const inputCls =\n  "h-12 rounded-xl border focus-visible:focus-ring";\n' +
+    "export function F() {\n" +
+    "  return <button type=\"button\" onClick={() => t()} className={`${inputCls} flex`}>x</button>;\n" +
+    "}\n";
+  const consts = new Map<string, string>();
+  for (const c of src.matchAll(/^const\s+([A-Za-z_$][\w$]*)\s*=\s*"([^"]*)";/gm)) {
+    consts.set(c[1], c[2]);
+  }
+  assert.equal(
+    consts.get("inputCls"),
+    "h-12 rounded-xl border focus-visible:focus-ring",
+    "a const declared across two lines must still be read",
+  );
+  const [interpolated] = jsxOpenTags(src, ["a", "button", "Link"]);
+  const expanded = interpolated.text.replace(
+    /\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g,
+    (whole, id: string) => consts.get(id) ?? whole,
+  );
+  assert.ok(
+    !/focus-visible/.test(interpolated.text),
+    "unexpanded, the tag looks unfocusable — which is the false positive",
+  );
+  assert.ok(
+    /focus-visible/.test(expanded),
+    "expanded, it is correct and must not be reported",
+  );
+});
+
+// ── A variant whose parent does not exist ────────────────────────────────────
+// `group-hover:` / `group-open:` / `group-focus:` compile to
+// `.group:hover .group-hover\:x`. Without a `group` on an ancestor the selector
+// matches nothing — and NOTHING in this repository notices. The class is one
+// Tailwind can generate, so `tailwindcss/no-custom-classname` is satisfied; the
+// build is green; a reader sees the intent and not the selector. This is the
+// same failure as the four modals that carried `animate-in fade-in zoom-in-95`
+// from a plugin nobody installed and simply never animated for months, and as
+// `text-[10px]` slipping past a floor guard whose capture captured nothing:
+// **a rule can be spelled correctly and still be connected to nothing.**
+//
+// Found on 2026-08-27 in `StudentNav.tsx`, the only offender in the tree: the
+// account menu's chevron was `group-open:rotate-180` on a `<details>` carrying
+// `className="relative shrink-0"`. The arrow never turned, for the life of the
+// component.
+//
+// SCOPE, stated because it is looser than it looks: this is a FILE-level check,
+// not an element-level one. It cannot tell you the `group` is on the right
+// ancestor, only that the file declares one somewhere. That is the level the
+// real defect lived at, and an ancestor walk through JSX is a parser rather
+// than a pattern. If a file ever declares `group` for one subtree and uses a
+// `group-` variant in an unrelated one, this passes and it should not.
+const GROUP_VARIANT = /\bgroup-(hover|open|focus|focus-within|active|disabled|checked|first|last)[:/]/;
+/**
+ * Does this source declare a `group` PARENT anywhere?
+ *
+ * Two things make the reading true rather than approximately true. It looks
+ * only inside string literals, and only after comments are stripped — so a line
+ * of prose about "a group of cards" cannot satisfy it, which would be the
+ * fail-open. And the lookahead excludes `-` but allows `/`: `group-hover` is
+ * the variant asking for a parent, while `group/card` is a NAMED group, which
+ * is a real parent. Nothing in the tree uses a named group today; the day one
+ * does, this must not report it.
+ */
+function declaresGroupParent(src: string): boolean {
+  const strings = stripComments(src).matchAll(
+    /"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/g,
+  );
+  return [...strings].some((m) =>
+    /\bgroup\b(?![-\w:.])/.test(m[1] ?? m[2] ?? m[3] ?? ""),
+  );
+}
+
+test("a group- variant always has a group parent to hang off", () => {
+  const offenders: string[] = [];
+  for (const file of sourceFiles()) {
+    const src = readFileSync(file, "utf8");
+    if (!GROUP_VARIANT.test(stripComments(src))) continue;
+    if (declaresGroupParent(src)) continue;
+    offenders.push(path.relative(process.cwd(), file).replace(/\\/g, "/"));
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `these files use a group- variant with no \`group\` anywhere, so the selector matches nothing:\n${offenders.join("\n")}`,
+  );
+});
+
+test("that group- guard bites on the markup that shipped", () => {
+  // The real pair, verbatim from StudentNav before the fix.
+  const asShipped = `
+    <details className="relative shrink-0">
+      <summary className="inline-flex min-h-11 items-center gap-1.5">
+        <svg className="transition-transform duration-200 group-open:rotate-180" />
+      </summary>
+    </details>`;
+  assert.ok(GROUP_VARIANT.test(asShipped), "the fixture stopped using a group- variant");
+  assert.ok(
+    !declaresGroupParent(asShipped),
+    "the guard must see that nothing here declares `group`",
+  );
+
+  // The fix, which must pass.
+  assert.ok(declaresGroupParent(asShipped.replace('"relative shrink-0"', '"group relative shrink-0"')));
+
+  // Near-misses, each one character or one context away from the real thing.
+  assert.ok(
+    !declaresGroupParent(`<div className="group-hover:opacity-100" />`),
+    "`group-hover` is the VARIANT, not a declaration of the parent",
+  );
+  assert.ok(
+    !declaresGroupParent(`<div className="grouped flex" />`),
+    "`grouped` is a different word",
+  );
+  assert.ok(
+    !declaresGroupParent(`// the cards are laid out in a group, three per row\nconst x = 1;`),
+    "prose in a comment must not satisfy the guard — that is the fail-open",
+  );
+  assert.ok(
+    declaresGroupParent(`<li className="group/card relative" />`),
+    "a named group is a real parent — `group/card` must count, or this guard fires falsely the day someone uses one",
   );
 });
 
@@ -2571,7 +3263,7 @@ test("every eslint-disable-next-line is adjacent to the code it disables", () =>
     lines.forEach((line, i) => {
       // Only a comment that BEGINS with the directive is one — ESLint ignores a
       // mention inside prose, and so must this, or documenting the rule trips it.
-      if (!/^\s*(\/\/|\/\*|\{\s*\/\*)\s*eslint-disable-next-line\b/.test(line))
+      if (!BAN.eslintDisable.test(line))
         return;
       const next = lines.slice(i + 1).find((l) => l.trim() !== "");
       if (next && /^(\/\/|\/\*|\{\s*\/\*)/.test(next.trim()))
@@ -2737,6 +3429,17 @@ test("pinning reorders, it never bypasses eligibility", () => {
   // failure that would matter: a card saying "you can enter this" to someone who
   // cannot is the one thing the product does not get to do, and "we pinned it"
   // is not an excuse the student can see.
+  //
+  // "Reach" is what needed re-deriving, and this test had the OLD answer. It
+  // asserted plain absence from `items`, which was right when matching hid
+  // off-region rows and wrong from the one-list release onward — the matcher
+  // marks now, and the default filters narrow. It never fired either way,
+  // because it iterates pinned local rows and there have been none; the day
+  // somebody pinned a Kazakh olympiad, which is the likeliest pin this product
+  // will ever have, it would have failed while the code was correct.
+  //
+  // So the guarantee is stated where it actually lives: the row is marked, and
+  // it is gone from the list the student is shown.
   const local = COMPETITIONS.filter((c) => c.pinned && c.region);
   for (const c of local) {
     const elsewhere = buildExtracurriculars({
@@ -2746,8 +3449,15 @@ test("pinning reorders, it never bypasses eligibility", () => {
       homeCountry: c.region === "IT" ? "KZ" : "IT",
       graduationYear: 2028,
     });
+    const row = elsewhere.items.find((i) => i.id === c.id);
+    if (row) {
+      assert.ok(
+        row.offRegion,
+        `${c.id} is region-scoped to ${c.region} and came back unmarked to a student outside it`,
+      );
+    }
     assert.ok(
-      !elsewhere.items.some((i) => i.id === c.id),
+      !matchedOnly(elsewhere.items).some((i) => i.id === c.id),
       `${c.id} is region-scoped to ${c.region} but reached a student outside it`,
     );
   }
@@ -3440,10 +4150,21 @@ test("map actions validate on the server, and never delete the thinking", () => 
 
   // "Send to plan" copies the node into planner_items. It must NOT remove it:
   // deleting the thinking at the moment you act on it is exactly backwards.
-  const promote = src.slice(
-    src.indexOf("export async function promoteNodeToTask"),
+  // Assert the INDEX, not the slice's length. Written as
+  // `src.slice(src.indexOf(…))` with one argument, a renamed function makes
+  // `indexOf` return −1, `slice(-1)` returns the file's LAST CHARACTER, and
+  // `length > 0` passes — after which the delete check scans one character and
+  // finds nothing. The guard would have gone green on a `promoteNodeToTask`
+  // that deleted the node, which is the exact thing it exists to forbid. Its
+  // two siblings in this file pass a second argument and fail closed on the
+  // same input; this one was the outlier.
+  const at = src.indexOf("export async function promoteNodeToTask");
+  assert.notEqual(
+    at,
+    -1,
+    "promoteNodeToTask is missing or renamed — this guard now reads nothing",
   );
-  assert.ok(promote.length > 0, "promoteNodeToTask is missing");
+  const promote = src.slice(at);
   assert.ok(
     !/\.delete\(\)/.test(promote),
     "sending a node to the plan deletes it — the map must keep the node",
@@ -3692,7 +4413,7 @@ test("the landing hero's background costs no JavaScript and no blur", () => {
     "HeroField became a client component — the landing page's JS budget is the point",
   );
   assert.ok(
-    !/framer-motion/.test(field),
+    !BAN.framerMotion.test(field),
     "HeroField imports framer-motion; this page ships none and must not start",
   );
   // The field is the section's FIRST child and carries no z-index: a `-z-10`
@@ -3714,7 +4435,7 @@ test("the landing hero's background costs no JavaScript and no blur", () => {
   );
   assert.ok(hero.length > 0, "the hero no longer mounts the field");
   assert.ok(
-    !/\bblur-(sm|md|lg|xl|2xl|3xl)\b/.test(hero),
+    !BAN.animatedBlur.test(hero),
     "a blur-* is back in the hero — that is a full re-raster of the box on every paint",
   );
 });
@@ -3739,7 +4460,7 @@ test("the landing page's bands ramp with the window, and no band caps at 1152", 
     "components/marketing/HowItWorks.tsx",
   ]) {
     const src = readFileSync(path.join(process.cwd(), rel), "utf8");
-    for (const m of src.matchAll(/className="([^"]*\bmax-w-6xl\b[^"]*)"/g)) {
+    for (const m of src.matchAll(BAN.ungrampedBand)) {
       assert.ok(
         m[1].includes("2xl:max-w-[90rem]"),
         `${rel}: a container caps at max-w-6xl without ramping — "${m[1]}"`,
@@ -3756,19 +4477,21 @@ test("the landing page's bands ramp with the window, and no band caps at 1152", 
 // defects were a type scale with no steps in it, a 10px floor, and one theme's
 // optical needs being served by the other theme's settings.
 
-test("11px is the floor — no surface ships 10px type", () => {
-  // 10px uppercase with letter-spacing was the smallest type in the product and
-  // it carried real information across 21 files: the report's programme cards,
-  // four country breakdowns, the admin tables, the guide's badges and the
-  // landing's own hero preview. A floor that holds in some components is not a
-  // floor, so it is asserted over the whole tree.
-  const offenders: string[] = [];
+// The floor is a number in one place, so that raising it is one edit and the
+// tests below cannot disagree with each other about what it is.
+const TYPE_FLOOR_PX = 12;
+
+// Every hardcoded size in the tree, in px, with its file and line. `rem` is
+// resolved at the root's 16px: `text-[0.7rem]` is 11.2px, and a px-only guard
+// would wave it through.
+function hardcodedTypeSizes(): { at: string; px: number }[] {
   const walk = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
       const full = path.join(dir, e.name);
       if (e.isDirectory()) return walk(full);
       return /\.tsx?$/.test(e.name) ? [full] : [];
     });
+  const out: { at: string; px: number }[] = [];
   for (const root of ["app", "components"]) {
     for (const file of walk(path.join(process.cwd(), root))) {
       readFileSync(file, "utf8")
@@ -3778,15 +4501,87 @@ test("11px is the floor — no surface ships 10px type", () => {
           // line, and reading only the first is how a 9px monogram sat behind
           // an 11px one for a whole release. Found when prettier happened to
           // split the line.
-          for (const m of line.matchAll(/text-[(d+(?:.d+)?)px]/g)) {
-            if (Number(m[1]) < 11) {
-              offenders.push(`${path.relative(process.cwd(), file)}:${i + 1}`);
-            }
+          for (const m of line.matchAll(BAN.hardcodedType)) {
+            out.push({
+              at: `${path.relative(process.cwd(), file)}:${i + 1}`,
+              px: m[2] === "rem" ? Number(m[1]) * 16 : Number(m[1]),
+            });
+          }
+          // The same rule arriving as a number on a prop. Kept as a second
+          // pass over the same line rather than one combined pattern, because
+          // the two have different capture shapes and a merged regex is where
+          // a group index quietly shifts and the size becomes NaN — which is
+          // how this guard failed open the first time.
+          for (const m of line.matchAll(BAN.hardcodedFontSizeProp)) {
+            out.push({
+              at: `${path.relative(process.cwd(), file)}:${i + 1}`,
+              px: Number(m[1]),
+            });
           }
         });
     }
   }
-  assert.deepEqual(offenders, [], `type below 11px:\n${offenders.join("\n")}`);
+  return out;
+}
+
+test(`${TYPE_FLOOR_PX}px is the floor — no surface ships smaller type`, () => {
+  // 10px uppercase with letter-spacing was the smallest type in the product and
+  // it carried real information across 21 files: the report's programme cards,
+  // four country breakdowns, the admin tables, the guide's badges and the
+  // landing's own hero preview. A floor that holds in some components is not a
+  // floor, so it is asserted over the whole tree.
+  //
+  // The floor rose from 11 to 12 on 2026-08-19 with the scale, because 118
+  // labels were pinned at exactly 11px by the pass that fixed the 10px bug: "at
+  // the floor" is not "readable", it is "not illegal". Raise this literal in
+  // the wave that earns it, the same way the discovery count floors work.
+  const offenders = hardcodedTypeSizes()
+    .filter((s) => s.px < TYPE_FLOOR_PX)
+    .map((s) => `${s.at} (${s.px}px)`);
+  assert.deepEqual(
+    offenders,
+    [],
+    `type below ${TYPE_FLOOR_PX}px:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the type floor guard actually bites", () => {
+  // The version this replaced could never have failed. It was written as
+  // `/text-[(d+(?:.d+)?)px]/` — the backslashes had been eaten, so `[...]` was
+  // a character CLASS, nothing was captured, `Number(undefined)` was NaN, and
+  // `NaN < 11` is false. It matched a real class name and reported nothing, for
+  // every release it existed. Same failure as the bundle guard written as a
+  // template literal, where `\s` became the letter s: a guard that fails OPEN
+  // still looks like a guarantee in a PR description.
+  //
+  // So the pattern is asserted against lines it MUST catch, and lines it must
+  // not, rather than only against the tree, which is clean by construction.
+  //
+  // It reads `BAN.hardcodedType` rather than a copy of it, and that is
+  // load-bearing: a bite test written against its own copy of a regex proves
+  // that the copy works, which is exactly nothing once the two drift apart.
+  const re = BAN.hardcodedType;
+  const sizeOf = (line: string) =>
+    [...line.matchAll(re)].map((m) =>
+      m[2] === "rem" ? Number(m[1]) * 16 : Number(m[1]),
+    );
+
+  assert.deepEqual(sizeOf('<span className="text-[10px] uppercase">'), [10]);
+  assert.deepEqual(sizeOf('className="text-[0.7rem]"'), [11.2]);
+  assert.deepEqual(
+    sizeOf('{a ? "text-[9px]" : b ? "text-[12px]" : "text-[13px]"}'),
+    [9, 12, 13],
+    "a ternary carrying three sizes must yield all three",
+  );
+  assert.deepEqual(sizeOf('className="text-sm text-ink-soft"'), []);
+  assert.ok(
+    sizeOf('<span className="text-[10px]">').some((n) => n < TYPE_FLOOR_PX),
+    "the guard must reject 10px",
+  );
+  assert.ok(
+    !sizeOf('<span className="text-[12px]">').some((n) => n < TYPE_FLOOR_PX),
+    "the guard must accept the floor itself",
+  );
 });
 
 test("the accent fill is not used as a foreground on text", () => {
@@ -3816,7 +4611,7 @@ test("the accent fill is not used as a foreground on text", () => {
       if (ALLOW.has(rel)) continue;
       const lines = readFileSync(file, "utf8").split("\n");
       lines.forEach((line, i) => {
-        if (!/(?<![-\w:])text-accent(?![-\w])/.test(line)) return;
+        if (!BAN.accentAsText.test(line)) return;
         // An icon's evidence is rarely on the same line as its colour: the size
         // can come from a `${px}` variable, and a wrapper span sits above the
         // `ICONS[...]` it colours. Two lines either way catches both, and is
@@ -3924,6 +4719,163 @@ test("the two cards that carry the product have a real type step", () => {
     /className="text-base font-semibold leading-snug text-ink"/,
     "the guide card's title is back to the same size as its own description",
   );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// One visual step per heading level, on the guide's reading surface.
+//
+// This is the mechanism behind "it's a wall of text", and it is not contrast:
+// contrast has been measured innocent four times. A reader chunks a long page
+// by SIZE, and on a country profile the same level could be four different
+// sizes — h2 at 12, 15, 17 and 22px — while an h3 at 17px outranked three of
+// them. There was also a real h2 → h4 skip. Size stopped tracking structure, so
+// there was nothing to chunk by, and 10,000 pixels of careful prose read as one
+// undifferentiated block.
+//
+// Two rules are enforced here, and the second is what keeps the first honest:
+//   • one size class per level, so a level means one thing everywhere;
+//   • nothing that merely LABELS a widget is a heading. `PageContents`, the two
+//     filter bars and the rail panels were all h2s rendering below body size;
+//     they carry `aria-label`/`aria-labelledby` instead, so their regions keep
+//     an accessible name without claiming a rank in the outline.
+//
+// Scope is the subject pages and the parts they are built from. `/guide/compare`
+// is deliberately excluded: its axis labels are a consistent uppercase overline
+// system, which is a legitimate pattern rather than this defect. The list pages
+// are excluded too — a grid of cards is not a document hierarchy.
+const GUIDE_READING_SURFACE = [
+  "app/guide/places/[place]/page.tsx",
+  "app/guide/cities/[hub]/page.tsx",
+  "app/guide/work/[area]/page.tsx",
+  "app/guide/majors/[major]/page.tsx",
+  "app/guide/from-home/page.tsx",
+  "components/guide/parts.tsx",
+  "components/guide/Spine.tsx",
+  "components/guide/TryTheWork.tsx",
+];
+
+/** `text-…` size class on every `<hN>` in a source file, by level. */
+function headingSizes(src: string): { level: number; size: string }[] {
+  const out: { level: number; size: string }[] = [];
+  const tag = /<h([1-6])\b([^>]*)>/g;
+  let m: RegExpExecArray | null;
+  while ((m = tag.exec(src))) {
+    const size = m[2].match(
+      /\btext-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|\[[^\]\s]+\])/,
+    );
+    out.push({ level: +m[1], size: size ? size[0] : "(none)" });
+  }
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Every character a link-preview card can print, it can draw.
+//
+// The two Open Graph cards carry a SUBSET of Inter, because the edge function
+// they run in is capped at 1 MB compressed and full Latin Inter put the bundle
+// at 1.06 MB gzip — `next build` passed locally and in CI, neither of which
+// enforces that limit, and only the deploy failed.
+//
+// The hazard subsetting creates is silent: a glyph outside the set does not
+// throw, it renders as a blank box, on a public card, inside someone else's
+// chat. Writing the set by hand found this the hard way — the first pass
+// covered Latin punctuation and missed both `²` and the Cyrillic in "Турнир
+// городов", a real catalog row.
+//
+// So the set is declared as RANGES rather than as today's characters, and this
+// asserts the catalog stays inside it. Widen `OG_GLYPHS` and re-run
+// `scripts/subset-og-fonts.ts` when it fires.
+const OG_CARD_FIELDS = [
+  "name",
+  "blurb",
+  "eligibility",
+  "window",
+  "costDetail",
+] as const;
+
+test("the link-preview font covers every character the catalog can print", () => {
+  const covered = new Set([...OG_GLYPHS]);
+  const missing = new Map<string, string>();
+  for (const c of COMPETITIONS) {
+    for (const field of OG_CARD_FIELDS) {
+      const value = (c as Record<string, unknown>)[field];
+      if (typeof value !== "string") continue;
+      for (const ch of value) {
+        if (!covered.has(ch)) missing.set(ch, `${c.id}.${field}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    [...missing].map(([ch, where]) => `U+${ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")} ${ch} in ${where}`),
+    [],
+    "widen OG_GLYPHS and re-run scripts/subset-og-fonts.ts",
+  );
+});
+
+test("the glyph-coverage guard actually bites", () => {
+  const covered = new Set([...OG_GLYPHS]);
+  // The two that were genuinely missing on the first pass, plus one nobody has
+  // any reason to use — if these ever land inside the set, it has been widened
+  // to something that is no longer a subset and the size win is gone.
+  assert.ok(covered.has("²"), "superscript two is used by an eligibility line");
+  assert.ok(covered.has("Т") && covered.has("у"), "Cyrillic is in the catalog");
+  assert.ok(!covered.has("漢"), "the subset is not silently the whole font");
+  // And the check itself finds a character outside the set.
+  const outside = [..."漢字"].filter((ch) => !covered.has(ch));
+  assert.deepEqual(outside, ["漢", "字"]);
+});
+
+test("the guide's reading surface uses one type step per heading level", () => {
+  // h1 is not pinned: a list page's `SectionIntro` is deliberately smaller than
+  // a subject page's `DetailShell`, and they are different surfaces.
+  const ALLOWED: Record<number, string[]> = {
+    2: ["text-2xl"],
+    3: ["text-lg"],
+  };
+  const offenders: string[] = [];
+  for (const rel of GUIDE_READING_SURFACE) {
+    const src = readFileSync(path.join(process.cwd(), rel), "utf8");
+    for (const { level, size } of headingSizes(src)) {
+      if (level >= 4) {
+        offenders.push(`${rel}: h${level} — the guide stops at h3`);
+        continue;
+      }
+      const allowed = ALLOWED[level];
+      if (allowed && !allowed.includes(size)) {
+        offenders.push(`${rel}: h${level} is ${size}, expected ${allowed[0]}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `heading level and type step disagree:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the heading-step guard actually bites", () => {
+  // Never ship one of these without watching it fail. Three shapes, and every
+  // one of them shipped in this repo: a sub-head promoted past its parent, a
+  // level rendering at two sizes, and a skipped level.
+  const overpowering = '<h3 className="text-xl font-semibold text-ink">x</h3>';
+  const undersized = '<h2 className="text-sm font-semibold text-ink">x</h2>';
+  const skipped = '<h4 className="text-base font-semibold text-ink">x</h4>';
+  const ok = '<h2 className="text-xl font-semibold text-ink">x</h2>';
+
+  assert.deepEqual(headingSizes(overpowering), [{ level: 3, size: "text-xl" }]);
+  assert.deepEqual(headingSizes(undersized), [{ level: 2, size: "text-sm" }]);
+  assert.deepEqual(headingSizes(skipped), [{ level: 4, size: "text-base" }]);
+  assert.deepEqual(headingSizes(ok), [{ level: 2, size: "text-xl" }]);
+
+  // The multi-line form the codebase actually writes, which a naive
+  // single-line regex misses entirely.
+  const wrapped = '<h2\n  id="x"\n  className="text-sm font-semibold text-ink"\n>';
+  assert.deepEqual(headingSizes(wrapped), [{ level: 2, size: "text-sm" }]);
+
+  // And a heading with no size class at all is reported rather than skipped.
+  assert.deepEqual(headingSizes("<h3>bare</h3>"), [
+    { level: 3, size: "(none)" },
+  ]);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -4054,24 +5006,169 @@ test("every area of work resolves to exactly one field", () => {
   }
 });
 
-test("the spine stays out of every client bundle", () => {
-  // It reaches into five prose registries totalling ~4,000 lines. Same trap as
-  // `careers.ts` and the catalog: a single runtime import from a client
-  // component drags all of it into that route's bundle.
-  const offenders: string[] = [];
+// ── The heavy registries stay out of every client bundle ─────────────────────
+//
+// This guard used to scan for a DIRECT import edge from a client component, and
+// that is exactly how the catalog escaped: `RoadmapView` (a client component)
+// imported `lib/data/roadmap.ts`, which imported `buildStudyPlan` from
+// `key-dates.ts`, which builds a lookup map over the whole ~2,700-row catalog at
+// module load and therefore cannot be tree-shaken. ONE HOP of indirection, and
+// the catalog sat in the initial bundle of four dashboard routes and their four
+// demo twins — measured at 27–28 kB apiece, on pages that never show it.
+//
+// Bundling is a REACHABILITY property, so the guard is now a graph walk. Two
+// edge kinds are deliberately excluded, because neither ships anything:
+// `import type`, which the compiler erases, and dynamic `import()`, which is the
+// sanctioned escape the matching views and `RoadmapView` use.
+const HEAVY_REGISTRIES = [
+  "lib/data/key-dates",
+  "lib/data/competitions-data",
+  "lib/data/careers",
+  "lib/data/world",
+  "lib/data/study-destinations",
+  "lib/data/spine",
+  "lib/data/majors",
+  "lib/data/place-universities",
+];
+
+/** Static, value-carrying import specifiers in one file. */
+function staticImports(src: string): string[] {
+  const out: string[] = [];
+  // Tempered: an import body may not contain another `import`, or a greedy
+  // match spans the whole header and reports the wrong specifier.
+  const re = /^import\s+((?:(?!^import\s)[\s\S])*?)from\s+["']([^"']+)["']/gm;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src))) {
+    const clause = m[1].trim();
+    if (/^type\b/.test(clause)) continue; // `import type { X } from`
+    const inner = clause.match(/\{([\s\S]*)\}/)?.[1];
+    if (inner) {
+      const specs = inner.split(",").map((x) => x.trim()).filter(Boolean);
+      // `import { type A, type B }` carries no value either.
+      if (specs.length > 0 && specs.every((x) => /^type\s/.test(x))) continue;
+    }
+    out.push(m[2]);
+  }
+  return out;
+}
+
+/** `@/x/y` or `./y` → a repo-relative module id, or null if it leaves the repo. */
+function resolveModule(fromFile: string, spec: string): string | null {
+  let base: string;
+  if (spec.startsWith("@/")) base = path.join(process.cwd(), spec.slice(2));
+  else if (spec.startsWith(".")) base = path.resolve(path.dirname(fromFile), spec);
+  else return null; // node_modules
+  for (const cand of [
+    `${base}.ts`,
+    `${base}.tsx`,
+    path.join(base, "index.ts"),
+    path.join(base, "index.tsx"),
+  ]) {
+    if (existsSync(cand)) return rel(cand);
+  }
+  return null;
+}
+
+/** Everything a client component drags into its bundle, transitively. */
+function clientReachable(): Map<string, string[]> {
+  const cache = new Map<string, string[]>();
+  const readImports = (id: string): string[] => {
+    const hit = cache.get(id);
+    if (hit) return hit;
+    const full = path.join(process.cwd(), id);
+    const raw = existsSync(full) ? readFileSync(full, "utf8") : "";
+    // A `"use server"` module is a BUNDLING BOUNDARY, not a dependency: the
+    // client gets an RPC stub, never the module. Walking through one reported
+    // the admin quick-add form as shipping the catalog (client form → server
+    // action → key-dates), which the build manifest disproves — the catalog
+    // chunk is in eight routes and /admin/opportunities is not one of them.
+    // Modelling the boundary is the difference between a guard people trust and
+    // one they start ignoring.
+    const deps = /^\s*["']use server["']/m.test(raw)
+      ? []
+      : staticImports(stripComments(raw))
+          .map((s) => resolveModule(full, s))
+          .filter((x): x is string => x !== null);
+    cache.set(id, deps);
+    return deps;
+  };
+  // id → the path by which a client component reaches it
+  const reached = new Map<string, string[]>();
   for (const file of sourceFiles()) {
     const src = readFileSync(file, "utf8");
     if (!/^\s*["']use client["']/m.test(src)) continue;
-    if (
-      /from "@\/lib\/data\/spine"/.test(src.replace(/import type[^;]+;/g, ""))
-    ) {
-      offenders.push(rel(file));
+    const root = rel(file);
+    const stack: { id: string; trail: string[] }[] = [{ id: root, trail: [root] }];
+    const seen = new Set<string>([root]);
+    while (stack.length > 0) {
+      const { id, trail } = stack.pop()!;
+      for (const dep of readImports(id)) {
+        if (seen.has(dep)) continue;
+        seen.add(dep);
+        const next = [...trail, dep];
+        if (!reached.has(dep)) reached.set(dep, next);
+        stack.push({ id: dep, trail: next });
+      }
     }
+  }
+  return reached;
+}
+
+test("no heavy registry is REACHABLE from a client component", () => {
+  const reached = clientReachable();
+  const offenders: string[] = [];
+  for (const mod of HEAVY_REGISTRIES) {
+    const trail = reached.get(`${mod}.ts`);
+    if (trail) offenders.push(`${mod}\n      via ${trail.join("\n       → ")}`);
   }
   assert.deepEqual(
     offenders,
     [],
-    `a client component imports the spine at runtime:\n${offenders.join("\n")}`,
+    `a heavy registry ships in a client bundle:\n  ${offenders.join("\n  ")}`,
+  );
+});
+
+test("the reachability guard actually bites — on a DIRECT and an INDIRECT edge", () => {
+  // The direct half is what the old guard checked. The indirect half is the one
+  // that mattered: it is the shape the catalog escaped through, and a walk that
+  // only reports depth 1 would pass against it exactly as the old guard did.
+  const here = rel(path.join(process.cwd(), "scripts/test-engine.ts"));
+  assert.deepEqual(
+    staticImports('import { buildRoadmap } from "@/lib/data/roadmap";'),
+    ["@/lib/data/roadmap"],
+    "a value import is not seen as an edge — the walk would traverse nothing",
+  );
+  assert.deepEqual(
+    staticImports('import type { Roadmap } from "@/lib/data/roadmap";'),
+    [],
+    "a type-only import is counted as an edge — it is erased and ships nothing",
+  );
+  assert.deepEqual(
+    staticImports('import { type A, type B } from "@/lib/data/roadmap";'),
+    [],
+    "an inline type-only import is counted as an edge",
+  );
+  assert.deepEqual(
+    staticImports('const m = await import("@/lib/data/roadmap");'),
+    [],
+    "a dynamic import is counted as an edge — it is the sanctioned escape",
+  );
+  // The resolver has to actually find real files, or every walk ends at depth 0
+  // and the whole guard silently asserts nothing.
+  assert.equal(
+    resolveModule(path.join(process.cwd(), here), "@/lib/data/roadmap"),
+    "lib/data/roadmap.ts",
+    "the resolver cannot find a module that exists",
+  );
+  // And the chain the outage travelled must be a real chain in the tree today:
+  // roadmap.ts still reaches key-dates, which is WHY RoadmapView may only load
+  // it dynamically.
+  const roadmapDeps = staticImports(
+    stripComments(readFileSync(path.join(process.cwd(), "lib/data/roadmap.ts"), "utf8")),
+  );
+  assert.ok(
+    roadmapDeps.includes("@/lib/data/key-dates"),
+    "roadmap.ts no longer reaches key-dates — re-check whether RoadmapView still needs its dynamic import",
   );
 });
 
@@ -4165,7 +5262,7 @@ test("no client component in the planner reads the clock", () => {
     const src = readFileSync(path.join(dir, f), "utf8");
     if (!/^\s*["']use client["']/m.test(src)) continue;
     assert.ok(
-      !/new Date\(\s*\)/.test(stripComments(src)),
+      !BAN.clockInClient.test(stripComments(src)),
       `components/planner/${f} calls new Date() — todayISO comes from the loader`,
     );
   }
@@ -4478,8 +5575,11 @@ test("picks are grouped in the guide's own order, and empty groups are dropped",
       label: "Data & AI",
       href: "/guide/work/data-and-ai",
     },
-    // A row written by a version that knew a kind we no longer do.
-    { ref: "major:mech-eng", label: "Mechanical", href: "/guide/x" },
+    // A row written by a version that knew a kind we no longer do. It used to
+    // say `major:` — which is a REAL kind now, so the fixture had to move to
+    // one that never will be. That is the rule working: an unknown kind is
+    // dropped, and yesterday's unknown can become today's known.
+    { ref: "scholarship:daad", label: "DAAD", href: "/guide/x" },
   ];
 
   const groups = groupPicks(picks);
@@ -4491,7 +5591,7 @@ test("picks are grouped in the guide's own order, and empty groups are dropped",
 
   // Dropped, not coerced into a group it does not belong to.
   assert.ok(
-    groups.every((g) => g.picks.every((p) => p.ref !== "major:mech-eng")),
+    groups.every((g) => g.picks.every((p) => p.ref !== "scholarship:daad")),
     "an unrecognised pick was rendered under a kind it is not",
   );
 
@@ -4507,7 +5607,13 @@ test("picks are grouped in the guide's own order, and empty groups are dropped",
     "the picks were re-sorted, which is a ranking nobody asked for",
   );
 
-  assert.deepEqual(countPicks(picks), { work: 1, place: 1, hub: 1, route: 0 });
+  assert.deepEqual(countPicks(picks), {
+    work: 1,
+    major: 0,
+    place: 1,
+    hub: 1,
+    route: 0,
+  });
   assert.equal(groupPicks([]).length, 0);
 });
 
@@ -4537,7 +5643,7 @@ test("the plan's picks stay out of every prose registry", () => {
 // plan, so the product accompanied nobody past their first action. These are
 // the rules that stop that coming back.
 
-const NO_PICKS = { work: 0, place: 0, hub: 0, route: 0 };
+const NO_PICKS = { work: 0, major: 0, place: 0, hub: 0, route: 0 };
 
 function moveInput(over: Partial<NextMoveInput> = {}): NextMoveInput {
   return {
@@ -4548,6 +5654,12 @@ function moveInput(over: Partial<NextMoveInput> = {}): NextMoveInput {
     overdue: 0,
     openToYou: 0,
     reachableAreas: 0,
+    // `tried: 1` by default, deliberately. The fixture stands for a student who
+    // has cleared every earlier gate except the one the test is varying, and
+    // these cases were written to exercise the branches BELOW the try step. The
+    // try step has its own tests, which set this to 0 explicitly.
+    tried: 1,
+    reachableMajors: 0,
     reachableCountries: 0,
     citiesInPicked: 0,
     nextDeadline: null,
@@ -4564,12 +5676,14 @@ test("there is always exactly one next move, and it always says why", () => {
     { overdue: 2 },
     { overdue: 1, committed: 4, started: 3, dated: 9 },
     { picks: { ...NO_PICKS, work: 1 } },
-    { picks: { ...NO_PICKS, work: 1, place: 2 }, citiesInPicked: 5 },
-    { picks: { ...NO_PICKS, work: 1, place: 2 }, citiesInPicked: 0 },
-    { picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 } },
-    { picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 }, committed: 2 },
+    { picks: { ...NO_PICKS, work: 1 }, tried: 0 },
+    { picks: { ...NO_PICKS, work: 1, major: 1 } },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 2 }, citiesInPicked: 5 },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 2 }, citiesInPicked: 0 },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 } },
+    { picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 }, committed: 2 },
     {
-      picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 },
+      picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 },
       committed: 2,
       started: 1,
       dated: 3,
@@ -4578,7 +5692,7 @@ test("there is always exactly one next move, and it always says why", () => {
     {
       committed: 1,
       started: 1,
-      picks: { ...NO_PICKS, work: 1, place: 1, hub: 1 },
+      picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 },
     },
     { fieldsStated: 0 },
   ];
@@ -4647,7 +5761,10 @@ test("the next move runs from what has gone wrong to what is closest", () => {
   // 3-5. The guide's own zoom, in order: what work, then where, then which city
   // inside it. A country contains cities, so it comes first — the guide shipped
   // that backwards once.
-  const withWork = { ...NO_PICKS, work: 1 };
+  // `withWork` carries the SUBJECT too, because the ladder gained two steps
+  // between the work and the country: try it, then choose what you'd study.
+  // Both have their own tests; this one is about the zoom that follows them.
+  const withWork = { ...NO_PICKS, work: 1, major: 1 };
   assert.equal(nextMove(moveInput({ committed: 1 })).id, "pick-work");
   assert.equal(nextMove(moveInput({ picks: withWork })).id, "pick-place");
   assert.equal(
@@ -4665,7 +5782,7 @@ test("the next move runs from what has gone wrong to what is closest", () => {
     "commit",
   );
 
-  const decided = { ...NO_PICKS, work: 1, place: 1, hub: 1 };
+  const decided = { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 };
   // 6. Thought it through, did nothing about it — the gap the product measures.
   assert.equal(nextMove(moveInput({ picks: decided })).id, "commit");
   // 7. Said they would, never started. We ask "when will you start?" precisely
@@ -5196,5 +6313,3638 @@ test("the category list is not hand-copied into a view", () => {
     action,
     /ADMIN_CATEGORIES = COMPETITION_CATEGORIES/,
     "the admin endpoint no longer accepts exactly the catalog's kinds",
+  );
+});
+
+// ── The vocabularies, and the shape that keeps breaking ──────────────────────
+//
+// An opportunity has four closed vocabularies — kind, level, tier, cost — and
+// only ONE of them had ever been protected. The guard above is that protection:
+// it exists because a hand-kept array of kinds fell two behind, so `community`
+// and `simulation` were accepted by the server and unchoosable in the form.
+//
+// The two vocabularies sitting beside it in the same files never got it, and by
+// 2026-08-24 `level` was declared by hand in FIVE places and `cost` in SIX.
+// Two of those copies were already wrong:
+//
+//   • the admin form offered a fourth level, `school`, that nothing on the read
+//     side had heard of — so such a row sat in no facet, no level filter could
+//     reach it, and the facet numbers stopped summing to the list total;
+//   • the admin form offered NINE of the ten cost models, and the missing one
+//     was `funded` — *they pay you* — which the server action had accepted the
+//     whole time.
+//
+// Both are structurally impossible now: the arrays live in `opportunity-vocab`,
+// every option list is derived from them, and every label map is a
+// `Record<Union, …>` the compiler refuses to leave incomplete. **These tests do
+// not duplicate that.** They cover the three things a type cannot:
+//
+//   1. that nobody has quietly written a private copy back into a component;
+//   2. that the DERIVED lists really do cover their vocabulary (a later `as`
+//      cast or a `.filter` would silently reintroduce the gap);
+//   3. that every deliberate exclusion is NAMED, because a deliberate omission
+//      and a forgotten one look identical in a list.
+//
+// One table, one bite test — the same discipline as `BAN`, and for the same
+// reason: a guard written against its own copy of a pattern proves only that
+// the copy works.
+
+/**
+ * The vocabularies, and the literal members a private copy would contain.
+ *
+ * Typed as a Record over the vocabulary names so adding a vocabulary without
+ * its members does not compile — the same trick `BAN_FIXTURES` uses.
+ */
+const VOCAB_MEMBERS = {
+  level: COMPETITION_LEVELS,
+  tier: COMPETITION_TIERS,
+  cost: COST_MODELS,
+  category: COMPETITION_CATEGORIES,
+} as const;
+
+/**
+ * Files allowed to hold three or more literals of a vocabulary, and why.
+ *
+ * `opportunity-vocab` IS the list. The two test files are these tests. Anything
+ * else with three members of one vocabulary in it is a fourth copy in the
+ * making, which is exactly how every defect above shipped.
+ */
+const VOCAB_HOMES = [
+  // The list itself.
+  "lib/data/opportunity-vocab.ts",
+  // The catalog is 172 rows of data, each naming its own level and kind. It is
+  // the thing the vocabulary describes, not a copy of it.
+  "lib/data/competitions-data.ts",
+  // The discovery screener sends the vocabulary to the model as prompt text and
+  // validates the reply against it. Those literals are an interface with
+  // something outside this codebase, not an option list a person reads.
+  "lib/discovery/screen.ts",
+  "lib/discovery/discover.ts",
+  // The bucket → models mapping ("free to start" is these three). That IS a
+  // partition of the cost vocabulary rather than a copy of it, and it has a
+  // STRONGER guard than this one a few tests below: every model must appear in
+  // a bucket or be named unbucketed, asserted in both directions. A guard that
+  // fires where a better guard already holds teaches people to add exemptions.
+  "lib/data/opportunity-filter.ts",
+];
+
+/** Every .ts/.tsx under app/, lib/ and components/. */
+function projectSources(): string[] {
+  const out: string[] = [];
+  const visit = (dir: string) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        if (e.name === "node_modules" || e.name === ".next") continue;
+        visit(full);
+      } else if (/\.tsx?$/.test(e.name)) {
+        out.push(full);
+      }
+    }
+  };
+  for (const d of ["app", "lib", "components"]) visit(path.join(process.cwd(), d));
+  return out;
+}
+
+/**
+ * The largest number of DISTINCT members of one vocabulary that appear inside a
+ * single array literal.
+ *
+ * Three decisions here, and the first version of this guard got all three
+ * wrong. Each is a different way to measure the wrong thing, so each is worth
+ * keeping written down:
+ *
+ *  • **Distinct, not total.** `oneOf(COST_MODELS, raw, "unknown")` appearing
+ *    three times in one file is three uses of one fallback, not a list.
+ *  • **Inside an array literal.** Every real instance of this defect has been
+ *    an array — the admin form's `[…].map()`, the approval form's
+ *    `[{ value, label }, …]`, `z.enum([…])`, `ADMIN_LEVELS`. Counting the whole
+ *    FILE instead flagged nine files and eight were unrelated unions that merely
+ *    share a word: `scholarship: "unknown"`, `english: "unknown"`,
+ *    `StrengthBand` containing "elite". A vocabulary's generic members belong to
+ *    other vocabularies too; its SHAPE does not.
+ *  • **Comments stripped.** Several of the files that explain this rule name the
+ *    members while doing so, and a guard unusable in the files documenting it is
+ *    a guard somebody deletes.
+ */
+function vocabLiterals(src: string, members: readonly string[]): number {
+  const body = stripComments(src);
+  const member = new RegExp(`"(${members.join("|")})"`, "g");
+  let worst = 0;
+  for (let i = 0; i < body.length; i++) {
+    if (body[i] !== "[") continue;
+    // Walk to the matching bracket. Bounded: an array literal running past
+    // ~4000 characters is not an option list, and refusing to scan further
+    // stops one stray bracket swallowing the rest of the file.
+    let depth = 0;
+    let end = -1;
+    for (let j = i; j < Math.min(body.length, i + 4000); j++) {
+      if (body[j] === "[") depth++;
+      else if (body[j] === "]") {
+        depth--;
+        if (depth === 0) {
+          end = j;
+          break;
+        }
+      }
+    }
+    if (end < 0) continue;
+    const found = new Set(body.slice(i, end + 1).match(member) ?? []);
+    if (found.size > worst) worst = found.size;
+    i = end;
+  }
+  return worst;
+}
+
+test("no file keeps a private copy of a vocabulary", () => {
+  const offenders: string[] = [];
+  for (const file of projectSources()) {
+    const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+    if (VOCAB_HOMES.includes(rel)) continue;
+    const src = readFileSync(file, "utf8");
+    for (const [name, members] of Object.entries(VOCAB_MEMBERS)) {
+      const n = vocabLiterals(src, members);
+      // Three is the threshold the category guard already used: one or two
+      // literals is a default or a special case, three is the union being
+      // restated.
+      if (n >= 3) offenders.push(`${rel} writes out ${n} ${name} names`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `a vocabulary is being copied instead of imported from opportunity-vocab:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the private-copy guard actually bites", () => {
+  // The guard above walks the tree, collects offenders and asserts the list is
+  // empty — the shape that fails OPEN. It has to be shown catching something.
+  //
+  // It reads VOCAB_MEMBERS rather than its own copy of the member list, which
+  // is the load-bearing part: a bite test written against a copy of a pattern
+  // proves that the copy works, which is exactly nothing once the two drift.
+  // The three real defects, verbatim. Each must be caught.
+  const adminLevelSelect =
+    '{["school", "regional", "national", "international"].map((l) => (';
+  assert.equal(vocabLiterals(adminLevelSelect, VOCAB_MEMBERS.level), 4);
+
+  const adminCostSelect =
+    '{["unknown","free","free_cert_paid","free_then_paid","freemium",' +
+    '"subscription","one_time","paid_aid","varies"].map((c) => (';
+  assert.equal(vocabLiterals(adminCostSelect, VOCAB_MEMBERS.cost), 9);
+
+  const partnerZodEnum = 'level: z.enum(["international", "national", "regional"]),';
+  assert.equal(vocabLiterals(partnerZodEnum, VOCAB_MEMBERS.level), 3);
+
+  // And the near-misses it must NOT fire on. Every one of these is a real
+  // line from this repository that the first version of the guard flagged.
+  assert.ok(
+    vocabLiterals('const cost = oneOf(COST_MODELS, raw, "unknown");', VOCAB_MEMBERS.cost) < 3,
+    "a fallback is not a list",
+  );
+  assert.ok(
+    vocabLiterals(
+      'scholarship: z.enum(["likely_full", "likely_partial", "unlikely", "unknown"]),',
+      VOCAB_MEMBERS.cost,
+    ) < 3,
+    "another union that happens to contain the word unknown is not a copy of the cost list",
+  );
+  assert.ok(
+    vocabLiterals(
+      'const TARGET_TIERS = { emerging: ["accessible"], developing: ["accessible", "selective"],' +
+        ' competitive: ["selective", "elite"], elite: ["elite"] };',
+      VOCAB_MEMBERS.tier,
+    ) < 3,
+    "a band-to-tier mapping is a mapping, not a restatement of the tier list",
+  );
+  assert.equal(
+    vocabLiterals(
+      '// "international", "national" and "regional" are the three levels\nconst a = 1;',
+      VOCAB_MEMBERS.level,
+    ),
+    0,
+    "prose explaining the rule is not a copy of it",
+  );
+});
+
+test("every derived option list covers its whole vocabulary", () => {
+  // The lists are derived, so this holds by construction TODAY. It is asserted
+  // because the failure mode is silent and the repair is not: a later `.filter`
+  // or `as` cast puts the gap straight back, and the symptom is a facet that
+  // counts nothing rather than an error anybody sees.
+  assert.deepEqual(
+    LEVEL_OPTIONS.map((o) => o.id),
+    [...COMPETITION_LEVELS],
+    "the level filter no longer offers every level",
+  );
+  assert.deepEqual(
+    [...PARTNER_LEVEL_OPTIONS.map((o) => o.value)].reverse(),
+    [...COMPETITION_LEVELS],
+    "a partner can no longer post at every level the catalog stores",
+  );
+  assert.deepEqual(
+    PARTNER_TIER_OPTIONS.map((o) => o.value),
+    [...COMPETITION_TIERS],
+    "a partner can no longer post at every tier",
+  );
+
+  // Every option carries the words for it. An empty label is a facet a student
+  // cannot read, and it renders as a blank chip rather than as an error.
+  for (const o of [...LEVEL_OPTIONS, ...COST_OPTIONS, ...TIMING_OPTIONS]) {
+    assert.ok(o.label.trim().length > 0, `option "${o.id}" has no label`);
+    assert.ok(o.hint.trim().length > 0, `option "${o.id}" has no hint`);
+  }
+  for (const o of MATCH_OPTIONS) {
+    assert.ok(o.label.trim().length > 0, `option "${o.id}" has no label`);
+  }
+});
+
+test("every cost model reaches the money filter, or is named as unbucketed", () => {
+  // Rule 2 of opportunity-filter: "Free" never includes a cost we have not
+  // verified, so `unknown` and `varies` belong to NO bucket. That is correct
+  // and it is also indistinguishable from having forgotten one — the money
+  // filter simply stops being able to find those rows, silently.
+  //
+  // So the exclusion is written down and this asserts BOTH directions: every
+  // model is in a bucket or on the list, and nothing on the list is also in a
+  // bucket. A new cost model that lands in neither fails here.
+  const bucketed = new Set(COST_OPTIONS.flatMap((o) => o.models));
+  const unreachable = COST_MODELS.filter(
+    (m) => !bucketed.has(m) && !COST_MODELS_WITHOUT_A_BUCKET.includes(m),
+  );
+  assert.deepEqual(
+    unreachable,
+    [],
+    `these cost models are in no money bucket and not declared unbucketed, so the filter can never find them: ${unreachable.join(", ")}`,
+  );
+
+  const contradictory = COST_MODELS_WITHOUT_A_BUCKET.filter((m) =>
+    bucketed.has(m),
+  );
+  assert.deepEqual(
+    contradictory,
+    [],
+    "a model cannot be both bucketed and declared unbucketed",
+  );
+
+  // The two that are excluded are excluded for one stated reason: we have not
+  // verified the money. Anything else appearing here is a product decision
+  // somebody should have to make on purpose.
+  assert.deepEqual(COST_MODELS_WITHOUT_A_BUCKET, ["varies", "unknown"]);
+});
+
+test("every deliberate exclusion from a partner's choices is named", () => {
+  // A partner cannot post a simulation (we link out to those, never host them)
+  // and cannot say the cost is unknown (an organiser knows what their own event
+  // costs). Both are right. Neither was written down, so each read as a list
+  // that had fallen a member behind — which is what the category list actually
+  // HAD done, one file away.
+  assert.deepEqual(
+    COMPETITION_CATEGORIES.filter(
+      (c) => !PARTNER_CATEGORY_OPTIONS.some((o) => o.value === c),
+    ),
+    ["simulation"],
+  );
+  assert.deepEqual(
+    COST_MODELS.filter(
+      (m) => !PARTNER_COST_OPTIONS.some((o) => o.value === m),
+    ),
+    ["unknown"],
+  );
+  // The form's options and the server's validator are one list, not two that
+  // agree. They used to be two, and the day they stopped agreeing a partner
+  // would have been offered a cost the action then rejected.
+  assert.deepEqual(
+    PARTNER_COST_VALUES,
+    PARTNER_COST_OPTIONS.map((o) => o.value),
+  );
+});
+
+test("the label maps stay keyed by their own vocabulary", () => {
+  // Completeness is the compiler's job — every map here is a Record over its
+  // union. What a Record cannot stop is somebody later writing `as Record<…>`
+  // over an object literal, which is how the facet counts were built before
+  // this pass and how a missing key becomes `undefined` on screen instead of a
+  // type error in an editor.
+  const sameKeys = (
+    map: Record<string, unknown>,
+    members: readonly string[],
+    what: string,
+  ) =>
+    assert.deepEqual(
+      Object.keys(map).sort(),
+      [...members].sort(),
+      `${what} no longer has exactly one entry per member`,
+    );
+
+  sameKeys(LEVEL_LABEL, COMPETITION_LEVELS, "LEVEL_LABEL");
+  sameKeys(LEVEL_HINT, COMPETITION_LEVELS, "LEVEL_HINT");
+  sameKeys(TIER_LABEL, COMPETITION_TIERS, "TIER_LABEL");
+  sameKeys(CATEGORY_LABEL, COMPETITION_CATEGORIES, "CATEGORY_LABEL");
+  sameKeys(CATEGORY_LABEL_SHORT, COMPETITION_CATEGORIES, "CATEGORY_LABEL_SHORT");
+  sameKeys(CATEGORY_TAB_LABEL, COMPETITION_CATEGORIES, "CATEGORY_TAB_LABEL");
+  sameKeys(COST_LABEL, COST_MODELS, "COST_LABEL");
+
+  // The short form differs from the long one in exactly one place, and that is
+  // the whole reason two maps exist rather than one. If they ever become
+  // identical, one of them is dead weight; if they diverge further, the second
+  // difference wants the same deliberate argument the first one has.
+  const differ = COMPETITION_CATEGORIES.filter(
+    (c) => CATEGORY_LABEL[c] !== CATEGORY_LABEL_SHORT[c],
+  );
+  assert.deepEqual(differ, ["research_program"]);
+});
+
+/** A runtime load of one of the two heavy registries. */
+const DYNAMIC_CATALOG_IMPORT =
+  /import\(\s*["']@\/lib\/data\/(key-dates|roadmap)["']\s*\)/;
+
+/** The three-line pair five components each wrote out. */
+const HAND_ROLLED_TODAY = /setToday\s*\(\s*new Date\(\)\s*\)/;
+// ── The catalog load, and the render cycle it used to wait for ───────────────
+//
+// Four client components each held their own copy of this pair:
+//
+//     const [today, setToday] = useState<Date | null>(null);
+//     useEffect(() => setToday(new Date()), []);
+//     useEffect(() => {
+//       if (!today) return;
+//       import("@/lib/data/key-dates").then(…);
+//     }, [today, …]);
+//
+// The second effect cannot run until `today` exists, which takes a state
+// update and a re-render — so the largest asynchronous chunk on the route
+// began downloading one full render cycle after it could have, and it depends
+// on `today` in no way whatsoever. On the public checker the import was gated
+// on the visitor's ANSWER too, so it started at the moment of highest intent
+// instead of before it.
+//
+// `lib/data/use-opportunity-plan.ts` owns both halves now: `useToday` is the
+// date, `useWarmModule` is a mount-only effect that starts the fetch. These
+// tests keep it that way, because the old shape reads as perfectly ordinary
+// and would be written again by anybody adding a fifth surface.
+
+/**
+ * A `<button …>` opening tag, up to the `>` that closes it.
+ *
+ * Bounded at 1200 characters: these className strings are long, and a
+ * runaway match would swallow the element after it and report the wrong file.
+ */
+
+/** An opacity utility with no state prefix — it applies always, not on a state. */
+const BARE_OPACITY = /(?<![\w:-])opacity-(?:[0-6]?[0-9])(?![\w-])/;
+
+test("a dimmed control is a disabled control", () => {
+  // Measured on the built page, 2026-08-24: an opportunity filter chip with
+  // no results rendered its label at **3.27:1** and its count at **2.41:1**,
+  // against 8.78 and 5.48 for the same chip with results in it. 13px text
+  // needs 4.5. The cause was `opacity-50` laid over the chip to mean "nothing
+  // here" while it stayed enabled and clickable.
+  //
+  // Every colour token inside was checked. The alpha over the top was not —
+  // and it arrives from a direction the existing contrast guards cannot see,
+  // because those scan for `text-ink/60`-style class names and this is an
+  // `opacity` on the element itself. Three chips had it: the opportunity
+  // filter and both of the guide filter's.
+  //
+  // Everywhere else in this codebase a dimmed control carries `disabled:` on
+  // the opacity, so it only applies to a control that really is disabled —
+  // and WCAG 1.4.3 exempts those. That convention is the rule; this asserts
+  // it rather than trusting it, and "nothing here" is expressed as a BRANCH
+  // of the colour instead.
+  const offenders: string[] = [];
+  for (const file of projectSources()) {
+    const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+    const body = stripComments(readFileSync(file, "utf8"));
+    // `jsxOpenTags`, never a lazy `[\s\S]*?>` — see the helper's note. The
+    // first version of this guard stopped at the `>` inside `onClick={() =>`
+    // and found 0 of the 2 chips named in the comment above.
+    for (const { text: tag } of jsxOpenTags(body, ["button"])) {
+      if (!BARE_OPACITY.test(tag)) continue;
+      // `disabled` anywhere in the same opening tag means the dimming is
+      // conditional on a state WCAG exempts. `aria-disabled` counts too.
+      if (/\bdisabled\b/.test(tag)) continue;
+      offenders.push(`${rel} — ${tag.replace(/\s+/g, " ").slice(0, 90)}…`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `these dim an ENABLED control, which takes checked text colours below AA:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the dimmed-control guard actually bites", () => {
+  // Collect-and-assert-empty again, so it has to be shown catching the real
+  // line. This is the opportunity filter chip exactly as it shipped.
+  const asItShipped =
+    '<button type="button" aria-pressed={on} onClick={onClick} className={`inline-flex h-8 ' +
+    'items-center rounded-full border px-3 text-xs ${on ? "border-accent" : "border-line ' +
+    'text-ink-soft"} ${count === 0 && !on ? "opacity-50" : ""}`}>';
+  const shipped = jsxOpenTags(asItShipped, ["button"]);
+  assert.equal(shipped.length, 1, "the real chip must be recognised as a button");
+  assert.ok(BARE_OPACITY.test(shipped[0].text), "and its bare opacity must be found");
+  assert.ok(!/\bdisabled\b/.test(shipped[0].text), "and it must not look disabled");
+
+  // ── The case the first version of this guard could not see ───────────────
+  //
+  // Every fixture above uses `onClick={onClick}`, the one handler shape with
+  // no arrow in it — which is why this test passed while the guard found 0 of
+  // the 2 chips in `GuideFilterBar.tsx`. `onClick={() =>` contains a `>`, so a
+  // tag bounded by the next `>` ended 60 characters in, long before
+  // `className`. Both shapes below are copied from that file as it shipped;
+  // the second nests an object literal inside the arrow, so it also proves the
+  // scan counts braces rather than stopping at the first `}`.
+  const withArrow =
+    '<button\n  type="button"\n  aria-pressed={on}\n  onClick={() => toggleRegion(r)}\n' +
+    '  className={`inline-flex h-11 rounded-full border px-4 ${\n' +
+    '    on ? "border-accent" : "border-line text-ink-soft"\n' +
+    '  } ${n === 0 && !on ? "opacity-50" : ""}`}\n>';
+  const arrowTags = jsxOpenTags(withArrow, ["button"]);
+  assert.equal(arrowTags.length, 1, "an arrow handler must not end the tag");
+  assert.ok(
+    BARE_OPACITY.test(arrowTags[0].text),
+    "the chip that actually shipped must be caught — this is the whole defect",
+  );
+
+  const withNestedObject =
+    '<button\n  type="button"\n  onClick={() =>\n    write({\n' +
+    '      [GUIDE_FILTER_KEYS.modelled]: filters.modelledOnly ? null : "1",\n' +
+    "    })\n  }\n" +
+    '  className={`… ${facets.modelled === 0 ? "opacity-50" : ""}`}\n>';
+  const nestedTags = jsxOpenTags(withNestedObject, ["button"]);
+  assert.equal(nestedTags.length, 1, "a nested object literal must not end the tag");
+  assert.ok(
+    BARE_OPACITY.test(nestedTags[0].text),
+    "the second guide chip must be caught too",
+  );
+
+  // And the boundary in the other direction: the tag really does END at its
+  // own `>`, so a dimmed element that is NOT this button must not be swept in.
+  const twoElements =
+    '<button type="button" onClick={() => go()} className="rounded">go</button>' +
+    '<span className="opacity-50">dimmed text, not a control</span>';
+  const [first] = jsxOpenTags(twoElements, ["button"]);
+  assert.ok(
+    !BARE_OPACITY.test(first.text),
+    "the scan must stop at the button's own `>`, not run on into a sibling",
+  );
+
+  // The near-misses, all real shapes from this tree, each excluded by exactly
+  // one character of the pattern — which is the case a bite test has to carry.
+  assert.ok(
+    !BARE_OPACITY.test('className="… focus-visible:focus-ring disabled:opacity-50"'),
+    "disabled:opacity is the correct convention and must not fire",
+  );
+  assert.ok(
+    !BARE_OPACITY.test('className="… transition-opacity hover:opacity-90"'),
+    "a hover state is not a resting colour",
+  );
+  assert.ok(
+    !BARE_OPACITY.test('className="… group-hover:opacity-100"'),
+    "a group variant is a state too",
+  );
+  // The boundary case: `opacity-100` is not a dimming, and it differs from
+  // `opacity-10` by one trailing character. A pattern that cannot tell them
+  // apart would fire on every full-opacity override in the tree.
+  assert.ok(!BARE_OPACITY.test('className="opacity-100"'), "full opacity is not dimming");
+  assert.ok(BARE_OPACITY.test('className="opacity-10"'), "and 10 still is");
+});
+
+// ── Validators point at a vocabulary; they never restate one ────────────────
+//
+// The same root cause as `opportunity-vocab`, one layer out. A `z.enum` taking
+// a literal array is a second declaration of a vocabulary that already exists,
+// and the compiler cannot tell it has fallen behind — a Zod enum is checked
+// for WRONG members and never for MISSING ones, exactly like a `T[]` literal.
+//
+// **This had already broken the product, and the repair was a comment.** The
+// intake schema's destinations enum was missing `"AE"`, so a student who
+// selected the United Arab Emirates could not save their intake at all. It was
+// fixed by adding the string and writing `// Keep in sync with DestinationCode`
+// above it. Two more restatements were sitting in the same file when this was
+// written — the eight faculty values and the five curricula — each one an
+// option the picker offers and the save would refuse.
+//
+// The rule is narrow on purpose: **a validator must take an identifier.** That
+// is checkable in one regex, it has exactly one legitimate exception, and it
+// catches the defect at the moment somebody types it.
+
+/** `z.enum([` — a validator declaring its own vocabulary inline. */
+const INLINE_ENUM = /z\.enum\(\s*\[/g;
+
+test("a validator points at a vocabulary rather than restating one", () => {
+  // `lib/ai/schema.ts` is the exception, and it is a real one: it validates the
+  // MODEL's reply, so those unions have no existence anywhere else in the
+  // codebase — the schema IS their canonical declaration. Everything else
+  // validates a vocabulary some registry already owns.
+  const allowed = new Set([
+    "lib/ai/schema.ts",
+  ]);
+  // Two-member unions are exempt. `"local" | "global"`, `"predicted" |
+  // "achieved": both members are always written together, there is nothing for
+  // a third to be missing from, and naming them would add indirection without
+  // adding a guarantee. The defect needs a list long enough to fall behind.
+  const offenders: string[] = [];
+  for (const file of projectSources()) {
+    const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+    if (allowed.has(rel)) continue;
+    const body = stripComments(readFileSync(file, "utf8"));
+    for (const m of body.matchAll(INLINE_ENUM)) {
+      const tail = body.slice(m.index, m.index + 600);
+      const close = tail.indexOf("]");
+      if (close < 0) continue;
+      const members = tail.slice(0, close).match(/"[^"]+"/g) ?? [];
+      if (members.length > 2) {
+        offenders.push(`${rel} — z.enum([${members.slice(0, 4).join(", ")}…]) declares ${members.length} members inline`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `a validator is restating a vocabulary instead of importing it:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the inline-validator guard actually bites", () => {
+  // The exact three lines that were in the intake schema, one of which had
+  // already cost a student their save.
+  const asItShipped = [
+    'destinations: z.array(z.enum(["US", "IT", "HK", "AE", "KR", "CN", "CA"]))',
+    'faculties: z.array(z.enum(["engineering", "computer_science", "business_economics"]))',
+    'curriculum: z.enum(["IB", "A-Level", "national", "US-GPA", "other"], {',
+  ];
+  for (const line of asItShipped) {
+    const hits = [...stripComments(line).matchAll(INLINE_ENUM)];
+    assert.equal(hits.length, 1, `not recognised as an inline enum: ${line}`);
+  }
+
+  // And the shapes it must leave alone.
+  assert.equal(
+    [...stripComments('level: z.enum(COMPETITION_LEVELS),').matchAll(INLINE_ENUM)].length,
+    0,
+    "an identifier is the whole point of the rule",
+  );
+  assert.equal(
+    [...stripComments('fields: z.array(z.enum(FACULTY_VALUES as [FacultyValue, ...FacultyValue[]]))').matchAll(INLINE_ENUM)].length,
+    0,
+    "a tuple CAST on an identifier is still an identifier",
+  );
+});
+
+test("every rubric factor has a place in the display order", () => {
+  // `FACTOR_ORDER` is deliberately a SUPERSET — it carries the country boards'
+  // own factors alongside the US rubric's — so it is not a restatement and
+  // `orderIndex` sends anything unknown to the end on purpose. What that
+  // graceful fallback also hides is a US factor going missing: it would sort
+  // last on the main board, silently, looking like a ranking decision.
+  const missing = RUBRIC.map((f) => f.key).filter(
+    (k) => !(FACTOR_ORDER as readonly string[]).includes(k),
+  );
+  assert.deepEqual(
+    missing,
+    [],
+    `these rubric factors have no position in FACTOR_ORDER and would sort last: ${missing.join(", ")}`,
+  );
+});
+
+test("nothing outside the plan hook loads the catalog directly", () => {
+  // A direct dynamic import is not wrong in itself — it is how the hook does
+  // it — but each new one is a component deciding for itself WHEN the load
+  // starts, and four out of four decided the same wrong thing.
+  const allowed = new Set([
+    // The hook. Both loaders live here.
+    "lib/data/use-opportunity-plan.ts",
+    // Server-only, and already a single place: the planner's loader is the
+    // one spot the planner touches key-dates or roadmap at all.
+    "lib/planner/load.ts",
+    // A server action, which is an RPC endpoint rather than a rendered
+    // surface; there is no render cycle here to wait for.
+    "app/planner/maps/actions.ts",
+    // Server-only too. `partnerOpportunities` reaches for the tier/category
+    // resolvers so the partner console does not reimplement them, and it is
+    // lazy so the console's client bundle never carries the catalog. Same
+    // reasoning as the planner loader: nothing here renders, so nothing waits.
+    "lib/partners/queries.ts",
+  ]);
+  const offenders: string[] = [];
+  for (const file of projectSources()) {
+    const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+    if (allowed.has(rel)) continue;
+    const body = stripComments(readFileSync(file, "utf8"));
+    if (DYNAMIC_CATALOG_IMPORT.test(body)) offenders.push(rel);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `these load the catalog themselves instead of through use-opportunity-plan:\n${offenders.join("\n")}`,
+  );
+});
+
+test("no component resolves the visitor's date for itself", () => {
+  // Five did, each with its own comment giving the same hydration reason. The
+  // duplication was not the cost — the cost was that four of them then wired
+  // the catalog load behind it, so fixing one taught the others nothing.
+  const offenders: string[] = [];
+  for (const file of projectSources()) {
+    const rel = path.relative(process.cwd(), file).split(path.sep).join("/");
+    if (rel === "lib/data/use-opportunity-plan.ts") continue;
+    const body = stripComments(readFileSync(file, "utf8"));
+    if (HAND_ROLLED_TODAY.test(body)) offenders.push(rel);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `these resolve "today" by hand — call useToday() instead:\n${offenders.join("\n")}`,
+  );
+});
+
+test("the catalog-load guards actually bite", () => {
+  // Both guards are collect-and-assert-empty, which fails OPEN: a pattern
+  // that matches nothing collects nothing and goes green. So each is shown
+  // catching the exact line that shipped, and ignoring the near-misses.
+  //
+  // They read DYNAMIC_CATALOG_IMPORT and HAND_ROLLED_TODAY rather than their
+  // own copies, which is the load-bearing part — a bite test written against
+  // a copy proves the copy works, and copies drift.
+  assert.match(
+    stripComments(
+      'useEffect(() => { import("@/lib/data/key-dates").then((m) => setPlan(m.x())); }, [today]);',
+    ),
+    DYNAMIC_CATALOG_IMPORT,
+  );
+  assert.match(
+    stripComments('import("@/lib/data/roadmap").then((m) => setRoadmap(m.buildRoadmap({})));'),
+    DYNAMIC_CATALOG_IMPORT,
+  );
+  assert.match(
+    stripComments("useEffect(() => setToday(new Date()), []);"),
+    HAND_ROLLED_TODAY,
+  );
+
+  // The near-misses, all real lines from this tree.
+  assert.doesNotMatch(
+    stripComments('import type { Competition } from "@/lib/data/key-dates";'),
+    DYNAMIC_CATALOG_IMPORT,
+    "a type-only import carries no runtime cost and is not a load",
+  );
+  assert.doesNotMatch(
+    stripComments('const { COMPETITIONS } = await import("./competitions-data");'),
+    DYNAMIC_CATALOG_IMPORT,
+    "another module is not the catalog",
+  );
+  assert.doesNotMatch(
+    stripComments("const today = new Date().toISOString().slice(0, 10);"),
+    HAND_ROLLED_TODAY,
+    "a server-side ISO date is not the client hydration pattern",
+  );
+  assert.doesNotMatch(
+    stripComments("//     useEffect(() => setToday(new Date()), []);"),
+    HAND_ROLLED_TODAY,
+    "the hook's own header quotes the shape it replaced; documentation is not a violation",
+  );
+});
+
+test("opportunity-vocab imports nothing, so it can never become heavy", () => {
+  // The module's whole value is that a client bundle, a server action and an
+  // edge function can all reach the SAME array. One `import` of a registry here
+  // would put that registry into every one of them — including the two Open
+  // Graph routes, which are edge functions capped at 1 MB compressed and have
+  // already blown that cap once.
+  const src = readFileSync(
+    path.join(process.cwd(), "lib/data/opportunity-vocab.ts"),
+    "utf8",
+  );
+  // Match the DEPENDENCY EDGE, not the keyword `import`. Until 2026-08-25 this
+  // read `/^\s*import\b[^;]*;/gm`, which is blind to `export { X } from "y"`
+  // and `export * from "y"` — both of which pull the module in at runtime in
+  // exactly the same way. A re-export is not a hypothetical here: `key-dates`
+  // re-exports ten names from this very file, so the idiom is one line away,
+  // and `export { HEAVY } from "./world"` would have kept this test green while
+  // shipping `world.ts` into every client bundle and both 1 MB edge functions.
+  const body = stripComments(src);
+  const edges = [
+    ...(body.match(/^[^\n]*\bfrom\s*["'][^"']+["']/gm) ?? []),
+    ...(body.match(/^\s*import\s+["'][^"']+["']\s*;?/gm) ?? []), // bare `import "x";`
+  ].map((s) => s.trim());
+  assert.deepEqual(
+    edges,
+    [],
+    `opportunity-vocab must reach nothing; it now depends on:\n${edges.join("\n")}`,
+  );
+});
+
+test("the imports-nothing guard actually bites — on an import AND a re-export", () => {
+  // Written because the first version only knew the word `import`, and a
+  // re-export creates the identical runtime edge. Both forms must be caught,
+  // and the module's own real content must not be.
+  const scan = (s: string) =>
+    [
+      ...(stripComments(s).match(/^[^\n]*\bfrom\s*["'][^"']+["']/gm) ?? []),
+      ...(stripComments(s).match(/^\s*import\s+["'][^"']+["']\s*;?/gm) ?? []),
+    ].map((x) => x.trim());
+
+  assert.equal(scan('import { HUBS } from "./world";').length, 1, "a plain import");
+  assert.equal(scan('import type { X } from "./world";').length, 1, "even a type import");
+  assert.equal(scan('export { HUBS } from "./world";').length, 1, "a named re-export");
+  assert.equal(scan('export * from "./world";').length, 1, "a star re-export");
+  assert.equal(scan('import "./side-effect";').length, 1, "a bare side-effect import");
+
+  // The near-misses: this module is arrays and label maps, and the word "from"
+  // appears in its prose and could appear in a value. Neither is an edge.
+  assert.deepEqual(scan('// derived from the canonical array'), [], "a comment is not an edge");
+  assert.deepEqual(
+    scan('export const COST_LABEL = { free: "Free from the organiser" } as const;'),
+    [],
+    "the word from inside a string is not an edge",
+  );
+});
+// ── Majors ───────────────────────────────────────────────────────────────────
+// The layer that was missing from the chain entirely: a student could learn what
+// work exists and where it lives, and never find out what you actually apply to.
+// Held to the same rules as every other prose registry here.
+
+test("every major has a unique id, a name, and belongs to a field", () => {
+  const ids = new Set<string>();
+  // The floor rises with each wave: 12 after A1, 24 after A1b, 36 after A1c,
+  // 44 after A1d. Raise this literal in the wave that earns it — a floor that
+  // stays at 12 stops being a floor.
+  assert.ok(MAJORS.length >= 44, "the majors layer is too thin to be a step");
+  for (const m of MAJORS) {
+    assert.ok(!ids.has(m.id), `duplicate major id ${m.id}`);
+    ids.add(m.id);
+    assert.match(m.id, /^[a-z0-9][a-z0-9-]{0,63}$/, `${m.id} is not a slug`);
+    assert.ok(m.name.trim().length > 2, `${m.id} has no name`);
+    assert.ok(m.fields.length > 0, `${m.id} belongs to no field`);
+  }
+});
+
+test("every major says what it actually is, what the first year is, and what school subjects it needs", () => {
+  for (const m of MAJORS) {
+    assert.ok(
+      m.whatItActuallyIs.trim().length > 60,
+      `${m.id} does not say what it actually is`,
+    );
+    // The field nobody writes down, and the reason half of first years leave.
+    assert.ok(
+      m.firstYear.trim().length > 120,
+      `${m.id} does not say what the first year is really made of`,
+    );
+    assert.ok(
+      m.schoolSubjects.length > 0,
+      `${m.id} names nothing a student could start today`,
+    );
+  }
+});
+
+test("every major states its catch and who should look elsewhere", () => {
+  const catches = new Set<string>();
+  const avoid = new Set<string>();
+  for (const m of MAJORS) {
+    assert.ok(
+      m.catch.trim().length > 100,
+      `${m.id} has no catch — that is a brochure`,
+    );
+    assert.ok(
+      m.suitsYou.trim().length > 100,
+      `${m.id} does not say who it suits`,
+    );
+    assert.ok(
+      m.notForYou.trim().length > 140,
+      `${m.id} does not name who should look somewhere else`,
+    );
+    catches.add(m.catch.trim());
+    avoid.add(m.notForYou.trim());
+  }
+  assert.equal(catches.size, MAJORS.length, "two majors share one catch");
+  assert.equal(avoid.size, MAJORS.length, "two majors warn off the same person");
+});
+
+test("no major quotes a price, a salary or a ranking", () => {
+  const forbidden =
+    /(\$|€|£|₸|\bUSD\b|\bEUR\b|\bper month\b|\bper year\b|\brank(ed|ing)? (?:#|no\.?\s?)\d|\btop \d+\b|\bbest\b|\bleading\b|\bprestigious\b)/i;
+  for (const m of MAJORS) {
+    for (const [field, text] of Object.entries(m)) {
+      if (typeof text !== "string") continue;
+      assert.ok(
+        !forbidden.test(text),
+        `${m.id}.${field} quotes a figure, ranking or superlative: ${text.slice(0, 80)}`,
+      );
+    }
+  }
+});
+
+test("no major carries a URL — the catalog owns links", () => {
+  const src = readFileSync(
+    path.join(process.cwd(), "lib/data/majors.ts"),
+    "utf8",
+  );
+  assert.ok(
+    !/https?:\/\//.test(stripComments(src)),
+    "majors.ts contains a URL; test:links only knows about the catalog",
+  );
+});
+
+test("every major leads to at least one area of work that exists", () => {
+  const areaSlugs = new Set(
+    allCareerAreas().map(({ area }) => areaSlug(area.title)),
+  );
+  for (const m of MAJORS) {
+    assert.ok(m.leadsTo.length > 0, `${m.id} leads to no work at all`);
+    for (const slug of m.leadsTo) {
+      assert.ok(
+        areaSlugs.has(slug),
+        `${m.id} points at a missing area of work: ${slug}`,
+      );
+    }
+  }
+});
+
+test("every area of work is reachable from at least one major", () => {
+  // The reverse edge, and the one that actually protects a student: a kind of
+  // work nothing leads to is a page whose reader has nowhere to go next. The
+  // student most likely to hit it is the one with the least common interest —
+  // exactly who this layer exists for.
+  const reached = new Set<string>();
+  for (const m of MAJORS) for (const slug of m.leadsTo) reached.add(slug);
+  for (const { area } of allCareerAreas()) {
+    const slug = areaSlug(area.title);
+    assert.ok(
+      reached.has(slug),
+      `no subject leads to ${slug} — a student reaches a dead end there`,
+    );
+  }
+});
+
+test("majors: empty fields in ⇒ every major; a chosen field never widens it", () => {
+  assert.equal(majorsForFaculties([]).length, MAJORS.length);
+  const cs = majorsForFaculties(["computer_science"]);
+  assert.ok(cs.length > 0 && cs.length <= MAJORS.length);
+  assert.ok(cs.every((m) => m.fields.includes("computer_science")));
+});
+
+test("majorById and majorsForArea resolve, and unknown ids return nothing", () => {
+  assert.equal(majorById(MAJORS[0].id)?.id, MAJORS[0].id);
+  assert.equal(majorById("no-such-major"), undefined);
+  const slug = MAJORS[0].leadsTo[0];
+  assert.ok(majorsForArea(slug).some((m) => m.id === MAJORS[0].id));
+  assert.deepEqual(majorsForArea("no-such-area"), []);
+});
+
+test("majorsByField groups in the order given and drops empty fields", () => {
+  const groups = majorsByField(["computer_science", "law"]);
+  assert.equal(groups[0].faculty, "computer_science");
+  assert.ok(groups.every((g) => g.majors.length > 0));
+});
+
+// Sentence case, not Title Case. The product writes every label, heading and
+// button in sentence case, and this registry is written by four separate passes
+// — which is exactly how one of them drifted into "Environmental Science" and
+// "Public Health" while every other entry said "Computer science". Nobody
+// notices one entry; a reader going down a list of forty-four notices the list.
+//
+// The rule is expressed as "at most one capitalised word, and it is the first",
+// because a genuine proper noun inside a subject name is legitimate — "English
+// literature", "American studies". Those go in PROPER_NOUNS rather than
+// weakening the check.
+const PROPER_NOUNS = new Set<string>([]);
+
+test("every major's name is sentence case", () => {
+  for (const m of MAJORS) {
+    const [first, ...rest] = m.name.split(" ");
+    assert.match(first, /^[A-Z]/, `${m.id} does not start with a capital`);
+    for (const word of rest) {
+      assert.ok(
+        !/^[A-Z]/.test(word) || PROPER_NOUNS.has(word),
+        `${m.id} is Title Case ("${m.name}") — the product writes sentence case`,
+      );
+    }
+  }
+});
+
+// ── Majors as a guide step, and a thing the plan can hold ───────────────────
+test("the guide's steps are 1..N with no gaps, and majors sits between work and countries", () => {
+  const steps = GUIDE_SECTIONS.map((s) => s.step);
+  assert.deepEqual(
+    steps,
+    Array.from({ length: GUIDE_SECTIONS.length }, (_, i) => i + 1),
+    "the guide's step numbers have a gap or a duplicate",
+  );
+  const order = GUIDE_SECTIONS.map((s) => s.id);
+  assert.ok(
+    order.indexOf("work") < order.indexOf("majors"),
+    "you cannot choose what to study before knowing what the work is",
+  );
+  assert.ok(
+    order.indexOf("majors") < order.indexOf("places"),
+    "the major is what you apply WITH — it comes before the country",
+  );
+});
+
+test("every pick kind has a guide step, and every guide step can be picked", () => {
+  for (const meta of PICK_KINDS) {
+    const section = GUIDE_SECTIONS.find((s) => s.id === meta.section);
+    assert.ok(section, `pick kind ${meta.kind} names a missing guide step`);
+    assert.equal(
+      meta.step,
+      section!.step,
+      `pick kind ${meta.kind} disagrees with the guide about which step it is`,
+    );
+  }
+  for (const section of GUIDE_SECTIONS) {
+    assert.ok(
+      PICK_KINDS.some((k) => k.section === section.id),
+      `guide step ${section.id} produces nothing the plan can hold`,
+    );
+  }
+});
+
+test("pickHref can only produce an in-app guide path, including for a major", () => {
+  assert.equal(
+    pickHref("major", "computer-science"),
+    "/guide/majors/computer-science",
+  );
+  for (const meta of PICK_KINDS) {
+    const href = pickHref(meta.kind, "x");
+    assert.ok(
+      href.startsWith("/guide/"),
+      `${meta.kind} can produce a path outside the guide: ${href}`,
+    );
+  }
+});
+
+test("countPicks counts a major", () => {
+  const counts = countPicks([
+    {
+      ref: "major:computer-science",
+      label: "Computer science",
+      href: "/guide/majors/computer-science",
+    },
+    { ref: "work:data-and-ai", label: "Data & AI", href: "/guide/work/data-and-ai" },
+  ]);
+  assert.equal(counts.major, 1);
+  assert.equal(counts.work, 1);
+  assert.equal(counts.place, 0);
+});
+
+test("the spine carries the study step, and every subject on it is under that field", () => {
+  // The chain used to run work -> country, skipping the row a student fills in
+  // on a form. This is the join that closes it.
+  for (const faculty of FACULTY_VALUES) {
+    const spine = spineForFaculty(faculty);
+    assert.ok(
+      spine.majors.length > 0,
+      `${faculty} has no subject to study — the chain breaks at step 2`,
+    );
+    assert.ok(
+      spine.majors.every((m) => m.fields.includes(faculty)),
+      `${faculty}'s chain lists a subject from another field`,
+    );
+  }
+});
+
+test("the sitemap lists the majors step and every subject page", () => {
+  const urls = new Set(sitemapRoutes().map((e) => e.url));
+  assert.ok(
+    urls.has(`${CANONICAL_URL}/guide/majors`),
+    "the majors step is not advertised to a crawler",
+  );
+  for (const m of MAJORS) {
+    assert.ok(
+      urls.has(`${CANONICAL_URL}/guide/majors/${m.id}`),
+      `${m.id} has a page the sitemap does not list`,
+    );
+  }
+});
+
+// ── The reaction engine ──────────────────────────────────────────────────────
+// How the thread learns who a student is without asking them the question they
+// came here unable to answer. Pure, fixed weights, same shape as the interest
+// quiz — and, unlike a personality test, it only ever reports what they picked.
+
+test("every beat is concrete, has a plainer version, and names no profession", () => {
+  const ids = new Set<string>();
+  assert.ok(BEATS.length >= 20, "too few beats to separate anything");
+  for (const b of BEATS) {
+    assert.ok(!ids.has(b.id), `duplicate beat id ${b.id}`);
+    ids.add(b.id);
+    // The old band was 60–260, which never bit: every beat landed at a median
+    // of 154 characters and 29 words, and two of those side by side in a narrow
+    // rail is twenty lines of text for one question. The spec asked for 15–25
+    // words; the test has to be the thing that holds it to that.
+    // `\s`, not `s`. This read `/s+/` until 2026-08-19, which splits on runs of
+    // the LETTER s: it reported a maximum of 9 "words" across all 24 beats when
+    // the real maximum is 23, so the ≤24 rule CLAUDE.md calls test-enforced was
+    // enforcing nothing and would have passed a sixty-word beat. Third guard in
+    // this repo to lose its backslashes and fail open. The content happened to
+    // comply, which is luck, not coverage.
+    const words = b.text.trim().split(/\s+/).length;
+    assert.ok(
+      b.text.trim().length > 50 && b.text.trim().length <= 135,
+      `${b.id} is ${b.text.trim().length} chars — a beat is one moment, not a paragraph`,
+    );
+    assert.ok(
+      words <= 24,
+      `${b.id} is ${words} words; a student reads two of these at once`,
+    );
+    // The button nobody builds. A student who cannot parse the sentence must
+    // have somewhere to go that is not a wrong answer.
+    assert.ok(
+      b.plainer.trim().length > 40,
+      `${b.id} has no plainer version for "I don't get it"`,
+    );
+    assert.ok(
+      Object.keys(b.axes).length > 0,
+      `${b.id} measures nothing`,
+    );
+  }
+});
+
+test("no beat names a job title — that is the vocabulary the student does not have", () => {
+  const titles = /\b(engineer|lawyer|doctor|analyst|consultant|banker|designer|scientist|developer|manager|architect)\b/i;
+  for (const b of BEATS) {
+    assert.ok(
+      !titles.test(b.text),
+      `${b.id} names a profession: ${b.text.slice(0, 60)}`,
+    );
+  }
+});
+
+test("every pair is two real, distinct beats, and no beat appears in two pairs", () => {
+  const byId = new Map(BEATS.map((b) => [b.id, b]));
+  const seen = new Set<string>();
+  assert.ok(BEAT_PAIRS.length >= 8, "fewer than eight pairs is not a sequence");
+  for (const [a, b] of BEAT_PAIRS) {
+    assert.ok(byId.has(a), `pair names a missing beat: ${a}`);
+    assert.ok(byId.has(b), `pair names a missing beat: ${b}`);
+    assert.notEqual(a, b, "a pair asks the same thing twice");
+    assert.ok(!seen.has(a) && !seen.has(b), `beat reused across pairs: ${a}/${b}`);
+    seen.add(a);
+    seen.add(b);
+  }
+});
+
+test("nextPair walks the sequence and returns null when it is finished", () => {
+  assert.deepEqual(nextPair({})?.map((b) => b.id), BEAT_PAIRS[0]);
+  const first: BeatAnswers = {
+    [BEAT_PAIRS[0][0]]: "picked",
+    [BEAT_PAIRS[0][1]]: "passed",
+  };
+  assert.deepEqual(nextPair(first)?.map((b) => b.id), BEAT_PAIRS[1]);
+  const all: BeatAnswers = {};
+  for (const [a, b] of BEAT_PAIRS) {
+    all[a] = "picked";
+    all[b] = "passed";
+  }
+  assert.equal(nextPair(all), null);
+});
+
+test("scoring: nothing in ⇒ nothing out, and unclear contributes no signal", () => {
+  assert.deepEqual(scoreBeats({}), []);
+  assert.deepEqual(topFieldsFromBeats({}), []);
+  const unclearOnly: BeatAnswers = Object.fromEntries(
+    BEATS.slice(0, 4).map((b) => [b.id, "unclear" as const]),
+  );
+  assert.deepEqual(
+    scoreBeats(unclearOnly),
+    [],
+    "an answer of 'I don't get it' was counted as a preference",
+  );
+});
+
+test("scoring: only what was PICKED counts, and the result is ordered", () => {
+  const b = BEATS[0];
+  const scored = scoreBeats({ [b.id]: "picked" });
+  assert.ok(scored.length > 0, "picking a beat measured nothing");
+  for (let i = 1; i < scored.length; i += 1) {
+    assert.ok(scored[i - 1].score >= scored[i].score, "not ordered");
+  }
+  assert.deepEqual(
+    scoreBeats({ [b.id]: "passed" }),
+    [],
+    "passing on something was counted as choosing it",
+  );
+});
+
+test("pairsAnswered counts pairs, not beats, and ignores unclear-only pairs", () => {
+  assert.equal(pairsAnswered({}), 0);
+  const [a1, b1] = BEAT_PAIRS[0];
+  assert.equal(pairsAnswered({ [a1]: "picked", [b1]: "passed" }), 1);
+  assert.equal(
+    pairsAnswered({ [a1]: "unclear", [b1]: "unclear" }),
+    0,
+    "a pair nobody understood was counted as answered",
+  );
+});
+
+test("the observation waits for three pairs, then says something, and never types the student", () => {
+  const answers: BeatAnswers = {};
+  for (let i = 0; i < 2; i += 1) {
+    answers[BEAT_PAIRS[i][0]] = "picked";
+    answers[BEAT_PAIRS[i][1]] = "passed";
+  }
+  assert.equal(
+    observationFromBeats(answers),
+    null,
+    "it spoke before it had grounds to",
+  );
+  answers[BEAT_PAIRS[2][0]] = "picked";
+  answers[BEAT_PAIRS[2][1]] = "passed";
+  const said = observationFromBeats(answers);
+  assert.ok(said && said.length > 30, "three pairs in and it had nothing to say");
+  // Rule 1 of the engine: observations, never types. A personality label is a
+  // claim we cannot support, and this product does not assert what it does not
+  // know.
+  assert.ok(
+    !/you are (an?|the) [A-Z]/.test(said!),
+    `it typed the student instead of observing them: ${said}`,
+  );
+});
+
+test("the beats measure every field and both ends of every axis", () => {
+  // Coverage the count floors cannot express, and without it the engine can be
+  // green and useless: a set of beats that only ever offers "result lands
+  // today" measures nothing, because every student picks it and the scores
+  // never separate. Both ends of each dichotomy have to be on offer, or the
+  // choice carries no information.
+  const seenFields = new Set<string>();
+  const seenAxes = new Set<string>();
+  for (const b of BEATS) {
+    for (const f of Object.keys(b.fields)) seenFields.add(f);
+    for (const a of Object.keys(b.axes)) seenAxes.add(a);
+  }
+  for (const f of FACULTY_VALUES) {
+    assert.ok(
+      seenFields.has(f),
+      `no beat leans toward ${f} — a student in that direction learns nothing`,
+    );
+  }
+  const DICHOTOMIES: [string, string][] = [
+    ["result_today", "result_years"],
+    ["with_people", "with_things"],
+    ["inside_rules", "inside_fog"],
+    ["making_new", "keeping_alive"],
+    ["alone", "in_a_group"],
+  ];
+  for (const [a, b] of DICHOTOMIES) {
+    assert.ok(seenAxes.has(a), `nothing measures ${a}`);
+    assert.ok(
+      seenAxes.has(b),
+      `${b} is never on offer, so ${a} is not a choice — it is the only option`,
+    );
+  }
+});
+
+test("a pair pulls in different directions, or it is not a question", () => {
+  // Two beats that lean the same way are a survey, not a choice: whichever the
+  // student picks, the score moves the same direction and nothing was learned.
+  const byId = new Map(BEATS.map((b) => [b.id, b]));
+  for (const [leftId, rightId] of BEAT_PAIRS) {
+    const left = byId.get(leftId)!;
+    const right = byId.get(rightId)!;
+    const leftAxes = new Set(Object.keys(left.axes));
+    const rightAxes = Object.keys(right.axes);
+    assert.ok(
+      rightAxes.some((a) => !leftAxes.has(a)),
+      `${leftId} / ${rightId} measure the same things — that pair asks nothing`,
+    );
+    const leftFields = new Set(Object.keys(left.fields));
+    assert.ok(
+      Object.keys(right.fields).some((f) => !leftFields.has(f)),
+      `${leftId} / ${rightId} point at the same fields — that pair separates nobody`,
+    );
+  }
+});
+
+test("the reaction action's bounds reject anything the registry does not contain", () => {
+  // A server action is a public HTTP endpoint, and these two are the whole
+  // defence between an arbitrary POST and a row in beat_reactions. They live in
+  // the registry rather than in the action so a test can reach them — a
+  // "use server" module cannot be imported here.
+  assert.ok(isKnownBeat(BEATS[0].id));
+  assert.ok(!isKnownBeat("../../etc/passwd"));
+  assert.ok(!isKnownBeat(""));
+  assert.ok(isBeatReaction("picked"));
+  assert.ok(isBeatReaction("unclear"));
+  assert.ok(!isBeatReaction("PICKED"), "case was accepted where it should not be");
+  assert.ok(!isBeatReaction("loved"));
+  assert.ok(!isBeatReaction(null));
+  assert.ok(!isBeatReaction(7));
+});
+
+// ── The thread's stations ────────────────────────────────────────────────────
+const NOWHERE: StationFacts = {
+  pairsAnswered: 0,
+  picks: { work: 0, major: 0, place: 0, hub: 0, route: 0 },
+  tried: 0,
+  committed: 0,
+  started: 0,
+  overdue: 0,
+};
+
+test("stations are numbered 1..7 with no gaps and no duplicates", () => {
+  assert.equal(STATIONS.length, 7);
+  assert.deepEqual(
+    STATIONS.map((s) => s.index),
+    [1, 2, 3, 4, 5, 6, 7],
+  );
+  assert.equal(new Set(STATIONS.map((s) => s.id)).size, 7);
+});
+
+test("a student who has done nothing is at station one", () => {
+  const at = station(NOWHERE);
+  assert.equal(at.id, "sense");
+  assert.equal(at.index, 1);
+  assert.equal(at.total, 7);
+});
+
+test("the stations advance in order as real facts accumulate", () => {
+  const steps: [Partial<StationFacts>, string][] = [
+    [{ pairsAnswered: 3 }, "look"],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 0, place: 0, hub: 0, route: 0 },
+      },
+      "try",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 0, place: 0, hub: 0, route: 0 },
+        tried: 1,
+      },
+      "study",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 1, place: 0, hub: 0, route: 0 },
+        tried: 1,
+      },
+      "where",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 1, place: 1, hub: 0, route: 0 },
+        tried: 1,
+      },
+      "act",
+    ],
+    [
+      {
+        pairsAnswered: 3,
+        picks: { work: 1, major: 1, place: 1, hub: 0, route: 0 },
+        tried: 1,
+        committed: 1,
+        started: 1,
+      },
+      "keep",
+    ],
+  ];
+  for (const [patch, expected] of steps) {
+    assert.equal(
+      station({ ...NOWHERE, ...patch }).id,
+      expected,
+      `expected ${expected} for ${JSON.stringify(patch)}`,
+    );
+  }
+});
+
+test("the station is where they ARE, not the furthest thing they have touched", () => {
+  // Somebody who commits to an olympiad before answering a single pair is still
+  // at the beginning. Taking the maximum instead would tell a lost student they
+  // were nearly finished, which is the opposite of accompaniment.
+  assert.equal(station({ ...NOWHERE, committed: 3, started: 3 }).id, "sense");
+});
+
+test("an overdue thing does not move the station", () => {
+  // Urgency is the MOVE's business — it outranks everything there. A progress
+  // figure that fell because a deadline lapsed would read as punishment, and
+  // this product does not treat not-entering as a verdict on a person.
+  assert.equal(station({ ...NOWHERE, overdue: 2 }).id, "sense");
+});
+
+test("knowing the work but never trying it sends you to try it", () => {
+  const move = nextMove(
+    moveInput({ picks: { ...NO_PICKS, work: 1 }, tried: 0 }),
+  );
+  assert.equal(move.id, "try-it");
+  assert.ok(move.why.trim().length > 40, "a move without a reason is an order");
+});
+
+test("having tried it, the next question is what you'd study", () => {
+  const move = nextMove(
+    moveInput({
+      picks: { ...NO_PICKS, work: 1 },
+      tried: 1,
+      reachableMajors: 4,
+    }),
+  );
+  assert.equal(move.id, "pick-major");
+  assert.match(move.action.href, /^\/guide\/majors/);
+  assert.match(move.why, /4 subjects/);
+});
+
+test("the study step comes before the country step", () => {
+  // The major is what you apply WITH, so it cannot come after the place you
+  // apply TO. The guide's own order shipped backwards once for cities and
+  // countries; this is the same mistake one layer up.
+  const move = nextMove(
+    moveInput({ picks: { ...NO_PICKS, work: 1 }, tried: 1 }),
+  );
+  assert.notEqual(move.id, "pick-place");
+});
+
+test("with no subjects to name, the study move drops the number rather than guessing", () => {
+  // Rule 3 of the ladder: it never invents a figure. Where we have nothing
+  // honest to say, the copy is phrased without one.
+  const move = nextMove(
+    moveInput({
+      picks: { ...NO_PICKS, work: 1 },
+      tried: 1,
+      reachableMajors: 0,
+    }),
+  );
+  assert.equal(move.id, "pick-major");
+  assert.ok(!/\b0\b/.test(move.why), `it printed a zero: ${move.why}`);
+});
+
+test("an overdue thing still outranks both new branches", () => {
+  const move = nextMove(
+    moveInput({ overdue: 1, picks: { ...NO_PICKS, work: 1 }, tried: 0 }),
+  );
+  assert.equal(move.id, "overdue");
+  assert.equal(move.tone, "urgent");
+});
+
+test("the companion says nothing twice in a row as a student advances", () => {
+  // A companion that repeats itself reads as broken, and this is the only way
+  // to catch it: walk the ladder the way a real student walks it and compare
+  // each utterance with the one before. Every step below is a fact changing,
+  // so every step must produce something different to say.
+  const said: string[] = [];
+  let facts: StationFacts = {
+    pairsAnswered: 3,
+    picks: { work: 0, major: 0, place: 0, hub: 0, route: 0 },
+    tried: 0,
+    committed: 0,
+    started: 0,
+    overdue: 0,
+  };
+  const advance: (() => void)[] = [
+    () => {
+      facts = { ...facts, picks: { ...facts.picks, work: 1 } };
+    },
+    () => {
+      facts = { ...facts, tried: 1 };
+    },
+    () => {
+      facts = { ...facts, picks: { ...facts.picks, major: 1 } };
+    },
+    () => {
+      facts = { ...facts, picks: { ...facts.picks, place: 1 } };
+    },
+    () => {
+      facts = { ...facts, committed: 1, started: 1 };
+    },
+  ];
+
+  for (const step of advance) {
+    const move = nextMove(
+      moveInput({
+        picks: facts.picks,
+        tried: facts.tried,
+        committed: facts.committed,
+        started: facts.started,
+      }),
+    );
+    said.push(`${station(facts).id}|${move.headline}`);
+    step();
+  }
+  // The state after the last advance counts too — it is what the student sees
+  // once everything is moving, and "nothing to say" there would be a companion
+  // that goes quiet exactly when it has succeeded.
+  const last = nextMove(
+    moveInput({
+      picks: facts.picks,
+      tried: facts.tried,
+      committed: facts.committed,
+      started: facts.started,
+    }),
+  );
+  said.push(`${station(facts).id}|${last.headline}`);
+
+  for (let i = 1; i < said.length; i += 1) {
+    assert.notEqual(
+      said[i],
+      said[i - 1],
+      `the companion said the same thing twice in a row: ${said[i]}`,
+    );
+  }
+  assert.equal(new Set(said).size, said.length, "the walk repeats itself");
+});
+
+test("the companion never drags a prose registry into a client bundle", () => {
+  // key-dates builds a map over ~2,700 catalog rows at module load; careers,
+  // world, study-destinations and spine are thousands of lines of prose. Any
+  // runtime import of one of them from a client component ships it to every
+  // route the companion renders on — which, by design, is every route in the
+  // student's product. This is the repository's most expensive recurring
+  // mistake and the companion is the widest possible surface for it.
+  const banned = [
+    "@/lib/data/key-dates",
+    "@/lib/data/careers",
+    "@/lib/data/world",
+    "@/lib/data/study-destinations",
+    "@/lib/data/spine",
+    "@/lib/data/competitions-data",
+    "@/lib/data/majors",
+  ];
+  const files = [
+    "components/companion/Companion.tsx",
+    "components/companion/BeatPair.tsx",
+  ];
+  for (const file of files) {
+    const full = path.join(process.cwd(), file);
+    // Asserted, not skipped. A guard that quietly passes for a file that is not
+    // there guards nothing — and would go green again the day someone deletes
+    // the component it protects.
+    assert.ok(
+      existsSync(full),
+      `${file} is missing — this guard has no subject`,
+    );
+    const src = stripComments(readFileSync(full, "utf8"));
+    for (const mod of banned) {
+      assert.ok(
+        !runtimeImportOf(mod).test(src),
+        `${file} imports ${mod} at runtime — that ships it to every page`,
+      );
+    }
+  }
+});
+
+/**
+ * Matches a RUNTIME import of one module. `import type` is erased by the
+ * compiler and is free, so it must not match.
+ *
+ * Assembled from RegExp LITERALS via `.source`, never from a template string.
+ * The first version of this was written as a template literal, where `\s` is
+ * the letter s and `\b` is a backspace — it compiled to
+ * `imports+(?!type\b)[^;]*froms+…`, matched nothing, and therefore passed
+ * against a clean codebase exactly as it would have passed against the bug it
+ * exists to catch. Using `.source` hands the escaping to the JS parser, which
+ * cannot get it wrong.
+ */
+function runtimeImportOf(mod: string): RegExp {
+  const escaped = mod.replace(/[.*+?^${}()|[\]\\/-]/g, "\\$&");
+  return new RegExp(
+    /import\s+(?!type\b)[^;]*from\s+["']/.source + escaped + /["']/.source,
+  );
+}
+
+test("that bundle guard actually bites — a regex matching nothing is not a guard", () => {
+  // A guard that matches nothing is indistinguishable from a codebase with no
+  // violations, and this one really did match nothing for a while. So: prove it
+  // fires on a known-bad line and stays quiet on a type-only import.
+  const guard = runtimeImportOf("@/lib/data/careers");
+  assert.ok(
+    guard.test('import { allCareerAreas } from "@/lib/data/careers";'),
+    "the guard does not catch a real runtime import — it asserts nothing",
+  );
+  assert.ok(
+    guard.test('import { areaSlug } from "@/lib/data/careers"'),
+    "the guard needs a trailing semicolon to fire",
+  );
+  assert.ok(
+    !guard.test('import type { CareerArea } from "@/lib/data/careers";'),
+    "the guard rejects a type-only import, which is erased and costs nothing",
+  );
+  assert.ok(
+    !guard.test('import { HUBS } from "@/lib/data/world";'),
+    "the guard fires on a module it was not asked about",
+  );
+});
+
+test("a kind in the URL resolves to a real tab, and rubbish narrows nothing", () => {
+  // `/opportunities?kind=simulation` is where the thread's "try it" move points.
+  // Before this the page ignored the query and landed on "All", so the two-clicks
+  // -to-a-simulation promise was not delivered.
+  assert.equal(categoryFromParam("simulation"), "simulation");
+  assert.equal(categoryFromParam("all"), "all");
+  assert.equal(categoryFromParam(["competition"]), "competition");
+  assert.equal(categoryFromParam("not-a-kind"), null);
+  assert.equal(categoryFromParam(undefined), null);
+  assert.equal(categoryFromParam(7), null);
+  for (const tab of CATEGORY_TABS) {
+    assert.equal(categoryFromParam(tab.key), tab.key, `${tab.key} is unreachable from the URL`);
+  }
+});
+
+test("the observation speaks on the pair that earned it, then goes quiet", () => {
+  // "Never repeats itself" is broken in the most tiring way available by saying
+  // ONE thing without stopping: the first version returned a fixed string per
+  // axis forever, so the same paragraph followed the reader across all 88 guide
+  // pages, the catalog and the plan.
+  const answers: BeatAnswers = {};
+  const answerPair = (i: number) => {
+    answers[BEAT_PAIRS[i][0]] = "picked";
+    answers[BEAT_PAIRS[i][1]] = "passed";
+  };
+  answerPair(0);
+  answerPair(1);
+  assert.equal(observationFromBeats(answers), null, "it spoke too early");
+  answerPair(2);
+  assert.ok(observationFromBeats(answers), "three pairs in and it said nothing");
+  answerPair(3);
+  assert.equal(
+    observationFromBeats(answers),
+    null,
+    "it is still standing there repeating itself a pair later",
+  );
+  answerPair(4);
+  answerPair(5);
+  assert.ok(
+    observationFromBeats(answers),
+    "it never speaks again after the first time",
+  );
+});
+
+test("a subject alone is not an empty plan", () => {
+  // The majors step is reachable directly, so a student can claim a subject
+  // before anything else. Telling them "your plan is empty" while the plan
+  // renders "Subjects you'd study — Computer science" underneath is the product
+  // contradicting itself on one screen.
+  const move = nextMove(
+    moveInput({ picks: { ...NO_PICKS, major: 1 }, tried: 0 }),
+  );
+  assert.notEqual(move.id, "cold-start");
+});
+
+test("committing to things and starting none reaches 'start', not 'try it'", () => {
+  // Both callers derive `tried` from the same started-intent count, so without
+  // the committed check the try branch swallowed the one below it and a student
+  // who chose three things and began none was told "you haven't done any of it".
+  const move = nextMove(
+    moveInput({
+      picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 },
+      tried: 0,
+      committed: 3,
+      started: 0,
+    }),
+  );
+  assert.equal(move.id, "start");
+});
+
+test("'I don't get it' keeps the pair open — it is a question, not a verdict", () => {
+  // `unclear` means "I don't understand this sentence", not "I have decided".
+  // Treating it as seen threw the pair away the moment a student asked for it
+  // to be rephrased — and disagreed with `pairsAnswered`, which does not count
+  // such a pair either. The button's whole purpose is to let them answer AFTER
+  // understanding.
+  const [a, b] = BEAT_PAIRS[0];
+  const asked: BeatAnswers = { [a]: "unclear" };
+  assert.deepEqual(
+    nextPair(asked)?.map((x) => x.id),
+    [a, b],
+    "asking for plainer words skipped the pair",
+  );
+  assert.equal(pairsAnswered(asked), 0, "an unclear pair was counted as answered");
+  // And once they really answer, it advances.
+  const answered: BeatAnswers = { [a]: "picked", [b]: "passed" };
+  assert.notDeepEqual(nextPair(answered)?.map((x) => x.id), [a, b]);
+});
+
+test("the station and the move ladder agree about step three", () => {
+  // One step, two files. Both callers derive `tried` from the same started-
+  // intent count, so a student with commitments and nothing started must not be
+  // at "Trying it" while the plan's own card says "start". Neither statement
+  // would be false, which is exactly why the drift would go unnoticed.
+  const committedNothingStarted = {
+    ...NOWHERE,
+    pairsAnswered: 3,
+    picks: { work: 1, major: 0, place: 0, hub: 0, route: 0 },
+    tried: 0,
+    committed: 3,
+    started: 0,
+  };
+  assert.notEqual(
+    station(committedNothingStarted).id,
+    "try",
+    "the station still says 'trying it' after they committed to three things",
+  );
+  assert.equal(
+    nextMove(
+      moveInput({
+        picks: { ...NO_PICKS, work: 1, major: 1, place: 1, hub: 1 },
+        tried: 0,
+        committed: 3,
+        started: 0,
+      }),
+    ).id,
+    "start",
+  );
+});
+
+// ── Matching annotates, it does not hide ─────────────────────────────────────
+test("a student outside a row's field still sees it, marked", () => {
+  // The gate was invisible: ~58 of 172 rows vanished with no way to ask why and
+  // no route to the rest. It is a filter now, so matching must hand the filter
+  // something to filter ON rather than doing the hiding itself.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: ["law"],
+    factors: [],
+  });
+  const offField = plan.items.filter((o) => o.offField);
+  assert.ok(
+    offField.length > 0,
+    "nothing came back marked off-field — matching is still hiding",
+  );
+  for (const o of offField) {
+    assert.ok(
+      o.fields !== "all" && !o.fields.includes("law"),
+      `${o.id} is marked off-field but is in the student's field`,
+    );
+  }
+});
+
+test("stating no field marks nothing off-field", () => {
+  // Empty faculties means "show me everything", never "show me nothing" — so
+  // there is no field to be outside of.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
+  assert.ok(plan.items.every((o) => !o.offField));
+});
+
+test("a country-gated row is hidden outside its countries, and never on an unknown country", () => {
+  // The FIRST catalog rows to carry `gate.countries` landed on 2026-08-28.
+  // Until then the mechanism was covered only by two unit fixtures calling
+  // `checkEligibility` with a synthetic gate — the branch existed, the data
+  // never reached it, and this end-to-end path had never once run. That is the
+  // sixth way a guard is useless in this repo: correct, and abstaining.
+  //
+  // The defect that produced the first row: Scholastic requires residence in
+  // the US, its territories or Canada, and shipped with no country restriction
+  // at all, so a sixteen-year-old in Shymkent was told they could enter.
+  const gated = COMPETITIONS.filter(
+    (c) => (c as { gate?: { countries?: string[] } }).gate?.countries?.length,
+  );
+  assert.ok(
+    gated.length > 0,
+    "no row carries gate.countries — this guard is ABSTAINING, not passing. " +
+      "If that is deliberate, say so here; if a row lost its gate, that is the bug.",
+  );
+
+  const factors = [{ key: "extracurriculars", score: 6 }];
+  const shows = (id: string, country: string | null, fields: string[]) =>
+    buildExtracurriculars({
+      today: TODAY,
+      faculties: fields,
+      factors,
+      homeCountry: country,
+      graduationYear: TODAY.getUTCFullYear() + 2,
+    }).items.some((o) => o.id === id);
+
+  for (const row of gated) {
+    const allowed = (row as { gate: { countries: string[] } }).gate.countries;
+    const fields = row.fields as unknown as string[];
+    for (const c of allowed) {
+      assert.ok(
+        shows(row.id, c, fields),
+        `${row.id} is hidden from ${c}, which its own gate allows`,
+      );
+    }
+    // Somewhere the gate does not name. KZ unless the row already allows it.
+    const outside = allowed.includes("KZ") ? "JP" : "KZ";
+    assert.ok(
+      !shows(row.id, outside, fields),
+      `${row.id} is shown to a student in ${outside}, who cannot enter it`,
+    );
+    // And the rule the whole matcher is built on: an unknown fact never
+    // excludes. A student who has not told us where they live still sees it.
+    assert.ok(
+      shows(row.id, null, fields),
+      `${row.id} is hidden from a student whose country we do not know — unknown facts must never exclude`,
+    );
+  }
+});
+
+test("the catalog carries local rows at all", () => {
+  // This test used to assert the opposite — that NOTHING was region-tagged —
+  // and its own comment said the first local row would trip it and force
+  // somebody to read audit finding A8. That happened on 2026-08-25.
+  //
+  // It is kept pointing the other way rather than deleted, because the zero it
+  // pinned was not a neutral state: `region` exists so that a student in
+  // Shymkent meets something they can turn up to, and for ten days it applied
+  // to nothing curated at all. A product whose stated mission is students
+  // outside the first tier, holding no row any of them can attend in person,
+  // is the gap A8 names. Going back to zero should fail.
+  const local = COMPETITIONS.filter((c) => c.region);
+  assert.ok(
+    local.length > 0,
+    "no region-tagged rows left — the local mechanism applies to nothing again, see AUDIT §A8",
+  );
+});
+
+test("a local row is marked for a student elsewhere, not hidden from them", () => {
+  // The three cases of the region rule, over the REAL catalog rather than over
+  // a synthetic row. `reachableFrom` has had unit coverage all along; what had
+  // none was whether the matcher above it agrees, and it did not — the
+  // reference implementation in the one-pass matcher test still hard-filtered
+  // region six days after the release that stopped doing so.
+  const forCountry = (homeCountry: string | null) =>
+    buildExtracurriculars({
+      today: TODAY,
+      faculties: [],
+      factors: [],
+      homeCountry,
+    }).items;
+
+  const abroad = forCountry("IT");
+  const marked = abroad.filter((o) => o.offRegion);
+  assert.ok(marked.length > 0, "a local row vanished instead of being marked");
+  for (const o of marked) {
+    assert.ok(o.region && o.region !== "IT", `${o.id} is marked but not local`);
+  }
+  // Marked means filterable, and both match options default ON — so the list
+  // the student is actually shown carries none of them.
+  assert.equal(
+    matchedOnly(abroad).filter((o) => o.offRegion).length,
+    0,
+    "an off-region row survived the default narrowing",
+  );
+
+  // Its own country sees it as an ordinary row.
+  const athome = forCountry("KZ");
+  const kzRows = athome.filter((o) => o.region === "KZ");
+  assert.ok(kzRows.length > 0, "a Kazakh student cannot see the Kazakh rows");
+  for (const o of kzRows) {
+    assert.ok(!o.offRegion, `${o.id} is marked off-region inside its own region`);
+  }
+
+  // And an unknown country is not a different country. A logged-out reader in
+  // Shymkent is exactly who a local event is for, and they were once the only
+  // person who could not see it.
+  const anon = forCountry(null);
+  assert.equal(
+    anon.filter((o) => o.offRegion).length,
+    0,
+    "a visitor who has not said where they live was treated as being elsewhere",
+  );
+  assert.ok(
+    kzRows.every((o) => anon.some((a) => a.id === o.id)),
+    "a local row is missing from the signed-out list",
+  );
+});
+
+test("a confirmed date in the past is still GONE, not marked", () => {
+  // A closed date is a fact about the world, not a narrowing of the catalog.
+  // Offering to "show expired" would be offering rubbish.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
+  for (const o of plan.items) {
+    if (o.dateConfirmed) {
+      assert.ok(
+        o.daysToDeadline >= 0,
+        `${o.id} is confirmed and past but was returned`,
+      );
+    }
+  }
+});
+
+test("what comes back no longer depends on the student's field", () => {
+  const narrow = buildExtracurriculars({
+    today: TODAY,
+    faculties: ["law"],
+    factors: [],
+  });
+  const matched = narrow.items.filter((o) => !o.offField && !o.offRegion);
+  const wide = buildExtracurriculars({
+    today: TODAY,
+    faculties: [],
+    factors: [],
+  });
+  assert.ok(narrow.items.length > matched.length, "annotating widened nothing");
+  assert.equal(
+    narrow.items.length,
+    wide.items.length,
+    "the returned set still depends on the field, which it must no longer",
+  );
+});
+
+test("an off-field row sinks below everything the student matches", () => {
+  // Visible, not promoted. The list still opens on what fits, and widening is a
+  // thing you choose rather than a thing that happens to you.
+  const plan = buildExtracurriculars({
+    today: TODAY,
+    faculties: ["law"],
+    factors: [],
+  });
+  const firstOff = plan.items.findIndex((o) => o.offField || o.offRegion);
+  const lastMatched = plan.items.reduce(
+    (last, o, i) => (!o.offField && !o.offRegion ? i : last),
+    -1,
+  );
+  if (firstOff !== -1 && lastMatched !== -1) {
+    assert.ok(
+      firstOff > lastMatched,
+      "an off-field row is sitting above one the student actually matches",
+    );
+  }
+});
+
+test("a beat opens with the ACTION, not with scenery", () => {
+  // This is the rule that was missing, and its absence is what turned the set
+  // into riddles. "No jargon, no profession named" was obeyed and overshot: the
+  // beats became evocative but unanchored — "The only two people left who
+  // remember how the old festival was run are both past eighty…" is a short
+  // story whose verb arrives at word 25, and a fifteen-year-old cannot tell
+  // what they are choosing between.
+  //
+  // Concrete and PLAIN, not concrete and literary. The cheapest test of that is
+  // where the verb sits: a beat must start by telling you what you are DOING.
+  const OPENERS = /^(You |Someone |Two |A person )/;
+  for (const b of BEATS) {
+    assert.match(
+      b.text,
+      OPENERS,
+      `${b.id} opens on scenery rather than on the thing you are doing`,
+    );
+  }
+});
+
+/** Sentences in a beat. Beats carry no abbreviations, so a period ends one. */
+const sentencesIn = (t: string) =>
+  t
+    .trim()
+    .split(/[.!?]+(?:\s|$)/)
+    .filter((s) => s.trim().length > 0).length;
+
+test("a beat is TWO sentences: the situation, then what you do about it", () => {
+  // The rule the other two guards could not see. Word count, opener and the
+  // profession ban were all passing while a reader called the questions
+  // "philosophical" — because every beat was ONE sentence of about twenty words
+  // carrying its situation in a subordinate clause, so nothing resolved until
+  // the last word. 23 of 24 were built that way.
+  //
+  // The proof that plain was always possible is in the file itself: `plainer`,
+  // the text behind "I don't get it", says what is happening in ordinary words.
+  // The clarity existed and was hidden behind a button most readers never press.
+  //
+  // Two sentences forces the order that fixes it: state the situation, then the
+  // action. It is mechanical, which is the point — the previous rules measured
+  // length and first word, and a riddle can satisfy both.
+  for (const b of BEATS) {
+    const n = sentencesIn(b.text);
+    assert.ok(
+      n >= 2,
+      `${b.id} is ${n} sentence(s): "${b.text}" — say the situation, then what you do`,
+    );
+    // Not four either. Two short ones is a moment; four is a paragraph in a
+    // narrow rail, and two of those sit side by side.
+    assert.ok(n <= 3, `${b.id} is ${n} sentences — a beat is one moment`);
+  }
+});
+
+test("that two-sentence rule bites on the shape it was written for", () => {
+  // A guard that has never been shown to fail is a guard nobody has checked.
+  // This is the exact beat that shipped, and it must be rejected.
+  const asShipped =
+    "You work out which beam gave way, after the model bridge you built snapped under half the weight it should hold.";
+  assert.equal(sentencesIn(asShipped), 1, "the fixture stopped being one sentence");
+
+  // And the replacement must pass, or the rule is unmeetable rather than strict.
+  const rewritten =
+    "You built a model bridge and it snapped at half the weight it should hold. You work out which beam went first.";
+  assert.equal(sentencesIn(rewritten), 2);
+  assert.ok(rewritten.split(/\s+/).length <= 24, "the replacement broke the word cap");
+});
+
+test("the plainer version is actually plainer — never longer than its own beat", () => {
+  // The rule that was missing entirely, and the field it was missing from is
+  // the one a student reaches only after saying "I don't get it".
+  //
+  // The beats were rewritten on 2026-08-22 because each was one sentence of
+  // about twenty words carrying its situation in a subordinate clause. That fix
+  // was applied to `text` and never to its neighbour: measured on 2026-08-27,
+  // `plainer` ran to a median of 28 words against the beat's 21, **19 of 24
+  // were LONGER than the beat they explain**, and all but one were a single
+  // clause chained with "and", "because" or "though". The most confused reader
+  // on the surface was handed the harder sentence.
+  //
+  // Words, not characters, and against its OWN beat rather than a fixed cap:
+  // "plainer" is a comparison, so the guard has to be one. A flat ceiling would
+  // pass a 24-word explanation of an 18-word beat.
+  //
+  // What is deliberately NOT asserted here: two sentences, and an opening word.
+  // Both are `text`'s rules and both would be wrong here —
+  // `same-question-fortieth` is thirteen words in one clean clause, and forcing
+  // a second sentence onto it would make it worse. The audit that found this
+  // originally reported those two as failures; they were the wrong properties,
+  // and re-checking beat acting on them.
+  const words = (s: string) => s.trim().split(/\s+/).length;
+  for (const b of BEATS) {
+    assert.ok(
+      words(b.plainer) <= words(b.text),
+      `${b.id}: the plainer version is ${words(b.plainer)} words against the beat's ${words(b.text)} — "${b.plainer}"`,
+    );
+  }
+  // And it must still SAY something: the existing floor is 40 characters, which
+  // a one-word "Accounting." would pass in spirit but not in use.
+  for (const b of BEATS) {
+    assert.ok(words(b.plainer) >= 8, `${b.id}: the plainer version says nothing`);
+  }
+});
+
+test("the plainer rule bites on the copy that shipped", () => {
+  const words = (s: string) => s.trim().split(/\s+/).length;
+  // Verbatim, the worst pair as it stood before the rewrite.
+  const beat =
+    "You spot a pattern in this morning's numbers that might be nothing. You spend six more months finding out which.";
+  const asShipped =
+    "A pattern shows up in your data, but nobody can yet tell if it means something real or is just chance, and it will take another six months of testing to find out.";
+  assert.equal(words(beat), 20, "the fixture's beat changed; re-derive the numbers");
+  assert.equal(words(asShipped), 33, "the fixture stopped being the shipped copy");
+  assert.ok(
+    words(asShipped) > words(beat),
+    "the guard would not have fired on the copy it was written for",
+  );
+  // The replacement has to pass, or the rule is unmeetable rather than strict.
+  const rewritten =
+    "Research data shows a pattern that might be chance. Six more months of testing decide which.";
+  assert.ok(words(rewritten) <= words(beat));
+  assert.ok(words(rewritten) >= 8);
+});
+
+// ── The gates, made visible ──────────────────────────────────────────────────
+test("by default the student still gets their own list", () => {
+  assert.deepEqual([...NO_FILTERS.matched].sort(), ["field", "region"]);
+  assert.equal(
+    activeFilterCount(NO_FILTERS),
+    0,
+    "the default must be quiet — it is not a choice the student made",
+  );
+});
+
+test("unchecking a match option widens the list and counts as an active filter", () => {
+  // This group is INVERTED from every other one: elsewhere an empty array means
+  // "no narrowing", here the default is both ON. So it is counted by what is
+  // MISSING — and it must count, because the panel's standing rule is that any
+  // active filter opens the full list on its own.
+  assert.equal(activeFilterCount({ ...NO_FILTERS, matched: ["region"] }), 1);
+  assert.equal(activeFilterCount({ ...NO_FILTERS, matched: [] }), 2);
+});
+
+test("the match group filters on the annotation, both ways", () => {
+  const rows = [
+    opp({ id: "mine" }),
+    opp({ id: "other-field", offField: true }),
+    opp({ id: "other-place", offRegion: true }),
+  ];
+  assert.deepEqual(
+    filterOpportunities(rows, NO_FILTERS).map((o) => o.id),
+    ["mine"],
+  );
+  assert.deepEqual(
+    filterOpportunities(rows, { ...NO_FILTERS, matched: ["region"] })
+      .map((o) => o.id)
+      .sort(),
+    ["mine", "other-field"],
+  );
+  assert.equal(
+    filterOpportunities(rows, { ...NO_FILTERS, matched: [] }).length,
+    3,
+  );
+});
+
+test("the match counts say what each narrowing is removing", () => {
+  const rows = [
+    opp({ id: "a" }),
+    opp({ id: "b", offField: true }),
+    opp({ id: "c", offField: true }),
+    opp({ id: "d", offRegion: true }),
+  ];
+  const facets = opportunityFacets(rows, NO_FILTERS);
+  // Counted with THIS control's own selection lifted, like every other group —
+  // "how many would I see if this one were off".
+  assert.equal(facets.matched.field, 3, "a=on-field, b+c off-field, d still off-region");
+  assert.equal(facets.matched.region, 2, "a plus d, with b+c still cut by field");
+});
+
+test("the honest count is computed, never written down", () => {
+  // The control that used to sit here read "Show everything we track for you
+  // (114)", where "everything" was false — it was everything we MATCHED, and a
+  // student read it as "they only have 114".
+  assert.deepEqual(
+    matchedCount([opp({ id: "a" }), opp({ id: "b", offField: true })]),
+    { shown: 1, total: 2 },
+  );
+  assert.deepEqual(matchedCount([]), { shown: 0, total: 0 });
+});
+
+test("a widened list leaves a chip that puts the narrowing back", () => {
+  const chips = activeChips({ ...NO_FILTERS, matched: ["field"] });
+  const chip = chips.find((c) => c.group === "matched");
+  assert.ok(chip, "widening the list left nothing the student could undo");
+  assert.deepEqual(
+    withoutChip({ ...NO_FILTERS, matched: ["field"] }, chip!).matched.sort(),
+    ["field", "region"],
+  );
+});
+
+test("every surface without a filter panel narrows to the student's own list", () => {
+  // Matching stopped hiding rows so the panel could own the narrowing — which
+  // means a surface with NO panel narrows nothing unless it asks. Three of them
+  // are in that position, and the leak is silent: nothing looks wrong, there
+  // are simply more rows than there should be. A student in Uzbekistan seeing a
+  // competition that only runs in Kazakhstan is the exact failure the region
+  // tag exists to prevent.
+  const files = [
+    "components/opportunities/EligibilityChecker.tsx",
+    "components/onboarding/FirstWin.tsx",
+    "lib/planner/load.ts",
+  ];
+  for (const file of files) {
+    const full = path.join(process.cwd(), file);
+    assert.ok(existsSync(full), `${file} is missing — this guard has no subject`);
+    const src = stripComments(readFileSync(full, "utf8"));
+    assert.match(
+      src,
+      /matchedOnly\(/,
+      `${file} reads the matched plan without calling matchedOnly — it will show a student other people's opportunities`,
+    );
+  }
+});
+
+test("every surface that renders an opportunity says WHERE a local one is", () => {
+  // Three files render an opportunity's identity, and for a long time only two
+  // of them drew the `Local · …` badge. The third — the public detail page,
+  // which exists so a student can send a row to a friend — never got it,
+  // because it is a hand-built page rather than a caller of OpportunityDetail.
+  //
+  // That was invisible until the catalog had local rows to render. Measured on
+  // 2026-08-25 against the running app: of five Kazakhstan-only detail pages,
+  // TWO named no country anywhere on them. The other three were saved by their
+  // eligibility sentence happening to mention Kazakhstan, which is a
+  // coincidence rather than a mechanism — `debat-eli-practice-games` says only
+  // "School students and first-year university students starting out in
+  // debate", so a reader arriving from a shared link met a row they cannot
+  // enter with nothing on the page to tell them.
+  //
+  // The card's own comment says the badge "reads as 'near you', not as a
+  // restriction", and that is true THERE: a local row only reaches a student
+  // from that country or one whose country we do not know. A public page
+  // arrives from anywhere, so for most of its readers the fact is the opposite
+  // one. Same badge, different job, and both jobs need it drawn.
+  // FOUR files, and the fourth is the one the first version of this guard
+  // missed. The share card is a separate surface from the page it links to:
+  // `page.tsx` was fixed and its Open Graph image was not, so a shared link
+  // still unfurled into a card naming no country while the page underneath
+  // named one. That is worse than the original defect, because it puts the
+  // honest sentence one tap PAST the moment the reader decides.
+  const files = [
+    "components/opportunities/OpportunityCard.tsx",
+    "components/opportunities/OpportunityDetail.tsx",
+    "app/opportunities/[id]/page.tsx",
+    "app/opportunities/[id]/opengraph-image.tsx",
+  ];
+  for (const file of files) {
+    const full = path.join(process.cwd(), file);
+    assert.ok(existsSync(full), `${file} is missing — this guard has no subject`);
+    const src = stripComments(readFileSync(full, "utf8"));
+    assert.match(
+      src,
+      /regionLabel\(/,
+      `${file} renders an opportunity without naming the country a local one belongs to`,
+    );
+  }
+});
+
+test("the front page shows global rows only", () => {
+  // The one surface where excluding local rows is a RULE rather than a filter.
+  //
+  // Everywhere else a local row is shown to someone we know is in that country,
+  // or marked `offRegion` and narrowed away by the panel. The landing hero is
+  // neither: it renders before anyone has told us anything, to every visitor on
+  // earth, and it does not go through `buildExtracurriculars`, so `matchedOnly`
+  // never sees these rows and `reachableFrom` is never consulted.
+  //
+  // Asserted over the real catalog and over the DATED pool specifically,
+  // because that is the half about to become live: `dated` sorts by nearest
+  // confirmed deadline, and the Kazakh rows carry the nearest estimates in the
+  // catalog. Confirm two of them in September — the next item on the backlog —
+  // and without this rule they take the top of the front page by construction.
+  for (const c of previewOpportunities(TODAY, 12)) {
+    assert.ok(
+      !c.region,
+      `${c.id} is local to ${c.region} and is on the front page, which cannot know where the reader is`,
+    );
+  }
+});
+
+test("matchedOnly keeps only what the student matches", () => {
+  const rows = [
+    opp({ id: "mine" }),
+    opp({ id: "other-field", offField: true }),
+    opp({ id: "other-place", offRegion: true }),
+    opp({ id: "both", offField: true, offRegion: true }),
+  ];
+  assert.deepEqual(
+    matchedOnly(rows).map((o) => o.id),
+    ["mine"],
+  );
+  assert.deepEqual(matchedOnly([]), []);
+});
+
+// ── A number in the README has to be the number ─────────────────────────────
+//
+// The landing page never drifts because it COUNTS the data at request time.
+// Prose cannot do that, so the README said 173 entries for two days after the
+// nao-cup row was removed, and OPPORTUNITIES_PLAN — the file a resuming session
+// is pointed at first — still said 156 and 100 from an August 2 measurement.
+// A stale count is worse than no count: it is the input to somebody's plan.
+//
+// So the counts that matter are asserted here. The date beside each one is not
+// decoration either: a figure with no date cannot be told apart from a figure
+// that is merely old.
+test("the README's counts are the counts", () => {
+  const readme = readFileSync(path.join(process.cwd(), "README.md"), "utf8");
+
+  // `\s+`, not a space: the claim wraps across a line in the README, and a
+  // pattern that assumed one line reported "the README no longer states a
+  // count" — a guard failing for the wrong reason is a guard nobody trusts.
+  const entries = readme.match(
+    /\*\*(\d+)\s+entries\s+as\s+of\s+(\d{4}-\d{2}-\d{2})\*\*/,
+  );
+  assert.ok(entries, "the README no longer states a dated catalog size");
+  assert.equal(
+    Number(entries[1]),
+    COMPETITIONS.length,
+    `README says ${entries[1]} catalog entries, the catalog holds ${COMPETITIONS.length}`,
+  );
+
+  // All FIVE steps, because the guide has five and a guard that covers three
+  // leaves two counts free to rot. Majors became step 2 in release 5, and the
+  // README carried that number for a while with nothing asserting it — the
+  // same gap this whole test exists to close, one layer in.
+  const guide = readme.match(
+    /(\d+) areas of work, (\d+) majors, (\d+) country profiles, (\d+) cities,\s+(\d+) routes from\s+home/,
+  );
+  assert.ok(guide, "the README no longer states the guide's shape");
+  assert.equal(Number(guide[1]), allCareerAreas().length, "areas of work");
+  assert.equal(Number(guide[2]), MAJORS.length, "majors");
+  assert.equal(Number(guide[3]), STUDY_DESTINATIONS.length, "country profiles");
+  assert.equal(Number(guide[4]), HUBS.length, "cities");
+  assert.equal(Number(guide[5]), HOME_ROUTES.length, "routes from home");
+});
+
+// ── No dictionary key that nobody asks for ──────────────────────────────────
+//
+// 163 of 393 keys were referenced nowhere — 137 of them `ob.*`, stranded when
+// the onboarding wizard moved to inline English. This map is imported by the
+// language provider in the ROOT layout, so every key ships in the client bundle
+// of every route on the site; the file's own header records ~80 landing keys
+// being removed for that reason once already, which is the argument for a test
+// rather than a second cleanup.
+//
+// Four prefixes are built dynamically and can never appear at a call site. That
+// list is the whole risk in this guard: `dest.*` became dynamic in this very
+// change (the registry now derives `labelKey` as `dest.${code}` instead of
+// spelling out seven literals), and a first run without it happily deleted all
+// eight live country names.
+const DYNAMIC_KEY_PREFIXES = ["tier.", "conf.", "effort.", "dest."];
+
+test("every dictionary key is asked for somewhere", () => {
+  const dictPath = path.join(process.cwd(), "lib/i18n/dictionary.ts");
+  const keys = [...readFileSync(dictPath, "utf8").matchAll(/^ {2}"([^"]+)":/gm)]
+    .map((m) => m[1]);
+  assert.ok(keys.length > 100, "the dictionary parsed as almost empty — check the key pattern");
+
+  const corpus = [...allRepoSources(), ...[path.join(process.cwd(), "middleware.ts")]]
+    .filter((f) => existsSync(f) && f !== dictPath)
+    .map((f) => readFileSync(f, "utf8"))
+    .join("\n");
+
+  const unused = keys.filter(
+    (k) =>
+      !DYNAMIC_KEY_PREFIXES.some((p) => k.startsWith(p)) &&
+      !corpus.includes(`"${k}"`) &&
+      !corpus.includes(`'${k}'`) &&
+      !corpus.includes("`" + k + "`"),
+  );
+  assert.deepEqual(
+    unused,
+    [],
+    `${unused.length} dictionary keys are never read — they ship to every route:\n${unused.join("\n")}`,
+  );
+});
+
+test("the dictionary guard bites, and spares the dynamic prefixes", () => {
+  const corpus = 'const a = t("nav.plan");';
+  const check = (k: string) =>
+    DYNAMIC_KEY_PREFIXES.some((p) => k.startsWith(p)) || corpus.includes(`"${k}"`);
+  assert.ok(check("nav.plan"), "a key that IS read is reported unused");
+  assert.ok(!check("ob.longGone"), "a key nothing reads slips through");
+  // The four that are assembled at runtime must survive a corpus that never
+  // spells them out — this is the case that nearly deleted every country name.
+  assert.ok(check("dest.US"), "a template-built key would be deleted");
+  assert.ok(check("tier.reach"), "a template-built key would be deleted");
+  assert.ok(check("conf.high"), "a template-built key would be deleted");
+  assert.ok(check("effort.low"), "a template-built key would be deleted");
+});
+
+// ── Nothing exports a value that nobody uses ────────────────────────────────
+//
+// Twenty-four exported symbols were referenced nowhere in the tree — four
+// parallel `*ProgramLabel` helpers left behind by the country-registry refactor,
+// the old onboarding wizard's step model, `UNIVERSITY_NAMES`, the language
+// toggle's leftovers. None could fail a type-check or a lint, because every one
+// of them was valid code; they were simply nobody's.
+//
+// The point of running the audit as a TEST rather than doing the delete once:
+// dead code is not a state you clean up, it is a rate. Something falls out of
+// use on nearly every refactor, and the only difference between a tree with
+// twenty-four dead exports and one with none is whether anything is counting.
+//
+// VALUES only. A `type X = (typeof CONST)[number]` alias beside a live constant
+// costs nothing at runtime and is the pattern that stops the next person
+// hand-writing the union — deleting those would be cleanup as cargo cult.
+const NEXT_CONTRACT_EXPORT =
+  /^(metadata|dynamic|revalidate|runtime|maxDuration|generateMetadata|generateStaticParams|viewport|fetchCache|dynamicParams|preferredRegion|alt|size|contentType|config|middleware|default)$/;
+
+test("every exported value is used somewhere", () => {
+  // `scripts/` counts as a CONSUMER — `scoreHolistic` is called only by
+  // check-scoring and sim-scorecard, and a corpus that skipped them reported a
+  // live function as dead. Root-level `middleware.ts` counts for the same
+  // reason: it is the only caller of `updateSession`.
+  const walkScripts = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return walkScripts(full);
+      return /\.tsx?$/.test(e.name) ? [full] : [];
+    });
+  const files = [
+    ...allRepoSources(),
+    ...walkScripts(path.join(process.cwd(), "scripts")),
+    ...["middleware.ts"]
+      .map((f) => path.join(process.cwd(), f))
+      .filter((f) => existsSync(f)),
+  ];
+  // One tokenised pass over the tree, then arithmetic — checking each symbol
+  // against every file separately is quadratic and makes the suite crawl.
+  const perFile = new Map<string, Map<string, number>>();
+  const total = new Map<string, number>();
+  const declared: { file: string; name: string }[] = [];
+  for (const f of files) {
+    const src = stripComments(readFileSync(f, "utf8"))
+      // Strings too: a name mentioned in copy is not a use.
+      .replace(/`(?:\\.|[^`\\])*`/g, "``")
+      .replace(/"(?:\\.|[^"\\])*"/g, '""')
+      .replace(/'(?:\\.|[^'\\])*'/g, "''");
+    const counts = new Map<string, number>();
+    for (const m of src.matchAll(/[A-Za-z_$][\w$]*/g)) {
+      counts.set(m[0], (counts.get(m[0]) ?? 0) + 1);
+      total.set(m[0], (total.get(m[0]) ?? 0) + 1);
+    }
+    perFile.set(rel(f), counts);
+    const isRoute =
+      /\/(page|layout|route|loading|error|not-found|sitemap|robots|icon|opengraph-image|template|default|global-error)\.tsx?$/.test(
+        rel(f),
+      );
+    for (const m of src.matchAll(
+      /^export\s+(?:async\s+)?(function|const|let|class|enum)\s+([A-Za-z_$][\w$]*)/gm,
+    )) {
+      if (isRoute && NEXT_CONTRACT_EXPORT.test(m[2])) continue;
+      declared.push({ file: rel(f), name: m[2] });
+    }
+  }
+  // DEAD means the identifier occurs exactly once in the whole tree: its own
+  // declaration. A symbol used inside its own file is merely over-exported —
+  // the `export` keyword is unnecessary, the code is not dead — and failing the
+  // build on that would bury the real thing under 160 items of tidying.
+  const dead = declared.filter(({ name }) => (total.get(name) ?? 0) === 1);
+  assert.deepEqual(
+    dead.map((d) => `${d.file} → ${d.name}`),
+    [],
+    "these exported values are referenced nowhere — delete them, or use them",
+  );
+});
+
+test("the dead-export scan actually bites", () => {
+  // It has to find a symbol that IS dead, or it is an empty loop reporting
+  // success. `__deadOnPurpose` below is exported and used by nothing; the scan
+  // must be able to see it, and the real test must be excluding it by name
+  // rather than by luck.
+  const src = `export const __deadOnPurpose = 1;\nexport const used = 2;\nconsole.log(used);`;
+  const names = [...src.matchAll(/^export\s+(?:async\s+)?(?:const)\s+([A-Za-z_$][\w$]*)/gm)]
+    .map((m) => m[1]);
+  assert.deepEqual(names, ["__deadOnPurpose", "used"], "the scan cannot see exports at all");
+  const count = (n: string) => [...src.matchAll(new RegExp(`\\b${n}\\b`, "g"))].length;
+  assert.equal(count("__deadOnPurpose"), 1, "a dead export must appear exactly once");
+  assert.ok(count("used") > 1, "a used export must appear more than once");
+});
+
+// ── One list, or the compiler cannot help you ───────────────────────────────
+//
+// Every set below used to exist twice: a union in one file, a hand-written copy
+// somewhere else, with nothing relating them. That is the shape audit finding A4
+// came in — a kind of opportunity the tab strip did not know about, which made
+// the counts stop summing — and four more of them were still in the tree.
+//
+// The type system now owns each relationship, so these tests guard the one thing
+// it cannot: somebody typing the members out again.
+test("the five live destination codes are written down exactly once", () => {
+  // `AvailableDestinationCode` is derived from AVAILABLE_DESTINATION_CODES, and
+  // the college-list builder, the rankings board, the map markers and
+  // dashboard/actions all alias it. Before that, promoting CN or CA would have
+  // left all four silently short with no type error anywhere.
+  const offenders: string[] = [];
+  const literal = /"US"\s*\|\s*"IT"\s*\|\s*"HK"\s*\|\s*"[AK][ER]"\s*\|\s*"[AK][ER]"/;
+  for (const file of allRepoSources()) {
+    if (rel(file) === "lib/data/destinations.ts") continue;
+    if (rel(file) === "scripts/test-engine.ts") continue;
+    if (literal.test(stripComments(readFileSync(file, "utf8")))) {
+      offenders.push(rel(file));
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `the destination list is written out again instead of imported:\n${offenders.join("\n")}`,
+  );
+});
+
+test("that destination guard bites on the literal it is looking for", () => {
+  const literal = /"US"\s*\|\s*"IT"\s*\|\s*"HK"\s*\|\s*"[AK][ER]"\s*\|\s*"[AK][ER]"/;
+  assert.ok(
+    literal.test('export type BuilderCountry = "US" | "IT" | "HK" | "AE" | "KR";'),
+    "the guard misses the exact copy that was in useListBuilder",
+  );
+  assert.ok(
+    // map-markers had drifted in member ORDER, which is how one set starts
+    // reading as two.
+    literal.test('export type CountryCode = "US" | "IT" | "HK" | "KR" | "AE";'),
+    "the guard misses a reordered copy",
+  );
+  assert.ok(
+    !literal.test("export type X = AvailableDestinationCode;"),
+    "the guard fires on the derived form it is meant to allow",
+  );
+});
+
+test("every vocabulary array covers its whole union", () => {
+  // The direction matters. Declared the other way — union first, array second —
+  // TypeScript checks that each member is VALID and never that the set is
+  // COMPLETE, so a new member is silently missing from the array that validates
+  // it. Each of these is now `as const` with the union derived from it; these
+  // assertions state the invariant that buys.
+  assert.deepEqual([...PLANNER_STATUSES].sort(), ["doing", "done", "dropped", "todo"]);
+  assert.equal(new Set(PLANNER_STATUSES).size, PLANNER_STATUSES.length);
+  assert.equal(new Set(COMPETITION_LEVELS).size, COMPETITION_LEVELS.length);
+  assert.equal(new Set(COMPETITION_TIERS).size, COMPETITION_TIERS.length);
+  // A tier or level the catalog actually uses must be in its own vocabulary, or
+  // discovery's sanitiser silently rewrites it to the fallback.
+  for (const c of COMPETITIONS) {
+    if (c.level)
+      assert.ok(
+        (COMPETITION_LEVELS as readonly string[]).includes(c.level),
+        `${c.id} has level "${c.level}", absent from COMPETITION_LEVELS`,
+      );
+    if (c.tier)
+      assert.ok(
+        (COMPETITION_TIERS as readonly string[]).includes(c.tier),
+        `${c.id} has tier "${c.tier}", absent from COMPETITION_TIERS`,
+      );
+  }
+});
+
+test("the scoring core has one factor list, not two", () => {
+  // `Factor` in tier-score.ts is now an alias of the rubric's `FactorKey`. A
+  // type alias leaves nothing to assert at runtime, so this checks the thing
+  // that would actually rot: the rubric naming a factor the alias cannot serve.
+  const keys = RUBRIC.map((f) => f.key).sort();
+  assert.equal(new Set(keys).size, keys.length, "the rubric names a factor twice");
+  assert.deepEqual(keys, [
+    "academics",
+    "awards",
+    "course_rigor",
+    "extracurricular_depth",
+    "leadership",
+    "narrative_fit",
+    "test_scores",
+  ]);
+});
+
+// ── What may reach the one table that measures the product ─────────────────
+//
+// `saveOpportunityIntent` accepted any string of 1 to 120 characters as an
+// opportunity id and wrote it to `opportunity_intents` — the only behavioural
+// signal this product collects, and the number `/admin/intents` reports. Four
+// files away, `recordReaction` refuses a `beatId` the registry does not
+// contain. Same job, one of them done: the repository's most frequent bug
+// shape, a rule enforced in one place and not in the one beside it.
+//
+// The check is on the SHAPE, and that was chosen by measurement rather than by
+// taste. Membership would have been a regression: an admin quick-add mints
+// `slugId(name)` and a partner post mints `${partnerUuid}-${slug}`, neither of
+// which is in the curated catalog, and both are things a student really commits
+// to. Refusing those would read as the button not working.
+const INTENT_ID_CALLERS: { file: string; must: RegExp; why: string }[] = [
+  {
+    file: "app/dashboard/actions.ts",
+    must: /saveOpportunityIntent[\s\S]{0,900}?!isOpportunityId\(/,
+    why: "the write path stopped validating the id, so anything at all reaches opportunity_intents again",
+  },
+  {
+    file: "app/dashboard/actions.ts",
+    must: /clearOpportunityIntent[\s\S]{0,400}?!isOpportunityId\(/,
+    why: "the delete path stopped validating, so the pair disagrees and teaches the next reader the wrong rule",
+  },
+];
+
+test("an opportunity id has to look like one before it is stored", () => {
+  // Every real writer, checked against the shape rather than assumed.
+  for (const c of COMPETITIONS) {
+    assert.ok(
+      isOpportunityId(c.id),
+      `catalog row ${c.id} would be refused by its own validator`,
+    );
+  }
+  // The two live writers, reproduced from their sources.
+  const slugId = (name: string) =>
+    `${name
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 48) || "opportunity"}-${Date.now().toString(36)}`;
+  assert.ok(isOpportunityId(slugId("Turnir Gorodov 2027")), "admin quick-add");
+  // A name with no latin characters collapses to the fallback, and that still
+  // has to pass — otherwise an admin posting a Russian-named contest is told
+  // their own opportunity does not exist.
+  assert.ok(isOpportunityId(slugId("Турнир городов")), "admin quick-add, non-latin name");
+  const partnerPost = `550e8400-e29b-41d4-a716-446655440000-${"a".repeat(43)}`;
+  assert.equal(partnerPost.length, 80, "the partner ceiling moved; re-check the bound");
+  assert.ok(isOpportunityId(partnerPost), "partner post at its 80-character ceiling");
+});
+
+test("the opportunity-id guard bites, and spares the near-misses", () => {
+  // Everything the 120-character ceiling used to let through.
+  for (const junk of [
+    "../../etc/passwd",
+    "<script>alert(1)</script>",
+    "DROP TABLE opportunity_intents",
+    "a b c",
+    "ÜBER",
+    "Has-Capitals",
+    "trailing space ",
+    "",
+    "a".repeat(97),
+  ]) {
+    assert.ok(!isOpportunityId(junk), `${JSON.stringify(junk)} still reaches the table`);
+  }
+  // The near-misses, which is the half that gets skipped. Each differs from a
+  // rejected string by one character, and a guard that fired on these would be
+  // exempted away inside a month.
+  assert.ok(isOpportunityId("a".repeat(96)), "the bound is off by one at the top");
+  assert.ok(isOpportunityId("a"), "a single character is a legal id");
+  assert.ok(isOpportunityId("0-a"), "a leading digit is legal");
+  assert.ok(!isOpportunityId("-a"), "a leading hyphen is not");
+});
+
+test("both intent actions call the guard, not just the one that writes", () => {
+  for (const { file, must, why } of INTENT_ID_CALLERS) {
+    const full = path.join(process.cwd(), file);
+    assert.ok(existsSync(full), `${file} is missing — this guard has no subject`);
+    assert.match(stripComments(readFileSync(full, "utf8")), must, `${file}: ${why}`);
+  }
+});
+
+test("that caller guard bites on the exact line that shipped", () => {
+  // The real code, before the fix. It compiles, type-checks and lints.
+  const asShipped = `
+export async function saveOpportunityIntent(input: { opportunityId: string }) {
+  const opportunityId = input.opportunityId?.trim();
+  if (!opportunityId || opportunityId.length > 120) {
+    return { ok: false, error: "Unknown opportunity." };
+  }
+`;
+  assert.ok(
+    !INTENT_ID_CALLERS[0].must.test(asShipped),
+    "the pattern passes the code it was written to reject",
+  );
+  const fixed = asShipped.replace(
+    "opportunityId.length > 120",
+    "!isOpportunityId(opportunityId)",
+  );
+  assert.match(fixed, INTENT_ID_CALLERS[0].must, "the pattern rejects the fix as well");
+});
+
+// ── The commitment step has to be REACHABLE ─────────────────────────────────
+// The bug this catches shipped to production and no test noticed, because
+// every part still compiled: `CommitRow` was rendered only by the five-row
+// `Shortlist`, and deleting that for the one list deleted the only caller.
+// `saveOpportunityIntent` — the product's single behavioural signal, and the
+// number `/admin/intents` reports — became unreachable from the UI while
+// remaining a valid, exported, type-checked server action.
+//
+// So the chain is pinned by name: the list's row builds the node, the card
+// hands it to the panel, and the panel renders it. Any one of those three
+// links quietly removed puts the metric back in the dark.
+const COMMIT_CHAIN: { file: string; must: RegExp; why: string }[] = [
+  {
+    file: "components/opportunities/CommitRow.tsx",
+    must: /commit=\{<CommitRow\b/,
+    why: "OpportunityRow no longer builds the commitment node, so nothing in the list can offer it",
+  },
+  {
+    file: "components/opportunities/OpportunityCard.tsx",
+    must: /<OpportunityDetail[\s\S]{0,200}?\bcommit=\{commit\}/,
+    why: "the card takes a commit node and never passes it to the detail panel, so it renders nowhere",
+  },
+  {
+    file: "components/opportunities/OpportunityDetail.tsx",
+    must: /\{commit\s*&&/,
+    why: "the detail panel accepts a commit node and never renders it",
+  },
+];
+
+test("the commitment step is reachable from the opportunity list", () => {
+  for (const { file, must, why } of COMMIT_CHAIN) {
+    const full = path.join(process.cwd(), file);
+    assert.ok(existsSync(full), `${file} is missing — this guard has no subject`);
+    assert.match(stripComments(readFileSync(full, "utf8")), must, `${file}: ${why}`);
+  }
+});
+
+test("the commitment-chain guard actually bites", () => {
+  // A guard written as a template literal once compiled to a pattern that
+  // matched nothing and was cited as a guarantee in a PR description. Every
+  // hand-built pattern here is therefore shown failing on the exact edit that
+  // caused the outage: the node stops being built, or stops being handed on.
+  const brokenRow = `return <OpportunityCard o={o} density="compact" />;`;
+  const brokenCard = `{detail && <OpportunityDetail o={o} onClose={close} />}`;
+  const brokenPanel = `<div className="border-t">{children}</div>`;
+  assert.ok(
+    !COMMIT_CHAIN[0].must.test(brokenRow),
+    "the row guard passes a card that builds no commitment node",
+  );
+  assert.ok(
+    !COMMIT_CHAIN[1].must.test(brokenCard),
+    "the card guard passes a panel call that drops the commit prop",
+  );
+  assert.ok(
+    !COMMIT_CHAIN[2].must.test(brokenPanel),
+    "the panel guard passes a panel that never renders the node",
+  );
+  // …and passes the real thing, so it is not merely a pattern that never matches.
+  for (const { file, must } of COMMIT_CHAIN) {
+    const src = stripComments(
+      readFileSync(path.join(process.cwd(), file), "utf8"),
+    );
+    assert.match(src, must);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE CACHES AND THE FAST PATHS
+//
+// Six hot paths were rewritten for speed, and every one of them replaced a
+// straightforward computation with either a remembered answer or a cheaper
+// route to the same one. That is the class of change that goes wrong quietly:
+// a cache that returns the wrong row does not throw, it just shows a student
+// something that is not theirs, and a hand-rolled date parse that is off by a
+// day moves a deadline.
+//
+// So each test below re-derives the answer the SLOW way — the exact code that
+// shipped before — and asserts the two agree over the whole real catalog rather
+// than over a fixture. The point is not that the new code is fast; it is that
+// being fast changed nothing a student can see.
+// ─────────────────────────────────────────────────────────────────────────────
+
+test("the date formatter is built once and says exactly what it said before", () => {
+  // `toLocaleDateString(locale, options)` constructs an Intl.DateTimeFormat per
+  // call — measured at 90.76 µs against 2.08 for a hoisted one, and it runs
+  // once per opportunity card, so a forty-card screen spent 3.5 ms formatting
+  // dates and spent it again on every re-render. The output is identical by
+  // specification; this asserts it over every date the product actually
+  // renders, plus the shapes most likely to expose a formatter difference.
+  const before = (iso: string) =>
+    new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  for (const c of COMPETITIONS) {
+    assert.equal(formatDate(c.deadline), before(c.deadline), c.id);
+  }
+  for (const iso of [
+    "2028-02-29", // leap day
+    "2026-01-01", // year start, single-digit day
+    "2026-12-31", // year end
+    "2027-09-09", // single-digit month and day
+  ]) {
+    assert.equal(formatDate(iso), before(iso), iso);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// How long is left, said once.
+//
+// Four places rendered this sentence and three of them disagreed. The card and
+// the landing preview were right; `OpportunityDetail` printed "1 days left",
+// and the public checker's verdict printed "the nearest closes in 0 days" on
+// the day something closed — the two shapes a reader cannot tell from a bug.
+// The grammar now lives here, so a fifth caller cannot invent a fourth
+// spelling.
+test("the days-left phrasings handle today, tomorrow and the plural", () => {
+  assert.equal(daysLeftLabel(0), "closes today");
+  assert.equal(daysLeftLabel(1), "1 day left");
+  assert.equal(daysLeftLabel(2), "2 days left");
+  assert.equal(daysLeftLabel(37), "37 days left");
+  // A confirmed date in the past is filtered before it reaches a card, but a
+  // clock that ticks over between render and read must not print "-1 days".
+  assert.equal(daysLeftLabel(-3), "closes today");
+
+  assert.equal(closesInPhrase(0), "closes today");
+  assert.equal(closesInPhrase(1), "closes tomorrow");
+  assert.equal(closesInPhrase(2), "closes in 2 days");
+  assert.equal(closesInPhrase(37), "closes in 37 days");
+  assert.equal(closesInPhrase(-3), "closes today");
+
+  // Neither one may ever emit the shapes that made this a bug.
+  for (const n of [-3, -1, 0, 1, 2, 5, 37]) {
+    for (const s of [daysLeftLabel(n), closesInPhrase(n)]) {
+      assert.ok(!/\b1 days\b/.test(s), `"${s}" says "1 days"`);
+      assert.ok(!/\b0 days\b/.test(s), `"${s}" says "0 days"`);
+      assert.ok(!/-\d/.test(s), `"${s}" carries a negative count`);
+    }
+  }
+});
+
+test("no component spells the days-left sentence for itself", () => {
+  // This scanned a hardcoded list of four files until 2026-08-25, and by then
+  // SIX rendered a countdown: `RoadmapView.tsx` said "due today" where every
+  // other surface says "closes today", and `FirstWin.tsx` printed
+  // `{days} days left` with no singular case, so a student one day out read
+  // "1 days left". Both sat outside the list, so the guard reported nothing.
+  //
+  // **An inclusion list fails OPEN and an exemption list fails CLOSED**, and
+  // that is the whole repair: a file added tomorrow is now scanned by default
+  // and has to be argued out, rather than being invisible by default. The same
+  // inversion is worth applying to every other hardcoded file list in here.
+  const OWNS_THE_WORDING = new Set([
+    // The module the label belongs to. `daysLeftLabel` and `closesInPhrase`
+    // are defined here; this is the one place the words may be typed.
+    "lib/data/opportunity-format.ts",
+    // Builds a full SENTENCE with its own pluraliser (`${title} closes in 3
+    // days.`), which is a different job from a badge label. Exempt by name and
+    // with a reason, rather than by not being looked at.
+    "lib/data/next-move.ts",
+  ]);
+  const offenders: string[] = [];
+  for (const file of allRepoSources()) {
+    const name = rel(file);
+    if (OWNS_THE_WORDING.has(name)) continue;
+    const src = stripComments(readFileSync(file, "utf8"));
+    if (/\bdays? left\b/.test(src)) {
+      offenders.push(`${name} — spells the countdown itself`);
+    }
+    if (/closes today|due today/.test(src)) {
+      offenders.push(`${name} — spells the closing day itself`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `import daysLeftLabel/closesInPhrase instead of retyping the words:\n  ${offenders.join("\n  ")}`,
+  );
+});
+
+test("daysBetween reads a date-only string without building a Date", () => {
+  // The fast path only fires on a plain YYYY-MM-DD. Anything else falls through
+  // to the old behaviour EXACTLY, including the NaN a caller has always got for
+  // a string this function cannot read — that is a contract rather than a bug,
+  // and quietly turning it into a number would hide a bad row instead of
+  // letting it render as "Dates TBA".
+  const beforeUTC = (d: Date | string) => {
+    const x = typeof d === "string" ? new Date(d + "T00:00:00Z") : d;
+    return Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate());
+  };
+  const before = (from: Date | string, to: Date | string) =>
+    Math.round((beforeUTC(to) - beforeUTC(from)) / 86_400_000);
+
+  const today = new Date("2026-08-19T00:00:00Z");
+  for (const c of COMPETITIONS) {
+    assert.equal(daysBetween(today, c.deadline), before(today, c.deadline), c.id);
+    assert.equal(daysBetween(c.deadline, today), before(c.deadline, today), c.id);
+  }
+  // Both directions, a leap year and a whole year — the arithmetic, not the parse.
+  assert.equal(daysBetween("2026-01-01", "2026-12-31"), 364);
+  assert.equal(daysBetween("2028-02-28", "2028-03-01"), 2);
+  assert.equal(daysBetween("2027-02-28", "2027-03-01"), 1);
+  assert.equal(daysBetween("2026-12-31", "2026-01-01"), -364);
+  // The unreadable string still reads as unreadable.
+  assert.ok(Number.isNaN(daysBetween("not-a-date", today)));
+});
+
+test("a cached eligibility gate is the gate the parser would have produced", () => {
+  // Keyed on the ROW, which is also why this pins the rule the cache must not
+  // swallow: an explicit `gate` on an entry always beats the parsed sentence.
+  // That rule sits one line above the cache and is the one a later edit is
+  // most likely to fold into it.
+  for (const c of COMPETITIONS) {
+    const expected = c.gate ?? parseEligibility(c.eligibility);
+    assert.deepEqual(gateFor(c), expected, `gate drift on ${c.id}`);
+    // Again, because the second call is the one served from the cache.
+    assert.deepEqual(gateFor(c), expected, `cached gate drift on ${c.id}`);
+  }
+  const pinned = COMPETITIONS.find((c) => c.gate);
+  if (pinned) assert.equal(gateFor(pinned), pinned.gate);
+
+  // A row rebuilt by resolveCompetitions is a NEW object carrying the same
+  // sentence — a fresh key, and it has to be parsed rather than missed.
+  const plain = COMPETITIONS.find((c) => !c.gate && c.eligibility);
+  assert.ok(plain, "expected at least one catalog row with a parsed gate");
+  const rebuilt = { ...plain!, deadline: "2027-01-01" };
+  assert.deepEqual(gateFor(rebuilt), parseEligibility(rebuilt.eligibility));
+});
+
+test("the one-pass matcher returns what the five-pass chain returned", () => {
+  // The chain was five map/filter stages; it is one loop now. MEMBERSHIP is
+  // re-derived here straight from the primitives, so a bug in the loop cannot
+  // hide behind the same bug in the reference.
+  //
+  // That independence does NOT extend to the region flag asserted further
+  // down, which calls `reachableFrom` — the same helper the matcher calls. It
+  // is deliberate rather than sloppy: `reachableFrom` is three lines of pure
+  // logic with its own direct unit coverage, including the empty-string case,
+  // and re-deriving it here would only re-test the thing that is already
+  // tested. Worth stating, because an earlier version of this comment claimed
+  // the independence for the whole test and a reader would have believed it.
+  const today = new Date("2026-08-19T00:00:00Z");
+  const profiles: {
+    faculties: string[];
+    factors: { key: string; score: number }[];
+  }[] = [
+    { faculties: [], factors: [] },
+    { faculties: ["computer_science"], factors: [] },
+    {
+      faculties: ["engineering", "arts_design"],
+      factors: [
+        { key: "awards", score: 9 },
+        { key: "extracurricular_depth", score: 8 },
+        { key: "academics", score: 9 },
+      ],
+    },
+  ];
+  let combinations = 0;
+  for (const p of profiles) {
+    for (const homeCountry of [null, "KZ", "US", "UZ"]) {
+      for (const graduationYear of [undefined, 2027, 2028, 2031]) {
+        const grade = gradeFromGraduationYear(graduationYear, today);
+        const ageRange = grade == null ? null : plausibleAgeForGrade(grade);
+        // Region does NOT appear here, and that absence is the point.
+        //
+        // It used to: this reference read `if (!reachableFrom(c, homeCountry))
+        // return false;`, which is what the matcher did BEFORE the one-list
+        // release made matching annotate instead of hide. The reference was
+        // written on 2026-08-19, three days after that release, and it stayed
+        // green for six days — not because it agreed with the code, but
+        // because the catalog held zero `region`-tagged rows and the line
+        // could not be reached. The first local row made the two disagree on
+        // ten entries at once.
+        //
+        // So the membership rule is: a confirmed past date is gone, a row the
+        // student can never enter is gone, and everything else comes back.
+        // Off-region is a FLAG, asserted separately below, and the default
+        // filters are what narrow the list a student actually sees.
+        const expected = COMPETITIONS.filter((c) => {
+          if (c.dateConfirmed && daysBetween(today, c.deadline) < 0) return false;
+          const v = checkEligibility(c.gate ?? parseEligibility(c.eligibility), {
+            country: homeCountry,
+            grade,
+            ageRange,
+          });
+          return v.ok || v.reason === "too_young";
+        }).map((c) => c.id);
+
+        const items = buildExtracurriculars({
+          today,
+          faculties: p.faculties,
+          factors: p.factors,
+          homeCountry,
+          graduationYear,
+        }).items;
+        const got = items.map((o) => o.id);
+
+        assert.deepEqual(
+          [...got].sort(),
+          [...expected].sort(),
+          `membership drift: fields=${p.faculties} country=${homeCountry} year=${graduationYear}`,
+        );
+
+        // The half the membership rule above deliberately stopped covering.
+        // Taking region out of `expected` without putting it back HERE would
+        // have turned a stale guard into an absent one, which is the worse of
+        // the two — the flag is what the panel filters on and what
+        // `matchedOnly` reads, so a wrong flag shows a student in Rome a
+        // one-day event in Kostanay with nothing looking broken.
+        for (const o of items) {
+          assert.equal(
+            o.offRegion,
+            !reachableFrom(o, homeCountry),
+            `offRegion drift on ${o.id} for country=${homeCountry}`,
+          );
+        }
+        // And the narrowed list — what a student actually sees, since both
+        // match options default ON — still carries nothing from anywhere else.
+        for (const o of matchedOnly(items)) {
+          assert.ok(
+            reachableFrom(o, homeCountry),
+            `${o.id} survived matchedOnly for country=${homeCountry}`,
+          );
+        }
+        combinations++;
+      }
+    }
+  }
+  assert.ok(combinations >= 36, "the matrix stopped covering what it claims to");
+
+  // Sorting in place must still be a total, repeatable answer.
+  const args = {
+    today,
+    faculties: ["computer_science"],
+    factors: [],
+    homeCountry: "KZ",
+    graduationYear: 2028,
+  };
+  assert.deepEqual(
+    buildExtracurriculars(args).items.map((o) => o.id),
+    buildExtracurriculars(args).items.map((o) => o.id),
+  );
+});
+
+test("the remembered search haystack is the haystack, for every query shape", () => {
+  // The haystack is built once per row and reused across the six faceting
+  // passes. Built from the wrong row, search would return someone else's
+  // opportunity for a term that is not on the card — the exact failure the
+  // whole matching layer is written to prevent.
+  const today = new Date("2026-08-19T00:00:00Z");
+  const items = buildExtracurriculars({
+    today,
+    faculties: [],
+    factors: [],
+    homeCountry: null,
+    graduationYear: 2028,
+  }).items;
+
+  const before = (o: Opportunity, q: string) => {
+    const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return true;
+    const hay = [o.name, o.blurb, o.eligibility, o.city, o.partner?.name]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return terms.every((t) => hay.includes(t));
+  };
+
+  const queries = [
+    "", // empty matches everything
+    "   ", // whitespace is still empty
+    "math",
+    "MATH", // case folds
+    "math olympiad",
+    "olympiad math", // any order
+    "  spaced   out  ", // repeated separators
+    "zzzznope", // matches nothing
+  ];
+  for (const q of queries) {
+    for (const o of items) {
+      assert.equal(matchesQuery(o, q), before(o, q), `query="${q}" row=${o.id}`);
+      // Twice: the first call fills the cache, the second reads it.
+      assert.equal(
+        matchesQuery(o, q),
+        before(o, q),
+        `cached query="${q}" row=${o.id}`,
+      );
+    }
+  }
+  // And through the pass that tokenises once for the list instead of per row.
+  for (const q of queries) {
+    assert.deepEqual(
+      filterOpportunities(items, {
+        ...NO_FILTERS,
+        matched: [],
+        query: q,
+      }).map((o) => o.id),
+      items.filter((o) => before(o, q)).map((o) => o.id),
+      `filterOpportunities disagrees with matchesQuery for "${q}"`,
+    );
+  }
+});
+
+test("the indexed registry lookups answer what the scans answered", () => {
+  // Both were linear scans rebuilt per call. `universitiesForHub` flattened the
+  // entire institution registry to keep a handful of rows, and its ORDER is
+  // load-bearing: the guide names institutions and never ranks them, so "the
+  // registry's own order" is the rule, and a grouping pass that reordered them
+  // would be a ranking introduced by accident.
+  for (const h of HUBS) {
+    assert.equal(
+      destinationForHub(h.id),
+      STUDY_DESTINATIONS.find((d) => d.hubs.includes(h.id)),
+      h.id,
+    );
+    assert.deepEqual(
+      universitiesForHub(h.id),
+      Object.values(PLACE_UNIVERSITIES)
+        .flat()
+        .filter((u) => u.hub === h.id),
+      h.id,
+    );
+  }
+  // An id nothing claims stays unclaimed rather than falling into a bucket.
+  for (const bogus of ["", "nowhere", "BERLIN"]) {
+    assert.equal(destinationForHub(bogus), undefined, bogus);
+    assert.deepEqual(universitiesForHub(bogus), []);
+  }
+  // A null `hub` means "named city, no page" and must never become a key.
+  const unhoused = Object.values(PLACE_UNIVERSITIES)
+    .flat()
+    .filter((u) => !u.hub);
+  for (const u of unhoused) {
+    assert.ok(
+      !HUBS.some((h) => universitiesForHub(h.id).includes(u)),
+      `${u.name} has no hub but was filed under one`,
+    );
+  }
+});
+
+test("the memoised spine is one object per field, and it is the derived one", () => {
+  // The memo hands every caller THE SAME object, which is what makes it cheap
+  // and also what makes it worth writing down: a view that sorted `stops` in
+  // place would reorder the chain for every later request and break the
+  // home-region-leads rule for everyone. Nothing does today.
+  for (const f of FACULTY_VALUES) {
+    const first = spineForFaculty(f);
+    assert.equal(spineForFaculty(f), first, `spine for ${f} is rebuilt per call`);
+    // Still self-consistent, and still derived rather than stored.
+    assert.equal(
+      first.hubCount,
+      first.stops.reduce((n, s) => n + s.hubs.length, 0),
+      f,
+    );
+    assert.equal(
+      first.universityCount,
+      first.stops.reduce((n, s) => n + s.universities.length, 0),
+      f,
+    );
+    // Rule 2 still holds through the memo: every stop can be opened.
+    for (const s of first.stops) {
+      assert.ok(
+        s.destination !== null || s.hubs.length > 0,
+        `${f}: ${s.country} is a stop with nothing behind it`,
+      );
+    }
+  }
+});
+
+test("mind map: the branch walks survive a cycle, in BOTH directions", () => {
+  // `buildTree` was written on the stated assumption that this table can hold a
+  // cycle, and it breaks one rather than recursing into it. The two walks the
+  // MOVE actions run had drifted apart on exactly that point: `branchDepth`
+  // carried a visited set, `branchHeight` — its neighbour, used by the same
+  // indent check — recursed into its children with neither a visited set nor a
+  // ceiling. So a cycle the renderer survived overflowed the stack inside a
+  // server action and turned it into a 500.
+  //
+  // Both are asserted here because the pair is the point: they are used in one
+  // expression (`branchDepth(parent) + 1 + branchHeight(node)`), and either one
+  // spinning takes the whole action down.
+  const cyclic: TreeRow[] = [
+    { id: "root", parentId: null },
+    { id: "a", parentId: "b" },
+    { id: "b", parentId: "a" }, // a → b → a
+  ];
+  // Would not return at all before the fix.
+  assert.ok(branchHeight(cyclic, "a") <= MINDMAP_MAX_DEPTH + 2);
+  assert.ok(branchDepth(cyclic, "a") <= MINDMAP_MAX_DEPTH + 2);
+  // A self-parenting row is the shortest cycle there is.
+  const selfLoop: TreeRow[] = [
+    { id: "root", parentId: null },
+    { id: "x", parentId: "x" },
+  ];
+  assert.ok(branchHeight(selfLoop, "x") <= MINDMAP_MAX_DEPTH + 2);
+  assert.ok(branchDepth(selfLoop, "x") <= MINDMAP_MAX_DEPTH + 2);
+
+  // A cycle somewhere else in the table must not affect a healthy branch.
+  const mixed: TreeRow[] = [
+    { id: "root", parentId: null },
+    { id: "k1", parentId: "root" },
+    { id: "k2", parentId: "k1" },
+    { id: "a", parentId: "b" },
+    { id: "b", parentId: "a" },
+  ];
+  assert.equal(branchHeight(mixed, "root"), 2);
+  assert.equal(branchDepth(mixed, "k2"), 2);
+});
+
+test("mind map: branch height and depth measure what the indent check needs", () => {
+  //        root
+  //        ├── a ── a1 ── a2
+  //        └── b
+  const rows: TreeRow[] = [
+    { id: "root", parentId: null },
+    { id: "a", parentId: "root" },
+    { id: "a1", parentId: "a" },
+    { id: "a2", parentId: "a1" },
+    { id: "b", parentId: "root" },
+  ];
+  assert.equal(branchHeight(rows, "a2"), 0, "a leaf is height 0");
+  assert.equal(branchHeight(rows, "a1"), 1);
+  assert.equal(branchHeight(rows, "a"), 2);
+  assert.equal(branchHeight(rows, "root"), 3, "the longest branch, not a count");
+  assert.equal(branchHeight(rows, "b"), 0);
+  assert.equal(branchDepth(rows, "root"), 0, "a root is depth 0");
+  assert.equal(branchDepth(rows, "a2"), 3);
+  // An id nothing knows about is depth 0 and height 0, not a throw.
+  assert.equal(branchDepth(rows, "ghost"), 0);
+  assert.equal(branchHeight(rows, "ghost"), 0);
+
+  // The check the action actually runs: indenting `b` under `a` would put a
+  // three-deep branch below a node already one deep.
+  assert.equal(branchDepth(rows, "a") + 1 + branchHeight(rows, "b"), 2);
+  assert.ok(branchDepth(rows, "a") + 1 + branchHeight(rows, "a1") > 2);
+});
+
+test("mind map: a very deep chain is bounded, not recursed to the stack limit", () => {
+  // Depth is capped in the database by the actions, but nothing stops a chain
+  // arriving longer than the cap — an edited row, a migration run by hand. The
+  // walk must answer rather than run to the end of a 50,000-long chain.
+  const rows: TreeRow[] = [{ id: "n0", parentId: null }];
+  for (let i = 1; i < 50_000; i++) {
+    rows.push({ id: `n${i}`, parentId: `n${i - 1}` });
+  }
+  assert.equal(branchHeight(rows, "n0"), MINDMAP_MAX_DEPTH + 3);
+  assert.equal(branchDepth(rows, "n49999"), MINDMAP_MAX_DEPTH + 3);
+});
+
+test("a single visit of any size has a length, rather than a RangeError", () => {
+  // `Math.min(...times)` passed one argument per view, and an argument list
+  // past roughly 100,000 throws. It never threw in production — /admin/traffic
+  // caps its query at 50,000 rows, so a visit could not get that big — but the
+  // safety was a constant in another file rather than anything in this one.
+  // 150,000 is above where the spread gives out and below nothing in
+  // particular, which is the point: the answer should not depend on the size.
+  const many: ViewRow[] = Array.from({ length: 150_000 }, (_, i) =>
+    view({
+      session_id: "one-long-visit",
+      created_at: new Date(T0 - (150_000 - i) * 1000).toISOString(),
+      dwell_ms: 1000,
+    }),
+  );
+  const ms = visitDurationMs(many);
+  assert.equal(
+    ms,
+    150_000 * 1000 - 1000 + 1000,
+    "the span is first to last, plus the last page's reading time",
+  );
+
+  // …and the ordinary cases are untouched: the minimum is the EARLIEST view,
+  // whatever order the rows arrive in.
+  const shuffled: ViewRow[] = [
+    view({ created_at: new Date(T0 + 60_000).toISOString(), dwell_ms: 5_000 }),
+    view({ created_at: new Date(T0).toISOString(), dwell_ms: 1_000 }),
+    view({ created_at: new Date(T0 + 30_000).toISOString(), dwell_ms: 2_000 }),
+  ];
+  assert.equal(visitDurationMs(shuffled), 65_000);
+  assert.equal(visitDurationMs([]), null, "no views is unknown, not zero");
+});
+
+// A minimal confirmed row. The calendar only ever builds from confirmed dates.
+const icsRow = (o: Partial<Competition> & { id: string }): Competition => ({
+  name: "A real-looking hackathon",
+  fields: "all",
+  deadline: "2026-11-01",
+  window: "November",
+  level: "national",
+  url: "https://example.org/",
+  blurb: "Nothing wrong with this blurb.",
+  dateConfirmed: true,
+  ...o,
+});
+
+test("a partner-supplied link cannot write extra events into a calendar", () => {
+  // `URL:` is a URI property, not TEXT — a backslash escapes nothing there, so
+  // the only correct treatment is to remove what cannot sit on a content line.
+  //
+  // This was a live hole. The same string went through `icsText` for
+  // DESCRIPTION and raw for URL, and the partner form's
+  // `z.string().trim().url()` ACCEPTS a CR or LF inside a URL — the WHATWG
+  // parser it calls tolerates them — and stored it verbatim. A calendar file
+  // is downloaded into a student's own calendar, where taking the post down
+  // afterwards reaches nothing at all.
+  const evil = [
+    "https://example.com/a\r\nX-EVIL:1",
+    "https://example.com/a\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nSUMMARY:Injected",
+    "https://example.com/a\nSUMMARY:Injected",
+    "https://example.com/a\tb",
+    "https://example.com/a\u0000b",
+  ];
+  for (const url of evil) {
+    const ics = buildIcs([icsRow({ id: "partner-x", url })]);
+    const lines = ics.split("\r\n");
+
+    // LINES, not substrings. `BEGIN:VEVENT` legitimately appears inside the
+    // DESCRIPTION value, where `icsText` escaped the newline to a literal
+    // backslash-n — that is the escaping working, and counting substrings
+    // would call it a failure. Injection means a value became a PROPERTY LINE
+    // of its own, so the lines are the only thing worth counting.
+    assert.equal(
+      lines.filter((l) => l === "BEGIN:VEVENT").length,
+      1,
+      `a link opened a second event: ${JSON.stringify(url)}`,
+    );
+    assert.equal(lines.filter((l) => l === "END:VEVENT").length, 1);
+    assert.ok(
+      !lines.some((l) => l.startsWith("X-EVIL")),
+      "an injected property became a line of its own",
+    );
+    assert.ok(
+      !lines.some((l) => l === "SUMMARY:Injected"),
+      "an injected summary became a line of its own",
+    );
+
+    // Every line is a property or a structural keyword, and none of them
+    // carries a character that cannot be on a content line.
+    for (const line of lines) {
+      assert.match(
+        line,
+        /^[A-Za-z-]+[;:]/,
+        `not a property line: ${JSON.stringify(line)}`,
+      );
+      assert.ok(
+        // eslint-disable-next-line no-control-regex -- looking for them is the point
+        !/[\u0000-\u001F\u007F]/.test(line),
+        `a control character reached a content line: ${JSON.stringify(line)}`,
+      );
+    }
+  }
+});
+
+test("the calendar still says what it is supposed to say", () => {
+  // Stripping is worthless if it also mangles the links students follow, so the
+  // ordinary row is asserted character for character.
+  const ics = buildIcs([
+    icsRow({
+      id: "imo",
+      name: "IMO — International Mathematical Olympiad",
+      url: "https://www.imo-official.org/?a=1&b=2#top",
+      blurb: "The world championship of school mathematics.",
+    }),
+    // An unconfirmed row never gets an event: a reminder set on a guessed date
+    // sends a student to a page that is not open, which is worse than none.
+    icsRow({ id: "guessed", dateConfirmed: false }),
+  ]);
+
+  assert.equal(
+    ics.match(/BEGIN:VEVENT/g)?.length,
+    1,
+    "an unconfirmed date was given a reminder",
+  );
+  assert.ok(ics.includes("URL:https://www.imo-official.org/?a=1&b=2#top"));
+  assert.ok(ics.includes("UID:imo@compass"));
+  assert.ok(ics.includes("DTSTART;VALUE=DATE:20261101"));
+  assert.ok(ics.includes("TRIGGER:-P7D"));
+
+  // The TEXT rule still applies where TEXT is what the property holds — the URI
+  // rule was added beside it, not in place of it.
+  const withPunctuation = buildIcs([
+    icsRow({ id: "x", name: "Maths, physics and informatics", blurb: "One; two, three." }),
+  ]);
+  assert.ok(
+    withPunctuation.includes("SUMMARY:Deadline — Maths\\, physics and informatics"),
+  );
+  assert.ok(withPunctuation.includes("DESCRIPTION:One\\; two\\, three."));
+
+  // Nothing at all to put in a calendar is an empty calendar, not a crash.
+  const none = buildIcs([icsRow({ id: "y", dateConfirmed: false })]);
+  assert.ok(!none.includes("BEGIN:VEVENT"));
+  assert.ok(none.startsWith("BEGIN:VCALENDAR"));
+  assert.ok(none.endsWith("END:VCALENDAR"));
+});
+
+// ── Structured data ─────────────────────────────────────────────────────────
+//
+// Same shape of risk as the calendar above, and the same answer. A partner
+// names their own organisation and every post they publish, and those names
+// travel into an opportunity page's breadcrumb — this time into a `<script>`
+// element, whose body is raw text until the parser sees `</script`. So the
+// escape is asserted against a name that tries to close the block, not merely
+// asserted to exist.
+
+test("a partner-supplied name cannot end the JSON-LD block", () => {
+  // The separators are built from their code points rather than typed. A raw
+  // U+2028 in a source file is invisible and does not survive an editor or a
+  // patch — writing this file the first time proved it twice.
+  const LS = String.fromCharCode(0x2028);
+  const PS = String.fromCharCode(0x2029);
+
+  const hostile = {
+    name: `</script><img src=x onerror=alert(1)>`,
+    amp: "Tom & Jerry",
+    seps: `a${LS}b${PS}c`,
+  };
+  const out = serializeJsonLd(hostile);
+
+  assert.ok(
+    !/<\/script/i.test(out),
+    "the payload can close the script element it sits in",
+  );
+  assert.ok(!out.includes("<"), "a raw < survived into the script body");
+  assert.ok(!out.includes(">"), "a raw > survived into the script body");
+  assert.ok(!out.includes("&"), "a raw & survived into the script body");
+  assert.ok(!out.includes(LS), "a raw U+2028 survived — that is a parse error");
+  assert.ok(!out.includes(PS), "a raw U+2029 survived — that is a parse error");
+
+  // Escaping that changed the data would be its own bug: the crawler must read
+  // exactly the name the partner typed.
+  const back = JSON.parse(out) as typeof hostile;
+  assert.deepEqual(back, hostile, "escaping altered the payload");
+
+  // And it bites through the builders, not only when called directly — that is
+  // the path a real partner name actually takes.
+  const crumbs = serializeJsonLd(
+    breadcrumbSchema([
+      { name: "Everything you can enter", path: "/opportunities" },
+      { name: hostile.name, path: "/opportunities/x" },
+    ]),
+  );
+  assert.ok(!/<\/script/i.test(crumbs));
+});
+
+test("the trail a crawler is given is the canonical path", () => {
+  // `?f=` is a filter, not a document, and `pageMeta` already drops it from the
+  // canonical. A breadcrumb naming the filtered URL would contradict the
+  // canonical on the very page it sits on — and `crumbHref` in the guide is
+  // routinely filtered, because every in-section link goes through
+  // `withFields`.
+  assert.equal(canonicalPath("/guide/places?f=law"), "/guide/places");
+  assert.equal(canonicalPath("/guide/places#money"), "/guide/places");
+  assert.equal(canonicalPath("/guide/places?f=law#money"), "/guide/places");
+  assert.equal(canonicalPath("/guide/places"), "/guide/places");
+
+  const trail = breadcrumbSchema([
+    { name: "The guide", path: "/guide" },
+    { name: "Countries", path: "/guide/places?f=law" },
+    { name: "Germany", path: "/guide/places/germany" },
+  ]);
+  const items = trail.itemListElement as {
+    position: number;
+    name: string;
+    item: string;
+  }[];
+
+  assert.deepEqual(
+    items.map((i) => i.position),
+    [1, 2, 3],
+    "positions must be 1-based and in order or the trail is ignored",
+  );
+  assert.ok(
+    items.every((i) => i.item.startsWith("https://")),
+    "a breadcrumb item has to be an absolute URL",
+  );
+  assert.ok(
+    !items.some((i) => i.item.includes("?")),
+    "a query string reached the structured data",
+  );
+  assert.equal(items[2].name, "Germany");
+});
+
+test("the FAQ markup carries the answers, and the site claims no search it lacks", () => {
+  const items = [
+    { q: "Is it free?", a: "Yes, all of it." },
+    { q: "Do I need an account?", a: "No." },
+  ];
+  const faq = faqSchema(items);
+  const questions = faq.mainEntity as {
+    name: string;
+    acceptedAnswer: { text: string };
+  }[];
+  assert.equal(questions.length, items.length);
+  assert.deepEqual(
+    questions.map((q) => q.acceptedAnswer.text),
+    items.map((i) => i.a),
+    "an answer went missing between the page and the markup",
+  );
+
+  // Pinned deliberately, so removing it is a decision rather than an accident.
+  // A `SearchAction` needs a URL TEMPLATE that runs a search, and the search on
+  // /opportunities is client state inside FilterBar — nothing here answers
+  // `?q=`. Declaring it would hand Google a URL that loads the unfiltered list.
+  assert.ok(
+    !("potentialAction" in webSiteSchema()),
+    "a sitelinks search box was declared for a search that is not in the URL",
+  );
+
+  // The one claim in the Organization block that could quietly become false.
+  assert.ok(
+    !("sameAs" in organizationSchema()),
+    "sameAs names profiles we do not control",
+  );
+});
+
+// ── What a search result actually shows ─────────────────────────────────────
+//
+// Measured live on 2026-08-22: 250 of 317 titles ran past 60 characters and 205
+// of 317 descriptions past 160, so on most pages the tail was cut. Nothing was
+// duplicated and nothing was missing — the uniqueness work held and the LENGTH
+// was never checked, because no test looked at it.
+
+test("boilerplate never pushes the subject out of a title", () => {
+  // The property that matters, stated as a property rather than as a list of
+  // pages: the qualifier is a nicety and the subject is not.
+  const short = fitTitle("Berlin", "the catch and the way in");
+  assert.ok(short.length <= SERP_TITLE_MAX);
+  assert.ok(short.startsWith("Berlin"), "the subject has to lead");
+  assert.ok(short.includes("Compass"), "the brand fits here and should be kept");
+
+  // Long subject: the qualifier goes first, then the brand, and the subject is
+  // never cut. A name sliced mid-word is worse in a result than a long one.
+  const long =
+    "Machine Learning Specialization by Andrew Ng and Stanford Online";
+  const fitted = fitTitle(long, "cost, dates and who can enter");
+  assert.ok(!fitted.includes("cost, dates"), "the qualifier survived past the budget");
+  assert.ok(fitted.startsWith(long), "the subject was truncated");
+
+  // The middle case: brand fits, qualifier does not.
+  const mid = fitTitle("Studying in the United Arab Emirates", "the honest picture");
+  assert.equal(mid, "Studying in the United Arab Emirates | Compass");
+  assert.ok(mid.length <= SERP_TITLE_MAX);
+});
+
+test("every real subject we publish produces a title inside the budget", () => {
+  // Over the actual registries, with the qualifiers the routes actually pass.
+  const cases: [string, string][] = [
+    ...HUBS.map(
+      (h) => [`Working in ${h.city}`, "the catch and the way in"] as [string, string],
+    ),
+    ...STUDY_DESTINATIONS.map(
+      (d) => [`Studying in ${d.name}`, "the honest picture"] as [string, string],
+    ),
+    ...MAJORS.map(
+      (m) => [m.name, "what it is, and who should not"] as [string, string],
+    ),
+    ...allCareerAreas().map(
+      ({ area }) => [area.title, "what it is and how you get in"] as [string, string],
+    ),
+  ];
+  const over = cases
+    .map(([s, q]) => ({ s, title: fitTitle(s, q) }))
+    .filter((c) => c.title.length > SERP_TITLE_MAX);
+  assert.deepEqual(
+    over.map((c) => `${c.title.length} ${c.title}`),
+    [],
+    "these titles are cut in a search result",
+  );
+
+  // The catalog is the one set where a name alone can exceed the budget, and
+  // that is allowed — but the fallback must have dropped everything droppable.
+  for (const c of COMPETITIONS) {
+    const t = fitTitle(c.name, "cost, dates and who can enter");
+    if (t.length > SERP_TITLE_MAX) {
+      assert.equal(t, c.name, `${c.id}: over budget but still carrying boilerplate`);
+    }
+  }
+
+  // Shortening must not make two pages share a title. Dropping a qualifier
+  // removes the differentiating half, so the subjects have to carry it — and
+  // for the catalog the fallback is the bare name, which is the only thing
+  // left to tell two rows apart.
+  const catalogTitles = COMPETITIONS.map((c) =>
+    fitTitle(c.name, "cost, dates and who can enter"),
+  );
+  assert.equal(
+    new Set(catalogTitles).size,
+    catalogTitles.length,
+    "two opportunities now produce the same title",
+  );
+  const guideTitles = cases.map(([s, q]) => fitTitle(s, q));
+  assert.equal(
+    new Set(guideTitles).size,
+    guideTitles.length,
+    "two guide pages now produce the same title",
+  );
+});
+
+test("only a WRONG url fails the link gate, and a wrong one still does", () => {
+  // The weekly Link health workflow failed on all four runs of its life, every
+  // time naming links that were alive: GitHub's runners get refused by a dozen
+  // of these hosts. Verified by hand on 2026-08-24 — ijsoweb.org,
+  // shanghai.nyu.edu and icaci.org all answer 200 from a residential request,
+  // and icaci.org renders fully in a browser while resetting curl.
+  //
+  // A gate that has never once passed is a red light people scroll past, which
+  // is worse than no gate: it also hides the day something is really wrong. The
+  // file's own comment always described the right rule and the code did not
+  // implement it, so this asserts the rule rather than the comment.
+
+  // The far end says our address is wrong.
+  for (const s of [400, 404, 405, 410, 451]) {
+    assert.equal(classifyStatus(s), "broken", `HTTP ${s} should fail the gate`);
+  }
+
+  // The far end says the fault is its own. Editing our link cannot fix it.
+  for (const s of [500, 502, 503, 504, 522]) {
+    assert.equal(
+      classifyStatus(s),
+      "unreachable",
+      `HTTP ${s} is their server, not our URL`,
+    );
+  }
+
+  // The far end answered and refused this caller because it thinks we are a
+  // script. A human browser sails past, so this proves nothing and fails
+  // nothing.
+  // 412 is in this list, and it was missing until 2026-08-25. The guide's
+  // checker had treated it as a bot wall for releases and CLAUDE.md stated the
+  // rule as "403/429/412", so the catalog gate was the one copy that had not
+  // been told — and a catalog URL behind such a rule would have fallen through
+  // to `broken` and exited 1 on a live page. Two gates, one rule.
+  for (const s of [403, 406, 409, 412, 429]) {
+    assert.equal(classifyStatus(s), "blocked");
+  }
+
+  // 401 is NOT a bot wall, and it sat inside that set until 2026-08-24.
+  //
+  // "We think you are a robot" and "this needs credentials you do not have"
+  // are different sentences, and only the first one describes a link a student
+  // can still open. The catalog's NAO Cup row was a Google Forms /edit address
+  // carrying a response token — an owner-only URL answering 401 to everyone
+  // else — and this gate reported that run as "170/173 healthy · 0 broken".
+  // The one row it was built to catch was the one it waved through.
+  assert.equal(classifyStatus(401), "private");
+  assert.deepEqual([...FAILS_THE_GATE].sort(), ["broken", "private"]);
+
+  for (const s of [200, 204, 301, 302]) {
+    assert.equal(classifyStatus(s), "ok");
+  }
+});
+
+test("the pages that bypass pageMeta are inside the budget too", () => {
+  // `fitDescription` runs inside `pageMeta`, which is exactly why the routes
+  // that do NOT use it were the ones left over. The home page is the important
+  // one: its metadata lives in the root layout, it inherits down to /demo, and
+  // it is the page most likely to be seen in a result. It was 228 characters
+  // while every page that went through the helper was inside 160.
+  const src = readFileSync(
+    path.join(process.cwd(), "app/layout.tsx"),
+    "utf8",
+  );
+  const m = src.match(/description:\s*\n?\s*"([^"]+)"/);
+  assert.ok(m, "the root layout no longer declares a description");
+  assert.ok(
+    m![1].length <= SERP_DESCRIPTION_MAX,
+    `the root description is ${m![1].length} characters; a result shows about ${SERP_DESCRIPTION_MAX}`,
+  );
+  // And it should still be a real description, not a stub.
+  assert.ok(m![1].length >= 90, "the root description is too short to be useful");
+});
+
+test("no description we publish is longer than a result will show", () => {
+  const sources = [
+    ...HUBS.map((h) => h.what),
+    ...STUDY_DESTINATIONS.map((d) => d.oneLine),
+    ...MAJORS.map((m) => m.whatItActuallyIs),
+    ...allCareerAreas().map(({ area }) => area.what),
+  ];
+  for (const s of sources) {
+    const d = fitDescription(s);
+    assert.ok(
+      d.length <= SERP_DESCRIPTION_MAX,
+      `description is ${d.length}: ${d.slice(0, 60)}`,
+    );
+  }
+  // It trims at a boundary, not mid-word.
+  const long = "A".repeat(80) + " " + "B".repeat(120);
+  const cut = fitDescription(long);
+  assert.ok(cut.length <= SERP_DESCRIPTION_MAX);
+  assert.ok(cut.endsWith("…"), "a hard cut should say it was cut");
+  // A sentence boundary is preferred when there is one past the floor.
+  const twoSentences =
+    "This opening sentence is comfortably past the eighty-character floor and stands alone. " +
+    "This second one pushes the whole thing past the budget, so it is dropped entirely.";
+  assert.ok(twoSentences.length > SERP_DESCRIPTION_MAX, "fixture must need trimming");
+  assert.ok(fitDescription(twoSentences).endsWith("stands alone."));
+
+  // A short first sentence is NOT allowed to become the whole description: the
+  // ellipsis carries more of the text than stopping at the full stop would.
+  const shortThenLong =
+    "Too short. " +
+    "Everything worth knowing is in this second sentence, which runs well past the budget and therefore has to be cut somewhere.";
+  assert.ok(!fitDescription(shortThenLong).endsWith("Too short."));
+  // Short text is returned untouched.
+  assert.equal(fitDescription("Short and fine."), "Short and fine.");
+});
+
+test("the country list leads with what we actually model, and says nothing else", () => {
+  // The order of this list is the only editorial claim it makes, so both halves
+  // are pinned. It used to lead with the home region on the argument that a
+  // guide listing eighteen ways to leave and none to stay is recommending; the
+  // founders' counter-argument was that leading with Kazakhstan steers just as
+  // hard in the other direction. The lead is derived from `modelled` now, which
+  // is a fact about the product rather than a view about a country.
+  const flags = STUDY_DESTINATIONS.map((d) => d.modelled);
+  const lastModelled = flags.lastIndexOf(true);
+  const firstUnmodelled = flags.indexOf(false);
+  assert.ok(
+    lastModelled < firstUnmodelled,
+    "a modelled destination fell behind an unmodelled one, so the lead is no longer the stated rule",
+  );
+
+  // Derived, not hand-listed: the front of the list must BE the modelled set,
+  // so a country that gains or loses an odds engine moves on its own.
+  const lead = STUDY_DESTINATIONS.slice(0, lastModelled + 1).map((d) => d.id);
+  assert.deepEqual(
+    [...lead].sort(),
+    STUDY_DESTINATIONS.filter((d) => d.modelled)
+      .map((d) => d.id)
+      .sort(),
+  );
+
+  // And those are the five the report actually computes. If this ever fails it
+  // means either a country gained an engine and nobody told the report, or the
+  // flag is being used for something it does not mean.
+  assert.deepEqual([...lead].sort(), [
+    "hong-kong",
+    "italy",
+    "south-korea",
+    "uae",
+    "united-states",
+  ]);
+
+  // The regional grouping is a different thing and is deliberately untouched:
+  // it groups the world map geographically and asserts nothing about merit.
+  assert.equal(REGION_ORDER[0], "central_asia");
+});
+
+test("the phone call-to-action appears only where the page has none", () => {
+  // The numbers are measured, not invented: the landing page at 375x812, with
+  // the hero button row and the closing call as the two edges. An
+  // IntersectionObserver does not fire at all in a throttled pane, so this is
+  // the only place the rule can actually be checked.
+  const VIEW = 812;
+  const at = (heroTop: number, finalTop: number): CtaEdges => {
+    let e = NO_EDGES;
+    e = foldEdge(e, "hero", heroTop < VIEW && heroTop > -60, heroTop);
+    e = foldEdge(e, "final", finalTop < VIEW && finalTop > -1200, finalTop);
+    return e;
+  };
+
+  // Top of the page: the hero's own buttons are right there.
+  assert.equal(
+    stickyCtaVisible(at(607, 13800)),
+    false,
+    "two filled controls on one screen — the rule this bar exists under",
+  );
+
+  // The long middle, where every measured scroll position has nothing to press.
+  assert.equal(stickyCtaVisible(at(-5731, 6712)), true);
+  assert.equal(stickyCtaVisible(at(-2000, 9000)), true);
+
+  // The closing call is on screen and is the real thing. The bar gets out of
+  // its way rather than floating over it.
+  assert.equal(stickyCtaVisible(at(-12000, 300)), false);
+
+  // Past it, at the footer, whose links are small and close together. This is
+  // the latch: "reached" has to mean at-or-past, never "currently visible", or
+  // the bar comes back on top of Privacy and Terms.
+  assert.equal(
+    stickyCtaVisible(at(-13000, -900)),
+    false,
+    "the bar returned over the footer",
+  );
+
+  // First paint, before anything has scrolled: the closing call is below the
+  // fold and so is also "not intersecting". Keying on that alone is the bug
+  // `top < 0` rules out — it would show the bar at scroll position zero.
+  const firstPaint = foldEdge(NO_EDGES, "hero", false, 13800);
+  assert.equal(
+    stickyCtaVisible(firstPaint),
+    false,
+    "an element below the fold was read as one scrolled past",
   );
 });

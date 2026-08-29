@@ -5,13 +5,24 @@ name: Link health
 # fake. A student found one before we did. Links rot on their own schedule, so
 # this checks weekly rather than waiting for someone to push.
 #
-# READ A FAILURE HERE AS "GO AND LOOK", NOT AS A VERDICT. These runners come
-# from datacenter IP ranges that many sites block outright: the first run
-# reported NYU Shanghai broken and seven others bot-walled, all of which answer
-# normally from an ordinary connection. Always reproduce with `npm run
-# test:links` locally before touching a catalog entry — and never delete a URL
-# on the strength of one bad day, since two "dead" links recovered by
-# themselves within the hour.
+# A FAILURE HERE NOW MEANS ONE THING: some site answered and said the address we
+# ship is wrong (a 4xx that is not a bot wall). That is the only case worth
+# waking someone for, and it is the only case that fails.
+#
+# It did not used to be. These runners come from datacenter IP ranges that many
+# of these sites refuse outright, so anything they could not reach was reported
+# as a dead link — and this workflow failed on all four runs of its life, every
+# time naming links that were alive. Checked by hand on 2026-08-24: the three it
+# called broken that morning all answer 200 from an ordinary connection, and one
+# of them renders in full in a browser while resetting the connection to a
+# script. A gate that has never once passed is a red light people scroll past,
+# which is worse than no gate, because it also hides the day something is real.
+#
+# Everything we could not verify is still PRINTED every run, under "blocked" or
+# "unreachable". Read those as "go and look", reproduce with `npm run test:links`
+# locally before touching a catalog entry, and never delete a URL on the
+# strength of one bad day — two "dead" links here recovered by themselves within
+# the hour, and globe.gov came back after several days of genuine 504s.
 
 on:
   schedule:

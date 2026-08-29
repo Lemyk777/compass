@@ -22,7 +22,7 @@ import { guidePickState } from "@/lib/guide/plan-state";
 import { AddToPlan } from "@/components/guide/AddToPlan";
 import { WorkFromHere } from "@/components/guide/Spine";
 import { areasForHub } from "@/lib/data/spine";
-import { pageMeta } from "@/lib/seo";
+import { fitTitle, pageMeta } from "@/lib/seo";
 
 // One city, in full. Same three facts as everywhere in world.ts and in the same
 // order every time: what it is, what the catch is, how someone who is not from
@@ -37,7 +37,7 @@ export async function generateMetadata({
   const hub = HUBS.find((h) => h.id === params.hub);
   if (!hub) return { title: "Not found — Compass" };
   return pageMeta({
-    title: `Working in ${hub.city} — the catch and the way in | Compass`,
+    title: fitTitle(`Working in ${hub.city}`, "the catch and the way in"),
     description: hub.what,
     path: `/guide/cities/${hub.id}`,
     type: "article",
@@ -93,7 +93,7 @@ export default async function GuideHubPage({
           </GuideBlock>
           <GuideBlock label="How the money works">
             {hub.money}
-            <span className="mt-1.5 block max-w-[60ch] text-xs text-ink-faint">
+            <span className="mt-1.5 block max-w-[54ch] text-xs text-ink-faint">
               Described in shape rather than figures on purpose: rents and
               salaries move every year and we cannot keep numbers true, but what
               is expensive and what quietly eats income stays true for far
@@ -131,8 +131,8 @@ export default async function GuideHubPage({
       title: "Who is named here",
       body: (
         <>
-          <p className="max-w-[60ch] text-sm leading-relaxed text-ink-soft">
-            Not a ranking and not in order of merit — the places a subject is
+          <p className="max-w-[54ch] text-base leading-relaxed text-ink-soft">
+            Not a ranking and not in order of merit. These are the places a subject is
             actually studied and taught at in this city, so you have something
             to search for.
           </p>
@@ -149,7 +149,7 @@ export default async function GuideHubPage({
                   {u.knownFor.map((f) => (
                     <li
                       key={f}
-                      className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-soft"
+                      className="rounded-full bg-surface px-2 py-0.5 text-[12px] font-medium text-ink-soft"
                     >
                       {FACULTY_LABEL[f]}
                     </li>
@@ -162,7 +162,7 @@ export default async function GuideHubPage({
             ))}
           </ul>
           <p className="text-xs text-ink-faint">
-            Language of teaching moves within a cycle — check it on the
+            Language of teaching moves within a cycle, so check it on the
             university&rsquo;s own page for your own entry year.
           </p>
         </>
@@ -183,6 +183,7 @@ export default async function GuideHubPage({
         stated,
       )}
       title={hub.city}
+      path={`/guide/cities/${hub.id}`}
       transitionName={guideMorph("hub", hub.id)}
       sub={`${hub.country} · ${REGION_LABEL[hub.region]}`}
       lead={hub.what}
@@ -196,7 +197,7 @@ export default async function GuideHubPage({
             label={hub.city}
             signedIn={pick.signedIn}
             saved={pick.saved}
-            maps={pick.maps}
+            
             returnTo={`/guide/cities/${hub.id}`}
           />
           {/* If this city sits in a country we profile in full, that page is the
@@ -221,10 +222,13 @@ export default async function GuideHubPage({
           )}
 
           {nearby.length > 0 && (
-            <section className="rounded-2xl border border-line bg-card p-4 sm:p-5">
-              <h2 className="text-sm font-semibold text-ink">
+            <section
+              aria-label={`Other cities in ${REGION_LABEL[hub.region]}`}
+              className="rounded-2xl border border-line bg-card p-4 sm:p-5"
+            >
+              <p className="text-sm font-semibold text-ink">
                 Others in {REGION_LABEL[hub.region]}
-              </h2>
+              </p>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {nearby.map((h) => (
                   <li key={h.id}>

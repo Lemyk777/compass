@@ -37,7 +37,7 @@ export function Shell({
     <Tag
       id={id}
       tabIndex={tabIndex}
-      className={`mx-auto w-full max-w-5xl px-4 sm:px-6 lg:max-w-6xl xl:max-w-7xl xl:px-8 2xl:max-w-[90rem] ${className}`}
+      className={`w-full max-w-[90rem] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-14 ${className}`}
     >
       {children}
     </Tag>

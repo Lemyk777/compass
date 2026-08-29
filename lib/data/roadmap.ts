@@ -22,6 +22,9 @@ import {
   type Competition,
   type SatSitting,
 } from "@/lib/data/key-dates";
+// `opportunity-vocab` imports nothing at all, so reaching it from here costs
+// no bundle weight anywhere — that is the whole point of the module.
+import { LEVEL_LABEL } from "@/lib/data/opportunity-vocab";
 import { resolveSchoolDeadlines } from "@/lib/data/app-deadlines";
 import { resolveUniversityDeadlines } from "@/lib/data/intl-deadlines";
 import type { DestinationCode } from "@/lib/data/destinations";
@@ -134,12 +137,18 @@ function shiftISO(iso: string, days: number): string {
   ).padStart(2, "0")}`;
 }
 
+// Built once, for the reason written up on `formatDate` in opportunity-format:
+// passing an options object to `toLocaleDateString` constructs and discards an
+// Intl.DateTimeFormat on every call. This one labels every phase of a roadmap,
+// so it is called a dozen times per build rather than once.
+const MONTH_YEAR = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
 function monthYear(iso: string): string {
-  return new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  return MONTH_YEAR.format(new Date(iso + "T00:00:00Z"));
 }
 
 /** ISO a ≤ b (string compare is safe for YYYY-MM-DD). */
@@ -193,7 +202,7 @@ function phasesFor(
           id: "foundation",
           name: "Foundation",
           focus:
-            "You have a rare amount of runway — spend it building the base of a real 'spike', not just polishing what's there.",
+            "You have a rare amount of runway. Spend it building the base of a real 'spike', not just polishing what's there.",
           startISO: todayISO,
           endISO: shiftISO(todayISO, 120),
           kinds: ["profile", "activity", "test"],
@@ -225,7 +234,7 @@ function phasesFor(
           id: "now",
           name: "Right now",
           focus:
-            "Six-to-twelve months is enough for one or two decisive moves — pick them and start; don't scatter your effort.",
+            "Six-to-twelve months is enough for one or two decisive moves. Pick them and start, and don't scatter your effort.",
           startISO: todayISO,
           endISO: shiftISO(todayISO, 45),
           kinds: ["profile", "test", "activity"],
@@ -254,9 +263,9 @@ function phasesFor(
       return [
         {
           id: "triage",
-          name: "This month — triage",
+          name: "This month: triage",
           focus:
-            "There isn't time to build a new spike before you apply — maximize what you already have. Lock your school list and start essays now.",
+            "There isn't time to build a new spike before you apply, so maximize what you already have. Lock your school list and start essays now.",
           startISO: todayISO,
           endISO: shiftISO(todayISO, 30),
           kinds: ["decision", "essay", "logistics", "test"],
@@ -309,7 +318,7 @@ function rangeLabel(startISO: string, endISO: string | null): string {
   const start = monthYear(startISO);
   if (!endISO) return `From ${start}`;
   const end = monthYear(endISO);
-  return start === end ? start : `${start} – ${end}`;
+  return start === end ? start : `${start}, ${end}`;
 }
 
 /** First phase whose date window contains `iso`; falls back to the last phase. */
@@ -339,7 +348,7 @@ function gatherDeadlines(
     if (seen.has(uni)) return;
     seen.add(uni);
     unconfirmed.push({
-      text: `${uni} — confirm the deadline`,
+      text: `${uni}: confirm the deadline`,
       source: "note",
       kind: "decision",
       why,
@@ -387,7 +396,7 @@ function gatherDeadlines(
       if (!r) {
         addUnconfirmed(
           uni,
-          "We don't have a verified date for this school yet — check its official admissions page."
+          "We don't have a verified date for this school yet. Check its official admissions page."
         );
         continue;
       }
@@ -406,7 +415,7 @@ function gatherDeadlines(
         } else {
           addUnconfirmed(
             uni,
-            "This cycle's rounds have closed — check the official page for the next intake.",
+            "This cycle's rounds have closed. Check the official page for the next intake.",
             r.source
           );
         }
@@ -467,7 +476,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
             id: "upcoming",
             name: "Upcoming",
             focus:
-              "Add your graduation year to anchor these to your real deadlines — here's what's on the calendar meanwhile.",
+              "Add your graduation year to anchor these to your real deadlines. Here's what's on the calendar meanwhile.",
             rangeLabel: `From ${monthYear(todayISO)}`,
             startISO: todayISO,
             endISO: null,
@@ -488,7 +497,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
       runwayMonths: null,
       headline: "Add your graduation year to unlock your roadmap",
       subhead:
-        "How much runway you have completely changes the plan — a student with a year to go and one with a month should not get the same advice.",
+        "How much runway you have completely changes the plan. A student with a year to go and one with a month should not get the same advice.",
       phases,
       deferred: [],
     };
@@ -568,7 +577,7 @@ export function buildRoadmap(inputs: RoadmapInputs): Roadmap {
   }
   if (!canBuild && usableSat.length === 0 && satScore != null) {
     buckets[0].push({
-      text: "No SAT sitting lands in time — the score schools will see is your current one, so don't wait on a retake.",
+      text: "No SAT sitting lands in time. The score schools will see is your current one, so don't wait on a retake.",
       source: "note",
       kind: "test",
     });
@@ -650,7 +659,7 @@ function satActions(
   lastBeforeTest: string | null
 ): RoadmapAction[] {
   return steps.map((s) => ({
-    text: `SAT test day — ${formatDate(s.test)}`,
+    text: `SAT test day: ${formatDate(s.test)}`,
     source: "sat" as const,
     kind: "test" as const,
     why: `Register by ${formatDate(s.regDeadline)}`,
@@ -675,7 +684,12 @@ function competitionActions(
     url: c.url,
     anchorDate: c.deadline,
     daysLeft: c.daysToDeadline,
-    tag: c.level,
+    // `LEVEL_LABEL`, never the raw union. The values are database spellings and
+    // any surface printing one shows a reader an enum — the admin form was
+    // given the label and this, the one a STUDENT reads, was not. It matters
+    // more here since `school` was added: the bare word reads as a kind of
+    // institution rather than as the narrowest rung.
+    tag: LEVEL_LABEL[c.level],
   }));
 }
 
@@ -697,7 +711,7 @@ function anchorClause(opLabel: string | null, deadlineCount: number): string {
   if (!opLabel) return "your main application season";
   const soonest = `your soonest verified deadline (${opLabel})`;
   return deadlineCount > 1
-    ? `${soonest} — the earliest across your target schools`
+    ? `${soonest}, the earliest across your target schools`
     : soonest;
 }
 
@@ -713,22 +727,22 @@ function framing(
   switch (regime) {
     case "building":
       return {
-        headline: `You have ${runway} — time to build`,
+        headline: `You have ${runway}. Time to build`,
         subhead: `That's enough runway to genuinely raise your profile, not just polish it. This plan front-loads the profile-building work now and leaves the logistics for ${anchor} until last.`,
       };
     case "focusing":
       return {
-        headline: `You have ${runway} — time to focus`,
-        subhead: `Enough for one or two decisive moves, not a full rebuild. This plan picks the highest-leverage work and phases in essays and logistics toward ${anchor}.`,
+        headline: `You have ${runway}. Time to focus`,
+        subhead: `Enough for one or two decisive moves, not a full rebuild. This plan picks the work that changes the most, and phases in essays and logistics toward ${anchor}.`,
       };
     case "sprinting":
       return {
-        headline: `You have ${runway} — this is a sprint`,
+        headline: `You have ${runway}. This is a sprint`,
         subhead: `Not enough time to build a new spike before ${anchor}, so this plan maximizes what you already have: lock the list, write, and submit. Longer-term profile moves are noted separately for next cycle.`,
       };
     default:
       return {
-        headline: `You have ${runway} — time to submit`,
+        headline: `You have ${runway}. Time to submit`,
         subhead: `This is pure execution. Everything below is about finishing essays, securing recommenders, and getting applications in cleanly before ${anchor}.`,
       };
   }

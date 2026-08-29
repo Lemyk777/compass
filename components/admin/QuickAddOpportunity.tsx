@@ -11,6 +11,16 @@ import {
 // and key-dates builds a lookup map over the whole ~2,700-entry catalog at
 // module load. `CATEGORY_ORDER` is the same list the student's tabs read.
 import { CATEGORY_ORDER } from "@/lib/data/opportunity-filter";
+// The vocabularies themselves, and the words for them. `opportunity-vocab`
+// imports nothing, so a client component may hold it — which is the whole
+// reason the three selects below can stop writing their own lists out.
+import {
+  CATEGORY_LABEL,
+  COMPETITION_LEVELS,
+  COST_LABEL,
+  COST_MODELS,
+  LEVEL_LABEL,
+} from "@/lib/data/opportunity-vocab";
 import { FACULTIES, type FacultyValue } from "@/lib/data/faculties";
 import { FACULTY_LABEL } from "@/lib/data/faculties";
 
@@ -87,7 +97,7 @@ export function QuickAddOpportunity() {
           + Add an opportunity
         </Button>
         <span className="text-xs text-ink-faint">
-          Admin — publishes immediately
+          Admin, publishes immediately
         </span>
         {done && (
           <span
@@ -106,7 +116,7 @@ export function QuickAddOpportunity() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-ink">Add an opportunity</h2>
-          <p className="mt-1 max-w-[60ch] text-xs leading-relaxed text-ink-soft">
+          <p className="mt-1 max-w-[54ch] text-xs leading-relaxed text-ink-soft">
             Publishes immediately, into the same list and the same card as
             everything else. Every field below is one a student actually reads.
           </p>
@@ -122,7 +132,7 @@ export function QuickAddOpportunity() {
             id="qa-name"
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
-            placeholder="NAO Cup — debate tournament"
+            placeholder="NAO Cup, debate tournament"
           />
         </Field>
         <Field
@@ -149,7 +159,7 @@ export function QuickAddOpportunity() {
             id="qa-elig"
             value={form.eligibility}
             onChange={(e) => set("eligibility", e.target.value)}
-            placeholder="School students — no experience required"
+            placeholder="School students, no experience required"
           />
         </Field>
       </div>
@@ -186,9 +196,13 @@ export function QuickAddOpportunity() {
             }
             className="h-11 w-full rounded-xl border border-line bg-card px-3 text-[0.95rem] text-ink focus-visible:focus-ring"
           >
-            {["school", "regional", "national", "international"].map((l) => (
+            {/* Narrowest first: an admin posting something they were told
+                about is thinking upward from their own city. Same array as the
+                student's filter, which renders it widest-first — one
+                vocabulary, two reading orders, no second list. */}
+            {[...COMPETITION_LEVELS].reverse().map((l) => (
               <option key={l} value={l}>
-                {l}
+                {LEVEL_LABEL[l]}
               </option>
             ))}
           </select>
@@ -209,7 +223,7 @@ export function QuickAddOpportunity() {
                 form that calls it. */}
             {CATEGORY_ORDER.map((c) => (
               <option key={c} value={c}>
-                {c.replace(/_/g, " ")}
+                {CATEGORY_LABEL[c]}
               </option>
             ))}
           </select>
@@ -251,19 +265,20 @@ export function QuickAddOpportunity() {
             }
             className="h-11 w-full rounded-xl border border-line bg-card px-3 text-[0.95rem] text-ink focus-visible:focus-ring"
           >
-            {[
-              "unknown",
-              "free",
-              "free_cert_paid",
-              "free_then_paid",
-              "freemium",
-              "subscription",
-              "one_time",
-              "paid_aid",
-              "varies",
-            ].map((c) => (
-              <option key={c} value={c}>
-                {c.replace(/_/g, " ")}
+            {/* Was a tenth hand-written list, and `funded` was the member it
+                was missing — *they pay you*, the strongest thing we can say
+                about an opportunity's money, and the one an admin adding a
+                local olympiad is most likely to need. The server action
+                accepted it the whole time; only this list refused it, so the
+                row shipped as "cost unverified".
+
+                It also printed the database spellings through
+                `replace(/_/g, " ")` — "free cert paid", "paid aid" — while the
+                partner form asked the same question in sentences. One
+                vocabulary means the good copy reaches both consoles. */}
+            {COST_MODELS.map((c) => (
+              <option key={c} value={c} title={COST_LABEL[c].hint}>
+                {COST_LABEL[c].label}
               </option>
             ))}
           </select>
@@ -274,7 +289,7 @@ export function QuickAddOpportunity() {
         <legend className="text-xs font-medium text-ink">
           Fields{" "}
           <span className="font-normal text-ink-faint">
-            — none selected means every field
+            (none selected means every field)
           </span>
         </legend>
         <div className="mt-2 flex flex-wrap gap-1.5">

@@ -249,7 +249,7 @@ function buildReasoning(p: KoreaProgram, c: Computed): string {
       : c.source === "ib"
         ? `Your IB total maps to ~${c.index}% on the transcript scale Korean screens read`
         : c.source === "sat"
-          ? `Your SAT maps to ~${c.index}% on the transcript scale — a rough stand-in, since Korean screens read the school GPA itself`
+          ? `Your SAT maps to ~${c.index}% on the transcript scale, a rough stand-in, since Korean screens read the school GPA itself`
           : `Without grades we've assumed a neutral index (~${c.index}%), so this read is deliberately rough`;
 
   const placement =
@@ -263,7 +263,7 @@ function buildReasoning(p: KoreaProgram, c: Computed): string {
     c.status === "likely"
       ? `On the document screen you are a strong, likely candidate for ${p.university} ${p.program_name}.`
       : c.status === "target"
-        ? `${p.university} ${p.program_name} is a realistic target — competitive, but in range.`
+        ? `${p.university} ${p.program_name} is a realistic target: competitive, but in range.`
         : `${p.university} ${p.program_name} is a reach at your current record.`;
 
   const languageLine = buildLanguageLine(p, c);
@@ -272,24 +272,24 @@ function buildReasoning(p: KoreaProgram, c: Computed): string {
   const interviewLine = p.interview_required
     ? c.interviewReady && c.status === "likely"
       ? ` This university interviews shortlisted international applicants; your record positions you well, though the interview still finalises the outcome.`
-      : ` This university interviews shortlisted international applicants, so the interview — not documents alone — finalises the outcome.`
+      : ` This university interviews shortlisted international applicants, so the interview, not documents alone, finalises the outcome.`
     : "";
 
   const offerLine = c.conditional_offer
-    ? ` Because your grades are predicted, a strong application would lead to a Conditional Offer — confirmed once you actually achieve those grades and graduate.`
+    ? ` Because your grades are predicted, a strong application would lead to a Conditional Offer, confirmed once you actually achieve those grades and graduate.`
     : "";
 
   const scholarshipLine =
     c.scholarship === "likely_full"
       ? p.auto_full_scholarship
-        ? ` Every admitted KAIST international undergraduate receives full tuition plus a monthly stipend — admission IS the scholarship.`
-        : ` At your level you are in full-tuition merit-scholarship territory — Korean admission scholarships are decided from the same document screen, with no separate application.`
+        ? ` Every admitted KAIST international undergraduate receives full tuition plus a monthly stipend. Admission IS the scholarship.`
+        : ` At your level you are in full-tuition merit-scholarship territory. Korean admission scholarships are decided from the same document screen, with no separate application.`
       : c.scholarship === "likely_partial"
         ? p.auto_full_scholarship
           ? ` If admitted, KAIST covers full tuition plus a stipend for every international undergraduate.`
-          : ` You are within range of a partial admission scholarship, decided automatically from the document screen; a stronger record — or a higher TOPIK/IELTS — raises the award.`
+          : ` You are within range of a partial admission scholarship, decided automatically from the document screen; a stronger record, or a higher TOPIK/IELTS, raises the award.`
         : c.scholarship === "unlikely"
-          ? ` A merit scholarship is unlikely at this level — the larger awards go to the top of the admitted pool.`
+          ? ` A merit scholarship is unlikely at this level. The larger awards go to the top of the admitted pool.`
           : "";
 
   return (
@@ -299,7 +299,7 @@ function buildReasoning(p: KoreaProgram, c: Computed): string {
     interviewLine +
     offerLine +
     scholarshipLine +
-    ` Korean international admission is a whole-file document screen, so treat this as a directional read — not a guarantee.`
+    ` Korean international admission is a whole-file document screen, so treat this as a directional read, not a guarantee.`
   );
 }
 
@@ -312,11 +312,11 @@ function buildLanguageLine(p: KoreaProgram, c: Computed): string {
 
   if (c.language === "meets") {
     return p.language_track === "KR"
-      ? ` You meet the language requirement (${bar}) — note that instruction is largely in Korean, so keep building past the minimum.`
+      ? ` You meet the language requirement (${bar}). Note that instruction is largely in Korean, so keep building past the minimum.`
       : ` You meet the language requirement (${bar}).`;
   }
   if (c.language === "below") {
-    return ` The language requirement (${bar}) is an eligibility document, and your current credential falls short of it — that is why this read is capped at "target" until the requirement is met.`;
+    return ` The language requirement (${bar}) is an eligibility document, and your current credential falls short of it. That is why this read is capped at "target" until the requirement is met.`;
   }
   return ` This program requires ${bar} as an eligibility document; we haven't seen that credential yet, so the read stays capped at "target" until it's confirmed.`;
 }
@@ -330,7 +330,7 @@ function achievementLine(p: KoreaProgram, c: Computed): string {
 
   if (c.ach.score >= 5) {
     if (c.status !== c.rawStatus && c.status !== "target") {
-      return ` Your achievements (${what}) lift this from a grades-only "${c.rawStatus}" to "${c.status}" — Korean document screening reads the whole file, and the personal statement/record is where it's won.`;
+      return ` Your achievements (${what}) lift this from a grades-only "${c.rawStatus}" to "${c.status}". Korean document screening reads the whole file, and the personal statement/record is where it's won.`;
     }
     if (p.interview_required && c.interviewReady) {
       return ` Your achievements (${what}) position you well for the interview stage.`;
@@ -351,26 +351,26 @@ function buildRoadmap(p: KoreaProgram, conditional: boolean): string[] {
         : `IELTS ${p.english_ielts}+ (or the TOEFL equivalent)`;
 
   const steps: string[] = [
-    `Apply directly through ${p.university}'s international-admission portal — each Korean university runs its own application, with a March (main) and September intake; documents for the March intake are typically due September–October of the previous year.`,
+    `Apply directly through ${p.university}'s international-admission portal. Each Korean university runs its own application, with a March (main) and September intake; documents for the March intake are typically due September–October of the previous year.`,
     `Confirm you qualify for the international ("pure foreigner") track: both you and your parents must hold non-Korean citizenship, and your 12 years of schooling must be outside the Korean system.`,
     `Prepare the document file: apostilled transcript and graduation (or expected-graduation) certificate${conditional ? " with predicted grades" : ""}, passports for you and your parents, a personal statement / study plan, and a teacher recommendation.`,
-    `Secure the language credential (${lang}) before the document deadline — it is an eligibility requirement, not a nice-to-have.`,
+    `Secure the language credential (${lang}) before the document deadline. It is an eligibility requirement, not a nice-to-have.`,
   ];
 
   if (p.interview_required) {
     steps.push(
-      "Shortlisted applicants are interviewed (in person or online) — prepare to discuss your study plan, motivation and subject fundamentals."
+      "Shortlisted applicants are interviewed, in person or online. Prepare to discuss your study plan, motivation and subject fundamentals."
     );
   }
 
   steps.push(
     p.auto_full_scholarship
       ? "There is no separate scholarship form: every admitted international undergraduate receives full tuition plus a monthly stipend."
-      : "Admission scholarships are decided from the same document screen — no separate form; a stronger file and a higher TOPIK/IELTS raise the award. Also consider the (separate, very competitive) Global Korea Scholarship (GKS) run by the Korean government."
+      : "Admission scholarships are decided from the same document screen. There is no separate form, and a stronger file and a higher TOPIK/IELTS raise the award. Also consider the (separate, very competitive) Global Korea Scholarship (GKS) run by the Korean government."
   );
 
   steps.push(
-    "After the offer, the university issues a Certificate of Admission — use it to apply for the D-2 student visa at the Korean embassy; start 4–8 weeks before term."
+    "After the offer, the university issues a Certificate of Admission. Use it to apply for the D-2 student visa at the Korean embassy; start 4–8 weeks before term."
   );
 
   return steps;

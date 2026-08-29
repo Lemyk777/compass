@@ -53,7 +53,7 @@ export function YourPicks({ picks }: { picks: PlanPick[] }) {
   return (
     <section
       aria-labelledby="your-picks"
-      className="rounded-2xl border border-line bg-card p-5"
+      className="rounded-2xl border border-line/70 bg-card p-6 shadow-card transition-all duration-200 hover:shadow-lift"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 id="your-picks" className="text-base font-semibold text-ink">
@@ -66,7 +66,7 @@ export function YourPicks({ picks }: { picks: PlanPick[] }) {
           Add more
         </Link>
       </div>
-      <p className="mt-1 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+      <p className="mt-1 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
         Each one opens where you read it. This is what the plan is built out of
         — nothing here commits you to anything.
       </p>
@@ -74,23 +74,23 @@ export function YourPicks({ picks }: { picks: PlanPick[] }) {
       <div className="mt-4 space-y-4">
         {groups.map((g) => (
           <div key={g.kind}>
-            <h3 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+            <h3 className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
               {/* The guide's own step number, not a position in this list. */}
               <span
                 data-num
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface text-[11px] font-semibold tabular-nums text-ink-soft"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold tabular-nums text-accent-ink"
               >
                 {g.step}
               </span>
               {g.heading}
             </h3>
-            <ul className="mt-2 flex flex-wrap gap-2">
+            <ul className="mt-2.5 flex flex-wrap gap-2">
               {g.picks.map((p) => (
                 <li key={p.ref}>
                   {/* Link and remove are SIBLINGS inside the pill, never nested
                       — a button inside an anchor is invalid and the browser
                       resolves it by guessing. */}
-                  <span className="inline-flex items-stretch overflow-hidden rounded-full border border-line bg-surface transition-colors hover:border-accent">
+                  <span className="inline-flex items-stretch overflow-hidden rounded-full border border-line/80 bg-surface/90 shadow-sm transition-all hover:border-accent hover:shadow">
                     <Link
                       href={p.href}
                       className="inline-flex min-h-11 items-center pl-3.5 pr-2 text-sm font-medium text-ink transition-colors hover:text-accent-ink focus-visible:focus-ring"

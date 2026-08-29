@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { LIMITS } from "@/lib/limits";
 import type { SaveResult } from "@/app/dashboard/actions";
-import { MINDMAP_MAX_DEPTH, type MapNodeRow } from "@/lib/data/mindmap";
+import {
+  MINDMAP_MAX_DEPTH,
+  branchDepth,
+  branchHeight,
+  type MapNodeRow,
+  type TreeRow,
+} from "@/lib/data/mindmap";
 
 // Writes for the mind maps (migration 0029).
 //
@@ -62,7 +68,7 @@ function refresh(mapId?: string) {
 /** A missing table or column means 0029 has not been applied by hand yet. */
 function migrationHint(code: string | undefined): string | null {
   if (code === "42P01" || code === "42703") {
-    return "Mind maps aren't set up yet — run migration 0029_planner_maps.sql.";
+    return "Mind maps aren't set up yet. Run migration 0029_planner_maps.sql.";
   }
   return null;
 }
@@ -101,27 +107,18 @@ async function loadMapRows(
   return { ok: true, rows: (data ?? []) as Row[] };
 }
 
-/** Depth of a node by walking up. Cycle-safe, same reason `buildTree` is. */
-function depthOf(rows: Row[], id: string): number {
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  const seen = new Set<string>();
-  let depth = 0;
-  let cur = byId.get(id);
-  while (cur?.parent_id) {
-    if (seen.has(cur.id)) break;
-    seen.add(cur.id);
-    cur = byId.get(cur.parent_id);
-    depth += 1;
-    if (depth > MINDMAP_MAX_DEPTH + 2) break;
-  }
-  return depth;
-}
-
-/** The deepest descendant below `id`, measured from `id` itself (0 = a leaf). */
-function subtreeHeight(rows: Row[], id: string): number {
-  const kids = rows.filter((r) => r.parent_id === id);
-  if (kids.length === 0) return 0;
-  return 1 + Math.max(...kids.map((k) => subtreeHeight(rows, k.id)));
+/**
+ * The DB rows as the pure tree helpers want them.
+ *
+ * `branchDepth`/`branchHeight` live in `lib/data/mindmap.ts` beside
+ * `canIndent`/`canOutdent`, so the check this action runs is the same function
+ * the button is disabled by — and so it can be unit-tested, which is what a
+ * private copy in a `"use server"` file can never be. The mapping is one small
+ * allocation over a single map's rows; the alternative was two more walks
+ * written a second time against a second column naming.
+ */
+function asTreeRows(rows: Row[]): TreeRow[] {
+  return rows.map((r) => ({ id: r.id, parentId: r.parent_id }));
 }
 
 function siblingsOf(rows: Row[], node: Row): Row[] {
@@ -141,7 +138,7 @@ function siblingsOf(rows: Row[], node: Row): Row[] {
  * makes "list my maps" a plain `where parent_id is null` and needs no second
  * table.
  */
-export async function createMap(label: string): Promise<SaveResult> {
+async function createMap(label: string): Promise<SaveResult> {
   const title = clean(label, MAX_LABEL);
   if (!title) return { ok: false, error: "Give the map a question to answer." };
 
@@ -161,7 +158,7 @@ export async function createMap(label: string): Promise<SaveResult> {
   if ((count ?? 0) >= LIMITS.maps) {
     return {
       ok: false,
-      error: `That's ${LIMITS.maps} maps — delete one before starting another.`,
+      error: `That's ${LIMITS.maps} maps. Delete one before starting another.`,
     };
   }
 
@@ -225,15 +222,15 @@ export async function addNode(input: {
   if (rows.length >= LIMITS.mapNodes) {
     return {
       ok: false,
-      error: `That map has ${LIMITS.mapNodes} nodes — the most one map can hold.`,
+      error: `That map has ${LIMITS.mapNodes} nodes, the most one map can hold.`,
     };
   }
 
   const parent = rows.find((r) => r.id === input.parentId);
   if (!parent)
-    return { ok: false, error: "That branch is gone — reload the map." };
+    return { ok: false, error: "That branch is gone. Reload the map." };
 
-  if (depthOf(rows, parent.id) + 1 > MINDMAP_MAX_DEPTH) {
+  if (branchDepth(asTreeRows(rows), parent.id) + 1 > MINDMAP_MAX_DEPTH) {
     return {
       ok: false,
       error: `A map goes ${MINDMAP_MAX_DEPTH} levels deep. Start a new branch instead.`,
@@ -307,7 +304,7 @@ export async function deleteNode(input: {
   if (node.parent_id === null) {
     return {
       ok: false,
-      error: "That's the map itself — delete the whole map instead.",
+      error: "That's the map itself. Delete the whole map instead.",
     };
   }
 
@@ -346,7 +343,7 @@ export async function moveNode(input: {
   const rows = loaded.rows;
 
   const node = rows.find((r) => r.id === input.id);
-  if (!node) return { ok: false, error: "That node is gone — reload the map." };
+  if (!node) return { ok: false, error: "That node is gone. Reload the map." };
   if (node.parent_id === null)
     return { ok: false, error: "The map itself doesn't move." };
 
@@ -387,7 +384,9 @@ export async function moveNode(input: {
     const newParent = siblings[i - 1];
     // The whole branch moves with it, so the check is on the branch, not the node.
     if (
-      depthOf(rows, newParent.id) + 1 + subtreeHeight(rows, node.id) >
+      branchDepth(asTreeRows(rows), newParent.id) +
+        1 +
+        branchHeight(asTreeRows(rows), node.id) >
       MINDMAP_MAX_DEPTH
     ) {
       return {
@@ -451,7 +450,7 @@ export async function promoteNodeToTask(input: {
     .maybeSingle();
 
   if (readError) return fail(readError.code, "Could not read that node.");
-  if (!data) return { ok: false, error: "That node is gone — reload the map." };
+  if (!data) return { ok: false, error: "That node is gone. Reload the map." };
 
   const row = data as Pick<MapNodeRow, "note"> & {
     label: string;
@@ -468,14 +467,14 @@ export async function promoteNodeToTask(input: {
       ok: false,
       error:
         countError.code === "42P01"
-          ? "The planner's table isn't set up yet — run migration 0028_planner.sql."
+          ? "The planner's table isn't set up yet. Run migration 0028_planner.sql."
           : "Could not add it to your plan. Try again.",
     };
   }
   if ((count ?? 0) >= LIMITS.plannerItems) {
     return {
       ok: false,
-      error: `That's ${LIMITS.plannerItems} tasks — finish or remove one first.`,
+      error: `That's ${LIMITS.plannerItems} tasks. Finish or remove one first.`,
     };
   }
 
@@ -491,7 +490,7 @@ export async function promoteNodeToTask(input: {
       ok: false,
       error:
         error.code === "42P01"
-          ? "The planner's table isn't set up yet — run migration 0028_planner.sql."
+          ? "The planner's table isn't set up yet. Run migration 0028_planner.sql."
           : "Could not add it to your plan. Try again.",
     };
   }
@@ -520,7 +519,7 @@ export async function promoteNodeToTask(input: {
  * question one level out. With neither, it declines rather than creating an
  * empty map with a heading on it.
  */
-export async function createMapFromPlan(): Promise<SaveResult> {
+async function createMapFromPlan(): Promise<SaveResult> {
   const uid = await currentUserId();
   if (!uid) return { ok: false, error: "Please log in again." };
 
@@ -537,7 +536,7 @@ export async function createMapFromPlan(): Promise<SaveResult> {
   if ((count ?? 0) >= LIMITS.maps) {
     return {
       ok: false,
-      error: `That's ${LIMITS.maps} maps — delete one before starting another.`,
+      error: `That's ${LIMITS.maps} maps. Delete one before starting another.`,
     };
   }
 

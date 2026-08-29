@@ -67,12 +67,12 @@ export const SAMPLE_PROFILE: StudentProfileInput = {
   ],
   honors: [
     {
-      title: "International competition — top 7 of 1,200 teams",
+      title: "International competition, top 7 of 1,200 teams",
       grades: ["12"],
       levels: ["International"],
     },
     {
-      title: "National academic olympiad — honorable mention",
+      title: "National academic olympiad, honorable mention",
       grades: ["11"],
       levels: ["National"],
     },
@@ -103,12 +103,12 @@ export const SAMPLE_ANALYSIS: Analysis = {
     { key: "test_scores", label: "Test scores", score: 9, rubric_tier: "Tier 9: Top 1% nationally, exceptional standardized scores", reasoning: ["SAT 1520 is in the top 1%", "IELTS 8.0 demonstrates perfect English proficiency"], note: "SAT 1520 and IELTS 8.0 are competitive almost everywhere on your list." },
     { key: "course_rigor", label: "Course rigor", score: 7, rubric_tier: "Tier 7: Highly rigorous, but lacking breadth", reasoning: ["Quantitative subjects are maxed out", "Missing humanities breadth for top-tier liberal arts"], note: "A-Levels in quantitative subjects show real rigor; more breadth would help." },
     { key: "leadership", label: "Leadership", score: 8, rubric_tier: "Tier 8: Regional/National impact founder or leader", reasoning: ["Co-founded funded startup", "Led team of 20+ people"], note: "Co-founding a funded startup is authentic, high-agency leadership." },
-    { key: "extracurricular_depth", label: "Extracurricular depth", score: 7, rubric_tier: "Tier 7: Deep spike in one specific area with measurable impact", reasoning: ["Consistent 3-year commitment", "Clear theme around entrepreneurship"], note: "Focused around entrepreneurship and competitions — coherent, not scattered." },
+    { key: "extracurricular_depth", label: "Extracurricular depth", score: 7, rubric_tier: "Tier 7: Deep spike in one specific area with measurable impact", reasoning: ["Consistent 3-year commitment", "Clear theme around entrepreneurship"], note: "Focused around entrepreneurship and competitions, coherent, not scattered." },
     { key: "awards", label: "Awards & recognition", score: 6, rubric_tier: "Tier 6: Significant regional or minor national recognition", reasoning: ["Top 7 out of 1200 participants locally", "Lacks international-tier verification"], note: "Top-7 of 1,200 is strong; a clearly national/international title would lift this." },
     { key: "narrative_fit", label: "Narrative / fit", score: 7, rubric_tier: "Tier 7: Clear, authentic story that aligns well with stated major", reasoning: ["Founder story aligns perfectly with business major", "Lacks specific 'Why Us' hooks for individual schools"], note: "Founder story fits Finance/Business well; tie it to a specific 'why this school'." },
   ],
   schools: [
-    { name: "Princeton University", tier: "reach", likelihood_low: 4, likelihood_high: 9, confidence: "low", fit_score: 7, reason: "Excellent profile, but ~4% admit rates make this a reach for everyone — and Princeton has no undergrad business major." },
+    { name: "Princeton University", tier: "reach", likelihood_low: 4, likelihood_high: 9, confidence: "low", fit_score: 7, reason: "Excellent profile, but ~4% admit rates make this a reach for everyone, and Princeton has no undergrad business major." },
     { name: "University of Pennsylvania", tier: "reach", likelihood_low: 6, likelihood_high: 12, confidence: "low", fit_score: 9, reason: "Wharton is a superb fit for your founder story, but admit rates are single digits and aid is need-aware for internationals." },
     { name: "University of Michigan, Ann Arbor", tier: "reach", likelihood_low: 12, likelihood_high: 23, confidence: "medium", fit_score: 8, reason: "Ross is strong for business and your stats sit above the mid-range, but the international pool is far more competitive than the ~18% overall rate suggests, and aid for internationals is very limited." },
     { name: "Boston University", tier: "likely", likelihood_low: 45, likelihood_high: 65, confidence: "medium", fit_score: 8, reason: "Your SAT is at the top of BU's range and Questrom fits well; the friendliest odds on your current list." },
@@ -130,7 +130,7 @@ export const SAMPLE_ANALYSIS: Analysis = {
     { action: "Add 1–2 aid-friendly target schools", impact: "De-risks a reach-heavy list given your aid need", effort: "low", priority: 4 },
   ],
   timeline: [
-    { text: "Retake the SAT aiming 1550+ — your 1520 sits at the mid-50% of your reaches, not above it", kind: "test", priority: 1 },
+    { text: "Retake the SAT aiming 1550+. Your 1520 sits at the mid-50% of your reaches, not above it", kind: "test", priority: 1 },
     { text: "Enter one more national competition in your field to convert Awards 6 → 8", kind: "research", priority: 2 },
     { text: "Deepen your startup activity into a documented, measurable result to headline the profile", kind: "activity", priority: 3 },
     { text: "Draft activity descriptions with concrete numbers (users, revenue, hours)", kind: "profile", priority: 4 },
@@ -139,7 +139,7 @@ export const SAMPLE_ANALYSIS: Analysis = {
     { text: "Secure strong recommenders and complete aid paperwork (CSS Profile)", kind: "logistics", priority: 7 },
   ],
   summary:
-    "You have a genuinely strong, coherent profile — top-decile test scores, real entrepreneurial leadership, and rigorous A-Levels. Your list is reach-heavy, and as an aid-seeking international that raises the stakes, so the highest-value moves are balancing the list with aid-friendly targets like Rochester and nudging your SAT and awards up. Penn and Princeton stay aspirational (single-digit odds for everyone); BU is where your profile competes hardest, and Michigan is a competitive reach in the tougher international pool. In Italy your SAT clears the Politecnico early-admission threshold outright — a far more predictable, score-based path worth securing alongside the US list.",
+    "You have a genuinely strong, coherent profile: top-decile test scores, real entrepreneurial leadership, and rigorous A-Levels. Your list is reach-heavy, and as an aid-seeking international that raises the stakes, so the highest-value moves are balancing the list with aid-friendly targets like Rochester and nudging your SAT and awards up. Penn and Princeton stay aspirational (single-digit odds for everyone); BU is where your profile competes hardest, and Michigan is a competitive reach in the tougher international pool. In Italy your SAT clears the Politecnico early-admission threshold outright — a far more predictable, score-based path worth securing alongside the US list.",
   // Italy pathway — computed deterministically by the engine, exactly as a real
   // analysis would assemble it, so the demo stays faithful to production.
   italy_programs: analyzeItalianPrograms(

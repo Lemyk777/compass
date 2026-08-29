@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { ExtracurricularsPlan } from "@/lib/data/key-dates";
+import { daysLeftLabel } from "@/lib/data/opportunity-format";
+import { matchedOnly } from "@/lib/data/opportunity-filter";
+import { NO_FACTORS, useOpportunityPlan, useToday } from "@/lib/data/use-opportunity-plan";
+import { useMemo } from "react";
 import { useOnboardingContext } from "./context/OnboardingContext";
 
 // Pay the student before asking them for anything else.
@@ -25,9 +27,10 @@ export function FirstWin() {
   const { data } = useOnboardingContext();
 
   // Resolve "today" on the client — the countdown depends on the visitor's
-  // clock and a server-rendered one would hydrate wrong.
-  const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => setToday(new Date()), []);
+  // clock and a server-rendered one would hydrate wrong. The hook warms the
+  // catalog from mount, so it is already there by the time the wizard reaches
+  // this screen.
+  const today = useToday();
 
   const graduationYear = data.graduation_year;
   const faculties = useMemo(
@@ -37,32 +40,20 @@ export function FirstWin() {
 
   // Lazy-load the matching engine so the catalog is a separate async chunk, not
   // part of the onboarding bundle. No analysis yet → everyone starts "emerging".
-  const [plan, setPlan] = useState<ExtracurricularsPlan | null>(null);
-  useEffect(() => {
-    if (!today || !graduationYear) {
-      setPlan(null);
-      return;
-    }
-    let cancelled = false;
-    import("@/lib/data/key-dates").then((m) => {
-      if (cancelled) return;
-      setPlan(
-        m.buildExtracurriculars({
-          today,
-          faculties,
-          factors: [],
-          graduationYear,
-        }),
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [today, graduationYear, faculties]);
+  const plan = useOpportunityPlan({
+    today,
+    faculties,
+    factors: NO_FACTORS,
+    graduationYear,
+    ready: Boolean(graduationYear),
+  });
 
   if (!plan) return null;
 
-  const openNow = plan.items.filter((o) => !o.notYetEligible);
+  // No filter panel here either — see matchedOnly. This screen is the first
+  // thing a new student ever sees, so a row from another country or another
+  // subject is the worst possible first impression of "matched to you".
+  const openNow = matchedOnly(plan.items).filter((o) => !o.notYetEligible);
   if (openNow.length === 0) return null;
 
   const shown = openNow.slice(0, SHOWN);
@@ -117,7 +108,7 @@ export function FirstWin() {
             <span className="font-medium text-ink">{o.name}</span>
             <span className="text-xs text-ink-faint">
               {o.dateConfirmed ? (
-                <span data-num>{o.daysToDeadline} days left</span>
+                <span data-num>{daysLeftLabel(o.daysToDeadline)}</span>
               ) : (
                 "dates not announced yet"
               )}
@@ -129,7 +120,7 @@ export function FirstWin() {
       {/* The anti-coercion line. It is also simply true: Opportunities works
           without an analysis, so nothing here is being held hostage. */}
       <p className="mt-3 text-xs leading-relaxed text-ink-soft">
-        These are on your dashboard already — you keep them whether or not you
+        These are on your dashboard already, and you keep them whether or not you
         finish the rest. Carry on and we can also tell you how you compare, and
         what to do first.
       </p>

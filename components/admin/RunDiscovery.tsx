@@ -49,7 +49,7 @@ export function RunDiscovery({
       <p className="mt-0.5 text-xs text-ink-soft">
         One web search at one angle, screened against the catalog and each
         candidate&apos;s own page. Takes about a minute and costs a few cents.
-        Anything it finds lands in the queue below — nothing reaches students
+        Anything it finds lands in the queue below. Nothing reaches students
         without your approval.
       </p>
 

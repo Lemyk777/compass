@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BrandLink } from "@/components/ui/BrandLink";
+import { Container } from "@/components/ui/Container";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { ButtonLink } from "@/components/ui/Button";
 import { EligibilityChecker } from "@/components/opportunities/EligibilityChecker";
@@ -8,6 +9,7 @@ import { DashboardProvider } from "@/components/dashboard/DashboardContext";
 import { StudentShell } from "@/components/student/StudentShell";
 import { COMPETITIONS, type Competition } from "@/lib/data/key-dates";
 import { getSession } from "@/lib/auth/session";
+import { categoryFromParam } from "@/lib/data/opportunity-filter";
 import { fetchLivePool } from "@/lib/partners/queries";
 import { loadStudentContext } from "@/lib/dashboard/load";
 import { pageMeta } from "@/lib/seo";
@@ -33,7 +35,15 @@ export const metadata: Metadata = pageMeta({
   path: "/opportunities",
 });
 
-export default async function OpportunitiesPage() {
+export default async function OpportunitiesPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  // `?kind=` is where the thread's "try it for an afternoon" move points. The
+  // page ignored it, so that link landed on the All tab and the two-clicks-to-a
+  // -simulation promise was quietly undelivered.
+  const initialCategory = categoryFromParam(searchParams.kind);
   const session = await getSession();
 
   if (session) {
@@ -58,7 +68,7 @@ export default async function OpportunitiesPage() {
           isAdmin={session.role === "admin"}
           hasReport={Boolean(ctx.analysis)}
         >
-          <OpportunitiesView />
+          <OpportunitiesView initialCategory={initialCategory} />
         </StudentShell>
       </DashboardProvider>
     );
@@ -93,12 +103,12 @@ export default async function OpportunitiesPage() {
     <div className="min-h-dvh bg-surface text-ink">
       <SkipLink />
       <header className="border-b border-line/70">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-5 sm:px-6">
+        <Container size="dashboard" className="flex items-center justify-between gap-3 py-5">
           <BrandLink />
           <ButtonLink href="/auth/login" variant="subtle" size="sm">
             Sign in
           </ButtonLink>
-        </div>
+        </Container>
       </header>
 
       <main id={SKIP_TARGET} tabIndex={-1}>
@@ -108,13 +118,13 @@ export default async function OpportunitiesPage() {
           been handed over. Note what is NOT being sold: Compass is free either
           way, so the trade on offer is information, not money. */}
         <section className="border-t border-line/70 bg-card">
-          <div className="mx-auto max-w-3xl px-5 py-14 sm:px-6">
+          <Container size="dashboard" className="py-14">
             <h2 className="text-balance text-2xl font-semibold tracking-tight text-ink">
               So far we only know one thing about you: your year at school.
             </h2>
             <p className="mt-3 max-w-xl text-pretty text-base leading-relaxed text-ink-soft">
-              Tell us a bit more — what you like, what you&rsquo;ve already done
-              — and we can say which of these suit you best, which one to start
+              Tell us a bit more, what you like and what you&rsquo;ve already done,
+              and we can say which of these suit you best, which one to start
               with, and what to do this month. We keep track of all{" "}
               <span data-num className="font-semibold text-ink">
                 {COMPETITIONS.length}
@@ -135,7 +145,7 @@ export default async function OpportunitiesPage() {
                 See an example first
               </ButtonLink>
             </div>
-          </div>
+          </Container>
         </section>
       </main>
     </div>
