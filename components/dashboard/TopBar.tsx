@@ -1,4 +1,5 @@
 import { DateClock } from "@/components/dashboard/DateGreeting";
+import { Container } from "@/components/ui/Container";
 
 /**
  * Persistent, slim top bar across every dashboard page. Holds the always-visible
@@ -12,7 +13,7 @@ export function TopBar() {
       className="sticky top-0 z-20 border-b border-line/60 bg-surface/80 backdrop-blur-md transition-colors"
       style={{ viewTransitionName: "header" }}
     >
-      <div className="flex w-full items-center justify-between px-4 py-2.5 sm:px-8 lg:px-10 xl:px-12 2xl:px-14">
+      <Container size="dashboard" className="flex items-center justify-between py-2.5">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
@@ -23,7 +24,7 @@ export function TopBar() {
           </span>
         </div>
         <DateClock />
-      </div>
+      </Container>
     </div>
   );
 }

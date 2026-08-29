@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
+import { Container } from "@/components/ui/Container";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 
 // The persistent frame: sidebar on the left (a top scroller on mobile), a slim
@@ -18,9 +19,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <main id={SKIP_TARGET} tabIndex={-1} className="relative min-w-0 flex-1">
         <TopBar />
-        <div className="py-6">
+        <Container size="dashboard" className="py-6">
           {children}
-        </div>
+        </Container>
       </main>
     </div>
   );
