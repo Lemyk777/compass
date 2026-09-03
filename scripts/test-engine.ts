@@ -5131,16 +5131,32 @@ test("no heavy registry is REACHABLE from a client component", () => {
 test("AboutClient never imports heavy data registries", () => {
   const src = readFileSync(path.join(process.cwd(), "app/about/AboutClient.tsx"), "utf8");
   const forbidden = [
-    "lib/data/key-dates",
-    "lib/data/careers",
-    "lib/data/majors",
-    "lib/data/study-destinations",
-    "lib/data/world",
+    ...HEAVY_REGISTRIES,
     "lib/data/from-home",
   ];
   for (const mod of forbidden) {
     assert.ok(!src.includes(mod), `AboutClient.tsx directly imports forbidden heavy registry: ${mod}`);
   }
+});
+
+test("the AboutClient registry guard actually bites on forbidden imports", () => {
+  const forbidden = [
+    ...HEAVY_REGISTRIES,
+    "lib/data/from-home",
+  ];
+  const checkSrc = (sample: string) => forbidden.filter((mod) => sample.includes(mod));
+  assert.deepEqual(
+    checkSrc('import { COMPETITIONS } from "@/lib/data/key-dates";'),
+    ["lib/data/key-dates"],
+  );
+  assert.deepEqual(
+    checkSrc('import { MAJORS } from "@/lib/data/majors";'),
+    ["lib/data/majors"],
+  );
+  assert.deepEqual(
+    checkSrc('import { Container } from "@/components/ui/Container";'),
+    [],
+  );
 });
 
 test("the reachability guard actually bites — on a DIRECT and an INDIRECT edge", () => {

@@ -33,7 +33,9 @@ const DEFAULT_STATS: AboutStats = {
 };
 
 function sanitizeStat(val: unknown, fallback = 0): number {
-  return typeof val === "number" && Number.isFinite(val) ? val : fallback;
+  return typeof val === "number" && Number.isFinite(val) && val >= 0
+    ? Math.floor(val)
+    : fallback;
 }
 
 const FADE_UP: Variants = {

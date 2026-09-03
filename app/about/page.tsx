@@ -21,7 +21,7 @@ export const metadata: Metadata = pageMeta({
   type: "article",
 });
 
-export default function AboutPage() {
+function computeAboutStats(): AboutStats {
   let free = 0;
   let alwaysOpen = 0;
   for (const c of COMPETITIONS) {
@@ -29,7 +29,7 @@ export default function AboutPage() {
     if (c.alwaysOpen) alwaysOpen++;
   }
 
-  const stats: AboutStats = {
+  return {
     total: COMPETITIONS.length,
     free,
     alwaysOpen,
@@ -39,6 +39,11 @@ export default function AboutPage() {
     cities: HUBS.length,
     homeRoutes: HOME_ROUTES.length,
   };
+}
+
+const ABOUT_STATS: AboutStats = computeAboutStats();
+
+export default function AboutPage() {
 
   return (
     <div className="min-h-dvh bg-surface text-ink flex flex-col">
@@ -62,7 +67,7 @@ export default function AboutPage() {
       </header>
 
       <main id={SKIP_TARGET} tabIndex={-1} className="flex-1 flex flex-col">
-        <AboutClient stats={stats} />
+        <AboutClient stats={ABOUT_STATS} />
       </main>
 
       <footer className="border-t border-line/70 mt-auto">
