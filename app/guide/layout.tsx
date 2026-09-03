@@ -65,6 +65,9 @@ export default async function GuideLayout({
         <Shell className="flex items-center justify-between gap-3 py-5">
           <BrandLink />
           <div className="flex items-center gap-2">
+            <ButtonLink href="/about" variant="subtle" size="sm">
+              About
+            </ButtonLink>
             <ButtonLink href="/opportunities" variant="subtle" size="sm">
               What can I enter?
             </ButtonLink>
