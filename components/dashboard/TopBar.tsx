@@ -1,5 +1,6 @@
 import { DateClock } from "@/components/dashboard/DateGreeting";
 import { Container } from "@/components/ui/Container";
+import Link from "@/components/ui/Link";
 
 /**
  * Persistent, slim top bar across every dashboard page. Holds the always-visible
@@ -23,7 +24,12 @@ export function TopBar() {
             Compass Advisory Hub
           </span>
         </div>
-        <DateClock />
+        <div className="flex items-center gap-4">
+          <DateClock />
+          <Link href="/about" className="text-xs font-medium text-ink-faint hover:text-ink transition-colors">
+            About
+          </Link>
+        </div>
       </Container>
     </div>
   );
