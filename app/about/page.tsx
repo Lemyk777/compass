@@ -5,7 +5,13 @@ import { ButtonLink } from "@/components/ui/Button";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { Container } from "@/components/ui/Container";
 import { pageMeta } from "@/lib/seo";
-import { AboutClient } from "./AboutClient";
+import { COMPETITIONS, opportunityCost } from "@/lib/data/key-dates";
+import { allCareerAreas } from "@/lib/data/careers";
+import { MAJORS } from "@/lib/data/majors";
+import { STUDY_DESTINATIONS } from "@/lib/data/study-destinations";
+import { HUBS } from "@/lib/data/world";
+import { HOME_ROUTES } from "@/lib/data/from-home";
+import { AboutClient, type AboutStats } from "./AboutClient";
 
 export const metadata: Metadata = pageMeta({
   title: "About Compass — who this is for, and what we refuse to do",
@@ -16,6 +22,24 @@ export const metadata: Metadata = pageMeta({
 });
 
 export default function AboutPage() {
+  let free = 0;
+  let alwaysOpen = 0;
+  for (const c of COMPETITIONS) {
+    if (opportunityCost(c).tone === "free") free++;
+    if (c.alwaysOpen) alwaysOpen++;
+  }
+
+  const stats: AboutStats = {
+    total: COMPETITIONS.length,
+    free,
+    alwaysOpen,
+    areas: allCareerAreas().length,
+    majors: MAJORS.length,
+    countries: STUDY_DESTINATIONS.length,
+    cities: HUBS.length,
+    homeRoutes: HOME_ROUTES.length,
+  };
+
   return (
     <div className="min-h-dvh bg-surface text-ink flex flex-col">
       <SkipLink />
@@ -38,7 +62,7 @@ export default function AboutPage() {
       </header>
 
       <main id={SKIP_TARGET} tabIndex={-1} className="flex-1 flex flex-col">
-        <AboutClient />
+        <AboutClient stats={stats} />
       </main>
 
       <footer className="border-t border-line/70 mt-auto">

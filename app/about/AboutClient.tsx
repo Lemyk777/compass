@@ -1,18 +1,40 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { Container } from "@/components/ui/Container";
 import Link from "@/components/ui/Link";
 import { ReactNode } from "react";
 import { CONTACT_EMAIL } from "@/lib/site";
-import { COMPETITIONS, opportunityCost } from "@/lib/data/key-dates";
-import { allCareerAreas } from "@/lib/data/careers";
-import { MAJORS } from "@/lib/data/majors";
-import { STUDY_DESTINATIONS } from "@/lib/data/study-destinations";
-import { HUBS } from "@/lib/data/world";
-import { HOME_ROUTES } from "@/lib/data/from-home";
 
-import { Variants } from "framer-motion";
+export interface AboutStats {
+  total: number;
+  free: number;
+  alwaysOpen: number;
+  areas: number;
+  majors: number;
+  countries: number;
+  cities: number;
+  homeRoutes: number;
+}
+
+export interface AboutClientProps {
+  stats?: Partial<AboutStats> | null;
+}
+
+const DEFAULT_STATS: AboutStats = {
+  total: 0,
+  free: 0,
+  alwaysOpen: 0,
+  areas: 0,
+  majors: 0,
+  countries: 0,
+  cities: 0,
+  homeRoutes: 0,
+};
+
+function sanitizeStat(val: unknown, fallback = 0): number {
+  return typeof val === "number" && Number.isFinite(val) ? val : fallback;
+}
 
 const FADE_UP: Variants = {
   hidden: { opacity: 0, y: 10 },
@@ -64,11 +86,15 @@ function Num({ children }: { children: ReactNode }) {
   return <span className="font-semibold text-ink">{children}</span>;
 }
 
-export function AboutClient() {
-  const total = COMPETITIONS.length;
-  const free = COMPETITIONS.filter((c) => opportunityCost(c).tone === "free").length;
-  const alwaysOpen = COMPETITIONS.filter((c) => c.alwaysOpen).length;
-  const areas = allCareerAreas().length;
+export function AboutClient({ stats }: AboutClientProps = {}) {
+  const total = sanitizeStat(stats?.total, DEFAULT_STATS.total);
+  const free = sanitizeStat(stats?.free, DEFAULT_STATS.free);
+  const alwaysOpen = sanitizeStat(stats?.alwaysOpen, DEFAULT_STATS.alwaysOpen);
+  const areas = sanitizeStat(stats?.areas, DEFAULT_STATS.areas);
+  const majors = sanitizeStat(stats?.majors, DEFAULT_STATS.majors);
+  const countries = sanitizeStat(stats?.countries, DEFAULT_STATS.countries);
+  const cities = sanitizeStat(stats?.cities, DEFAULT_STATS.cities);
+  const homeRoutes = sanitizeStat(stats?.homeRoutes, DEFAULT_STATS.homeRoutes);
 
   return (
     <Container size="dashboard" className="py-14 sm:py-24">
@@ -135,7 +161,7 @@ export function AboutClient() {
               <div className="space-y-3">
                 <h3 className="font-semibold text-ink text-xl">The Guide</h3>
                 <p className="text-base text-ink-soft">
-                  Walks from <Num>{areas}</Num> career areas, to <Num>{MAJORS.length}</Num> subjects, <Num>{STUDY_DESTINATIONS.length}</Num> countries, and <Num>{HUBS.length}</Num> cities.
+                  Walks from <Num>{areas}</Num> career areas, to <Num>{majors}</Num> subjects, <Num>{countries}</Num> countries, and <Num>{cities}</Num> cities.
                 </p>
               </div>
               <div className="space-y-3">
@@ -158,7 +184,7 @@ export function AboutClient() {
 
           <BentoCard title="Staying is an answer">
             <P>
-              Leaving is not the default here. There are <Num>{HOME_ROUTES.length}</Num> routes that need no visa and no move at all.
+              Leaving is not the default here. There are <Num>{homeRoutes}</Num> routes that need no visa and no move at all.
             </P>
             <P>
               The mistake is treating staying as a failure. The students who do well from here choose the local degree deliberately and leave later for a funded master&rsquo;s with a real record behind them.

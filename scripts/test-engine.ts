@@ -5128,6 +5128,21 @@ test("no heavy registry is REACHABLE from a client component", () => {
   );
 });
 
+test("AboutClient never imports heavy data registries", () => {
+  const src = readFileSync(path.join(process.cwd(), "app/about/AboutClient.tsx"), "utf8");
+  const forbidden = [
+    "lib/data/key-dates",
+    "lib/data/careers",
+    "lib/data/majors",
+    "lib/data/study-destinations",
+    "lib/data/world",
+    "lib/data/from-home",
+  ];
+  for (const mod of forbidden) {
+    assert.ok(!src.includes(mod), `AboutClient.tsx directly imports forbidden heavy registry: ${mod}`);
+  }
+});
+
 test("the reachability guard actually bites — on a DIRECT and an INDIRECT edge", () => {
   // The direct half is what the old guard checked. The indirect half is the one
   // that mattered: it is the shape the catalog escaped through, and a walk that
