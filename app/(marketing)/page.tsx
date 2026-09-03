@@ -158,6 +158,14 @@ export default async function LandingPage() {
             {isAdmin && (
               <AdminSwitcher className="mr-1 hidden lg:inline-flex" />
             )}
+            <ButtonLink
+              href="/about"
+              variant="ghost"
+              size="sm"
+              className="whitespace-nowrap px-2 sm:px-4"
+            >
+              About
+            </ButtonLink>
             {/* The way in for an ORGANISATION rather than a student. Sits before
                 "log in" because a hub arriving at this page is not looking for
                 an account, it is looking for us. */}
