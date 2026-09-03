@@ -105,9 +105,14 @@ export default async function OpportunitiesPage({
       <header className="border-b border-line/70">
         <Container size="dashboard" className="flex items-center justify-between gap-3 py-5">
           <BrandLink />
-          <ButtonLink href="/auth/login" variant="subtle" size="sm">
-            Sign in
-          </ButtonLink>
+          <div className="flex items-center gap-2">
+            <ButtonLink href="/about" variant="subtle" size="sm">
+              About
+            </ButtonLink>
+            <ButtonLink href="/auth/login" variant="subtle" size="sm">
+              Sign in
+            </ButtonLink>
+          </div>
         </Container>
       </header>
 
