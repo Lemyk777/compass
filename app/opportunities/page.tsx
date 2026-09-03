@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BrandLink } from "@/components/ui/BrandLink";
+import { Container } from "@/components/ui/Container";
 import { SKIP_TARGET, SkipLink } from "@/components/ui/SkipLink";
 import { ButtonLink } from "@/components/ui/Button";
 import { EligibilityChecker } from "@/components/opportunities/EligibilityChecker";
@@ -102,12 +103,12 @@ export default async function OpportunitiesPage({
     <div className="min-h-dvh bg-surface text-ink">
       <SkipLink />
       <header className="border-b border-line/70">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-5 sm:px-6">
+        <Container size="dashboard" className="flex items-center justify-between gap-3 py-5">
           <BrandLink />
           <ButtonLink href="/auth/login" variant="subtle" size="sm">
             Sign in
           </ButtonLink>
-        </div>
+        </Container>
       </header>
 
       <main id={SKIP_TARGET} tabIndex={-1}>
@@ -117,7 +118,7 @@ export default async function OpportunitiesPage({
           been handed over. Note what is NOT being sold: Compass is free either
           way, so the trade on offer is information, not money. */}
         <section className="border-t border-line/70 bg-card">
-          <div className="mx-auto max-w-3xl px-5 py-14 sm:px-6">
+          <Container size="dashboard" className="py-14">
             <h2 className="text-balance text-2xl font-semibold tracking-tight text-ink">
               So far we only know one thing about you: your year at school.
             </h2>
@@ -144,7 +145,7 @@ export default async function OpportunitiesPage({
                 See an example first
               </ButtonLink>
             </div>
-          </div>
+          </Container>
         </section>
       </main>
     </div>

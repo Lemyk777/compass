@@ -138,7 +138,7 @@ function siblingsOf(rows: Row[], node: Row): Row[] {
  * makes "list my maps" a plain `where parent_id is null` and needs no second
  * table.
  */
-export async function createMap(label: string): Promise<SaveResult> {
+async function createMap(label: string): Promise<SaveResult> {
   const title = clean(label, MAX_LABEL);
   if (!title) return { ok: false, error: "Give the map a question to answer." };
 
@@ -519,7 +519,7 @@ export async function promoteNodeToTask(input: {
  * question one level out. With neither, it declines rather than creating an
  * empty map with a heading on it.
  */
-export async function createMapFromPlan(): Promise<SaveResult> {
+async function createMapFromPlan(): Promise<SaveResult> {
   const uid = await currentUserId();
   if (!uid) return { ok: false, error: "Please log in again." };
 

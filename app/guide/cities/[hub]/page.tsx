@@ -197,7 +197,7 @@ export default async function GuideHubPage({
             label={hub.city}
             signedIn={pick.signedIn}
             saved={pick.saved}
-            maps={pick.maps}
+            
             returnTo={`/guide/cities/${hub.id}`}
           />
           {/* If this city sits in a country we profile in full, that page is the

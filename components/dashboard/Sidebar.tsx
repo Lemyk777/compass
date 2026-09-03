@@ -54,27 +54,30 @@ export function Sidebar() {
 
   return (
     <aside
-      className="border-line bg-card lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-64 lg:shrink-0 lg:flex-col lg:border-r"
+      className="border-line/60 bg-card/95 backdrop-blur-xl lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-64 lg:shrink-0 lg:flex-col lg:border-r shadow-sm"
       style={{ viewTransitionName: "sidebar" }}
     >
-      <div className="hidden px-6 py-6 lg:block">
+      <div className="hidden px-6 py-6 lg:block border-b border-line/40">
         <BrandLink />
+        <span className="mt-1 block text-xs font-semibold uppercase tracking-wider text-ink-faint">
+          Advisory & Intelligence
+        </span>
       </div>
 
       {/* Up, not across — for a student who has no report panel for it. Anyone
           who kept the panel (they have an analysis) reaches the section from
           inside it instead, so two same-named entries never sit side by side. */}
       {!demo && analysis === null && (
-        <div className="border-b border-line px-3 pb-3 pt-3 lg:border-b-0 lg:pt-0">
+        <div className="border-b border-line/60 px-3 pb-3 pt-3 lg:border-b-0 lg:pt-3">
           <Link
             href="/opportunities"
-            className="flex items-center gap-2.5 rounded-xl border border-line bg-surface px-3.5 py-3 text-sm font-medium text-ink transition-colors hover:border-accent hover:bg-accent-soft/40 focus-visible:focus-ring"
+            className="flex items-center gap-2.5 rounded-xl border border-line/70 bg-surface/70 px-3.5 py-3 text-sm font-medium text-ink transition-all hover:border-accent hover:bg-accent-soft/40 hover:translate-x-0.5 focus-visible:focus-ring shadow-sm"
           >
             <span className="text-ink-faint" aria-hidden>
               {BACK_ARROW}
             </span>
             <span className="min-w-0">
-              <span className="block whitespace-nowrap">
+              <span className="block whitespace-nowrap font-medium">
                 {t("nav.opportunities")}
               </span>
               <span className="block text-xs font-normal text-ink-faint">
@@ -90,7 +93,7 @@ export function Sidebar() {
         // Mobile: wrap every section so all of them are visible at once (a
         // horizontal scroller hid Costs/Plan/Timeline/Summary off the right edge
         // with no scroll affordance). Desktop: vertical rail.
-        className="flex flex-wrap gap-2 border-b border-line px-3 py-3 lg:flex-1 lg:flex-col lg:flex-nowrap lg:gap-2 lg:border-b-0 lg:px-3 lg:py-2"
+        className="flex flex-wrap gap-1.5 border-b border-line/60 px-3 py-3 lg:flex-1 lg:flex-col lg:flex-nowrap lg:gap-1.5 lg:border-b-0 lg:px-3 lg:py-3"
       >
         {sections.map((s) => {
           const on = isActive(s.slug);
@@ -99,13 +102,19 @@ export function Sidebar() {
               key={s.slug || "overview"}
               href={hrefFor(s.slug)}
               aria-current={on ? "page" : undefined}
-              className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-colors focus-visible:focus-ring lg:shrink ${
+              className={`group flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-150 focus-visible:focus-ring lg:shrink ${
                 on
-                  ? "bg-accent-soft text-accent-ink"
-                  : "text-ink-soft hover:bg-surface hover:text-ink"
+                  ? "bg-accent-soft/80 text-accent-ink font-semibold shadow-sm border-l-2 border-accent pl-3"
+                  : "text-ink-soft hover:bg-surface/90 hover:text-ink hover:translate-x-0.5"
               }`}
             >
-              <span className={on ? "text-accent" : "text-ink-faint"}>
+              <span
+                className={`transition-colors ${
+                  on
+                    ? "text-accent-ink"
+                    : "text-ink-faint group-hover:text-ink-soft"
+                }`}
+              >
                 {ICONS[s.icon]}
               </span>
               <span className="whitespace-nowrap">{t(s.labelKey)}</span>
@@ -117,9 +126,9 @@ export function Sidebar() {
       {/* Account actions. Mobile: a compact wrapping row under the nav (was
           hidden entirely below lg, so Update profile / Sign out were unreachable
           on phones). Desktop: the vertical block pinned to the sidebar bottom. */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-line p-3 lg:flex-col lg:items-stretch lg:border-b-0 lg:border-t lg:p-4">
+      <div className="flex flex-wrap items-center gap-2 border-b border-line/60 bg-surface/30 p-3 lg:flex-col lg:items-stretch lg:border-b-0 lg:border-t lg:p-4">
         {demo ? (
-          <ButtonLink href="/" variant="tonal" size="sm" className="lg:w-full">
+          <ButtonLink href="/" variant="tonal" size="sm" className="lg:w-full shadow-sm">
             <HomeGlyph /> {t("common.home")}
           </ButtonLink>
         ) : (
@@ -129,7 +138,7 @@ export function Sidebar() {
                 href="/admin"
                 variant="tonal"
                 size="sm"
-                className="lg:w-full"
+                className="lg:w-full shadow-sm"
               >
                 <ShieldGlyph /> Admin
               </ButtonLink>
@@ -138,7 +147,7 @@ export function Sidebar() {
               href="/"
               variant="tonal"
               size="sm"
-              className="lg:w-full"
+              className="lg:w-full shadow-sm"
             >
               <HomeGlyph /> {t("common.home")}
             </ButtonLink>
@@ -146,13 +155,13 @@ export function Sidebar() {
               href="/onboarding"
               variant="tonal"
               size="sm"
-              className="lg:w-full"
+              className="lg:w-full shadow-sm"
             >
               <EditGlyph /> {t("common.updateProfile")}
             </ButtonLink>
             {/* Separate the destructive action from normal nav (destructive-nav-separation). */}
             <div
-              className="my-1 hidden h-px w-full bg-line lg:block"
+              className="my-1 hidden h-px w-full bg-line/60 lg:block"
               aria-hidden
             />
             <form action="/auth/signout" method="post" className="lg:w-full">
@@ -160,7 +169,7 @@ export function Sidebar() {
                 type="submit"
                 variant="danger"
                 size="sm"
-                className="lg:w-full"
+                className="lg:w-full shadow-sm"
               >
                 <LogoutGlyph /> {t("common.signOut")}
               </Button>

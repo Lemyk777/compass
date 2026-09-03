@@ -40,14 +40,14 @@ export function LockedSection({
 
       {/* Lock overlay over the teaser */}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-card shadow-card">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full border border-line/70 bg-card shadow-card">
           <LockIcon />
         </span>
         {!open && (
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="rounded-xl border border-line bg-card px-4 py-2 text-sm font-medium text-ink shadow-card transition-colors focus-visible:focus-ring hover:border-ink/30"
+            className="rounded-xl border border-line/70 bg-card px-4 py-2 text-sm font-semibold text-ink shadow-card transition-all focus-visible:focus-ring hover:border-accent hover:shadow-lift"
           >
             What&apos;s this?
           </button>
@@ -56,8 +56,8 @@ export function LockedSection({
 
       {/* Instant promo modal */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-line bg-card shadow-lift">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-md">
+          <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-line/70 bg-card shadow-lift">
             <div className="grid md:grid-cols-[1.1fr_0.9fr]">
               {/* Left: pitch */}
               <div className="p-7">

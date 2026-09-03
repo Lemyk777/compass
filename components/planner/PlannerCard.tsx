@@ -84,23 +84,23 @@ export function PlannerCard({
           ? { viewTransitionName: plannerMorph(item.key) }
           : undefined
       }
-      className="rounded-xl border border-line bg-card p-3"
+      className="group rounded-2xl border border-line/70 bg-card p-4 shadow-card transition-all duration-200 hover:shadow-lift"
     >
       {item.href ? (
         <Link
           href={item.href}
-          className="text-sm font-medium text-ink underline-offset-2 hover:underline focus-visible:focus-ring"
+          className="text-sm font-semibold text-ink underline-offset-2 hover:text-accent-ink hover:underline focus-visible:focus-ring"
         >
           {item.title}
         </Link>
       ) : (
-        <p className="text-sm font-medium text-ink">{item.title}</p>
+        <p className="text-sm font-semibold text-ink">{item.title}</p>
       )}
 
       {/* Never a countdown for a date we cannot stand behind. An unconfirmed
           deadline never reaches `dueISO` at all, so this branch is physically
           unable to render one — the rule lives in the type, not here. */}
-      <p className="mt-1 text-xs text-ink-faint">
+      <p className="mt-1.5 text-xs text-ink-faint">
         {item.dueISO ? (
           <DueLabel daysLeft={item.daysLeft ?? 0} />
         ) : (
@@ -109,19 +109,19 @@ export function PlannerCard({
       </p>
 
       {item.note && (
-        <p className="mt-2 text-xs italic text-ink-soft">
+        <p className="mt-2.5 rounded-lg bg-surface/80 p-2 text-xs italic text-ink-soft border border-line/40">
           &ldquo;{item.note}&rdquo;
         </p>
       )}
 
       {movable && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-2">
+        <div className="mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-line/60 pt-2.5">
           <button
             type="button"
             disabled={pending || !left}
             onClick={() => left && move(left)}
             aria-label={`Move ${item.title} back`}
-            className="rounded-lg border border-line px-2 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring disabled:opacity-40"
+            className="rounded-lg border border-line/70 bg-surface/80 px-2.5 py-1 text-xs font-medium text-ink-soft transition-all hover:border-accent hover:bg-card hover:text-ink focus-visible:focus-ring disabled:opacity-35 shadow-sm active:scale-95"
           >
             &larr;
           </button>
@@ -130,7 +130,7 @@ export function PlannerCard({
             disabled={pending || !right}
             onClick={() => right && move(right)}
             aria-label={`Move ${item.title} forward`}
-            className="rounded-lg border border-line px-2 py-1 text-xs font-medium text-ink-soft transition-colors hover:border-ink/30 hover:text-ink focus-visible:focus-ring disabled:opacity-40"
+            className="rounded-lg border border-line/70 bg-surface/80 px-2.5 py-1 text-xs font-medium text-ink-soft transition-all hover:border-accent hover:bg-card hover:text-ink focus-visible:focus-ring disabled:opacity-35 shadow-sm active:scale-95"
           >
             &rarr;
           </button>
@@ -139,7 +139,7 @@ export function PlannerCard({
               type="button"
               disabled={pending}
               onClick={() => move("dropped")}
-              className="ml-auto text-xs text-ink-faint underline-offset-2 hover:underline focus-visible:focus-ring disabled:opacity-40"
+              className="ml-auto text-xs text-ink-faint underline-offset-2 hover:text-reach-ink hover:underline focus-visible:focus-ring disabled:opacity-35"
             >
               Not doing this
             </button>
@@ -152,7 +152,7 @@ export function PlannerCard({
               type="button"
               disabled={pending}
               onClick={remove}
-              className="text-xs text-ink-faint underline-offset-2 hover:underline focus-visible:focus-ring disabled:opacity-40"
+              className="text-xs text-ink-faint underline-offset-2 hover:text-reach-ink hover:underline focus-visible:focus-ring disabled:opacity-35"
             >
               Delete
             </button>

@@ -31,7 +31,7 @@ import { Shell } from "@/components/ui/Shell";
 const LINKS: { href: string; label: string }[] = [
   { href: "/opportunities", label: "Opportunities" },
   { href: "/guide", label: "Guide" },
-  { href: "/planner", label: "Plan" },
+  { href: "/planner", label: "Advisory" },
 ];
 
 export function StudentNav({
@@ -45,7 +45,7 @@ export function StudentNav({
 
   return (
     <header
-      className="sticky top-0 z-30 border-b border-line bg-surface/90 backdrop-blur"
+      className="sticky top-0 z-30 border-b border-line/60 bg-surface/80 backdrop-blur-md transition-colors"
       style={{ viewTransitionName: "header" }}
     >
       {/* Same container as the content below it — a header that stops short of
@@ -66,10 +66,10 @@ export function StudentNav({
                 key={l.href}
                 href={l.href}
                 aria-current={on ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium transition-colors focus-visible:focus-ring ${
+                className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-xl px-3.5 text-sm font-medium transition-all focus-visible:focus-ring ${
                   on
-                    ? "bg-accent-soft text-accent-ink"
-                    : "text-ink-soft hover:bg-card hover:text-ink"
+                    ? "bg-accent-soft/85 text-accent-ink font-semibold shadow-sm"
+                    : "text-ink-soft hover:bg-card/80 hover:text-ink"
                 }`}
               >
                 {l.label}
@@ -171,12 +171,12 @@ function AccountMenu({
         </svg>
       </summary>
 
-      <div className="absolute right-0 top-full z-40 mt-1.5 w-56 rounded-2xl border border-line bg-card p-1.5 shadow-lift">
+      <div className="absolute right-0 top-full z-40 mt-1.5 w-56 rounded-2xl border border-line/70 bg-card/95 backdrop-blur-xl p-1.5 shadow-lift">
         <MenuLink href="/dashboard">
           {hasReport ? "Your report" : "Full report"}
         </MenuLink>
         {isAdmin && <MenuLink href="/admin">Admin</MenuLink>}
-        <div className="my-1.5 border-t border-line" />
+        <div className="my-1.5 border-t border-line/60" />
         <form action="/auth/signout" method="post">
           <button
             type="submit"

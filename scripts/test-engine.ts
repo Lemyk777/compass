@@ -7983,6 +7983,59 @@ test("stating no field marks nothing off-field", () => {
   assert.ok(plan.items.every((o) => !o.offField));
 });
 
+test("a country-gated row is hidden outside its countries, and never on an unknown country", () => {
+  // The FIRST catalog rows to carry `gate.countries` landed on 2026-08-28.
+  // Until then the mechanism was covered only by two unit fixtures calling
+  // `checkEligibility` with a synthetic gate — the branch existed, the data
+  // never reached it, and this end-to-end path had never once run. That is the
+  // sixth way a guard is useless in this repo: correct, and abstaining.
+  //
+  // The defect that produced the first row: Scholastic requires residence in
+  // the US, its territories or Canada, and shipped with no country restriction
+  // at all, so a sixteen-year-old in Shymkent was told they could enter.
+  const gated = COMPETITIONS.filter(
+    (c) => (c as { gate?: { countries?: string[] } }).gate?.countries?.length,
+  );
+  assert.ok(
+    gated.length > 0,
+    "no row carries gate.countries — this guard is ABSTAINING, not passing. " +
+      "If that is deliberate, say so here; if a row lost its gate, that is the bug.",
+  );
+
+  const factors = [{ key: "extracurriculars", score: 6 }];
+  const shows = (id: string, country: string | null, fields: string[]) =>
+    buildExtracurriculars({
+      today: TODAY,
+      faculties: fields,
+      factors,
+      homeCountry: country,
+      graduationYear: TODAY.getUTCFullYear() + 2,
+    }).items.some((o) => o.id === id);
+
+  for (const row of gated) {
+    const allowed = (row as { gate: { countries: string[] } }).gate.countries;
+    const fields = row.fields as unknown as string[];
+    for (const c of allowed) {
+      assert.ok(
+        shows(row.id, c, fields),
+        `${row.id} is hidden from ${c}, which its own gate allows`,
+      );
+    }
+    // Somewhere the gate does not name. KZ unless the row already allows it.
+    const outside = allowed.includes("KZ") ? "JP" : "KZ";
+    assert.ok(
+      !shows(row.id, outside, fields),
+      `${row.id} is shown to a student in ${outside}, who cannot enter it`,
+    );
+    // And the rule the whole matcher is built on: an unknown fact never
+    // excludes. A student who has not told us where they live still sees it.
+    assert.ok(
+      shows(row.id, null, fields),
+      `${row.id} is hidden from a student whose country we do not know — unknown facts must never exclude`,
+    );
+  }
+});
+
 test("the catalog carries local rows at all", () => {
   // This test used to assert the opposite — that NOTHING was region-tagged —
   // and its own comment said the first local row would trip it and force

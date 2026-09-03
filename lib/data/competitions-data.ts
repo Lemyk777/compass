@@ -482,7 +482,30 @@ export const COMPETITIONS: Competition[] = [
     level: "national",
     category: "competition",
     tier: "selective",
-    eligibility: "Ages 13+ · grades 7–12",
+    // RESIDENCY, and it is the reason this row carries an explicit gate. The
+    // organiser's participation terms (verified 2026-08-28 at
+    // artandwriting.org/participation-terms — NOT on how-to-enter, which is
+    // where you would look): "To participate in the Awards, you must be a teen
+    // in grades 7–12, age 13 years or older as of the date of entry, attending
+    // school and residing in the United States, U.S. territories or military
+    // bases, or Canada (excluding Quebec)."
+    //
+    // The row shipped as "Ages 13+ · grades 7–12" with no country restriction,
+    // so `parseEligibility` returned {gradeMin:7, gradeMax:12, ageMin:13} and a
+    // sixteen-year-old in Shymkent was told they could enter. That is the one
+    // failure lib/data/README.md says this product does not get to make.
+    //
+    // The gate is EXPLICIT rather than parsed because the parser cannot express
+    // this rule: `US_ONLY` only ever yields ["US"], which would wrongly shut out
+    // Canadians. `gateFor` honours an explicit gate first.
+    //
+    // Quebec is excluded by the organiser and is NOT modelled — the gate is
+    // country-level, so a Quebec student passes it and then meets the rule in
+    // the eligibility sentence. Narrowing that needs a province, which this
+    // catalog has no concept of.
+    eligibility:
+      "Ages 13+ · grades 7–12 · at school in the US, US territories or Canada (Quebec excluded)",
+    gate: { countries: ["US", "CA"] },
     url: "https://www.artandwriting.org/",
     blurb:
       "Regional juries judge first, then the national round in New York. Categories run from poetry and journalism to sculpture and film, so most things you make have somewhere to go.",
@@ -523,11 +546,39 @@ export const COMPETITIONS: Competition[] = [
     level: "international",
     category: "summer_program",
     tier: "elite",
+    // The grade ceiling has to be EXPLICIT, and this is the exact trap
+    // lib/data/README.md warns about with the hyphenated "final-year".
+    // The organiser is unambiguous (verified 2026-08-28 at
+    // cee.org/programs/apply-rsi): "High school seniors are not eligible to
+    // apply." and "Citizens studying overseas, with one year remaining before
+    // graduation from high school, may apply to RSI."
+    //
+    // The sentence used to say "final HS year", which `parseEligibility` does
+    // not match — so the row parsed to {ageMin: 16} with NO grade ceiling at
+    // all, and offered a final-year student a programme that categorically bars
+    // them. Invisible in a diff; found by printing the parse.
+    //
+    // AND THE OBVIOUS REPAIR MAKES IT WORSE, which is the part to remember.
+    // Writing the exclusion into the sentence — "(final-year students are not
+    // eligible)" — parses to {gradeMin: 12, gradeMax: 12}: the parser reads the
+    // hyphenated "final-year" as the grade being described and gates the row to
+    // exactly the group the organiser bars. Measured, not guessed. The wording
+    // below was chosen by printing the parse of four candidates; it is the
+    // plainest one that still yields {ageMin: 16}.
+    //
+    // So the ceiling lives in the explicit gate, where no sentence can invert
+    // it. That matters beyond this row: `lib/discovery/screen.ts` calls
+    // `parseEligibility` on strings that have no row behind them yet.
     eligibility:
-      "Age 16+ by July 1 · rising seniors (year before final HS year completed)",
+      "Age 16+ by July 1 · apply the year before your last year of school",
+    gate: { ageMin: 16, gradeMax: 11 },
     url: "https://www.cee.org/programs/research-science-institute",
+    // The blurb used to end "and it costs nothing", which restates the `free`
+    // pill rendered directly above it — banned by lib/data/README.md. The
+    // "hardest to get into" half stays: the README allows it because it is
+    // checkable against the organiser's own acceptance figures.
     blurb:
-      "The hardest STEM summer research programme to get into, and it costs nothing.",
+      "The hardest STEM summer research programme to get into. Six weeks of full-time research with a mentor, ending in a paper and a talk.",
     cost: "free",
     costDetail:
       "Free once you are in: RSI charges no tuition and covers room and board for the six weeks. Two things are still on you: a $65 application fee, and travel to the US.",
@@ -802,7 +853,23 @@ export const COMPETITIONS: Competition[] = [
     name: "CyberPatriot",
     fields: ["computer_science", "engineering"],
     deadline: "2026-10-01",
-    window: "Rounds from October to March",
+    // CONFIRMED 2026-08-28, and the inference is recorded rather than hidden
+    // behind the flag. The organiser's live homepage banner, which survives
+    // comment-stripping, reads: "CyberPatriot 19 Registration Deadline is
+    // October 1st!" — day and month, no YEAR.
+    //
+    // The year is forced rather than printed. CP18 was the 2025-26 season
+    // ("Registration Deadline: October 1, 2025", uscyberpatriot.org/cp18-
+    // schedule-announced), so CP19 is 2026-27; the page carries 2026 eight
+    // times; and on 2026-08-28 a banner meaning October 2027 would be thirteen
+    // months early. `cp19-schedule-announced` 404s — the site is mid-rebuild
+    // ("Pardon our Dust") and every competition sub-page is currently missing,
+    // so there is no page that prints the year.
+    //
+    // If that reads as too thin for a countdown, the field to change is this
+    // one; the estimate underneath it was already 2026-10-01.
+    dateConfirmed: true,
+    window: "Registration closes October 1; rounds from October to March",
     level: "national",
     category: "competition",
     tier: "accessible",
@@ -1817,8 +1884,15 @@ export const COMPETITIONS: Competition[] = [
     eligibility:
       "School students, junior and senior papers. Roughly ages 12–18",
     url: "https://www.turgor.ru/",
+    // "a junior paper from year one" was wrong. The organiser's English page
+    // (verified 2026-08-28): "for school students of grades 8-11" and "Each
+    // level is held separately for Juniors (grades 8-9) and Seniors (grades
+    // 10-11). Any school student of any grade can participate in the Tournament
+    // for his grade or higher." So the junior paper starts at grade 8 — a
+    // younger student may sit up into it, which is the opposite of what the old
+    // sentence promised a ten-year-old.
     blurb:
-      "The classic problem-solving olympiad across the CIS. There is a junior paper from year one.",
+      "The classic problem-solving olympiad across the CIS. A junior paper runs alongside the senior one, and a younger student may sit up into it.",
     cost: "free",
     costDetail: "Local organising centres run it at no cost to participants.",
   },
@@ -1884,8 +1958,12 @@ export const COMPETITIONS: Competition[] = [
     eligibility:
       "Age 17 or under. Separate categories for 10 and under, 11–14, 15–17",
     url: "https://www.nhm.ac.uk/wpy/competition",
+    // "One image is the whole entry" was wrong, and it understated what a
+    // student may send by a factor of ten. The organiser (verified 2026-08-28):
+    // "you can submit up to 10 photos into one of the three age group
+    // categories."
     blurb:
-      "A world-famous photography award with a category for ten-year-olds. One image is the whole entry.",
+      "A world-famous photography award with a category for ten-year-olds. You may enter up to ten images in one age group.",
     cost: "free",
     costDetail: "Free for the under-18 Young Wildlife Photographer categories.",
   },

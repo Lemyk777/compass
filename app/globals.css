@@ -449,6 +449,16 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+@container (min-width: 1320px) {
+  .opp-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@container (min-width: 1760px) {
+  .opp-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
 
 /* ---- Reliable entrance: CSS-only, ends visible, runs without JS ----------- */
 @keyframes rise-in {

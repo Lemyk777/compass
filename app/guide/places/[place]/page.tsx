@@ -346,7 +346,7 @@ function DestinationBody({
             label={d.name}
             signedIn={pick.signedIn}
             saved={pick.saved}
-            maps={pick.maps}
+            
             returnTo={`/guide/places/${d.id}`}
           />
           {/* A `p` under an `aria-label`, not an `h2` — the same call as

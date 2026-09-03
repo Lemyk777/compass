@@ -37,13 +37,13 @@ export function LikelihoodGauge({
     : [];
 
   return (
-    <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
+    <div className="rounded-2xl border border-line/70 bg-card p-5 shadow-card transition-all duration-200 hover:shadow-lift">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-[0.95rem] font-semibold leading-tight text-ink">
+        <h3 className="text-base font-bold leading-snug text-ink">
           {school.name}
         </h3>
         <span
-          className="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium"
+          className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold shadow-sm"
           style={{ backgroundColor: meta.soft, color: meta.text }}
         >
           {t(`tier.${school.tier}`)}
@@ -51,18 +51,18 @@ export function LikelihoodGauge({
       </div>
 
       <div className="mt-3 flex items-baseline gap-2">
-        <span data-num className="font-display text-xl font-semibold text-ink">
+        <span data-num className="font-display text-2xl font-bold text-ink">
           {low}–{high}%
         </span>
-        <span className="text-xs text-ink-faint">
+        <span className="text-xs font-medium text-ink-faint">
           {t(`conf.${school.confidence}`)}
         </span>
       </div>
 
       {/* Range track */}
-      <div className="relative mt-2 h-2.5 w-full rounded-full bg-line">
+      <div className="relative mt-2.5 h-2.5 w-full rounded-full bg-line/80 shadow-inner">
         <div
-          className="absolute top-0 h-full rounded-full"
+          className="absolute top-0 h-full rounded-full shadow-sm"
           style={{
             left: `${low}%`,
             width: `${Math.max(2, high - low)}%`,
@@ -70,39 +70,39 @@ export function LikelihoodGauge({
           }}
         />
       </div>
-      <div className="mt-1 flex justify-between text-[12px] text-ink-faint">
+      <div className="mt-1 flex justify-between text-[12px] font-medium text-ink-faint">
         <span>0%</span>
         <span>50%</span>
         <span>100%</span>
       </div>
 
-      <p className="mt-2.5 text-xs leading-relaxed text-ink-soft">
+      <p className="mt-3 text-xs leading-relaxed text-ink-soft">
         {school.reason}
       </p>
 
       {branch && <BranchCampusPanel branch={branch} />}
 
       {deadlines.length > 0 && (
-        <div className="mt-3 border-t border-line pt-2.5">
-          <p className="mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-ink-faint">
+        <div className="mt-3.5 border-t border-line/60 pt-3">
+          <p className="mb-2 text-[12px] font-bold uppercase tracking-wider text-ink-faint">
             Application deadlines
           </p>
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {deadlines.map((d) => (
               <li
                 key={d.stage}
                 className="flex items-center justify-between gap-2 text-xs"
               >
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <span className="font-medium text-ink">{d.short}</span>
+                  <span className="font-semibold text-ink">{d.short}</span>
                   {d.binding && (
-                    <span className="shrink-0 rounded bg-reach-soft px-1.5 py-0.5 text-[12px] font-semibold text-reach-ink">
+                    <span className="shrink-0 rounded-md bg-reach-soft px-1.5 py-0.5 text-[12px] font-bold text-reach-ink shadow-sm">
                       Binding
                     </span>
                   )}
                 </span>
                 <span className="flex shrink-0 items-center gap-2 text-ink-soft">
-                  <span data-num className="tabular-nums">
+                  <span data-num className="tabular-nums font-medium">
                     {formatDate(d.date)}
                   </span>
                   <DeadlinePill days={d.daysLeft} />

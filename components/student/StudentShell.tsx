@@ -83,7 +83,7 @@ export async function StudentShell({
           // subject page already carries its own rail from `lg`, so nesting a
           // second one left 256px of prose at 1024px — buying a column WITH the
           // line length, which inverts the rule the whole layout is built on.
-          <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-8">
+          <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] 2xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-8 2xl:gap-10">
             <div className="min-w-0">{children}</div>
             <Companion
               stationIndex={companion.station.index}

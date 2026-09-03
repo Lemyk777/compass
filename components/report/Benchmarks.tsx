@@ -32,15 +32,15 @@ export function Benchmarks({ benchmarks }: { benchmarks: Benchmark[] }) {
         return (
           <li key={i}>
             <div className="mb-1.5 flex items-baseline justify-between gap-2">
-              <span className="text-sm font-medium text-ink">{b.school}</span>
-              <span data-num className="text-xs text-ink-soft">
+              <span className="text-sm font-semibold text-ink">{b.school}</span>
+              <span data-num className="text-xs font-medium text-ink-soft">
                 {b.metric} {b.student_value} · mid {b.admit_p25}–{b.admit_p75}
               </span>
             </div>
             <div className="relative h-7">
               {/* admitted range band */}
               <div
-                className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-line"
+                className="absolute top-1/2 h-2.5 -translate-y-1/2 rounded-full bg-line/80 shadow-inner"
                 style={{
                   left: `${pct(b.admit_p25)}%`,
                   width: `${pct(b.admit_p75) - pct(b.admit_p25)}%`,
@@ -54,7 +54,7 @@ export function Benchmarks({ benchmarks }: { benchmarks: Benchmark[] }) {
                 }}
               >
                 <span
-                  className="h-4 w-4 rounded-full border-2 border-white shadow"
+                  className="h-4 w-4 rounded-full border-2 border-card shadow-md"
                   style={{ backgroundColor: ACCENT }}
                 />
               </div>

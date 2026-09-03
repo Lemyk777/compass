@@ -172,7 +172,7 @@ export default async function GuideMajorPage({
           label={major.name}
           signedIn={pick.signedIn}
           saved={pick.saved}
-          maps={pick.maps}
+          
           returnTo={`/guide/majors/${params.major}`}
         />
       }

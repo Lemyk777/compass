@@ -255,7 +255,7 @@ export function CountryTabs() {
   const { tabs, country, setCountry } = useDashboard();
   if (tabs.length < 2) return null;
   return (
-    <div className="inline-flex rounded-xl border border-line bg-card p-1">
+    <div className="inline-flex rounded-2xl border border-line/70 bg-card p-1.5 shadow-card">
       {tabs.map((code: DestinationCode) => {
         const d = DESTINATIONS.find((x) => x.code === code);
         if (!d) return null;
@@ -266,8 +266,8 @@ export function CountryTabs() {
             type="button"
             aria-pressed={on}
             onClick={() => setCountry(code)}
-            className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors focus-visible:focus-ring ${
-              on ? "bg-accent text-on-fill" : "text-ink-soft hover:text-ink"
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all focus-visible:focus-ring ${
+              on ? "bg-accent text-on-fill shadow-sm" : "text-ink-soft hover:text-ink hover:bg-surface/80"
             }`}
           >
             <Flag code={code} />
@@ -287,15 +287,15 @@ export function EmptyCountryList({ code }: { code: DestinationCode }) {
   const d = DESTINATIONS.find((x) => x.code === code);
   const label = useT()(d?.labelKey ?? "");
   return (
-    <div className="rounded-2xl border border-dashed border-line bg-card px-6 py-12 text-center">
-      <h2 className="text-lg font-semibold tracking-tight text-ink">
+    <div className="rounded-2xl border border-dashed border-line/80 bg-card px-6 py-12 text-center shadow-card">
+      <h2 className="text-lg font-bold tracking-tight text-ink">
         No {label} universities yet
       </h2>
       <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
         Add the {label} universities or programs you&apos;re aiming for and
         Compass will score your admission odds at each.
       </p>
-      <ButtonLink href={`${basePath}/college-list`} size="lg" className="mt-6">
+      <ButtonLink href={`${basePath}/college-list`} size="lg" className="mt-6 shadow-sm">
         Build your {label} list
       </ButtonLink>
     </div>
@@ -306,7 +306,7 @@ export function EmptyCountryList({ code }: { code: DestinationCode }) {
 export function PageHeader({ title, hint }: { title: string; hint?: string }) {
   return (
     <div className="mb-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-ink">
+      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
         {title}
       </h1>
       {hint && <p className="mt-1 text-sm text-ink-soft">{hint}</p>}
