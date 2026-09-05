@@ -426,10 +426,6 @@ export function OriginStory() {
                     <h3 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight pt-1">
                       Alibek Ussipbayev
                     </h3>
-                    <p className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                      NIS PhM Shymkent · Class of 2026
-                    </p>
                   </div>
 
                   {/* Bespoke Geometric Monogram */}
@@ -506,10 +502,6 @@ export function OriginStory() {
                     <h3 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight pt-1">
                       Kirill Kim
                     </h3>
-                    <p className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      NIS PhM Shymkent · Class of 2026
-                    </p>
                   </div>
 
                   {/* Bespoke Geometric Monogram */}
