@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
+import type { ReactNode } from "react";
+import { motion, type Variants } from "framer-motion";
 import { Container } from "@/components/ui/Container";
 import { MotionSafe } from "@/components/ui/MotionSafe";
 import Link from "@/components/ui/Link";
 import { ButtonLink } from "@/components/ui/Button";
+import { OriginStory } from "@/components/about/OriginStory";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -60,14 +61,6 @@ const STAGGER: Variants = {
   },
 };
 
-const SCALE_IN: Variants = {
-  hidden: { opacity: 0, scale: 0.96 },
-  show: {
-    opacity: 1,
-    scale: 1,
-    transition: { type: "spring", stiffness: 120, damping: 20 },
-  },
-};
 
 // ── Inline Accessible SVGs ───────────────────────────────────────────────────
 function CompassIcon({ className = "w-4 h-4" }: { className?: string }) {
@@ -169,54 +162,6 @@ function GlassCard({
   );
 }
 
-// ── Timeline Milestone Data ──────────────────────────────────────────────────
-interface Milestone {
-  year: string;
-  quarter: string;
-  title: string;
-  tagline: string;
-  lead: string;
-  details: string[];
-}
-
-const MILESTONES: Milestone[] = [
-  {
-    year: "2024",
-    quarter: "Grade 11 · Autumn",
-    title: "The Wall of Expired Deadlines",
-    tagline: "When searching for opportunities felt like wading through junk.",
-    lead: "At NIS Shymkent, we set out to find international olympiads, research programs, and pre-college summer grants. What we found instead was a broken internet.",
-    details: [
-      "Catalog websites that claimed to be 'free' charged $80 to submit or $120 for an completion certificate.",
-      "Deadlines displayed were copied from 2021 and had expired three years earlier.",
-      "90% of lists were authored for US college graduates, leaving Central Asian high schoolers completely invisible.",
-    ],
-  },
-  {
-    year: "2025",
-    quarter: "Grade 11 · Spring",
-    title: "The Spreadsheet That Broke the Rules",
-    tagline: "From manual calling lists to automated headless verification.",
-    lead: "We stopped reading aggregator sites. Kirill called competition coordinators directly across Kazakhstan and Europe, while Alibek wrote scrapers that verified official domain certificates.",
-    details: [
-      "Built automated link checkers that crawl organizer websites directly on every build.",
-      "Rule zero: if an organizer hadn't announced the current cycle's date, we said 'Not announced yet' rather than guessing.",
-      "Shared the spreadsheet with classmates at NIS; within 72 hours, it had spread to schools across Almaty, Astana, and Tashkent.",
-    ],
-  },
-  {
-    year: "2026",
-    quarter: "Class of 2026 · Graduation",
-    title: "The Compass Manifesto",
-    tagline: "Free, open, zero ad-trackers, zero compromise.",
-    lead: "As we graduate from the Nazarbayev Intellectual School of Physics and Mathematics, Compass is our permanent contribution to high school students everywhere.",
-    details: [
-      "Strict server-side verification: zero paid rankings, zero sponsored search results.",
-      "Private by design: your plans, saved items, and notes live in your browser, never on an ad broker's server.",
-      "Equal reverence for domestic and global paths: highlighting local university programs with zero debt alongside funded global master's routes.",
-    ],
-  },
-];
 
 export function AboutClient({ stats }: AboutClientProps = {}) {
   const total = sanitizeStat(stats?.total, DEFAULT_STATS.total);
@@ -228,10 +173,6 @@ export function AboutClient({ stats }: AboutClientProps = {}) {
   const cities = sanitizeStat(stats?.cities, DEFAULT_STATS.cities);
   const homeRoutes = sanitizeStat(stats?.homeRoutes, DEFAULT_STATS.homeRoutes);
 
-  // Interactive founder tabs state
-  const [activeFounder, setActiveFounder] = useState<"both" | "alibek" | "kirill">("both");
-  // Interactive milestone state
-  const [activeMilestone, setActiveMilestone] = useState<number>(0);
 
   return (
     <MotionSafe>
@@ -322,229 +263,8 @@ export function AboutClient({ stats }: AboutClientProps = {}) {
           </motion.section>
 
 
-          {/* ── ACT 2: INTERACTIVE FOUNDERS' STORY ───────────────────────── */}
-          <section className="space-y-12">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-accent-ink uppercase">
-                  <SparkleIcon className="w-3.5 h-3.5 text-accent-ink" />
-                  Origin Story
-                </div>
-                <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-white">
-                  Two students. One stubborn rule.
-                </h2>
-                <p className="text-base sm:text-lg text-slate-400 max-w-[65ch]">
-                  Explore the journey from the perspectives of both founders who built Compass side-by-side.
-                </p>
-              </div>
-
-              {/* Segmented Persona Pill Switcher */}
-              <div
-                role="tablist"
-                aria-label="Founder perspectives"
-                className="flex items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.04] p-1 backdrop-blur-xl self-start md:self-auto shrink-0"
-              >
-                {(
-                  [
-                    { id: "both", label: "Unified Journey" },
-                    { id: "alibek", label: "Alibek Ussipbayev" },
-                    { id: "kirill", label: "Kirill Kim" },
-                  ] as const
-                ).map((tab) => {
-                  const isActive = activeFounder === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={isActive}
-                      onClick={() => setActiveFounder(tab.id)}
-                      className={cn(
-                        "relative rounded-full px-4 py-2 text-xs sm:text-sm font-medium transition-colors min-h-[44px] flex items-center justify-center focus-visible:focus-ring",
-                        isActive
-                          ? "text-white"
-                          : "text-slate-400 hover:text-slate-200"
-                      )}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeFounderTab"
-                          className="absolute inset-0 rounded-full bg-accent/25 border border-accent/40 shadow-sm"
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        />
-                      )}
-                      <span className="relative z-10">{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Dynamic Founder Spotlight Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Alibek Card */}
-              <motion.div
-                variants={SCALE_IN}
-                initial="hidden"
-                animate="show"
-                className={cn(
-                  "group relative overflow-hidden rounded-[2rem] border p-6 sm:p-8 backdrop-blur-xl transition-all duration-300",
-                  activeFounder === "alibek" || activeFounder === "both"
-                    ? "border-accent/40 bg-white/[0.04] shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
-                    : "border-white/[0.06] bg-white/[0.01] opacity-50"
-                )}
-              >
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/40 bg-accent/15 text-lg font-bold text-white shadow-inner">
-                    AU
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">Alibek Ussipbayev</h3>
-                    <p className="text-sm text-accent-ink font-medium">Co-Founder & Systems Architect</p>
-                    <p className="text-xs text-slate-400">NIS PhM Shymkent · Class of 2026</p>
-                  </div>
-                </div>
-                <blockquote className="space-y-3 text-slate-300 leading-relaxed text-pretty">
-                  <p className="italic text-base sm:text-lg text-slate-200">
-                    &ldquo;If an algorithm has to guess when a deadline is, that algorithm belongs in the trash. We wrote scrapers to read real websites and break the build when a link rots.&rdquo;
-                  </p>
-                  <p className="text-sm text-slate-400 pt-2">
-                    Focused on architecture, privacy-first local storage, and ensuring zero telemetry tracks a student’s private career planning.
-                  </p>
-                </blockquote>
-              </motion.div>
-
-              {/* Kirill Card */}
-              <motion.div
-                variants={SCALE_IN}
-                initial="hidden"
-                animate="show"
-                className={cn(
-                  "group relative overflow-hidden rounded-[2rem] border p-6 sm:p-8 backdrop-blur-xl transition-all duration-300",
-                  activeFounder === "kirill" || activeFounder === "both"
-                    ? "border-accent/40 bg-white/[0.04] shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
-                    : "border-white/[0.06] bg-white/[0.01] opacity-50"
-                )}
-              >
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/40 bg-emerald-500/15 text-lg font-bold text-white shadow-inner">
-                    KK
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">Kirill Kim</h3>
-                    <p className="text-sm text-emerald-400 font-medium">Co-Founder & Data Lead</p>
-                    <p className="text-xs text-slate-400">NIS PhM Shymkent · Class of 2026</p>
-                  </div>
-                </div>
-                <blockquote className="space-y-3 text-slate-300 leading-relaxed text-pretty">
-                  <p className="italic text-base sm:text-lg text-slate-200">
-                    &ldquo;We spent weekends calling competition committees to confirm if high schoolers from Central Asia were genuinely eligible. If the rules were vague, we marked it unverified.&rdquo;
-                  </p>
-                  <p className="text-sm text-slate-400 pt-2">
-                    Focused on manual verification of rulebooks, cost integrity, and eradicating bait-and-switch programs with hidden certificate fees.
-                  </p>
-                </blockquote>
-              </motion.div>
-            </div>
-
-            {/* School Credential Authenticity Banner */}
-            <GlassCard glow className="border-accent/20 bg-gradient-to-r from-accent/[0.08] via-white/[0.03] to-transparent">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                <div className="space-y-2 max-w-2xl">
-                  <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-accent-ink">
-                    <CompassIcon className="w-4 h-4 text-accent" />
-                    School-Grounded Perspective
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-semibold text-white">
-                    Built by high schoolers, for high schoolers.
-                  </h3>
-                  <p className="text-sm sm:text-base text-slate-300 leading-relaxed text-pretty">
-                    &ldquo;We are still at school. That is not a credential, but it does mean we were the people this was built for before we were the people making it.&rdquo;
-                  </p>
-                </div>
-                <div className="rounded-xl border border-white/[0.1] bg-white/[0.05] px-5 py-3 text-center shrink-0">
-                  <div className="text-xs text-slate-400 uppercase tracking-wider">Campus</div>
-                  <div className="text-sm font-semibold text-white mt-0.5">NIS PhM Shymkent</div>
-                  <div className="text-xs text-accent-ink">Graduating June 2026</div>
-                </div>
-              </div>
-            </GlassCard>
-
-            {/* Interactive Timeline: The 3 Epochs */}
-            <div className="space-y-6 pt-6">
-              <div className="text-xs font-semibold tracking-widest text-slate-400 uppercase">
-                Interactive Milestones
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {MILESTONES.map((m, idx) => {
-                  const isSelected = activeMilestone === idx;
-                  return (
-                    <button
-                      key={m.year}
-                      type="button"
-                      aria-pressed={isSelected}
-                      onClick={() => setActiveMilestone(idx)}
-                      className={cn(
-                        "flex flex-col text-left rounded-2xl border p-4 sm:p-5 transition-all min-h-[44px] focus-visible:focus-ring",
-                        isSelected
-                          ? "border-accent/50 bg-accent/10 shadow-lg"
-                          : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15] hover:bg-white/[0.04]"
-                      )}
-                    >
-                      <div className="flex items-center justify-between w-full text-xs mb-2">
-                        <span className={cn("font-bold", isSelected ? "text-accent-ink" : "text-slate-400")}>
-                          {m.year}
-                        </span>
-                        <span className="text-slate-500">{m.quarter}</span>
-                      </div>
-                      <div className="font-medium text-white text-base leading-snug">
-                        {m.title}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Milestone Detail Card */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeMilestone}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <GlassCard className="border-white/[0.12] bg-white/[0.04]">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <span className="rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold text-accent-ink">
-                          {MILESTONES[activeMilestone].quarter}
-                        </span>
-                        <h4 className="text-xl sm:text-2xl font-semibold text-white">
-                          {MILESTONES[activeMilestone].title}
-                        </h4>
-                      </div>
-                      <p className="text-base sm:text-lg text-slate-300 font-medium leading-relaxed">
-                        {MILESTONES[activeMilestone].tagline}
-                      </p>
-                      <p className="text-sm sm:text-base text-slate-400 leading-relaxed max-w-[65ch]">
-                        {MILESTONES[activeMilestone].lead}
-                      </p>
-                      <ul className="space-y-2.5 pt-2 border-t border-white/[0.08]">
-                        {MILESTONES[activeMilestone].details.map((bullet, i) => (
-                          <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                            <span>{bullet}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </GlassCard>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </section>
+          {/* ── ACT 2: INTERACTIVE FOUNDERS' STORY (BESPOKE EDITORIAL OVERHAUL) ── */}
+          <OriginStory />
 
 
           {/* ── ACT 3: THE 4 NON-NEGOTIABLES ("WHAT WE REFUSE TO DO") ─────── */}
