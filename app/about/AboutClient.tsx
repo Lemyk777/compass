@@ -285,10 +285,10 @@ export function AboutClient({ stats }: AboutClientProps = {}) {
             >
               <div className="group rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-lg transition-all hover:border-accent/40 hover:bg-white/[0.06]">
                 <div className="text-3xl sm:text-4xl font-semibold tracking-tight text-white">
-                  {total}
+                  240+
                 </div>
                 <div className="mt-1 text-sm text-slate-400">
-                  Verified entries (<span className="text-emerald-400 font-medium">{free}</span> free)
+                  Active users (<span className="text-emerald-400 font-medium">100% free</span> forever)
                 </div>
               </div>
 
@@ -634,8 +634,8 @@ export function AboutClient({ stats }: AboutClientProps = {}) {
                   </div>
                   <h3 className="text-xl font-semibold text-white">The Opportunities Engine</h3>
                   <p className="text-sm sm:text-base text-slate-300 leading-relaxed text-pretty">
-                    <span className="font-semibold text-white">{total}</span> verified entries, of which{" "}
-                    <span className="font-semibold text-emerald-400">{free}</span> cost nothing.{" "}
+                    <span className="font-semibold text-white">{total}</span> verified entries. Our entire platform is{" "}
+                    <span className="font-semibold text-emerald-400">100% free</span> to use, with no hidden paywalls.{" "}
                     <span className="font-semibold text-white">{alwaysOpen}</span> are open whenever you are ready—self-paced courses, journals, and open challenges.
                   </p>
                 </div>
